@@ -75,7 +75,7 @@ struct GrowParameters
  * @param[in] seedMatchId The match used to estimate the plane and the corresponding matches.
  * @param[out] planarMatchesIndices The indices (in the \c matches vector) of the really planar matches.
  * @param[out] transformation The homography associated to the plane.
- * @param[in] param The parameters of the algorihm.
+ * @param[in] param The parameters of the algorithm.
  * @return true if the \c transformation is different than the identity matrix.
  */
 bool growHomography(const std::vector<feature::PointFeature>& featuresI,

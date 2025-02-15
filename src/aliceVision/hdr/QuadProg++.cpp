@@ -98,7 +98,7 @@ double solve_quadprog(Eigen::MatrixXd& G,
     double f_value, psi, c1, c2, sum, ss, R_norm;
     const double inf = std::numeric_limits<double>::infinity();
 
-    double t, t1, t2; /* t is the step lenght, which is the minimum of the partial step length t1
+    double t, t1, t2; /* t is the step length, which is the minimum of the partial step length t1
                        * and the full step length t2 */
 
     Eigen::VectorXi A(m + p), A_old(m + p), iai(m + p);
@@ -171,7 +171,7 @@ double solve_quadprog(Eigen::MatrixXd& G,
         update_z(z, J, d, iq);
         update_r(R, r, d, iq);
 
-        /* compute full step length t2: i.e., the minimum step in primal space s.t. the contraint
+        /* compute full step length t2: i.e., the minimum step in primal space s.t. the constraint
           becomes feasible */
         t2 = 0.0;
         if (fabs(scalar_product(z, z)) > std::numeric_limits<double>::epsilon())  // i.e. z != 0
@@ -371,7 +371,7 @@ l2a: /* Step 2a: determine step direction */
         goto l1;
     }
 
-    /* a patial step has taken */
+    /* a partial step has taken */
     /* drop constraint l */
     iai[l] = l;
     delete_constraint(R, J, A, u, n, p, iq, l);

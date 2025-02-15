@@ -394,7 +394,7 @@ class Tag
 };
 
 Tag::Tag(unsigned short tag, TagType type, unsigned int datasize, Endianness order, FILE* f)
-  :  // file index supposed to be at rigth location to read datasize
+  :  // file index supposed to be at right location to read datasize
     tagID(tag),
     type(type),
     datasize(datasize),

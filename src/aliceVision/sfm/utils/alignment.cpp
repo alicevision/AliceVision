@@ -148,7 +148,7 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     ALICEVISION_LOG_INFO("Trajectory seems to be singular. Use another algorithm.");
     
 
-    // If point cloud is badly conditionned let's try to add some
+    // If point cloud is badly conditioned let's try to add some
     // Points from the axis
     // Move input point in appropriate container
     xA = Mat(3, reconstructedCommonViewIds.size() * 4);

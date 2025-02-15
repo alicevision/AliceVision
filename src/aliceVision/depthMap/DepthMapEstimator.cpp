@@ -504,7 +504,7 @@ void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
         }
     }
 
-    // some objects countains CUDA objects
+    // some objects contains CUDA objects
     // this objects should be destroyed before the end of the program (i.e. the end of the CUDA context)
     DeviceCache::getInstance().clear();
     sgmPerStream.clear();

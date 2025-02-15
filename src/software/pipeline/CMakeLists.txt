@@ -1,5 +1,5 @@
 ## AliceVision
-## Pipeline softwares
+## Pipeline software
 
 # Software PROPERTY FOLDER is 'Software/Pipeline'
 set(FOLDER_SOFTWARE_PIPELINE "Software/Pipeline")
@@ -118,7 +118,7 @@ if(ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
-    # Bootstraping SfM
+    # Bootstrapping SfM
     alicevision_add_software(aliceVision_sfmBootstraping
         SOURCE main_sfmBootstraping.cpp
         FOLDER ${FOLDER_SOFTWARE_PIPELINE}

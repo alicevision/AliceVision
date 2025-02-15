@@ -73,6 +73,10 @@ class Equirectangular : public IntrinsicScaleOffsetDisto
 
     Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeTransformProjectWrtParams(const Eigen::Matrix4d& pose, const Vec4& pt3D) const override;
 
+    Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
+
+    Eigen::Matrix<double, 3, Eigen::Dynamic> getDerivativeBackProjectUnitWrtDistortion(const Vec2& pt2D) const override;
+
     Vec3 toUnitSphere(const Vec2& pt) const override;
 
     Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2& pt) const;

@@ -91,7 +91,7 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool& pt
         RD.z = std::max(RD.z, pts[i].z);
     }
 
-    ALICEVISION_LOG_INFO("Optimizing mesh smooth: " << std::endl << "\t- lamda: " << lambda << std::endl << "\t- niters: " << niter << std::endl);
+    ALICEVISION_LOG_INFO("Optimizing mesh smooth: " << std::endl << "\t- lambda: " << lambda << std::endl << "\t- niters: " << niter << std::endl);
 
     for (int i = 0; i < niter; i++)
     {

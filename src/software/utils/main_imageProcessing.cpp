@@ -1043,7 +1043,7 @@ int aliceVision_main(int argc, char* argv[])
          "Use original image names instead of view names when saving.")
 
         ("reconstructedViewsOnly", po::value<bool>(&pParams.reconstructedViewsOnly)->default_value(pParams.reconstructedViewsOnly),
-         "Process only recontructed views or all views.")
+         "Process only reconstructed views or all views.")
 
         ("fixNonFinite", po::value<bool>(&pParams.fixNonFinite)->default_value(pParams.fixNonFinite),
          "Fill non-finite pixels.")
@@ -1431,7 +1431,11 @@ int aliceVision_main(int argc, char* argv[])
 
             if (pParams.par.enabled)
             {
-                pParams.par.value = cam->getParams()[1] / cam->getParams()[0];
+                auto iso = camera::IntrinsicScaleOffset::cast(cam);
+                if (iso)
+                {
+                    pParams.par.value = iso->getScale().y() / iso->getScale().x();
+                }
             }
 
             // Image processing

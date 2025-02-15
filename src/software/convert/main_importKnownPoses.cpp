@@ -494,7 +494,7 @@ int aliceVision_main(int argc, char** argv)
     // export the SfMData scene in the expected format
     if (!sfmDataIO::save(sfmData, outputFilename, sfmDataIO::ESfMData::ALL))
     {
-        ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputFilename << "'");
+        ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outputFilename << "'");
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

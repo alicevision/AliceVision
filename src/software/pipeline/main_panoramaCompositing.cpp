@@ -167,7 +167,7 @@ bool processImage(const PanoramaMap& panoramaMap,
         needWeights = false;
         needSeams = true;
 
-        // Enlarge the panorama boundingbox to allow consider neighboor pixels even at small scale
+        // Enlarge the panorama boundingbox to allow consider neighbor pixels even at small scale
         panoramaBoundingBox =
           referenceBoundingBox.divide(panoramaMap.getScale()).dilate(panoramaMap.getBorderSize()).multiply(panoramaMap.getScale());
 
@@ -194,7 +194,7 @@ bool processImage(const PanoramaMap& panoramaMap,
     std::vector<IndexT> overlappingViews;
     if (!panoramaMap.getOverlaps(overlappingViews, referenceBoundingBox))
     {
-        ALICEVISION_LOG_ERROR("Problem analyzing neighboorhood");
+        ALICEVISION_LOG_ERROR("Problem analyzing neighborhood");
         return false;
     }
 

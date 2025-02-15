@@ -429,6 +429,7 @@ bool readCamera(const Version& abcVersion,
     double undistortionDiagonal = 0.0;
     double undistortionPixelAspectRatio = 1.0;
     bool undistortionDesqueezed = false;
+    bool undistortionLocked = false;
     std::string serialNumber = "";
 
     if (userProps)
@@ -628,7 +629,11 @@ bool readCamera(const Version& abcVersion,
                 }
                 if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_undistortionDesqueezed"))
                 {
-                    undistortionDesqueezed = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_undistortionPixelAspectRatio", sampleFrame);
+                    undistortionDesqueezed = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_undistortionDesqueezed", sampleFrame);
+                }
+                if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_undistortionLocked"))
+                {
+                    undistortionLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_undistortionLocked", sampleFrame);
                 }
             }
         }
@@ -705,6 +710,7 @@ bool readCamera(const Version& abcVersion,
             {
                 undistortion->setParameters(undistortionParams);
                 undistortion->setOffset(undistortionOffset);
+                undistortion->setLocked(undistortionLocked);
 
                 if (abcVersion >= Version(1, 2, 7))
                 {

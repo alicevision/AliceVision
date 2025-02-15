@@ -81,7 +81,7 @@ void LighthingEstimator::addImage(const image::Image<float>& albedo,
 {
     using namespace Eigen;
 
-    // augmented normales
+    // augmented normals
     image::Image<AugmentedNormal> augmentedNormals(normals.cast<AugmentedNormal>());
 
     const std::size_t nbPixels = augmentedNormals.width() * augmentedNormals.height();
@@ -106,7 +106,7 @@ void LighthingEstimator::addImage(const image::Image<image::RGBfColor>& albedo,
 {
     using namespace Eigen;
 
-    // augmented normales
+    // augmented normals
     image::Image<AugmentedNormal> augmentedNormals(normals.cast<AugmentedNormal>());
 
     const std::size_t nbPixels = augmentedNormals.width() * augmentedNormals.height();
@@ -184,7 +184,7 @@ void LighthingEstimator::estimateLigthing(LightingVector& lighting) const
             }
         }
 
-        ALICEVISION_LOG_INFO("Estimate ligthing channel: rhoTimesN(" << rhoTimesN.rows() << "x" << rhoTimesN.cols() << ")");
+        ALICEVISION_LOG_INFO("Estimate lighting channel: rhoTimesN(" << rhoTimesN.rows() << "x" << rhoTimesN.cols() << ")");
         Eigen::Matrix<float, 9, 1> lightingC = rhoTimesN.colPivHouseholderQr().solve(pictureChannel);
 
         // lighting vectors fusion

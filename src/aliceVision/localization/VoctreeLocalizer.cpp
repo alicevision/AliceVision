@@ -530,7 +530,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
             // try next one
             continue;
         }
-        ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
+        ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEEDED");
 
         ALICEVISION_LOG_DEBUG("R est\n" << pose.rotation());
         ALICEVISION_LOG_DEBUG("t est\n" << pose.translation());
@@ -580,7 +580,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc&
         localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, refineStatus);
         break;
     }
-    //@todo deal with unsuccesful case...
+    //@todo deal with unsuccessful case...
     return localizationResult.isValid();
 }
 
@@ -653,7 +653,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc& quer
         localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
         return localizationResult.isValid();
     }
-    ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEEDED");
 
     ALICEVISION_LOG_DEBUG("R est\n" << pose.rotation());
     ALICEVISION_LOG_DEBUG("t est\n" << pose.translation());
@@ -765,7 +765,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc& quer
     std::map<std::pair<IndexT, IndexT>, std::size_t> repeated;
 
     // B. for each found similar image, try to find the correspondences between the
-    // query image adn the similar image
+    // query image and the similar image
     // stop when param._maxResults successful matches have been found
     std::size_t goodMatches = 0;
     for (const voctree::DocMatch& matchedImage : out_matchedImages)

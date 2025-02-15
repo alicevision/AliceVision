@@ -100,7 +100,7 @@ int aliceVision_main(int argc, char** argv)
         const IndexT poseId = view->getPoseId();
         const int subPoseId = mapPoseToSubPose[poseId];
 
-        // New commmon pose id is the same than the rig id for convenience
+        // New common pose id is the same than the rig id for convenience
         view->setPoseId(indexRig);
         view->setRigAndSubPoseId(indexRig, subPoseId);
         view->setIndependantPose(false);

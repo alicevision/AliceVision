@@ -84,7 +84,7 @@ enum class EImageMatchingMode
 };
 
 /**
- * @brief get informations about each EImageMatchingMode
+ * @brief get information about each EImageMatchingMode
  * @return String
  */
 std::string EImageMatchingMode_description();

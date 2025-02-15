@@ -729,7 +729,7 @@ void saveCCTag2SVG(const std::string& inputImagePath,
                    const feature::CCTAG_Regions& cctags,
                    const std::string& outputSVGPath)
 {
-    // set the text size to 5% if the image heigth
+    // set the text size to 5% if the image height
     const float textSize = 0.05 * imageSize.second;
 
     svg::svgDrawer svgStream(imageSize.first, imageSize.second);
@@ -768,7 +768,7 @@ void saveCCTagMatches2SVG(const std::string& imagePathLeft,
                           const std::string& outputSVGPath,
                           bool showNotMatched)
 {
-    // set the text size to 5% if the image heigth
+    // set the text size to 5% if the image height
     const float textSize = 0.05 * std::min(imageSizeRight.second, imageSizeLeft.second);
 
     svg::svgDrawer svgStream(imageSizeLeft.first + imageSizeRight.first, std::max(imageSizeLeft.second, imageSizeRight.second));

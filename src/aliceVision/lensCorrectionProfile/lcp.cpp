@@ -597,9 +597,9 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
                  f > v_lensParams[iLow]
                        .camData.FocalLength  // Better candidate than the stored one (higher than but still lower than or equal to the target value)
                  ||
-                 (f == v_lensParams[iLow].camData.FocalLength &&  // Same focal lenth value as the stored one
+                 (f == v_lensParams[iLow].camData.FocalLength &&  // Same focal length value as the stored one
                     (settings.FocusDistance == 0 &&               // No focus info
-                     mode != LCPCorrectionMode::VIGNETTE &&       // search for other model than vignetting (geometry, chromatic aberation)
+                     mode != LCPCorrectionMode::VIGNETTE &&       // search for other model than vignetting (geometry, chromatic aberration)
                      v_lensParams[iLow].camData.FocusDistance > currParam.camData.FocusDistance)    // Higher focus distance value than the stored one
                   || (settings.ApertureValue == 0 &&                                                // No aperture info
                       mode == LCPCorrectionMode::VIGNETTE &&                                        // search for vignetting model
@@ -613,9 +613,9 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
                 && (iHigh == -1            // iHigh not yet initialized
                     || f < v_lensParams[iHigh].camData.FocalLength  // Better candidate than the stored one (lower than but still higher than or equal
                                                                     // to the target value)
-                    || (f == v_lensParams[iHigh].camData.FocalLength &&  // Same focal lenth value as the stored one
+                    || (f == v_lensParams[iHigh].camData.FocalLength &&  // Same focal length value as the stored one
                           (settings.FocusDistance == 0 &&                // No focus info
-                           mode != LCPCorrectionMode::VIGNETTE &&        // search for other model than vignetting (geometry, chromatic aberation)
+                           mode != LCPCorrectionMode::VIGNETTE &&        // search for other model than vignetting (geometry, chromatic aberration)
                            v_lensParams[iHigh].camData.FocusDistance > currParam.camData.FocusDistance) ||
                         (settings.ApertureValue == 0 &&                                                 // No aperture info
                          mode == LCPCorrectionMode::VIGNETTE &&                                         // search for vignetting model

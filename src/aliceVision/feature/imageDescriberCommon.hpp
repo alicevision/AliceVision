@@ -52,7 +52,7 @@ enum class EImageDescriberType : unsigned char
 };
 
 /**
- * @brief get informations about each describer type
+ * @brief get information about each describer type
  * @return String
  */
 std::string EImageDescriberType_informations();

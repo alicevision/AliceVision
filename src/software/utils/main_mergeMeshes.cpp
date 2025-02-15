@@ -46,7 +46,7 @@ enum class EOperationType : unsigned char
 };
 
 /**
- * @brief get informations about each operation type
+ * @brief get information about each operation type
  * @return String
  */
 std::string EOperationType_informations()

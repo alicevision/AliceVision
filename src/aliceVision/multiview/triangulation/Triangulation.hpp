@@ -91,7 +91,7 @@ void TriangulateNViewAlgebraicSpherical(const std::vector<Vec3> &xs,
  * @param[in] Ps is the list of projective matrices for each camera
  * @param[out] X is the estimated 3D point
  * @param[out] inliersIndex (optional) store the index of the cameras (following Ps ordering, not the view_id) set as Inliers by Lo-RANSAC
- * @param[in] thresholdError (optional) set a threashold value to the Lo-RANSAC scorer
+ * @param[in] thresholdError (optional) set a threshold value to the Lo-RANSAC scorer
  */
 void TriangulateNViewLORANSAC(const std::vector<Vec2>& x,
                               const std::vector<Mat34>& Ps,

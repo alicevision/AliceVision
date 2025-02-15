@@ -56,7 +56,7 @@ class DistortionRadialK1 : public Distortion
 {
   public:
     /**
-     * @brief Default contructor, no distortion
+     * @brief Default constructor, no distortion
      */
     DistortionRadialK1() { _distortionParams = {0.0}; }
 

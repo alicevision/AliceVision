@@ -29,7 +29,7 @@ LocalBundleAdjustmentGraph::LocalBundleAdjustmentGraph(const sfmData::SfMData& s
 
         IntrinsicHistory intrinsicHistory;
         intrinsicHistory.nbPoses = 0;
-        intrinsicHistory.focalLength = intrinsicPtr->getParams().at(0);
+        intrinsicHistory.focalLength = intrinsicPtr->getParameters().at(0);
         intrinsicHistory.isConstant = intrinsicPtr->isLocked();
 
         _intrinsicsHistory[intrinsicId].push_back(intrinsicHistory);
@@ -63,7 +63,7 @@ void LocalBundleAdjustmentGraph::setAllParametersToRefine(const sfmData::SfMData
     for (sfmData::Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
         _statePerPoseId[itPose->first] = EEstimatorParameterState::REFINED;
 
-    // instrinsics
+    // intrinsics
     for (const auto& itIntrinsic : sfmData.getIntrinsics())
         _statePerIntrinsicId[itIntrinsic.first] = EEstimatorParameterState::REFINED;
 
@@ -99,7 +99,7 @@ void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData&
 
         IntrinsicHistory intrinsicHistory;
         intrinsicHistory.nbPoses = intrinsicUsage[intrinsicId];
-        intrinsicHistory.focalLength = intrinsicPtr->getParams().at(0);
+        intrinsicHistory.focalLength = intrinsicPtr->getParameters().at(0);
         intrinsicHistory.isConstant = isFocalLengthConstant(intrinsicId);
 
         _intrinsicsHistory.at(intrinsicId).push_back(intrinsicHistory);
@@ -376,7 +376,7 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
     //    - Ignored <=> else (dist = -1 U [D+2; +inf.[)
     //  - an intrinsic is set to:
     //    - Refined by default
-    //    - Constant <=> its focal lenght is considered as stable in its W last saved values
+    //    - Constant <=> its focal length is considered as stable in its W last saved values
     //    according to all of its values.
     //  - a landmarks is set to:
     //    - Ignored by default
@@ -394,7 +394,7 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
         _statePerPoseId[poseId] = state;
     }
 
-    // instrinsics
+    // intrinsics
     checkFocalLengthsConsistency(kWindowSize, kStdevPercentage);
 
     for (auto& itIntrinsic : sfmData.getIntrinsics())
@@ -428,7 +428,7 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
         }
 
         // in the general case, a landmark can NOT have observations from refined AND ignored cameras.
-        // in pratice, there is a minimal number of common points to declare the connection between images.
+        // in practice, there is a minimal number of common points to declare the connection between images.
         // so we can have some points that are not declared in the graph of cameras connections.
         // for these particular cases, we can have landmarks with refined AND ignored cameras.
         // in this particular case, we prefer to ignore the landmark to avoid wrong/unconstraint refinements.

@@ -178,7 +178,7 @@ void Mesher::filterLargeHelperPoints(std::vector<bool>& out_reliableVertices,
 {
     out_reliableVertices.clear();
 
-    // Do not filter helper points if maxSegSize is negative/infinit
+    // Do not filter helper points if maxSegSize is negative/infinite
     if (maxSegSize < 0)
     {
         return;
@@ -412,7 +412,7 @@ int Mesher::removeDust(int minSegSize)
     // all free space segments which contains camera has to remain free
     for (CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        if (fullSegsColor[ci] >= 0)  // if we have a valid color: non empty and non infinit cell
+        if (fullSegsColor[ci] >= 0)  // if we have a valid color: non empty and non infinite cell
         {
             colorsSize[fullSegsColor[ci]] += 1;  // count the number of cells in the segment
         }
@@ -635,7 +635,7 @@ void Mesher::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIter
             if (!invert)
                 continue;
 
-            // Ensure that we do not increase inconsitencies (like holes).
+            // Ensure that we do not increase inconsistencies (like holes).
             // Check the status coherency with neighbor cells if we swap the cells status.
             for (const Facet& f : neighboringFacets)
             {

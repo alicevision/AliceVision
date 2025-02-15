@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(TriangulateNViewAlgebraic_FiveViews)
 // test DLT triangulation using weights, it generates some random projection
 // matrices, a random 3D points and its corresponding 2d image points. Some of these
 // points are considered as outliers. Inliers are assigned a max weight, outliers
-// a zero weight. Note: this is just an algebric test, ie points and projection
+// a zero weight. Note: this is just an algebraic test, ie points and projection
 // matrices have no physical meaning (eg no notion of point in front of the camera
 // is considered).
 BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_WithWeights)
@@ -168,10 +168,10 @@ BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_FiveViews)
     }
 }
 
-//// Test triangulation as algebric problem, it generates some random projection
+//// Test triangulation as algebraic problem, it generates some random projection
 //// matrices, a random 3D points and its corresponding 2d image points. Some of these
 //// points are considered as outliers. Inliers are assigned a max weight, outliers
-//// a zero weight. Note: this is just an algebric test, ie points and projection
+//// a zero weight. Note: this is just an algebraic test, ie points and projection
 //// matrices have no physical meaning (eg no notion of point in front of the camera
 //// is considered).
 BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_LORANSAC)

@@ -45,7 +45,7 @@ std::istream& operator>>(std::istream& stream, Pattern& pattern)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
         pattern = ASYMMETRIC_CCTAG_GRID;
 #else
-        throw boost::program_options::invalid_option_value("Not builded with CCTag support.");
+        throw boost::program_options::invalid_option_value("Not built with CCTag support.");
 #endif
     else
         throw boost::program_options::invalid_option_value(std::string("Invalid pattern: ") + token);

@@ -102,7 +102,7 @@ class LineKernel : public IRansacKernel<robustEstimation::MatrixModel<Vec2>>
 
     /**
      * @brief This function is called to estimate the model using a least squared
-     * algorithm from a minumum of \p minSampleLS.
+     * algorithm from a minimum of \p minSampleLS.
      * @param[in] inliers An array containing the indices of the data to use.
      * @param[out] models The model(s) estimated using the least squared algorithm.
      * @param[in] weights An optional array of weights, one for each sample

@@ -112,11 +112,30 @@ bool exportToMatlab(const SfMData& sfm_data, const std::string& outDirectory)
         {
             const View& view = *v.second.get();
             if (!sfm_data.isPoseAndIntrinsicDefined(view))
+            {
                 continue;
-            const IntrinsicBase& intrinsics = *sfm_data.getIntrinsics().at(view.getIntrinsicId()).get();
-            cameraIntrinsicsFile << view.getViewId() << " " << camera::EINTRINSIC_enumToString(intrinsics.getType());
-            for (double p : intrinsics.getParams())
+            }
+
+            const auto & intrinsics = sfm_data.getIntrinsicSharedPtr(view.getIntrinsicId());
+            cameraIntrinsicsFile << view.getViewId() << " " << camera::EINTRINSIC_enumToString(intrinsics->getType());
+            for (double p : intrinsics->getParameters())
+            {
                 cameraIntrinsicsFile << " " << p;
+            }
+
+            auto casted = camera::IntrinsicScaleOffsetDisto::cast(intrinsics);
+            if (casted)
+            {
+                auto disto = casted->getDistortion();
+                if (disto)
+                {
+                    for (double p : disto->getParameters())
+                    {
+                        cameraIntrinsicsFile << " " << p;
+                    }
+                }
+            }
+
             cameraIntrinsicsFile << "\n";
         }
         cameraIntrinsicsFile.close();

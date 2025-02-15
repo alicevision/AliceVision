@@ -584,7 +584,7 @@ class SfMData
     void setAbsolutePose(IndexT poseId, const CameraPose& pose) { _poses[poseId] = pose; }
 
     /**
-     * @brief Erase yhe pose for the given poseId
+     * @brief Erase the pose for the given poseId
      * @param[in] poseId The given poseId
      * @param[in] noThrow If false, throw exception if no pose found
      */

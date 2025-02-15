@@ -324,7 +324,7 @@ class DCPDatabase final
     void clear();
 
     /**
-     * @brief Check if the databse is empty.
+     * @brief Check if the database is empty.
      * return True if empty.
      */
     inline bool empty() { return dcpFilenamesList.empty(); }

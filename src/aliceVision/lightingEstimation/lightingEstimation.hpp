@@ -21,7 +21,7 @@ namespace lightingEstimation {
 using Eigen::MatrixXf;
 
 /**
- * @brief Augmented lighting vetor for augmented Lambert's law (using Spherical Harmonics model)
+ * @brief Augmented lighting vector for augmented Lambert's law (using Spherical Harmonics model)
  * Composed of 9 coefficients
  */
 using LightingVector = Eigen::Matrix<float, 9, 3>;
@@ -55,8 +55,8 @@ class LighthingEstimator
                   const image::Image<image::RGBfColor>& normals);
 
     /**
-     * @brief Estimate ligthing from the aggregate image(s) data
-     * @param[out] lighting Estimate ligthing @see LightingVector
+     * @brief Estimate lighting from the aggregate image(s) data
+     * @param[out] lighting Estimate lighting @see LightingVector
      */
     void estimateLigthing(LightingVector& lighting) const;
 

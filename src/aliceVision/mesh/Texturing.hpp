@@ -94,7 +94,7 @@ struct TexturingParams
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO;   // output file color space
     mvsUtils::ECorrectEV correctEV{mvsUtils::ECorrectEV::NO_CORRECTION};
 
-    bool forceVisibleByAllVertices = false;  //< triangle visibility is based on the union of vertices visiblity
+    bool forceVisibleByAllVertices = false;  //< triangle visibility is based on the union of vertices visibility
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
 
     float subdivisionTargetRatio = 0.8;

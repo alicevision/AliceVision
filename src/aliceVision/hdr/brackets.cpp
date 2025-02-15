@@ -459,7 +459,7 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
         {
             if (!(monotonics[idref][idExposure].mexposure == monotonics[idprev][idExposure].mexposure))
             {
-                ALICEVISION_LOG_WARNING("Non consistant exposures between poses have been detected.\
+                ALICEVISION_LOG_WARNING("Non consistent exposures between poses have been detected.\
                 Most likely the dataset has been captured with an automatic exposure mode enabled.\
                 Final result can be impacted.");
                 coherency = false;
@@ -533,7 +533,7 @@ std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<Lum
         {
             if (!(divided[idref][idExposure].mexposure == divided[idprev][idExposure].mexposure))
             {
-                ALICEVISION_LOG_WARNING("Non consistant exposures between poses have been detected.\
+                ALICEVISION_LOG_WARNING("Non consistent exposures between poses have been detected.\
                 Most likely the dataset has been captured with an automatic exposure mode enabled.\
                 Final result can be impacted.");
                 coherency = false;

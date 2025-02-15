@@ -54,7 +54,7 @@ bool SfmResection::processView(
     if (trackIds.size() < 3)
     {
         
-        // If less than 3 points, the resection is theorically impossible.
+        // If less than 3 points, the resection is theoretically impossible.
         // Let ignore this view.
         return false;
     }

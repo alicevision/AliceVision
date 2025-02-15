@@ -433,7 +433,7 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
         }
     }
 
-    // scale choosed by the user and apply during the process
+    // scale chosen by the user and apply during the process
     const int processScale = mp.getProcessDownscale();
 
     if (processScale > 1)

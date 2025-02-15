@@ -168,7 +168,7 @@ bool ColorHarmonizationEngineGlobal::process()
     //-------------------
 
     std::map<size_t, size_t> mapCameraNodeToCameraIndex;  // graph node Id to 0->Ncam
-    std::map<size_t, size_t> mapCameraIndexTocameraNode;  // 0->Ncam correspondance to graph node Id
+    std::map<size_t, size_t> mapCameraIndexTocameraNode;  // 0->Ncam correspondence to graph node Id
     std::set<size_t> setIndexImage;
 
     for (size_t i = 0; i < _pairwiseMatches.size(); ++i)

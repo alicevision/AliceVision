@@ -33,7 +33,7 @@ public:
      * @param updatedPose output estimated pose
      * @param updatedThreshold estimated threshold
      * @param inliersCount number of inliers for this resection
-     * @return false if a critical error occured
+     * @return false if a critical error occurred
     */
     bool processView(
                 const sfmData::SfMData & sfmData,

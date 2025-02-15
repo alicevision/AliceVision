@@ -77,7 +77,7 @@ You can also contact the core team privately on: [alicevision-team@googlegroups.
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2995/badge)](https://bestpractices.coreinfrastructure.org/projects/2995)
 
 Beyond open source interest to foster developments, open source is a way of life. The project has started as a collaborative project and aims to continue. We love to exchange ideas, improve ourselves while making improvements for other people and discover new collaboration opportunities to expand everybody’s horizon.
-Contributions are welcome. We integrate all contributions as soon as it is useful for someone, don't create troubles for others and the code quality is good enough for maintainance.
+Contributions are welcome. We integrate all contributions as soon as it is useful for someone, don't create troubles for others and the code quality is good enough for maintenance.
 
 Please have a look at the [project code of conduct](CODE_OF_CONDUCT.md) to provide a friendly, motivating and welcoming environment for all.
 Please have a look at the [project contributing guide](CONTRIBUTING.md) to provide an efficient workflow that minimize waste of time for contributors and maintainers as well as maximizing the project quality and efficiency.

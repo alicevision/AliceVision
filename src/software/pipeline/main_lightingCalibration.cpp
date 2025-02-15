@@ -49,7 +49,7 @@ int aliceVision_main(int argc, char** argv)
 
     std::string inputPath;
     std::string inputDetection;
-    std::string ouputJSON;
+    std::string outputJSON;
     std::string method;
     bool doDebug;
     bool saveAsModel;
@@ -62,7 +62,7 @@ int aliceVision_main(int argc, char** argv)
          "Path to the SfMData input.")
         ("inputDetection, j", po::value<std::string>(&inputDetection)->required(),
          "Path to the folder containing the JSON file that describes spheres' positions and radius")
-        ("outputFile, o", po::value<std::string>(&ouputJSON)->required(),
+        ("outputFile, o", po::value<std::string>(&outputJSON)->required(),
          "Path to JSON output file.");
 
     po::options_description optionalParams("Optional parameters");
@@ -105,7 +105,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        lightingEstimation::lightCalibration(sfmData, inputDetection, ouputJSON, method, doDebug, saveAsModel, ellipticEstimation);
+        lightingEstimation::lightCalibration(sfmData, inputDetection, outputJSON, method, doDebug, saveAsModel, ellipticEstimation);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

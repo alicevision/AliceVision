@@ -36,7 +36,7 @@ public:
      * @param viewIds the set of view ids to process. Only tracks observed in these views will be considered
      * @param evaluatedTracks output list of track ids which were evaluated (Not necessarily with success)
      * @param outputLandmarks a set of generated landmarks indexed by their landmark id (the associated track id)
-     * @return false if a critical error occured
+     * @return false if a critical error occurred
     */
     bool process(
             const sfmData::SfMData & sfmData,
@@ -73,7 +73,7 @@ private:
      * @param randomNumberGenerator random number generator object
      * @param viewIds the set of view ids to process. Only tracks observed in these views will be considered
      * @param result the output landmark
-     * @return false if a critical error occured
+     * @return false if a critical error occurred
     */
     bool processTrack(
             const sfmData::SfMData & sfmData,

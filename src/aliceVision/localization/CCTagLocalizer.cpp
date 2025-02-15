@@ -310,7 +310,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc& genQueryRegions,
         localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
         return localizationResult.isValid();
     }
-    ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEEDED");
 
     ALICEVISION_LOG_DEBUG("R est\n" << pose.rotation());
     ALICEVISION_LOG_DEBUG("t est\n" << pose.translation());
@@ -459,7 +459,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsPer
     }
 
     // each element of the vector is a map containing for each pair <pt3D_id, pt2D_id>
-    // the number of times that the association has been seen. One element fo the
+    // the number of times that the association has been seen. One element of the
     // vector for each camera.
     std::vector<OccurenceMap> vec_occurrences(numCams);
     std::vector<Mat> vec_pts3D(numCams);

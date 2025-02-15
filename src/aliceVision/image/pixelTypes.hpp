@@ -103,7 +103,7 @@ class Rgb : public Eigen::Matrix<T, 3, 1, 0, 3, 1>
 
     /**
      * @brief stream operator
-     * @param os Stream in which rgb value is outputed
+     * @param os Stream in which rgb value is outputted
      * @param col Color to store into the stream
      * @return stream after output
      */
@@ -284,7 +284,7 @@ class Rgba : public Eigen::Matrix<T, 4, 1, 0, 4, 1>
     //------------------------------
     /**
      * @brief stream operator
-     * @param os Stream in which rgb value is outputed
+     * @param os Stream in which rgb value is outputted
      * @param col Color to store into the stream
      * @return stream after output
      */

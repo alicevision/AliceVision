@@ -324,11 +324,11 @@ void saveCCTag2SVG(const std::string& inputImagePath,
  * The ids of the cctags are rendered as text close to their center.
  * If \p showNotMatched is enable also the non matching cctags are drawn.
  *
- * @param[in] imagePathLeft The full path to the left iamge. The image is only
+ * @param[in] imagePathLeft The full path to the left image. The image is only
  * saved as a link, no image data is stored in the svg.
  * @param[in] imageSizeLeft The size of the image <width,height>.
  * @param[in] cctagLeft The CCtag regions (keypoints+descriptors).
- * @param[in] imagePathRight The full path to the left iamge. The image is only
+ * @param[in] imagePathRight The full path to the left image. The image is only
  * saved as a link, no image data is stored in the svg.
  * @param[in] imageSizeRight The size of the image <width,height>.
  * @param[in] cctagRight The CCtag regions (keypoints+descriptors).

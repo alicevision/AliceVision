@@ -19,7 +19,7 @@
 namespace aliceVision {
 
 /**
- * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
+ * @brief Maxflow computation based on a standard Adjacency List graph representation.
  *
  * @see MaxFlow_CSR which use less memory.
  */
@@ -387,7 +387,7 @@ class GraphcutSeams
                     continue;
                 }
 
-                // Look for another label in the neighboorhood which is seen by this pixel
+                // Look for another label in the neighborhood which is seen by this pixel
                 bool modified = false;
                 bool hadUndefined = false;
                 for (int l = -1; l <= 1; l++)
@@ -852,7 +852,7 @@ class GraphcutSeams
 
                     // This pixel is only seen by alpha.
                     // Enforce its domination by stating that removing this pixel
-                    // from alpha territoy is infinitly costly (impossible).
+                    // from alpha territory is infinitely costly (impossible).
                     gc.addNodeToSource(node_id, 100000);
                 }
                 else if (mask(y, x) == 2)
@@ -866,7 +866,7 @@ class GraphcutSeams
 
                     // This pixel is only seen by an ennemy.
                     // Enforce its domination by stating that removing this pixel
-                    // from ennemy territory is infinitly costly (impossible).
+                    // from ennemy territory is infinitely costly (impossible).
                     gc.addNodeToSink(node_id, 100000);
                 }
                 else if (mask(y, x) == 3)
@@ -891,7 +891,7 @@ class GraphcutSeams
 
         // Loop over alpha bounding box.
         // Let's define the transition cost.
-        // When two neighboor pixels have different labels, there is a seam (border) cost.
+        // When two neighbor pixels have different labels, there is a seam (border) cost.
         // Graph cut will try to make sure the territory will have a minimal border cost
 
         for (int y = 0; y < labels.height(); y++)

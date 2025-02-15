@@ -67,8 +67,8 @@ from pyalicevision import numeric as avnum
 # - void setDistortionParams(vector<double>& distortionParams)
 # - template<class F> void setDistortionParamsFn(F&& callback) / not binded
 # - template<class F> void setDistortionParamsFn(size_t count, F&& callback) / not binded
-# - vector<double> getParams() => DONE
-# - size_t getParamsSize() => DONE
+# - vector<double> getParameters() => DONE
+# - size_t getParametersSize() => DONE
 # - updateFromParams(vector<double>& params) => DONE
 # - float getMaximalDistortion(double min_radius, double max_radius)
 # - Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(Vec2& pt) / Matrix and Vec2 not binded
@@ -243,16 +243,16 @@ def test_pinhole_get_set_params():
     """ Test creating a Pinhole object, getting and setting its parameters with the
     parent's class getters and setters. """
     intrinsic = av.Pinhole()
-    params = intrinsic.getParams()
+    params = intrinsic.getParameters()
 
-    assert len(params) == intrinsic.getParamsSize()
+    assert len(params) == intrinsic.getParametersSize()
     assert params == DEFAUT_PARAMETERS
 
     params = (2.0, 2.0, 1.0, 1.0)
 
-    assert params != intrinsic.getParams()
+    assert params != intrinsic.getParameters()
     intrinsic.updateFromParams(params)
-    assert params == intrinsic.getParams()
+    assert params == intrinsic.getParameters()
 
 
 def test_pinhole_lock_unlock():

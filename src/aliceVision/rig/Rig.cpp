@@ -328,7 +328,7 @@ bool Rig::optimizeCalibration()
     //         {
     //           case PINHOLE_CAMERA:
     //           {
-    //             std::vector<double> vec_params = localizationResult.getIntrinsics().getParams();
+    //             std::vector<double> vec_params = localizationResult.getIntrinsics().getParameters();
     //             intrinsics.reserve(3);
     //             intrinsics.push_back(vec_params[0]);
     //             intrinsics.push_back(vec_params[1]);
@@ -344,7 +344,7 @@ bool Rig::optimizeCalibration()
     //           }
     //           case PINHOLE_CAMERA_RADIAL3
     //           {
-    //             std::vector<double> vec_params = localizationResult.getIntrinsics().getParams();
+    //             std::vector<double> vec_params = localizationResult.getIntrinsics().getParameters();
     //             intrinsics.reserve(6);
     //             intrinsics.push_back(vec_params[0]);
     //             intrinsics.push_back(vec_params[1]);

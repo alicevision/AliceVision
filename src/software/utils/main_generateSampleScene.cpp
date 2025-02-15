@@ -27,7 +27,7 @@ namespace po = boost::program_options;
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
-    std::string sfmOutputDataFilepath;  // output folder for splited images
+    std::string sfmOutputDataFilepath;  // output folder for split images
 
     // clang-format off
     po::options_description requiredParams("Required parameters");

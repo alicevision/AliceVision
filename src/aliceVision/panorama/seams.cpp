@@ -394,7 +394,7 @@ bool HierarchicalGraphcutSeams::append(const aliceVision::image::Image<image::RG
         convolveGaussian5x5<image::RGBfColor>(buf, feathered);
         downscale(nextImage, buf);
 
-        // Just nearest neighboor divide for mask
+        // Just nearest neighbor divide for mask
         for (int i = 0; i < nextMask.height(); i++)
         {
             int di = i * 2;
@@ -430,7 +430,7 @@ bool HierarchicalGraphcutSeams::process()
 {
     for (int level = _countLevels - 1; level >= 0; level--)
     {
-        ALICEVISION_LOG_INFO("Hierachical graphcut processing level #" << level);
+        ALICEVISION_LOG_INFO("Hierarchical graphcut processing level #" << level);
 
         image::Image<IndexT>& smallLabels = _graphcuts[level].getLabels();
         int w = smallLabels.width();

@@ -48,7 +48,7 @@ double Depth(const Mat3& R, const Vec3& t, const Vec3& X);
  * @param[in] R the camera rotation.
  * @param[in] t the camera translation.
  * @param[in] X the 3D points to test.
- * @return A vector of boolean of the same size as the number ot points. The corresponding value is true if the point
+ * @return A vector of boolean of the same size as the number of points. The corresponding value is true if the point
  * is in front of the camera, false otherwise.
  */
 Vecb cheiralityTest(const Mat3& R, const Vec3& t, const Mat3X& X);

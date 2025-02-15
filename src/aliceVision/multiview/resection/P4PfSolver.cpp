@@ -1215,7 +1215,7 @@ void P4PfSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<P4PfModel>& m
         if (isNan(sol))
             return;
 
-        // separarte valid solutions
+        // separate valid solutions
         if (!validSol(sol, vSol))
             return;
     }

@@ -190,7 +190,7 @@ struct FisheyeModel
 };
 
 /**
- * @brief LensParam contains parameters of distortion, vignetting and chromatic aberation models
+ * @brief LensParam contains parameters of distortion, vignetting and chromatic aberration models
  * for a set of camera settings (focal length, focus distance, aperture value).
  * Detailed information on models can be found in the Adobe technical report
  * "Adobe Camera Model" part of the documentation of the Adobe free tool Lens Profile Creator.
@@ -212,20 +212,20 @@ class LensParam
     bool isEmpty() const { return perspParams.isEmpty && fisheyeParams.isEmpty; }
 
     /**
-     * @brief Indicate that paramaters apply for a fisheye lens
+     * @brief Indicate that parameters apply for a fisheye lens
      * @return true if the fisheye model is the valid one
      */
     bool isFisheye() const { return _isFisheye; }
 
     /**
-     * @brief Indicate that a vignetting model is avaialble
-     * @return true if a vignetting model is avaialble
+     * @brief Indicate that a vignetting model is available
+     * @return true if a vignetting model is available
      */
     bool hasVignetteParams() const { return _hasVignetteParams; }
 
     /**
-     * @brief Indicate that chromatic models are avaialble
-     * @return true if chromatic models are avaialble
+     * @brief Indicate that chromatic models are available
+     * @return true if chromatic models are available
      */
     bool hasChromaticParams() const { return _hasChromaticParams; }
 
@@ -236,14 +236,14 @@ class LensParam
     void setFisheyeStatus(bool s) { _isFisheye = s; }
 
     /**
-     * @brief Set vignetting availabilty status
-     * @param[in] vignetting availabilty status
+     * @brief Set vignetting availability status
+     * @param[in] vignetting availability status
      */
     void setVignetteParamsStatus(bool s) { _hasVignetteParams = s; }
 
     /**
-     * @brief Set chromatic models availabilty status
-     * @param[in] chromatic models availabilty status
+     * @brief Set chromatic models availability status
+     * @param[in] chromatic models availability status
      */
     void setChromaticParamsStatus(bool s) { _hasChromaticParams = s; }
 
@@ -287,7 +287,7 @@ class LensParam
 
 /**
  * @brief LCPinfo loads and hosts the content of a Lens Correction Profile (LCP) file,
- * parameters of distortion, vignetting and chromatic aberation models for different
+ * parameters of distortion, vignetting and chromatic aberration models for different
  * set of camera settings (focal length, focus distance, aperture value).
  * Detailed information on LCP file content can be found in the Adobe technical report
  * "Adobe Camera Model" part of the documentation of the Adobe free tool Lens Profile Creator.
@@ -337,8 +337,8 @@ class LCPinfo
     void getChromaticParams(const float& focalLength, const float& focusDistance, LensParam& lparam);
 
     /**
-     * @brief Indicate that no lens paramater set is available
-     * @return true if no lens paramater set is available
+     * @brief Indicate that no lens parameter set is available
+     * @return true if no lens parameter set is available
      */
     inline bool isEmpty() const { return v_lensParams.empty(); }
 
@@ -486,13 +486,13 @@ class LCPinfo
     inline void setLensInfo(const std::string& str) { LensInfo = str; }
 
     /**
-     * @brief Set an alernate lens ID for the lens
+     * @brief Set an alternate lens ID for the lens
      * @param[in] alternate lens ID
      */
     inline void addLensID(int lensID) { LensID.push_back(lensID); }
 
     /**
-     * @brief Set an alernate model name for the lens
+     * @brief Set an alternate model name for the lens
      * @param[in] alternate model name
      */
     inline void addLensModel(std::string lensModel) { Lens.push_back(lensModel); }

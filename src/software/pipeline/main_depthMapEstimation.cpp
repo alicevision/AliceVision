@@ -247,7 +247,7 @@ int aliceVision_main(int argc, char* argv[])
     // print GPU Information
     ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
 
-    // check if the gpu suppport CUDA compute capability 2.0
+    // check if the gpu support CUDA compute capability 2.0
     if (!gpu::gpuSupportCUDA(2, 0))
     {
         ALICEVISION_LOG_ERROR("This program needs a CUDA-Enabled GPU (with at least compute capability 2.0).");

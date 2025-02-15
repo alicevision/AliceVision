@@ -48,7 +48,7 @@ bool solve_translations_problem_l2_chordal(const int* edges,
  *   true:  3-view estimates -> triplet of translations: 3 relativeInfo per triplet.
  * @param[in] nb_poses the number of camera nodes in the relative motion graph
  * @param[out] translations found global camera translations
- * @param[in] d_l1_loss_threshold optionnal threshold for SoftL1 loss (-1: no loss function)
+ * @param[in] d_l1_loss_threshold optional threshold for SoftL1 loss (-1: no loss function)
  * @return True if the registration can be solved
  */
 bool solve_translations_problem_softl1(const std::vector<relativeInfo>& vec_initial_estimates,

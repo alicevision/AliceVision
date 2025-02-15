@@ -262,7 +262,7 @@ class ImageInfo
 
     /**
      * @brief Get the gps position in the WGS84 reference system as a vector.
-     * @return A three dimensional vector with latitude, logitude and altitude.
+     * @return A three dimensional vector with latitude, longitude and altitude.
      */
     Vec3 getGpsPositionWGS84FromMetadata() const;
 

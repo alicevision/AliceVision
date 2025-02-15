@@ -89,7 +89,7 @@ private:
     std::shared_ptr<ExpansionHistory> _historyHandler;
 
     /**
-     * Handle iteration prcess
+     * Handle iteration process
     */
     std::unique_ptr<ExpansionIteration> _iterationHandler;
 

@@ -296,7 +296,7 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
             _sfmData.getPoses()[rigPoseId] = rigPose;
         }
 
-        // remove independant poses and replace with rig pose
+        // remove independent poses and replace with rig pose
         for (auto& viewInfoPair : rigFrame)
         {
             const IndexT subPoseId = viewInfoPair.first;
@@ -314,7 +314,7 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
                 if (itPose != _sfmData.getPoses().end())
                 {
                     _sfmData.getPoses().erase(itPose);
-                    ALICEVISION_LOG_TRACE("Erase independant pose:"
+                    ALICEVISION_LOG_TRACE("Erase independent pose:"
                                           << "\n\t- pose id: " << view.getPoseId() << "\n\t- frame id: " << frameId
                                           << "\n\t- sub-pose id: " << subPoseId);
                 }

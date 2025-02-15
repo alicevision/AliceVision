@@ -234,7 +234,7 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
         // Override make and model in order to force camera model in SfM
         outMetadataSpec.attribute("Make", "Custom");
         outMetadataSpec.attribute("Model", "Pinhole");
-        const float focal_mm = focal_px * (36.0 / splitResolution);  // muliplied by sensorWidth (36mm by default)
+        const float focal_mm = focal_px * (36.0 / splitResolution);  // multiplied by sensorWidth (36mm by default)
         outMetadataSpec.attribute("Exif:FocalLength", focal_mm);
 
         // Make sure sub-folder exists for complete rig structure
@@ -352,7 +352,7 @@ int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
     std::string inputPath;                       // media file path list or SfMData file
-    std::string outputFolder;                    // output folder for splited images
+    std::string outputFolder;                    // output folder for split images
     std::string outSfmDataFilepath;              // output SfMData file
     std::string splitMode;                       // split mode (dualfisheye, equirectangular)
     std::string dualFisheyeOffsetPresetX;        // dual-fisheye offset preset on X axis

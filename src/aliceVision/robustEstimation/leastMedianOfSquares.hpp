@@ -85,7 +85,7 @@ double leastMedianOfSquares(const Kernel& kernel,
 
     // This array of precomputed values corresponds to the inverse
     //  cumulative function for a normal distribution. For more information
-    //  consult the litterature (Robust Regression for Outlier Detection,
+    //  consult the literature (Robust Regression for Outlier Detection,
     //  rouseeuw-leroy). The values are computed for each 5%
     static const double ICDF[21] = {1.4e16,       15.94723940,  7.957896558,  5.287692054,  3.947153876,  3.138344200,  2.595242369,
                                     2.203797543,  1.906939402,  1.672911853,  1.482602218,  1.323775627,  1.188182950,  1.069988721,

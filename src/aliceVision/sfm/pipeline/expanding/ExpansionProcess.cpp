@@ -149,10 +149,11 @@ void ExpansionProcess::remapExistingLandmarks(sfmData::SfMData & sfmData, const 
             }
 
             auto landmarkPair = landmarks.find(it->second);
+            sfmData::Landmark l = landmarkPair->second;
             landmarks.erase(landmarkPair->first);
 
             // re-insert the landmark with the new id
-            sfmData.getLandmarks().emplace(trackId, landmarkPair->second);
+            sfmData.getLandmarks().emplace(trackId, l);
         }
     }
 

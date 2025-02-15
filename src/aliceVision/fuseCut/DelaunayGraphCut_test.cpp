@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
     const std::string tempDirPath = std::filesystem::temp_directory_path().generic_string();
 
     
-    ALICEVISION_LOG_TRACE("Creating dense point cloud witout support pts.");
+    ALICEVISION_LOG_TRACE("Creating dense point cloud without support pts.");
 
     // delaunayGC.createDensePointCloud(&hexah[0], cams, &sfmData, nullptr);
     const float minDist = (hexah[0] - hexah[1]).size() / 1000.0f;
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(fuseCut_delaunayGraphCut)
 }
 
 /**
- * @brief Generate syntesize dataset with succesion of n(size) alignaed regular thetraedron and two camera on the last thetrahedron.
+ * @brief Generate synthesized dataset with succession of n(size) aligned regular thetraedron and two camera on the last tetrahedron.
  *
  * @param size
  * @param eintrinsic

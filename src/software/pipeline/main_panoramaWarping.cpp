@@ -44,7 +44,7 @@ bool computeOptimalPanoramaSize(std::pair<int, int>& optimalSize, const sfmData:
     std::vector<double> scales;
     for (auto& viewIt : sfmData.getViews())
     {
-        // Ignore non positionned views
+        // Ignore non positioned views
         const sfmData::View& view = *viewIt.second.get();
         if (!sfmData.isPoseAndIntrinsicDefined(view))
         {
@@ -235,7 +235,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     panoramaSize.second = panoramaSize.first / 2;
-    ALICEVISION_LOG_INFO("Choosen panorama size : " << panoramaSize.first << "x" << panoramaSize.second);
+    ALICEVISION_LOG_INFO("Chosen panorama size : " << panoramaSize.first << "x" << panoramaSize.second);
 
     // Define empty tiles data
     std::unique_ptr<float> empty_float(new float[tileSize * tileSize * 3]);
@@ -308,7 +308,7 @@ int aliceVision_main(int argc, char** argv)
             snappedCoarseBbox = coarseBbox;
             snappedCoarseBbox.snapToGrid(tileSize);
 
-            // Initialize bouding box for image
+            // Initialize bounding box for image
             BoundingBox globalBbox;
 
             {

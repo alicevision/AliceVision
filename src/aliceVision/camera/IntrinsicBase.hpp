@@ -270,13 +270,13 @@ class IntrinsicBase
      * @brief Get the intrinsic parameters
      * @return Intrinsic parameters as a vector
      */
-    virtual std::vector<double> getParams() const = 0;
+    virtual std::vector<double> getParameters() const = 0;
 
     /**
      * @brief Get the count of intrinsic parameters
      * @return The number of intrinsic parameters
      */
-    virtual std::size_t getParamsSize() const = 0;
+    virtual std::size_t getParametersSize() const = 0;
 
     /**
      * @brief Update intrinsic parameters
@@ -375,7 +375,7 @@ class IntrinsicBase
     /**
      * @brief Return true if this ray should be visible in the image
      * @param ray input ray to check for visibility
-     * @return True if this ray is visible theorically
+     * @return True if this ray is visible theoretically
      */
     virtual bool isVisibleRay(const Vec3& ray) const = 0;
 
@@ -482,7 +482,7 @@ class IntrinsicBase
  * @brief Apply intrinsic and extrinsic parameters to unit vector
  * from the cameras focus to a point on the camera plane
  * @param[in] pose Extrinsic pose
- * @param[in] intrinsic Intrinsic camera paremeters
+ * @param[in] intrinsic Intrinsic camera parameters
  * @param[in] x Point in image
  * @return The unit vector in 3D space pointing out from the camera to the point
  */

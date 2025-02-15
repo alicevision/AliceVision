@@ -137,7 +137,7 @@ int aliceVision_main(int argc, char** argv)
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first), "UID or filepath or filename of the first image.")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second), "UID or filepath or filename of the second image.");
 
-    CmdLine cmdline("AliceVision SfM Bootstraping");
+    CmdLine cmdline("AliceVision SfM Bootstrapping");
 
     cmdline.add(requiredParams);
     cmdline.add(optionalParams);

@@ -119,7 +119,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     }
 
     if ((outputFileType != image::EImageFileType::EXR) && saveMetadata)
-        ALICEVISION_LOG_WARNING("Cannot save informations in images metadata.\n"
+        ALICEVISION_LOG_WARNING("Cannot save information in images metadata.\n"
                                 "Choose '.exr' file type if you want AliceVision custom metadata");
 
     // export data
@@ -192,7 +192,7 @@ bool prepareDenseScene(const SfMData& sfmData,
 
             if (saveMetadata)
             {
-                // convert to 44 matix
+                // convert to 44 matrix
                 Mat4 projectionMatrix;
                 projectionMatrix << P(0, 0), P(0, 1), P(0, 2), P(0, 3), P(1, 0), P(1, 1), P(1, 2), P(1, 3), P(2, 0), P(2, 1), P(2, 2), P(2, 3), 0, 0,
                   0, 1;

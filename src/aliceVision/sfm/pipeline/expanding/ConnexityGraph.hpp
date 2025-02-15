@@ -19,7 +19,7 @@ public:
      * Compute distances of all the sfmData views to the viewsOfInterest views
      * @param sfmData the sfmData containing all the views
      * @param viewsOfInterest the list of views to compute the distance from. Those views must also be in the sfmData !
-     * @return false if an error occured
+     * @return false if an error occurred
     */
     bool build(const sfmData::SfMData & sfmData, const std::set<IndexT> & viewsOfInterest);
 

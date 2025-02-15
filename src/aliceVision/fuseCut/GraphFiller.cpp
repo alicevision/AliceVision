@@ -141,7 +141,7 @@ void GraphFiller::rayMarchingGraphEmpty(int vertexIndex,
     while (geometry.type != EGeometryType::Vertex || (_mp.CArr[cam] - intersectPt).size() >= 1.0e-3)
     {
         lastGeoIsVertex = false;
-        // Keep previous informations
+        // Keep previous information
         const GeometryIntersection previousGeometry = geometry;
         const Point3d lastIntersectPt = intersectPt;
 
@@ -232,7 +232,7 @@ void GraphFiller::rayMarchingGraphFull(int vertexIndex,
     // While we are within the surface margin (as long as we find a next geometry)
     while ((originPt - intersectPt).size() < maxDist)
     {
-        // Keep previous informations
+        // Keep previous information
         const GeometryIntersection previousGeometry = geometry;
         const Point3d lastIntersectPt = intersectPt;
 
@@ -321,7 +321,7 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                        &&
                        (lastIntersectPt - originPt).size() <= (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist)  // We are to far from the originPt
                 {
-                    // Keep previous informations
+                    // Keep previous information
                     const GeometryIntersection previousGeometry = geometry;
                     lastIntersectPt = intersectPt;
 
@@ -367,7 +367,7 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                 // While we are within the surface margin defined by maxDist (as long as we find a next geometry)
                 while ((lastIntersectPt - originPt).size() <= nsigmaBackSilentPart * maxDist)
                 {
-                    // Keep previous informations
+                    // Keep previous information
                     const GeometryIntersection previousGeometry = geometry;
                     lastIntersectPt = intersectPt;
 

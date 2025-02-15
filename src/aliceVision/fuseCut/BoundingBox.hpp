@@ -82,7 +82,7 @@ struct BoundingBox
     }
 
     /**
-     * Return an hexahedron which is the corners of the boudning box
+     * Return an hexahedron which is the corners of the bounding box
      * To replace ....
      * 
     */
