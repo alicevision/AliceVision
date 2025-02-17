@@ -259,6 +259,69 @@ std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<Lumina
         return splitted;
     }
 
+    // Check the specific case of 2 items per group without outlier
+    if (luminanceInfos.size() % 2 == 0)
+    {
+        float exp0 = luminanceInfos[0].mexposure;
+        float exp1 = luminanceInfos[1].mexposure;
+        if (exp0 != exp1)
+        {
+            int idx = 2;
+            bool ok = true;
+            while (ok && idx < luminanceInfos.size())
+            {
+                ok = ok && luminanceInfos[idx].mexposure == exp0 && luminanceInfos[idx+1].mexposure == exp1;
+                idx += 2;
+            }
+            if (idx == luminanceInfos.size())
+            {
+                std::vector<LuminanceInfo> current;
+                for (int i = 0; i < luminanceInfos.size(); i++)
+                {
+                    current.push_back(luminanceInfos[i]);
+                    if (i % 2 == 1)
+                    {
+                        splitted.push_back(current);
+                        current.clear();
+                    }
+                }
+                return splitted;
+            }
+        }
+    }
+
+    // Check the corner case of 3 items per group ordered with middle exposure first and without outlier
+    if (luminanceInfos.size() % 3 == 0)
+    {
+        float exp0 = luminanceInfos[0].mexposure;
+        float exp1 = luminanceInfos[1].mexposure;
+        float exp2 = luminanceInfos[2].mexposure;
+        if (exp0 > exp1 && exp0 < exp2 || exp0 < exp1 && exp0 > exp2)
+        {
+            int idx = 3;
+            bool ok = true;
+            while (ok && idx < luminanceInfos.size())
+            {
+                ok = ok && luminanceInfos[idx].mexposure == exp0 && luminanceInfos[idx+1].mexposure == exp1 && luminanceInfos[idx+2].mexposure == exp2;
+                idx += 3;
+            }
+            if (idx == luminanceInfos.size())
+            {
+                std::vector<LuminanceInfo> current;
+                for (int i = 0; i < luminanceInfos.size(); i++)
+                {
+                    current.push_back(luminanceInfos[i]);
+                    if (i % 3 == 2)
+                    {
+                        splitted.push_back(current);
+                        current.clear();
+                    }
+                }
+                return splitted;
+            }
+        }
+    }
+
     //Split the luminanceInfos into groups which have monotonic values 
     //(either increasing or decreasing)
     std::vector<LuminanceInfo> current;
