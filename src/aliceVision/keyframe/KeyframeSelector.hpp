@@ -407,7 +407,7 @@ class KeyframeSelector
     std::vector<sensorDB::Datasheet> _sensorDatabase;
     bool _parsedSensorDb = false;
 
-    /// Map media path index with names of the output images (used when the input medias are videos)
+    /// Map media path index with names of the output images (used when the input media are videos)
     std::map<std::size_t, std::vector<std::string>> _keyframesPaths;
 
     /// Map score vectors with names for export

@@ -185,7 +185,7 @@ class View
 
     /**
      * @brief setIndependantPose
-     * @param independant
+     * @param independent
      */
     void setIndependantPose(bool independent) { _isPoseIndependent = independent; }
 

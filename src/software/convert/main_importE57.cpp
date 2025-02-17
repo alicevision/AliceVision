@@ -234,7 +234,7 @@ int aliceVision_main(int argc, char** argv)
 
         std::vector<std::vector<dataio::E57Reader::PointInfo>> vec_allVertices(omp_get_max_threads());
 
-// Loop trough all vertices
+// Loop through all vertices
 #pragma omp parallel for
         for (int vIndex = 0; vIndex < vertices.size(); ++vIndex)
         {

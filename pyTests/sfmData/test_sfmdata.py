@@ -60,10 +60,10 @@ from ..constants import IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH,
 ##################
 
 def test_sfmdata_get_views():
-    """ Test creating an emtpy SfMData object, retrieving and editing its Views. """
+    """ Test creating an empty SfMData object, retrieving and editing its Views. """
     data = av.SfMData()
     views = data.getViews()
-    assert len(views) == 0, "The SfMData object is emtpy, there should not be any View in it"
+    assert len(views) == 0, "The SfMData object is empty, there should not be any View in it"
 
     # Create a View object and add it to the list
     view = av.View()
@@ -346,7 +346,7 @@ def test_sfmdata_get_set_folders():
     assert len(data.getFeaturesFolders()) == 2, \
         "A second features folder should have been added to the list"
     assert len(data.getMatchesFolders()) == 2, \
-        "A second matches folder should have been addded to the list"
+        "A second matches folder should have been added to the list"
 
     assert os.path.relpath(data.getFeaturesFolders()[0], projectFolder) == relative_folder
     assert os.path.relpath(data.getFeaturesFolders()[1], projectFolder) == other_folder

@@ -235,8 +235,8 @@ CMake Options
 
 * `ALICEVISION_USE_UNCERTAINTYTE` (default: `AUTO`)
   Enable Uncertainty computation.
-  `-DUNCERTAINTYTE_DIR:PATH=/path/to/uncertaintyTE/install/` (where `inlude` and `lib` can be found)
-  `-DMAGMA_ROOT:PATH=/path/to/magma/install/` (where `inlude` and `lib` can be found)
+  `-DUNCERTAINTYTE_DIR:PATH=/path/to/uncertaintyTE/install/` (where `include` and `lib` can be found)
+  `-DMAGMA_ROOT:PATH=/path/to/magma/install/` (where `include` and `lib` can be found)
 
 * `ALICEVISION_USE_OPENCV` (default: `OFF`)
   Build with openCV

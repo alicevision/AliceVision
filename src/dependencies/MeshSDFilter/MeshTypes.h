@@ -211,7 +211,7 @@ inline double average_edge_length(const MeshT &mesh)
 
 
 // Center the mesh at the origin, and normalize its scale
-// Return the orginal mesh center, and the orginal scale
+// Return the original mesh center, and the original scale
 template<typename MeshT>
 inline void normalize_mesh(MeshT &mesh, Eigen::Vector3d &original_center, double &original_scale)
 {

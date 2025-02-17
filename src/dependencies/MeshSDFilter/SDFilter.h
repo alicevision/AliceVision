@@ -576,7 +576,7 @@ protected:
 
 	bool initialize_filter(Parameters &param)
 	{
-		// Retrive input signals and their area weights
+		// Retrieve input signals and their area weights
 		Eigen::MatrixXd guidance, init_signals;
 		get_initial_data(guidance, init_signals, area_weights_);
 

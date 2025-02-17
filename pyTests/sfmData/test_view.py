@@ -45,7 +45,7 @@ def test_view_default_constructor():
     assert view.getFrameId() == 4294967295, "Default frame ID should be 4294967295"
     assert view.getFrameId() == view.getIntrinsicId() == view.getPoseId() \
         == view.getResectionId() == view.getRigId() \
-        == view.getSubPoseId() == view.getViewId(), "All IDs should be unitialized"
+        == view.getSubPoseId() == view.getViewId(), "All IDs should be uninitialized"
 
     image_info = view.getImage()
     assert image_info, "An ImageInfo object should be available for a default View object"

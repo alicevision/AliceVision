@@ -149,7 +149,7 @@ public:
 		Timer::EventID update_end_time = timer.get_time();
 
 		if(print_timing_){
-			std::cout << "Mesh udpate timing: " << timer.elapsed_time(update_begin_time, update_end_time) << " secs" << std::endl;
+			std::cout << "Mesh update timing: " << timer.elapsed_time(update_begin_time, update_end_time) << " secs" << std::endl;
 			std::cout << "Mesh filter total timing: " << timer.elapsed_time(mesh_flter_begin_time, update_end_time) << " secs" << std::endl;
 		}
 
@@ -228,7 +228,7 @@ protected:
 										face_queue.push(current_face);
 
 										if(current_face < i){
-											// Make sure each neigbor list only stores indices smaller than its face index
+											// Make sure each neighbor list only stores indices smaller than its face index
 											lower_neighbor_lists[i].push_back(current_face);
 										}
 										else if(current_face > i){
@@ -639,7 +639,7 @@ private:
 			return false;
 		}
 
-		// Align the new mesh with the intial mesh
+		// Align the new mesh with the initial mesh
 		vtx_pos = sol.transpose();
 		Eigen::Vector3d new_centroid = compute_centroid(face_vtx_idx, area_weights_, vtx_pos);
 		vtx_pos.colwise() += initial_centroid - new_centroid;

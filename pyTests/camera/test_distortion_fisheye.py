@@ -145,7 +145,7 @@ def test_distortion_fisheye_get_derivative_remove():
 def test_distortion_fisheye_get_radius():
     """ Test creating a DistortionFisheye object and retrieving its undistorted 
     radius. """
-    # 'getUndistortedRadius' is not overriden by this class and is expected to return
+    # 'getUndistortedRadius' is not overridden by this class and is expected to return
     # the provided radius, as it is defined in the parent 'Distortion' class
     distortion = av.DistortionFisheye()
     radius = 1.2

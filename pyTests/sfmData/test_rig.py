@@ -10,7 +10,7 @@ from pyalicevision import sfmData as av
 #                     ERigSubPoseStatus status = ERigSubPoseStatus::UNINITIALIZED)
 #                     => DONE / Pose3 not binded
 # - operator==(RigSubPose& other) => DONE
-# - Rig(unsinged int nbSubPoses = 0) => DONE
+# - Rig(unsigned int nbSubPoses = 0) => DONE
 # - operator==(other) => DONE
 # - bool isInitialized() => DONE
 # - bool isFullyCalibrated() => DONE
