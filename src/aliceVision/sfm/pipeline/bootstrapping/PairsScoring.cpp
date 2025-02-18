@@ -50,7 +50,7 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
         double refScore = sfm::ExpansionPolicyLegacy::computeScore(tracksMap, usedTracks, pair.reference, maxref, 5);
         double nextScore = sfm::ExpansionPolicyLegacy::computeScore(tracksMap, usedTracks, pair.next, maxnext, 5);
 
-        double score = std::min(refScore, nextScore) * std::max(1.0, radianToDegree(angle));
+        double score = std::min(refScore, nextScore) * std::max(1e-12, radianToDegree(angle));
          //If the angle is too small, then dramatically reduce its chances
         if (radianToDegree(angle) < minAngle)
         {
