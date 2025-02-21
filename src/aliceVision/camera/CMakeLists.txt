@@ -89,7 +89,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     )
     set_property(
         TARGET camera
-        PROPERTY COMPILE_OPTIONS -std=c++17
+        PROPERTY COMPILE_OPTIONS -std=c++20
     )
 
     target_link_libraries(camera
