@@ -17,13 +17,15 @@ struct LuminanceInfo
     aliceVision::IndexT mviewId;
     std::string mpath;
     float mexposure;
+    int64_t mtimestamp;
 
     LuminanceInfo() = default;
 
-    LuminanceInfo(aliceVision::IndexT vid, const std::string & path, float exposure):
+    LuminanceInfo(aliceVision::IndexT vid, const std::string & path, float exposure, int64_t timestamp):
         mviewId(vid),
         mpath(path),
-        mexposure(exposure)
+        mexposure(exposure),
+        mtimestamp(timestamp)
     {
 
     }

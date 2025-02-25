@@ -38,8 +38,9 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         fnumbers.insert(view->getImage().getMetadataFNumber());
         double exp = view->getImage().getCameraExposureSetting().getExposure();
         std::string path = view->getImage().getImagePath();
+        int64_t timestamp = view->getImage().getMetadataDateTimestamp();
 
-        LuminanceInfo li(viewIt.first, path, exp);
+        LuminanceInfo li(viewIt.first, path, exp, timestamp);
         luminances.push_back(li);
     }
 
@@ -303,6 +304,97 @@ std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<Lumina
     return splitted;
 }
 
+std::vector<std::vector<LuminanceInfo>> splitTimes(const std::vector<LuminanceInfo> & luminanceInfos, int maxDeltaInABurst = 2)
+{
+    std::vector<std::vector<LuminanceInfo>> splitted;
+
+    if (luminanceInfos.size() == 0)
+    {
+        return splitted;
+    }
+
+    // Split the luminanceInfos into groups which have close capture time (burst detection) 
+    std::vector<LuminanceInfo> normedTimes(luminanceInfos);
+    // Sort luminanceinfos by timestamp
+    std::sort(normedTimes.begin(),
+              normedTimes.end(),
+              [](const LuminanceInfo& a, const LuminanceInfo& b) -> bool {
+                return (a.mtimestamp < b.mtimestamp);
+              });
+
+    const int histoSize = maxDeltaInABurst + 2;
+    std::vector<int> histo(histoSize, 0);
+    for (int i = normedTimes.size() - 1; i >= 1; i--)
+    {
+        normedTimes[i].mtimestamp -= normedTimes[i - 1].mtimestamp;
+        histo[std::min(maxDeltaInABurst + 1, (int)normedTimes[i].mtimestamp)]++;
+    }
+    normedTimes[0].mtimestamp = 0;
+
+    // Check for outliers at both sides of the sequence.
+    // At the beginning an item is an outlier if the next one has been captured more than maxDeltaInABurst seconds after.
+    // At the end an item is an outlier if the previous one has been captured more than maxDeltaInABurst seconds before.
+    int firstIndexValid = 0;
+    while (normedTimes[firstIndexValid + 1].mtimestamp > maxDeltaInABurst && firstIndexValid < normedTimes.size() - 1)
+    {
+        firstIndexValid++;
+    }
+    if (firstIndexValid == normedTimes.size() - 1)
+    {
+        return splitted;
+    }
+    int LastIndexValid = normedTimes.size() - 1;
+    while (normedTimes[LastIndexValid].mtimestamp > maxDeltaInABurst && LastIndexValid > firstIndexValid)
+    {
+        LastIndexValid--;
+    }
+    if (LastIndexValid == firstIndexValid)
+    {
+        return splitted;
+    }
+
+    int outlierNumber = firstIndexValid + (normedTimes.size() - 1 - LastIndexValid);
+
+   int nbItemLow = 0;
+    for (int i = 0; i <= maxDeltaInABurst ; i++)
+    {
+        nbItemLow += histo[i];
+    }
+    const int nbItemHigh = histo.back();
+ 
+    int nbGroup;
+    int groupSize;
+    if (nbItemLow % (nbItemHigh + 1 - outlierNumber) == 0)
+    {
+        nbGroup = nbItemHigh + 1 - outlierNumber;
+        groupSize = (luminanceInfos.size() - outlierNumber) / nbGroup;
+        std::vector<LuminanceInfo> group;
+        std::map<float, int> mexposure;
+        for (int i = firstIndexValid; i <= LastIndexValid ; i++)
+        {
+            group.push_back(normedTimes[i]);
+            mexposure[normedTimes[i].mexposure] = 0;
+            if (i % groupSize == groupSize - 1)
+            {
+                if (mexposure.size() == groupSize)
+                {
+                    // All group's exposures are different from each others
+                    splitted.push_back(group);
+                    group.clear();
+                    mexposure.clear();
+                }
+                else
+                {
+                    splitted.clear();
+                    break;
+                }
+            }
+        }
+    }
+
+    return splitted;
+}
+
 /**
 * @brief assume ref is smaller than larger
 * Try to find a subpart of larger which has the same set of exposures that smaller
@@ -349,11 +441,15 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
 
     //Split and order the items using path
     std::vector<std::vector<LuminanceInfo>> splitted = splitBasedir(luminanceInfos);
-    //Create monotonic groups
+    //Create groups
     std::vector<std::vector<LuminanceInfo>> monotonics;
     for (const auto & luminanceInfoOneDir : splitted)
     {
-        std::vector<std::vector<LuminanceInfo>> lmonotonics = splitMonotonics(luminanceInfoOneDir);
+        std::vector<std::vector<LuminanceInfo>> lmonotonics = splitTimes(luminanceInfoOneDir);
+        if (lmonotonics.empty())
+        {
+            lmonotonics = splitMonotonics(luminanceInfoOneDir);
+        }
         monotonics.insert(monotonics.end(), lmonotonics.begin(), lmonotonics.end());
     }
 
@@ -426,7 +522,6 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
             continue;
         }
         
-
         //Compare with all valid monotonics
         int offset = -1;
         for (const auto& monotonic : monotonics)
@@ -484,7 +579,9 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
         groups.push_back(group);
     }
 
-    ALICEVISION_LOG_INFO("Groups found : "  << monotonics.size());
+    const int groupNumber = monotonics.size();
+    const int outlierNumber = luminanceInfos.size() - groupNumber * bestBracketCount;
+    ALICEVISION_LOG_INFO(groupNumber << " group(s) of " << bestBracketCount << " bracket(s) and " << outlierNumber << " outlier(s) found.");
 
     return groups;
 }
