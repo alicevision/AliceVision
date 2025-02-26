@@ -21,6 +21,11 @@ public:
         return _mapTracks;
     }
 
+    track::TracksMap & getAllTracksMutable()
+    {
+        return _mapTracks;
+    }
+
     const track::TracksPerView & getTracksPerView() const
     {
         return _mapTracksPerView;

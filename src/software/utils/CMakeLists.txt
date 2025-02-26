@@ -147,6 +147,32 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_cmdline
                   Boost::program_options
         )
+
+        # Output intrinsics transformed images
+        alicevision_add_software(aliceVision_exportImages
+        SOURCE main_exportImages.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+            aliceVision_cmdline
+            aliceVision_image
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            Boost::program_options
+            Boost::boost
+        )
+
+        # Output intrinsics transformed sfmdata
+        alicevision_add_software(aliceVision_intrinsicsTransforming
+        SOURCE main_intrinsicsTransforming.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+            aliceVision_cmdline
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            aliceVision_track
+            Boost::program_options
+            Boost::boost
+        )
     endif()
 
     # SfM quality evaluation

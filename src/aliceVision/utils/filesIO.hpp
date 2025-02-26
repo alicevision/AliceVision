@@ -121,5 +121,25 @@ inline std::time_t getLastWriteTime(const std::string& path)
     return fs::exists(path, ec);
 }
 
+/**
+ * @brief cast a int to a string and pad the string with 0
+ * to_string_with_zero_padding(17, 5) -> "00017"
+ * @param value the initial value
+ * @param total_length the string required length 
+ * (will be exceeded if the number number of digits is greater 
+ * to_string_with_zero_padding(17, 1) -> "17")
+ * @return a string with the value
+*/
+inline std::string to_string_with_zero_padding(const int value, std::size_t total_length)
+{
+    auto str = std::to_string(value);
+    if (str.length() < total_length)
+    {
+        str.insert(str.front() == '-' ? 1 : 0, total_length - str.length(), '0');
+    }
+
+    return str;
+}
+
 }  // namespace utils
 }  // namespace aliceVision

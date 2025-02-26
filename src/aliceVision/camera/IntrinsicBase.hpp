@@ -27,6 +27,10 @@ namespace camera {
 class IntrinsicBase
 {
   public:
+    using sptr = std::shared_ptr<IntrinsicBase>;
+    using ptr = IntrinsicBase*;
+    
+  public:
     explicit IntrinsicBase(unsigned int width, unsigned int height, const std::string& serialNumber = "")
       : _w(width),
         _h(height),
@@ -375,7 +379,7 @@ class IntrinsicBase
     /**
      * @brief Return true if this ray should be visible in the image
      * @param ray input ray to check for visibility
-     * @return True if this ray is visible theoretically
+     * @return True if this ray is visible theorically
      */
     virtual bool isVisibleRay(const Vec3& ray) const = 0;
 
@@ -482,7 +486,7 @@ class IntrinsicBase
  * @brief Apply intrinsic and extrinsic parameters to unit vector
  * from the cameras focus to a point on the camera plane
  * @param[in] pose Extrinsic pose
- * @param[in] intrinsic Intrinsic camera parameters
+ * @param[in] intrinsic Intrinsic camera paremeters
  * @param[in] x Point in image
  * @return The unit vector in 3D space pointing out from the camera to the point
  */
