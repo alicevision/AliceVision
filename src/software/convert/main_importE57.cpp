@@ -122,6 +122,9 @@ class BestPointInRadius
 
     // Upper bound on distance
     inline DistanceType worstDist() const { return m_radius; }
+
+    // Necessary since nanoflann 1.6.0: https://github.com/jlblancoc/nanoflann/commit/a74fc3b5b359c941d9a00eb9d92c2202c22eca3a
+    inline void sort() {}
 };
 
 // convert from a SfMData format to another
