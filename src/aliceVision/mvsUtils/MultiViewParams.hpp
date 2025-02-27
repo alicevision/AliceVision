@@ -238,7 +238,7 @@ class MultiViewParams
      * @brief Find nearest cameras for a given tile
      * @param[in] rc R camera id
      * @param[in] nbNearestCams maximum number of desired nearest cameras
-     * @param[in] tCams a given list of pre-selected nearest cameras
+     * @param[in] tCams a given list of preselected nearest cameras
      * @param[in] roi the tile 2d region of interest
      * @return nearest cameras list for the given tile
      */
