@@ -38,8 +38,8 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
-# C++17
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard used by the project")
+# C++20
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "The C++ standard used by the project")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "The C++ standard used to compile cuda code in the project")
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
@@ -732,7 +732,7 @@ if(ALICEVISION_HAVE_CUDA)
   list(GET ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CC_LIST_LEN} ALICEVISION_CUDA_CC_LIST_LAST)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CUDA_CC_LIST_LAST},code=compute_${ALICEVISION_CUDA_CC_LIST_LAST}")
 
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++17")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++20")
 
   # default stream legacy implies that the 0 stream synchronizes all streams
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;legacy")

@@ -41,17 +41,17 @@ RUN . ./etc/os-release && \
         nasm \
         automake \
         cmake \
-        gfortran \
         clang-format \
         libxerces-c-dev \
-        gcc-10 \
-        g++-10 \
-        cpp-10 \
+        gcc-12 \
+        g++-12 \
+        cpp-12 \
+        gfortran-12 \
         python3-dev \
         python3-pip \
         libpcre2-dev \
         bison && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 --slave /usr/bin/g++ g++ /usr/bin/g++-12 --slave /usr/bin/gcov gcov /usr/bin/gcov-12  --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-12
 
 # Install numpy
 RUN python3 -m pip install numpy
@@ -92,6 +92,7 @@ RUN mkdir -p "${AV_INSTALL}/lib" && \
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
+# RUN make -j ${CPU_CORES} lapack
 # RUN make -j ${CPU_CORES} onnxruntime
 # RUN make -j ${CPU_CORES} pcl
 # RUN make -j ${CPU_CORES} turbojpeg
@@ -102,7 +103,6 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} geogram
 # RUN make -j ${CPU_CORES} eigen
 # RUN make -j ${CPU_CORES} opengv
-# RUN make -j ${CPU_CORES} lapack
 # RUN make -j ${CPU_CORES} suitesparse
 # RUN make -j ${CPU_CORES} ceres
 # RUN make -j ${CPU_CORES} tiff
@@ -115,6 +115,11 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} expat
 # RUN make -j ${CPU_CORES} SWIG
 # RUN make -j ${CPU_CORES} E57Format
+# RUN make -j ${CPU_CORES} LEMON
+# RUN make -j ${CPU_CORES} opengv
+# RUN make -j ${CPU_CORES} OpenMesh
+# RUN make -j ${CPU_CORES} flann
+# RUN make -j ${CPU_CORES} clp
 
 # RUN make -j ${CPU_CORES} popsift
 # RUN make -j ${CPU_CORES} cctag

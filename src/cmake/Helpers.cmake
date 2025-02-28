@@ -92,6 +92,10 @@ function(alicevision_add_library library_name)
     VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
   )
 
+  if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+    target_compile_options(${library_name} PUBLIC "/Zc:__cplusplus")
+  endif()
+
   install(TARGETS ${library_name}
     EXPORT aliceVision-targets
     ARCHIVE
@@ -200,6 +204,10 @@ function(alicevision_add_software software_name)
     PUBLIC ${SOFTWARE_INCLUDE_DIRS}
   )
 
+  if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+    target_compile_options(${software_name}_exe PUBLIC "/Zc:__cplusplus")
+  endif()
+
   set_property(TARGET ${software_name}_exe
     PROPERTY FOLDER ${SOFTWARE_FOLDER}
   )
@@ -253,6 +261,10 @@ function(alicevision_add_test test_file)
   set_property(TARGET ${TEST_EXECUTABLE_NAME}
     PROPERTY FOLDER Test
   )
+
+  if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+    target_compile_options(${TEST_EXECUTABLE_NAME} PUBLIC "/Zc:__cplusplus")
+  endif()
 
   add_test(NAME test_${TEST_EXECUTABLE_NAME}
            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}

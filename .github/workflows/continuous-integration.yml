@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: ["alicevision/alicevision-deps:2025.01.06-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.01.06-rocky9-cuda12.1.1"]
+        container: ["alicevision/alicevision-deps:2025.02.21-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.02.21-rocky9-cuda12.1.1"]
     container:
       image: ${{ matrix.container }}
     env:
@@ -33,7 +33,7 @@ jobs:
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
       ALICEVISION_SENSOR_DB: ${{ github.workspace }}/../AV_install/share/aliceVision/cameraSensors.db
       ALICEVISION_LENS_PROFILE_INFO: ""
-      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.01.06-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
+      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.02.21-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
     steps:
       - uses: actions/checkout@v1
 
@@ -168,7 +168,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2024.08.28.zip?ref_type=heads&inline=false"
+          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2025.02.28.zip?ref_type=heads&inline=false"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 
@@ -185,10 +185,10 @@ jobs:
           rm ${{ env.vcpkgArchive }}
 
       - name: Get CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.10
+        uses: Jimver/cuda-toolkit@v0.2.21
         id: cuda-toolkit
         with:
-          cuda: '11.6.0'
+          cuda: '12.5.0'
 
       - name: Display CUDA information
         run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
@@ -226,7 +226,6 @@ jobs:
                              -DALICEVISION_BUILD_STEREOPHOTOMETRY=OFF
                              -DALICEVISION_BUILD_SEGMENTATION=OFF
                              -DBOOST_NO_CXX11=ON
-                             -DCUDA_NVCC_FLAGS=--allow-unsupported-compiler;-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH
 
           # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
           cmakeBuildType: Release
