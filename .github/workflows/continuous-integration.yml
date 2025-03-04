@@ -223,7 +223,7 @@ jobs:
                              -DALICEVISION_USE_POPSIFT=OFF
                              -DALICEVISION_USE_ALEMBIC=ON
                              -DALICEVISION_USE_OPENGV=OFF
-                             -DALICEVISION_BUILD_STEREOPHOTOMETRY=OFF
+                             -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
                              -DALICEVISION_BUILD_SEGMENTATION=OFF
                              -DBOOST_NO_CXX11=ON
 
