@@ -420,21 +420,22 @@ if (ALICEVISION_BUILD_PANORAMA)
 endif()
 
 if(ALICEVISION_BUILD_MVS)
-
-    # Lighting estimation from picture, albedo and geometry
-    alicevision_add_software(aliceVision_lightingEstimation
-        SOURCE main_lightingEstimation.cpp
-        FOLDER ${FOLDER_SOFTWARE_UTILS}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_numeric
-              aliceVision_sfmData
-              aliceVision_sfmDataIO
-              aliceVision_mvsUtils
-              aliceVision_image
-              aliceVision_lightingEstimation
-              ${Boost_LIBRARIES}
-    )
+    if(ALICEVISION_BUILD_PHOTOMETRICSTEREO)
+        # Lighting estimation from picture, albedo and geometry
+        alicevision_add_software(aliceVision_lightingEstimation
+            SOURCE main_lightingEstimation.cpp
+            FOLDER ${FOLDER_SOFTWARE_UTILS}
+            LINKS aliceVision_system
+                  aliceVision_cmdline
+                  aliceVision_numeric
+                  aliceVision_sfmData
+                  aliceVision_sfmDataIO
+                  aliceVision_mvsUtils
+                  aliceVision_image
+                  aliceVision_lightingEstimation
+                  ${Boost_LIBRARIES}
+        )
+    endif()
 
 
     # Lighting estimation from picture, albedo and geometry
