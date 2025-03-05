@@ -129,8 +129,6 @@ alicevision_add_library(aliceVision_depthMap
     aliceVision_mvsUtils
     aliceVision_system
     assimp::assimp
-    ${CUDA_CUDADEVRT_LIBRARY}
-    ${CUDA_CUBLAS_LIBRARIES} #TODO shouldn't be here, but required to build on some machines
   PRIVATE_LINKS
     aliceVision_gpu
     aliceVision_sfmData
