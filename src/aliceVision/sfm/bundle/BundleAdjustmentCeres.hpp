@@ -245,9 +245,11 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     /// block: intrinsics params
     std::map<IndexT, std::vector<double>> _intrinsicsBlocks;
     std::map<IndexT, std::vector<double>> _distortionsBlocks;
+    std::map<IndexT, std::vector<double>> _undistortionsBlocks;
     std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
 
     std::vector<double> _fakeDistortionBlock;
+    std::vector<double> _fakeUndistortionBlock;
     /// landmarks blocks wrapper
     /// block: 3d position(3)
     std::map<IndexT, std::array<double, 3>> _landmarksBlocks;

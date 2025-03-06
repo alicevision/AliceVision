@@ -41,6 +41,8 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const std::shared_ptr<Intr
     auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionSimpleErrorFunctor>(new ProjectionSimpleErrorFunctor(observation, intrinsic));
 
     int distortionSize = 1;
+    int undistortionSize = 1;
+
     auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
     if (isod)
     {
@@ -49,10 +51,17 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const std::shared_ptr<Intr
         {
             distortionSize = distortion->getParameters().size();
         }
+
+        auto undistortion = isod->getUndistortion();
+        if (undistortion)
+        {
+            undistortionSize = undistortion->getParameters().size();
+        }
     }
 
     costFunction->AddParameterBlock(intrinsic->getParameters().size());
     costFunction->AddParameterBlock(distortionSize);
+    costFunction->AddParameterBlock(undistortionSize);
     costFunction->AddParameterBlock(6);
     costFunction->AddParameterBlock(3);
     costFunction->SetNumResiduals(2);
@@ -71,6 +80,7 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(std::shared_ptr<Intrins
     auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionErrorFunctor>(new ProjectionErrorFunctor(observation, intrinsic));
 
     int distortionSize = 1;
+    int undistortionSize = 1;
     auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
     if (isod)
     {
@@ -79,10 +89,17 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(std::shared_ptr<Intrins
         {
             distortionSize = distortion->getParameters().size();
         }
+
+        auto undistortion = isod->getUndistortion();
+        if (undistortion)
+        {
+            undistortionSize = undistortion->getParameters().size();
+        }
     }
 
     costFunction->AddParameterBlock(intrinsic->getParameters().size());
     costFunction->AddParameterBlock(distortionSize);
+    costFunction->AddParameterBlock(undistortionSize);
     costFunction->AddParameterBlock(6);
     costFunction->AddParameterBlock(6);
     costFunction->AddParameterBlock(3);
@@ -104,6 +121,7 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(std::shared_ptr
     auto costFunction = new ceres::DynamicAutoDiffCostFunction<Constraint2dErrorFunctor>(new Constraint2dErrorFunctor(observation_first, observation_second, intrinsic));
 
     int distortionSize = 1;
+    int undistortionSize = 1;
     auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
     if (isod)
     {
@@ -112,11 +130,18 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(std::shared_ptr
         {
             distortionSize = distortion->getParameters().size();
         }
+
+        auto undistortion = isod->getUndistortion();
+        if (undistortion)
+        {
+            undistortionSize = undistortion->getParameters().size();
+        }
     }
 
 
     costFunction->AddParameterBlock(intrinsic->getParameters().size()); 
     costFunction->AddParameterBlock(distortionSize);
+    costFunction->AddParameterBlock(undistortionSize);
     costFunction->AddParameterBlock(6);
     costFunction->AddParameterBlock(6);
     costFunction->SetNumResiduals(2);
@@ -428,6 +453,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
       || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
     const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
     const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
+    const bool refineIntrinsicsUndistortion = refineOptions & REFINE_INTRINSICS_UNDISTORTION;
     const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
 
     std::map<IndexT, std::size_t> intrinsicsUsage;
@@ -438,6 +464,13 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     _fakeDistortionBlock = {0.0};
     problem.AddParameterBlock(_fakeDistortionBlock.data(), 1);
     problem.SetParameterBlockConstant(_fakeDistortionBlock.data());
+
+    //Create a fake undistortion block which is always constant
+    //This is to trick ceres limitations
+    _fakeUndistortionBlock = {0.0};
+    problem.AddParameterBlock(_fakeUndistortionBlock.data(), 1);
+    problem.SetParameterBlockConstant(_fakeUndistortionBlock.data());
+
 
     // count the number of reconstructed views per intrinsic
     for (const auto& viewPair : sfmData.getViews())
@@ -608,6 +641,26 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
                     problem.SetParameterBlockConstant(distortionBlockPtr);
                 }
             }
+
+            auto undistortion = isod->getUndistortion();
+            if (undistortion)
+            {
+                //Create data block for intrinsics inside ceres
+                std::vector<double>& undistortionBlock = _undistortionsBlocks[intrinsicId];
+                undistortionBlock = undistortion->getParameters();
+                double* undistortionBlockPtr = undistortionBlock.data();
+                problem.AddParameterBlock(undistortionBlockPtr, undistortionBlock.size());
+                
+                if (!refineIntrinsicsDistortion 
+                    || isod->getDistortionInitializationMode() == camera::EInitMode::CALIBRATED
+                    || undistortion->isLocked()
+                    || !refineIntrinsics 
+                    || intrinsicPtr->getState() == EEstimatorParameterState::CONSTANT
+                    )
+                {
+                    problem.SetParameterBlockConstant(undistortionBlockPtr);
+                }
+            }
         }
 
        
@@ -645,6 +698,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
         problem.AddParameterBlock(landmarkBlockPtr, 3);
 
         double* fakeDistortionBlockPtr = _fakeDistortionBlock.data();
+        double* fakeUndistortionBlockPtr = _fakeUndistortionBlock.data();
 
         // add landmark parameter to the all parameters blocks pointers list
         _allParametersBlocks.push_back(landmarkBlockPtr);
@@ -671,6 +725,12 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 distortionBlockPtr = _distortionsBlocks.at(intrinsicId).data();
             }
 
+            double * undistortionBlockPtr = fakeUndistortionBlockPtr;
+            if (_undistortionsBlocks.find(intrinsicId) != _undistortionsBlocks.end())
+            {
+                undistortionBlockPtr = _undistortionsBlocks.at(intrinsicId).data();
+            }
+
             // apply a specific parameter ordering:
             if (_ceresOptions.useParametersOrdering)
             {
@@ -678,6 +738,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
                 _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
                 _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
+                _linearSolverOrdering.AddElementToGroup(undistortionBlockPtr, 2);
             }
 
             if (view.isPartOfRig() && !view.isPoseIndependant())
@@ -690,6 +751,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
                 params.push_back(distortionBlockPtr);
+                params.push_back(undistortionBlockPtr);
                 params.push_back(poseBlockPtr);
                 params.push_back(rigBlockPtr);
                 params.push_back(landmarkBlockPtr);
@@ -703,6 +765,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
                 params.push_back(distortionBlockPtr);
+                params.push_back(undistortionBlockPtr);
                 params.push_back(poseBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
@@ -729,6 +792,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
     // note: set it to NULL if you don't want use a lossFunction.
     ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
     double* fakeDistortionBlockPtr = _fakeDistortionBlock.data();
+    double* fakeUndistortionBlockPtr = _fakeUndistortionBlock.data();
     
     for (const auto& constraint : sfmData.getConstraints2D())
     {
@@ -766,11 +830,17 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
             distortionBlockPtr_1 = _distortionsBlocks.at(intrinsicId_1).data();
         }
 
+        double * undistortionBlockPtr_1 = fakeUndistortionBlockPtr;
+        if (_undistortionsBlocks.find(intrinsicId_1) != _undistortionsBlocks.end())
+        {
+            undistortionBlockPtr_1 = _undistortionsBlocks.at(intrinsicId_1).data();
+        }
+
         ceres::CostFunction* costFunction = createConstraintsCostFunctionFromIntrinsics(intrinsicObject1,
                                                                                         constraint.ObservationFirst,
                                                                                         constraint.ObservationSecond);
         
-        problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, distortionBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
+        problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, distortionBlockPtr_1, undistortionBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
     }
 }
 
@@ -862,6 +932,8 @@ void BundleAdjustmentCeres::resetProblem()
     _allParametersBlocks.clear();
     _posesBlocks.clear();
     _intrinsicsBlocks.clear();
+    _distortionsBlocks.clear();
+    _undistortionsBlocks.clear();
     _landmarksBlocks.clear();
     _rigBlocks.clear();
 
@@ -874,7 +946,10 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
     const bool refineIntrinsicsOpticalCenter =
       (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
     const bool refineIntrinsics =
-      (refineOptions & REFINE_INTRINSICS_FOCAL) || (refineOptions & REFINE_INTRINSICS_DISTORTION) || refineIntrinsicsOpticalCenter;
+      (refineOptions & REFINE_INTRINSICS_FOCAL) || 
+      (refineOptions & REFINE_INTRINSICS_DISTORTION) || 
+      (refineOptions & REFINE_INTRINSICS_UNDISTORTION) || 
+      refineIntrinsicsOpticalCenter;
     const bool refineStructure = refineOptions & REFINE_STRUCTURE;
 
     // update camera poses with refined data
@@ -954,6 +1029,27 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
                 if (distortion)
                 {
                     distortion->setParameters(distortionBlock);
+                }
+            }
+        }
+
+        for (const auto& [idIntrinsic, undistortionBlock]: _undistortionsBlocks)
+        {
+            auto intrinsic = sfmData.getIntrinsicSharedPtr(idIntrinsic);
+
+            // do not update a camera pose set as Ignored or Constant in the Local strategy
+            if (intrinsic->getState() != EEstimatorParameterState::REFINED)
+            {
+                continue;
+            }
+
+            auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+            if (isod)
+            {
+                auto undistortion = isod->getUndistortion();
+                if (undistortion)
+                {
+                    undistortion->setParameters(undistortionBlock);
                 }
             }
         }
@@ -1067,6 +1163,21 @@ void BundleAdjustmentCeres::PrepareForEvaluation(bool evaluate_jacobians, bool n
                 if (distortion)
                 {
                     distortion->setParameters(distortionBlock);
+                }
+            }
+        }
+
+        for (const auto& [idIntrinsic, undistortionBlock] : _undistortionsBlocks)
+        {
+            auto intrinsic = _intrinsicObjects[idIntrinsic];
+
+            auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+            if (isod)
+            {
+                auto undistortion = isod->getUndistortion();
+                if (undistortion)
+                {
+                    undistortion->setParameters(undistortionBlock);
                 }
             }
         }

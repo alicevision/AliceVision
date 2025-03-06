@@ -21,25 +21,34 @@ class CostIntrinsicsLift : public ceres::CostFunction
     {
         set_num_residuals(3);
 
-        size_t size_disto = 1;
+        size_t sizeDisto = 1;
+        size_t sizeUndisto = 1;
         auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsics);
         if (isod)
         {
             _distortion = isod->getDistortion();
             if (_distortion)
             {
-                size_disto = _distortion->getParameters().size();
+                sizeDisto = _distortion->getParameters().size();
+            }
+
+            _undistortion = isod->getUndistortion();
+            if (_undistortion)
+            {
+                sizeUndisto = _undistortion->getParameters().size();
             }
         }
         
         mutable_parameter_block_sizes()->push_back(intrinsics->getParametersSize());
-        mutable_parameter_block_sizes()->push_back(size_disto);
+        mutable_parameter_block_sizes()->push_back(sizeDisto);
+        mutable_parameter_block_sizes()->push_back(sizeUndisto);
     }
 
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
     {
         const double* parameter_intrinsics = parameters[0];
         const double* parameter_distortion = parameters[1];
+        const double* parameter_undistortion = parameters[1];
 
         const Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
 
@@ -70,12 +79,17 @@ class CostIntrinsicsLift : public ceres::CostFunction
             J = isod->getDerivativeBackProjectUnitWrtDistortion(_pt2d);
         }
 
+        if (jacobians[2] != nullptr && _undistortion)
+        {
+        }
+
         return true;
     }
 
   private:
     const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
     std::shared_ptr<camera::Distortion> _distortion;
+    std::shared_ptr<camera::Undistortion> _undistortion;
     const Vec2 _pt2d;
 };
 

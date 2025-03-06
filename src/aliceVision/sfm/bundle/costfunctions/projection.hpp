@@ -32,8 +32,9 @@ struct ProjectionSimpleErrorFunctor
     {       
         const T* parameter_intrinsics = parameters[0];
         const T* parameter_distortion = parameters[1];
-        const T* parameter_pose = parameters[2];
-        const T* parameter_point = parameters[3];
+        const T* parameter_undistortion = parameters[2];
+        const T* parameter_pose = parameters[3];
+        const T* parameter_point = parameters[4];
 
         //--
         // Apply external parameters (Pose)
@@ -50,10 +51,11 @@ struct ProjectionSimpleErrorFunctor
         transformedPoint[1] += cam_t[1];
         transformedPoint[2] += cam_t[2];
 
-        const T * innerParameters[3];
+        const T * innerParameters[4];
         innerParameters[0] = parameter_intrinsics;
         innerParameters[1] = parameter_distortion;
-        innerParameters[2] = transformedPoint;
+        innerParameters[2] = parameter_undistortion;
+        innerParameters[3] = transformedPoint;
 
         return _intrinsicFunctor(innerParameters, residuals);
     }
@@ -73,9 +75,10 @@ struct ProjectionErrorFunctor
     {       
         const T* parameter_intrinsics = parameters[0];
         const T* parameter_distortion = parameters[1];
-        const T* parameter_pose = parameters[2];
-        const T* parameter_subpose = parameters[3];
-        const T* parameter_point = parameters[4];
+        const T* parameter_undistortion = parameters[2];
+        const T* parameter_pose = parameters[3];
+        const T* parameter_subpose = parameters[4];
+        const T* parameter_point = parameters[5];
 
         T transformedPoint[3];
         {
@@ -105,10 +108,11 @@ struct ProjectionErrorFunctor
             transformedPoint[2] += cam_t[2];
         }
 
-        const T * innerParameters[3];
+        const T * innerParameters[4];
         innerParameters[0] = parameter_intrinsics;
         innerParameters[1] = parameter_distortion;
-        innerParameters[2] = transformedPoint;
+        innerParameters[2] = parameter_undistortion;
+        innerParameters[3] = transformedPoint;
 
         return _intrinsicFunctor(innerParameters, residuals);
     }

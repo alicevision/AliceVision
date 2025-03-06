@@ -22,6 +22,7 @@ class CostIntrinsicsProject : public ceres::CostFunction
         set_num_residuals(2);
 
         size_t sizeDisto = 1;
+        size_t sizeUndisto = 1;
         auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsics);
         if (isod)
         {
@@ -30,10 +31,17 @@ class CostIntrinsicsProject : public ceres::CostFunction
             {
                 sizeDisto = _distortion->getParameters().size();
             }
+
+            _undistortion = isod->getUndistortion();
+            if (_undistortion)
+            {
+                sizeUndisto = _undistortion->getParameters().size();
+            }
         }
         
         mutable_parameter_block_sizes()->push_back(intrinsics->getParametersSize());
         mutable_parameter_block_sizes()->push_back(sizeDisto);
+        mutable_parameter_block_sizes()->push_back(sizeUndisto);
         mutable_parameter_block_sizes()->push_back(3);
     }
 
@@ -41,7 +49,8 @@ class CostIntrinsicsProject : public ceres::CostFunction
     {
         const double* parameter_intrinsics = parameters[0];
         const double* parameter_distortion = parameters[1];
-        const double* parameter_point = parameters[2];
+        const double* parameter_undistortion = parameters[2];
+        const double* parameter_point = parameters[3];
 
         const Eigen::Map<const Vec3> pt(parameter_point);
         const Vec4 pth = pt.homogeneous();
@@ -80,9 +89,13 @@ class CostIntrinsicsProject : public ceres::CostFunction
             J = d_res_d_pt_est * isod->getDerivativeTransformProjectWrtDistortion(T, pth);
         }
 
-        if (jacobians[2] != nullptr)
+        if (jacobians[2] != nullptr && _undistortion)
         {
-            Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[2]);
+        }
+
+        if (jacobians[3] != nullptr)
+        {
+            Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[3]);
 
             J = d_res_d_pt_est * _intrinsics->getDerivativeTransformProjectWrtPoint3(T, pth);
         }
@@ -94,6 +107,7 @@ class CostIntrinsicsProject : public ceres::CostFunction
     const sfmData::Observation _measured;
     const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
     std::shared_ptr<camera::Distortion> _distortion;
+    std::shared_ptr<camera::Undistortion> _undistortion;
 };
 
 }  // namespace sfm
