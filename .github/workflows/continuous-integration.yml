@@ -189,7 +189,7 @@ jobs:
         id: cuda-toolkit
         with:
           cuda: '12.5.0'
-          sub-packages: '["nvcc", "cudart", "cublas", "cusparse"]'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev"]'
 
       - name: Display CUDA information
         run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
