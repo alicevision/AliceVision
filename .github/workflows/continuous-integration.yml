@@ -168,7 +168,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2025.02.28.zip?ref_type=heads&inline=false"
+          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2025.03.06.zip?ref_type=heads&inline=false"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 
@@ -189,7 +189,7 @@ jobs:
         id: cuda-toolkit
         with:
           cuda: '12.5.0'
-          sub-packages: '["nvcc", "cudart", "cublas", "cusparse"]'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev"]'
 
       - name: Display CUDA information
         run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
