@@ -563,6 +563,55 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
     }
 }
 
+void saveSurveyPoints(const sfmData::SurveyPoints& spoints, bpt::ptree& parentTree)
+{
+    for (const auto & [viewId, vPoints]: spoints)
+    {
+        bpt::ptree viewTree;
+
+        viewTree.put("viewId", viewId);
+
+        bpt::ptree pointsTree;
+        for (const auto & point : vPoints)
+        {
+            bpt::ptree pointTree;
+
+            pointTree.put("X", point.point3d.x());
+            pointTree.put("Y", point.point3d.y());
+            pointTree.put("Z", point.point3d.z());
+            pointTree.put("u", point.survey.x());
+            pointTree.put("v", point.survey.y());
+            
+            pointsTree.push_back(std::make_pair("", pointTree));
+        }
+
+        viewTree.add_child("points", pointsTree);
+
+        parentTree.push_back(std::make_pair("", viewTree));
+    }
+}
+
+void loadSurveyPoints(sfmData::SurveyPoints& spoints, bpt::ptree& parentTree)
+{
+    for (const bpt::ptree::value_type& viewTree : parentTree.get_child(""))
+    {
+        IndexT viewId = viewTree.second.get<IndexT>("viewId");
+        
+        for (const bpt::ptree::value_type& pointTree : viewTree.second.get_child("points"))
+        {
+            sfmData::SurveyPoint p;
+
+            p.point3d.x() = pointTree.second.get<double>("X");
+            p.point3d.y() = pointTree.second.get<double>("Y");
+            p.point3d.z() = pointTree.second.get<double>("Z");
+            p.survey.x() = pointTree.second.get<double>("u");
+            p.survey.y() = pointTree.second.get<double>("v");
+
+            spoints[viewId].push_back(p);
+        }
+    }
+}
+
 bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
     const Vec3i version = {ALICEVISION_SFMDATAIO_VERSION_MAJOR, ALICEVISION_SFMDATAIO_VERSION_MINOR, ALICEVISION_SFMDATAIO_VERSION_REVISION};
@@ -573,6 +622,7 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
     const bool saveIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
     const bool saveExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
     const bool saveStructure = (partFlag & STRUCTURE) == STRUCTURE;
+    const bool saveSurveys = (partFlag & SURVEYS) == SURVEYS;
     const bool saveFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
     const bool saveObservations = saveFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
 
@@ -687,6 +737,16 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
         fileTree.add_child("structure", structureTree);
     }
 
+    // surveys
+    if (saveSurveys)
+    {
+        bpt::ptree surveyTree;
+
+        saveSurveyPoints(sfmData.getSurveyPoints(), surveyTree);
+
+        fileTree.add_child("surveys", surveyTree);
+    }
+
     // write the json file with the tree
 
     bpt::write_json(filename, fileTree);
@@ -709,6 +769,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
     const bool loadIntrinsics = (partFlag & INTRINSICS) == INTRINSICS;
     const bool loadExtrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
     const bool loadStructure = (partFlag & STRUCTURE) == STRUCTURE;
+    const bool loadSurveys = (partFlag & SURVEYS) == SURVEYS;
     const bool loadFeatures = (partFlag & OBSERVATIONS_WITH_FEATURES) == OBSERVATIONS_WITH_FEATURES;
     const bool loadObservations = loadFeatures || ((partFlag & OBSERVATIONS) == OBSERVATIONS);
 
@@ -880,6 +941,15 @@ bool loadJSON(sfmData::SfMData& sfmData,
             structure.emplace(landmarkId, landmark);
         }
     }
+
+    // surveyx
+    if (loadSurveys && fileTree.count("surveys"))
+    {
+        sfmData::SurveyPoints& surveyPoints = sfmData.getSurveyPoints();
+
+        loadSurveyPoints(surveyPoints, fileTree.get_child("surveys"));
+    }
+    
 
     return true;
 }

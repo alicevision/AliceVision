@@ -12,6 +12,7 @@
 #include <aliceVision/sfmData/Constraint2D.hpp>
 #include <aliceVision/sfmData/ConstraintPoint.hpp>
 #include <aliceVision/sfmData/RotationPrior.hpp>
+#include <aliceVision/sfmData/SurveyPoint.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
@@ -54,8 +55,13 @@ using Constraints2D = std::vector<Constraint2D>;
 /// Define a collection of constraints
 using ConstraintsPoint = std::map<IndexT, ConstraintPoint>;
 
+/// Define a collection of surveyed points
+using SurveyPoints = std::map<IndexT, std::vector<SurveyPoint>>;
+
 /// Define a collection of rotation priors
 using RotationPriors = std::vector<RotationPrior>;
+
+
 
 /**
  * @brief SfMData container
@@ -147,6 +153,13 @@ class SfMData
      */
     const ConstraintsPoint& getConstraintsPoint() const { return _constraintsPoint; }
     ConstraintsPoint& getConstraintsPoint() { return _constraintsPoint; }
+
+    /**
+     * @brief Get SurveyPoints
+     * @return SurveyPoints
+     */
+    const SurveyPoints & getSurveyPoints() const { return _surveyPoints; }
+    SurveyPoints& getSurveyPoints() { return _surveyPoints; }
 
     /**
      * @brief Get RotationPriors
@@ -661,6 +674,8 @@ class SfMData
     ConstraintsPoint _constraintsPoint;
     /// Rotation priors
     RotationPriors _rotationpriors;
+    /// Survey points
+    SurveyPoints _surveyPoints;
 
     /**
      * @brief Get Rig pose of a given camera view
