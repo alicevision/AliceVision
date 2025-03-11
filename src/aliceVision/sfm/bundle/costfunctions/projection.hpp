@@ -61,6 +61,75 @@ struct ProjectionSimpleErrorFunctor
     ceres::DynamicCostFunctionToFunctorTmp _intrinsicFunctor;
 };
 
+
+struct ProjectionSurveyErrorFunctor
+{
+    explicit ProjectionSurveyErrorFunctor(const Vec3 & point, 
+                                            const sfmData::Observation& obs, 
+                                            const std::shared_ptr<camera::IntrinsicBase>& intrinsics)        
+    : _intrinsicFunctor(new CostIntrinsicsProject(obs, intrinsics)), _point(point)
+    {        
+    }
+
+    template<typename T>
+    T func(const T & input) const 
+    {
+        const T alpha = T(5.0);
+        const T coeff = T(0.05);
+
+        const T p1 = abs(alpha - T(2));
+        const T p2 = coeff * input * input;
+        
+        return (p1/alpha) * (pow(T(1) + p2/p1, alpha / T(2)) - T(1));
+    }
+
+    template<typename T>
+    bool operator()(T const* const* parameters, T* residuals) const
+    {       
+        const T* parameter_intrinsics = parameters[0];
+        const T* parameter_distortion = parameters[1];
+        const T* parameter_pose = parameters[2];
+        T parameter_point[3];
+        
+        parameter_point[0] = T(_point.x());
+        parameter_point[1] = T(_point.y());
+        parameter_point[2] = T(_point.z());
+
+        //--
+        // Apply external parameters (Pose)
+        //--
+        const T* cam_R = parameter_pose;
+        const T* cam_t = &parameter_pose[3];
+        
+        T transformedPoint[3];
+        // Rotate the point according the camera rotation
+        ceres::AngleAxisRotatePoint(cam_R, parameter_point, transformedPoint);
+
+        // Apply the camera translation
+        transformedPoint[0] += cam_t[0];
+        transformedPoint[1] += cam_t[1];
+        transformedPoint[2] += cam_t[2];
+
+        const T * innerParameters[3];
+        innerParameters[0] = parameter_intrinsics;
+        innerParameters[1] = parameter_distortion;
+        innerParameters[2] = transformedPoint;
+
+        if (!_intrinsicFunctor(innerParameters, residuals))
+        {
+            return false;
+        }
+
+        residuals[0] = func(residuals[0]);
+        residuals[1] = func(residuals[1]);
+
+        return true;
+    }
+
+    ceres::DynamicCostFunctionToFunctorTmp _intrinsicFunctor;
+    Vec3 _point;
+};
+
 struct ProjectionErrorFunctor
 {
     explicit ProjectionErrorFunctor(const sfmData::Observation& obs, const std::shared_ptr<camera::IntrinsicBase>& intrinsics)        
