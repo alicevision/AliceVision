@@ -55,7 +55,6 @@ alicevision_add_test(view_test.cpp
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
     set_property(SOURCE SfMData.i PROPERTY CPLUSPLUS ON)
     set_property(SOURCE SfMData.i PROPERTY SWIG_MODULE_NAME sfmData)
 

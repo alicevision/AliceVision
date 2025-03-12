@@ -83,7 +83,6 @@ endif()
 
 
 if(ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
     set_property(SOURCE aliceVision.i PROPERTY CPLUSPLUS ON)
     set_property(SOURCE aliceVision.i PROPERTY SWIG_MODULE_NAME pyalicevision)
 

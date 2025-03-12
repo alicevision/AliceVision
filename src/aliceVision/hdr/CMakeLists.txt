@@ -51,7 +51,6 @@ alicevision_add_test(hdrLaguerre_test.cpp
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
     set_property(SOURCE Hdr.i PROPERTY CPLUSPLUS ON)
     set_property(SOURCE Hdr.i PROPERTY SWIG_MODULE_NAME hdr)
 

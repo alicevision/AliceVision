@@ -29,7 +29,6 @@ alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase" LINKS 
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
     set_property(SOURCE SensorDB.i PROPERTY CPLUSPLUS ON)
     set_property(SOURCE SensorDB.i PROPERTY SWIG_MODULE_NAME sensorDB)
 

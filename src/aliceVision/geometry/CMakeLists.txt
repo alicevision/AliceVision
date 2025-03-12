@@ -38,7 +38,6 @@ alicevision_add_test(frustumIntersection_test.cpp
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
     set_property(SOURCE Geometry.i PROPERTY CPLUSPLUS ON)
     set_property(SOURCE Geometry.i PROPERTY SWIG_MODULE_NAME geometry)
 

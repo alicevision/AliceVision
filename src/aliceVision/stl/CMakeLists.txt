@@ -19,7 +19,6 @@ alicevision_add_test(dynamicBitset_test.cpp NAME "stl_dynamicBitset" LINKS alice
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
     set_property(SOURCE Stl.i PROPERTY CPLUSPLUS ON)
     set_property(SOURCE Stl.i PROPERTY SWIG_MODULE_NAME stl)
 

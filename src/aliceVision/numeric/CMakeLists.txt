@@ -37,7 +37,6 @@ alicevision_add_test(gps_test.cpp NAME "numeric_gps" LINKS aliceVision_numeric)
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
     set_property(SOURCE numeric.i PROPERTY CPLUSPLUS ON)
     set_property(SOURCE numeric.i PROPERTY SWIG_MODULE_NAME numeric)
 
