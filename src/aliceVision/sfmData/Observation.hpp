@@ -56,7 +56,7 @@ class Observation
     void setScale(double scale) { _scale = scale; }
 
   private:
-    Vec2 _coordinates;
+    Vec2 _coordinates = { 0.0, 0.0 };
     IndexT _idFeature = UndefinedIndexT;
     double _scale = 0.0;
 };

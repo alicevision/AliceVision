@@ -37,7 +37,7 @@ class Landmark
         rgb(color)
     {}
 
-    Vec3 X;
+    Vec3 X = { 0.0, 0.0, 0.0 };
     feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
     image::RGBColor rgb = image::WHITE;  //!> the color associated to the point
     EEstimatorParameterState state = EEstimatorParameterState::REFINED;
