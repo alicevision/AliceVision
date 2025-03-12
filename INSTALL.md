@@ -68,10 +68,10 @@ AliceVision's required dependencies can be built with it.
 Vcpkg evolved from being a Windows-only project to becoming cross-platform.
 In the scope of AliceVision, vcpkg has only been tested on Windows.
 
-1. Install vcpkg itself
+1. Install vcpkg
 
 See the reference [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
-We recommend to use our vcpkg fork, where dependencies have been validated by the AliceVision development team but it should work with the latest version.
+We recommend to use our vcpkg fork, where dependencies have been validated by the AliceVision development team and where some ports may have some custom changes.
 ```bash
 git clone https://github.com/alicevision/vcpkg --branch alicevision_master
 cd vcpkg
@@ -107,7 +107,11 @@ vcpkg install ^
           pcl ^
           clp ^
           libe57format ^
+          vcpkg-tool-swig ^
           --triplet x64-windows
+
+%VCPKG_ROOT%/installed/x64-windows/tools/python3/python -m ensurepip --upgrade
+%VCPKG_ROOT%/installed/x64-windows/tools/python3/python -m pip install numpy
 ```
 
 3. Build AliceVision
@@ -256,6 +260,9 @@ CMake Options
 
 * `ALICEVISION_BUILD_COVERAGE` (default `OFF`)
   Enable code coverage generation (gcc only)
+
+* `ALICEVISION_BUILD_SWIG_BINDING` (default `OFF`)
+  Build AliceVision's Python binding with SWIG
 
 
 Linux compilation
