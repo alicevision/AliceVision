@@ -50,12 +50,12 @@ Get the source code: `git clone --recursive git://github.com/alicevision/AliceVi
 
 See [**INSTALL.md**](INSTALL.md) to build the project.
 
-Continuous integration status: [![Build Status](https://travis-ci.org/alicevision/AliceVision.png?branch=develop)](https://travis-ci.org/alicevision/AliceVision) [![Coverage Status](https://coveralls.io/repos/github/alicevision/AliceVision/badge.png?branch=develop)](https://coveralls.io/github/alicevision/AliceVision?branch=develop).
+Continuous integration status: [![Build Status](https://github.com/alicevision/AliceVision/actions/workflows/continuous-integration.yml/badge.svg?branch=develop)](https://github.com/alicevision/AliceVision/actions/workflows/continuous-integration.yml)
 
 
 ## Launch 3D reconstructions
 
-Use [Meshroom](https://github.com/alicevision/meshroom) to launch the AliceVision pipeline.
+Use [Meshroom](https://github.com/alicevision/Meshroom) to launch the AliceVision pipeline.
  - Meshroom provides a User Interface to create 3D reconstructions.
  - Meshroom provides a command line to launch all the steps of the pipeline.
  - Meshroom is written in python and can be used to create your own python scripts to customize the pipeline or create custom automation.
