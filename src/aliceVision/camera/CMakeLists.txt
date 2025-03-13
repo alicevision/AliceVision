@@ -105,12 +105,12 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     TARGETS
     camera
     DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        ${CMAKE_INSTALL_BINDIR}
     )
     install(
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/camera.py
     DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        ${CMAKE_INSTALL_BINDIR}
     )
 endif()

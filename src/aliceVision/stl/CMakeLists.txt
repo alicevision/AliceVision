@@ -65,12 +65,12 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     TARGETS
         stl
     DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        ${CMAKE_INSTALL_BINDIR}
     )
     install(
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/stl.py
     DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        ${CMAKE_INSTALL_BINDIR}
     )
 endif()

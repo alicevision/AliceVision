@@ -154,12 +154,12 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         TARGETS
             sfmDataIO
         DESTINATION
-            ${CMAKE_INSTALL_PREFIX}
+            ${CMAKE_INSTALL_BINDIR}
     )
     install(
         FILES
             ${CMAKE_CURRENT_BINARY_DIR}/sfmDataIO.py
         DESTINATION
-            ${CMAKE_INSTALL_PREFIX}
+            ${CMAKE_INSTALL_BINDIR}
     )
 endif()

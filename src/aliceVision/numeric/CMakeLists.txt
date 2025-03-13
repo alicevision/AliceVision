@@ -81,12 +81,12 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
     TARGETS
     numeric
     DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        ${CMAKE_INSTALL_BINDIR}
     )
     install(
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/numeric.py
     DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        ${CMAKE_INSTALL_BINDIR}
     )
 endif()
