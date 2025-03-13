@@ -59,7 +59,7 @@ jobs:
            -DALICEVISION_USE_CUDA=ON \
            -DALICEVISION_USE_CCTAG="${BUILD_CCTAG}" \
            -DALICEVISION_USE_POPSIFT=ON \
-           -DALICEVISION_USE_ALEMBIC=ON  \
+           -DALICEVISION_USE_ALEMBIC=ON \
            -DOpenCV_DIR="${DEPS_INSTALL_DIR}/share/OpenCV" \
            -DALICEVISION_USE_OPENGV=ON \
            -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
@@ -230,11 +230,27 @@ jobs:
                              -DALICEVISION_BUILD_SWIG_BINDING=ON
                              -DBOOST_NO_CXX11=ON
 
-          # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
           cmakeBuildType: Release
           buildWithCMake: true
 
-      - name: UnitTests
+      - name: Bundle
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          buildDirectory: ${{ env.buildDir }}
+          buildWithCMakeArgs: '--config Release --target bundle'
+          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
+          cmakeBuildType: Release
+          buildWithCMake: true
+
+      - name: Python Binding - Unit Tests
+        run: |
+          dir ${{ env.ALICEVISION_ROOT }}
+          set PYTHONPATH=${{ env.ALICEVISION_ROOT }}\bundle\bin;${{ env.PYTHONPATH}}
+          ${{ env.VCPKG_ROOT }}\installed\x64-windows\tools\python3\python -m pytest ./pyTests
+
+      - name: Unit Tests
         uses: lukka/run-cmake@v3
         with:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
