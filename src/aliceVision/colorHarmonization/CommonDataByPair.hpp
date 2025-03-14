@@ -54,7 +54,7 @@ class CommonDataByPair
         {
             for (int i = 0; i < mask.width(); ++i)
             {
-                if ((int)mask(j, i) != 0)
+                if (static_cast<int>(mask(j, i)) != 0)
                     histo.Add(image(j, i)(channelIndex));
             }
         }
