@@ -318,7 +318,7 @@ bool extractDSPSIFT(const image::Image<float>& image,
             std::vector<float> patchXY(2 * kPatchSide * kPatchSide);
 
 #pragma omp for
-            for (std::size_t oIndex = 0; oIndex < indexSort.size(); ++oIndex)
+            for (int oIndex = 0; oIndex < static_cast<int>(indexSort.size()); ++oIndex)
             {
                 const int iIndex = indexSort[oIndex];
                 const auto& inFeat = features[iIndex];

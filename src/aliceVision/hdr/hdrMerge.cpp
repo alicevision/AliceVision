@@ -84,7 +84,7 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
     noMidLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
 
 #pragma omp parallel for
-    for (std::size_t y = 0; y < height; ++y)
+    for (int y = 0; y < static_cast<int>(height); ++y)
     {
         for (std::size_t x = 0; x < width; ++x)
         {
@@ -216,7 +216,7 @@ void hdrMerge::postProcessHighlight(const std::vector<image::Image<image::RGBfCo
     image::Image<float> isPixelClamped(width, height);
 
 #pragma omp parallel for
-    for (std::size_t y = 0; y < height; ++y)
+    for (int y = 0; y < static_cast<int>(height); ++y)
     {
         for (std::size_t x = 0; x < width; ++x)
         {
@@ -243,7 +243,7 @@ void hdrMerge::postProcessHighlight(const std::vector<image::Image<image::RGBfCo
     image::imageGaussianFilter(isPixelClamped, 1.0f, isPixelClamped_g, 3, 3);
 
 #pragma omp parallel for
-    for (std::size_t y = 0; y < height; ++y)
+    for (int y = 0; y < static_cast<int>(height); ++y)
     {
         for (std::size_t x = 0; x < width; ++x)
         {

@@ -372,7 +372,7 @@ bool extractSIFT(const image::Image<float>& image,
         std::vector<std::vector<double>> anglesPerKeypoint(filteredKeypointsIndex.size());
 
 #pragma omp parallel for
-        for (std::size_t ii = 0; ii < filteredKeypointsIndex.size(); ++ii)
+        for (int ii = 0; ii < static_cast<int>(filteredKeypointsIndex.size()); ++ii)
         {
             const int i = filteredKeypointsIndex[ii];
 
