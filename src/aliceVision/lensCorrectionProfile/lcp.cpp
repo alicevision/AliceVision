@@ -646,7 +646,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
         std::vector<int> candidatesHigh;
 
         // Search all possible low and high candidates
-        for (int i = 0; i < v_lensParams.size(); ++i)
+        for (std::size_t i = 0; i < v_lensParams.size(); ++i)
         {
             bool isCurrentValid = (mode == LCPCorrectionMode::DISTORTION && v_isDistortionValid[i]) ||
                                   (mode == LCPCorrectionMode::VIGNETTE && v_isVignetteValid[i]) ||
@@ -664,7 +664,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
 
         // If search mode is vignetting select low and high candidates with the closest aperture value.
         // If search mode is not vignetting select low and high candidates with the closest focus distance value.
-        for (int i = 0; i < candidatesLow.size(); ++i)
+        for (std::size_t i = 0; i < candidatesLow.size(); ++i)
         {
             bool update = false;
             if (mode == LCPCorrectionMode::VIGNETTE)
@@ -694,7 +694,7 @@ bool LCPinfo::search(settingsInfo& settings, LCPCorrectionMode mode, int& iLow, 
             }
         }
 
-        for (int i = 0; i < candidatesHigh.size(); ++i)
+        for (std::size_t i = 0; i < candidatesHigh.size(); ++i)
         {
             bool update = false;
             if (mode == LCPCorrectionMode::VIGNETTE)
