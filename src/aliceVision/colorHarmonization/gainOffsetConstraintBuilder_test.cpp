@@ -31,10 +31,10 @@ using namespace aliceVision::lInfinity;
 double const pi = 4.0 * std::atan(1.0);
 
 // simple functor for normal distribution
-class normal_distribution
+class NormalDistribution
 {
   public:
-    normal_distribution(double m, double s)
+    NormalDistribution(double m, double s)
       : mu(m),
         sigma(s)
     {}
@@ -55,24 +55,24 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset)
     utils::Histogram<double> histo(0, 256, 255);
     for (std::size_t i = 0; i < 6000; i++)
     {
-        histo.Add(normal_distribution(127, 10)());
+        histo.Add(NormalDistribution(127, 10)());
     }
 
     const size_t OFFET_VALUE = 20;
-    std::vector<std::size_t> vec_reference = histo.GetHist();
-    std::vector<std::size_t> vec_shifted = vec_reference;
-    rotate(vec_shifted.begin(), vec_shifted.begin() + OFFET_VALUE, vec_shifted.end());
+    std::vector<std::size_t> reference = histo.GetHist();
+    std::vector<std::size_t> shifted = reference;
+    rotate(shifted.begin(), shifted.begin() + OFFET_VALUE, shifted.end());
 
     //-- Try to solve the color consistency between the two histograms
     //-- We are looking for gain and offset parameter for each image {g;o}
     //--  and the upper bound precision found by Linfinity minimization.
-    std::vector<double> vec_solution(2 * 2 + 1);
+    std::vector<double> solution(2 * 2 + 1);
 
     //-- Setup the problem data in the container
-    std::vector<relativeColorHistogramEdge> vec_relativeHistograms;
-    vec_relativeHistograms.push_back(relativeColorHistogramEdge(0, 1, vec_reference, vec_shifted));
+    std::vector<relativeColorHistogramEdge> relativeHistograms;
+    relativeHistograms.push_back(relativeColorHistogramEdge(0, 1, reference, shifted));
     //-- First image will be considered as reference and don't move
-    std::vector<std::size_t> vec_indexToFix(1, 0);
+    std::vector<std::size_t> indexToFix(1, 0);
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
     typedef MOSEKSolver SOLVER_LP_T;
@@ -81,24 +81,24 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset)
 #endif
     // Red channel
     {
-        SOLVER_LP_T lpSolver(vec_solution.size());
+        SOLVER_LP_T lpSolver(solution.size());
 
-        GainOffsetConstraintBuilder cstBuilder(vec_relativeHistograms, vec_indexToFix);
+        GainOffsetConstraintBuilder cstBuilder(relativeHistograms, indexToFix);
         LPConstraintsSparse constraint;
         cstBuilder.Build(constraint);
         lpSolver.setup(constraint);
         lpSolver.solve();
-        lpSolver.getSolution(vec_solution);
+        lpSolver.getSolution(solution);
     }
 
     ALICEVISION_LOG_DEBUG("Found solution:");
-    std::copy(vec_solution.begin(), vec_solution.end(), std::ostream_iterator<double>(std::cout, " "));
+    std::copy(solution.begin(), solution.end(), std::ostream_iterator<double>(std::cout, " "));
 
-    double g0 = vec_solution[0];
-    double o0 = vec_solution[1];
-    double g1 = vec_solution[2];
-    double o1 = vec_solution[3];
-    double gamma = vec_solution[4];
+    double g0 = solution[0];
+    double o0 = solution[1];
+    double g1 = solution[2];
+    double o1 = solution[3];
+    double gamma = solution[4];
 
     BOOST_CHECK_SMALL(1. - g0, 1e-2);
     BOOST_CHECK_SMALL(0. - o0, 1e-2);
@@ -109,33 +109,33 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset)
 
 BOOST_AUTO_TEST_CASE(ColorHarmonisation_Offset_gain)
 {
-    utils::Histogram<double> histo_ref(0, 256, 255);
-    utils::Histogram<double> histo_offset_gain(0, 256, 255);
+    utils::Histogram<double> histoRef(0, 256, 255);
+    utils::Histogram<double> histoOffsetGain(0, 256, 255);
     const double GAIN = 3.0;
     const double OFFSET = 160;
     // const double GAIN = 2.0;
     // const double OFFSET = 50;
     for (std::size_t i = 0; i < 10000; i++)
     {
-        double val = normal_distribution(127, 10)();
-        histo_ref.Add(val);
-        histo_offset_gain.Add((val - 127) * GAIN + OFFSET);
+        double val = NormalDistribution(127, 10)();
+        histoRef.Add(val);
+        histoOffsetGain.Add((val - 127) * GAIN + OFFSET);
     }
-    std::vector<std::size_t> vec_reference = histo_ref.GetHist();
-    std::vector<std::size_t> vec_shifted = histo_offset_gain.GetHist();
+    std::vector<std::size_t> reference = histoRef.GetHist();
+    std::vector<std::size_t> shifted = histoOffsetGain.GetHist();
 
     //-- Try to solve the color consistency between the two histograms
     //-- We are looking for gain and offset parameter for each image {g;o}
     //--  and the upper bound precision found by Linfinity minimization.
-    std::vector<double> vec_solution(3 * 2 + 1);
+    std::vector<double> solution(3 * 2 + 1);
 
     //-- Setup the problem data in the container
-    std::vector<relativeColorHistogramEdge> vec_relativeHistograms;
-    vec_relativeHistograms.push_back(relativeColorHistogramEdge(0, 1, vec_reference, vec_shifted));
-    vec_relativeHistograms.push_back(relativeColorHistogramEdge(1, 2, vec_shifted, vec_reference));
-    vec_relativeHistograms.push_back(relativeColorHistogramEdge(0, 2, vec_reference, vec_reference));
+    std::vector<relativeColorHistogramEdge> relativeHistograms;
+    relativeHistograms.push_back(relativeColorHistogramEdge(0, 1, reference, shifted));
+    relativeHistograms.push_back(relativeColorHistogramEdge(1, 2, shifted, reference));
+    relativeHistograms.push_back(relativeColorHistogramEdge(0, 2, reference, reference));
     //-- First image will be considered as reference and don't move
-    std::vector<size_t> vec_indexToFix(1, 0);
+    std::vector<size_t> indexToFix(1, 0);
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
     typedef MOSEKSolver SOLVER_LP_T;
@@ -144,26 +144,26 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Offset_gain)
 #endif
     // Red channel
     {
-        SOLVER_LP_T lpSolver(vec_solution.size());
+        SOLVER_LP_T lpSolver(solution.size());
 
-        GainOffsetConstraintBuilder cstBuilder(vec_relativeHistograms, vec_indexToFix);
+        GainOffsetConstraintBuilder cstBuilder(relativeHistograms, indexToFix);
         LPConstraintsSparse constraint;
         cstBuilder.Build(constraint);
         lpSolver.setup(constraint);
         lpSolver.solve();
-        lpSolver.getSolution(vec_solution);
+        lpSolver.getSolution(solution);
     }
 
     ALICEVISION_LOG_DEBUG("Found solution:");
-    std::copy(vec_solution.begin(), vec_solution.end(), std::ostream_iterator<double>(std::cout, " "));
+    std::copy(solution.begin(), solution.end(), std::ostream_iterator<double>(std::cout, " "));
 
-    double g0 = vec_solution[0];
-    double o0 = vec_solution[1];
-    double g1 = vec_solution[2];
-    double o1 = vec_solution[3];
-    double g2 = vec_solution[4];
-    double o2 = vec_solution[5];
-    double gamma = vec_solution[6];
+    double g0 = solution[0];
+    double o0 = solution[1];
+    double g1 = solution[2];
+    double o1 = solution[3];
+    double g2 = solution[4];
+    double o2 = solution[5];
+    double gamma = solution[6];
 
     // The minimal solution must be {0,1,1/gain, 127-offset/gain,1,0}
     // gain and offset 2 must not move since it is equal to reference and link to the reference.
@@ -183,10 +183,10 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Offset_gain)
     {
         htmlDocument::JSXGraphWrapper jsxGraph;
         jsxGraph.init("test0", 600, 300);
-        jsxGraph.addYChart(histo_ref.GetHist(), "point");
+        jsxGraph.addYChart(histoRef.GetHist(), "point");
         jsxGraph.UnsuspendUpdate();
-        std::vector<double> xBin = histo_ref.GetXbinsValue();
-        std::pair<std::pair<double, double>, std::pair<double, double>> range = autoJSXGraphViewport<double>(xBin, histo_ref.GetHist());
+        std::vector<double> xBin = histoRef.GetXbinsValue();
+        std::pair<std::pair<double, double>, std::pair<double, double>> range = autoJSXGraphViewport<double>(xBin, histoRef.GetHist());
         jsxGraph.setViewport(range);
         jsxGraph.close();
         _htmlDocStream.pushInfo(jsxGraph.toStr());
@@ -195,10 +195,10 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Offset_gain)
     {
         htmlDocument::JSXGraphWrapper jsxGraph;
         jsxGraph.init("test1", 600, 300);
-        jsxGraph.addYChart(histo_offset_gain.GetHist(), "point");
+        jsxGraph.addYChart(histoOffsetGain.GetHist(), "point");
         jsxGraph.UnsuspendUpdate();
-        std::vector<double> xBin = histo_offset_gain.GetXbinsValue();
-        std::pair<std::pair<double, double>, std::pair<double, double>> range = autoJSXGraphViewport<double>(xBin, histo_offset_gain.GetHist());
+        std::vector<double> xBin = histoOffsetGain.GetXbinsValue();
+        std::pair<std::pair<double, double>, std::pair<double, double>> range = autoJSXGraphViewport<double>(xBin, histoOffsetGain.GetHist());
         jsxGraph.setViewport(range);
         jsxGraph.close();
         _htmlDocStream.pushInfo(jsxGraph.toStr());
