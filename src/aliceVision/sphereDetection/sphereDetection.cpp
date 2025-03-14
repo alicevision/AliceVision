@@ -154,7 +154,7 @@ Prediction predict(Ort::Session& session, const fs::path imagePath, const float 
     std::vector<float> scores;
 
     // Filter detections and fill arrays
-    for (size_t i = 0; i < shape[0]; ++i)
+    for (int i = 0; i < shape[0]; ++i)
     {
         float score = allScores.at(i);
         if (score > minScore)
