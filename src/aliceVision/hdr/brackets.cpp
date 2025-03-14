@@ -22,13 +22,10 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
         return false;
     }
 
-    const sfmData::Views& views = sfmData.getViews();
-
     std::set<float> fnumbers;
     std::vector<LuminanceInfo> luminances;
     for (auto& viewIt : sfmData.getViews())
     {
-        IndexT id = viewIt.first;
         auto view = viewIt.second; 
         if (view ==nullptr)
         {
@@ -112,8 +109,8 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& targetViews,
         {
             lines.push_back(line);
         }
-        if ((lines.size() < 3) || (std::stoi(lines[0]) != groups.size()) || (std::stoi(lines[1]) < groups[0].size()) ||
-            (lines.size() < 3 + std::stoi(lines[0]) * std::stoi(lines[1])))
+        if ((lines.size() < 3) || (std::stoi(lines[0]) != static_cast<int>(groups.size())) || (std::stoi(lines[1]) < static_cast<int>(groups[0].size())) ||
+            (static_cast<int>(lines.size()) < 3 + std::stoi(lines[0]) * std::stoi(lines[1])))
         {
             ALICEVISION_THROW_ERROR("File '" << lumaStatFilepath << "' is not a valid file");
         }
@@ -198,7 +195,7 @@ std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<Luminance
     //Remove symlinks
     //This will enable correct path comparison
     std::vector<LuminanceInfo> correctedPaths;
-    for (const auto item : luminanceInfos)
+    for (const auto &item : luminanceInfos)
     {
         if (!std::filesystem::exists(item.mpath))
         {
@@ -220,7 +217,7 @@ std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<Luminance
 
     //Split items per base directory
     std::vector<LuminanceInfo> current;
-    for (int index = 0; index < correctedPaths.size(); index++)
+    for (std::size_t index = 0; index < correctedPaths.size(); index++)
     {
         if (index == 0)
         {
@@ -257,7 +254,7 @@ std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<Lumina
     //(either increasing or decreasing)
     std::vector<LuminanceInfo> current;
     current.push_back(luminanceInfos[0]);
-    for (int index = 1; index < luminanceInfos.size(); index++)
+    for (std::size_t index = 1; index < luminanceInfos.size(); index++)
     {   
         float val = luminanceInfos[index].mexposure;
         float prev = luminanceInfos[index - 1].mexposure;
@@ -391,7 +388,7 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
             maxSize = item.second;
             bestBracketCount = item.first;
         }
-        else if (item.second == maxSize && item.first > bestBracketCount)
+        else if (item.second == maxSize && static_cast<int>(item.first) > bestBracketCount)
         {
             // If two brackets size have the same vote number,
             // keep the larger one (this avoids keeping only the outlier)
@@ -404,7 +401,7 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
     std::vector<std::vector<LuminanceInfo>> eraseds;
     while (groupIt != monotonics.end())
     {
-        if (groupIt->size() != bestBracketCount)
+        if (static_cast<int>(groupIt->size()) != bestBracketCount)
         {
             eraseds.push_back(*groupIt);
             groupIt = monotonics.erase(groupIt);
@@ -452,10 +449,10 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
 
     //check coherency
     bool coherency = true;
-    for (int idref = 1; idref < monotonics.size(); ++idref)
+    for (std::size_t idref = 1; idref < monotonics.size(); ++idref)
     {
-        const int idprev = idref - 1;
-        for (int idExposure = 0; idExposure < monotonics[idref].size(); ++idExposure)
+        const std::size_t idprev = idref - 1;
+        for (std::size_t idExposure = 0; idExposure < monotonics[idref].size(); ++idExposure)
         {
             if (!(monotonics[idref][idExposure].mexposure == monotonics[idprev][idExposure].mexposure))
             {
@@ -511,11 +508,11 @@ std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<Lum
         }
 
         //For each group of bracketSize items
-        for (int index = 0; index < item.size(); index += bracketSize)
+        for (std::size_t index = 0; index < item.size(); index += bracketSize)
         {   
             //Create a new set
             std::vector<LuminanceInfo> part;
-            for (int bracket = 0; bracket < bracketSize; bracket++)
+            for (unsigned int bracket = 0; bracket < bracketSize; bracket++)
             {
                 part.push_back(item[index + bracket]);
             }
@@ -526,10 +523,10 @@ std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<Lum
 
     //check coherency
     bool coherency = true;
-    for (int idref = 1; idref < divided.size(); ++idref)
+    for (std::size_t idref = 1; idref < divided.size(); ++idref)
     {
-        const int idprev = idref - 1;
-        for (int idExposure = 0; idExposure < divided[idref].size(); ++idExposure)
+        const std::size_t idprev = idref - 1;
+        for (std::size_t idExposure = 0; idExposure < divided[idref].size(); ++idExposure)
         {
             if (!(divided[idref][idExposure].mexposure == divided[idprev][idExposure].mexposure))
             {

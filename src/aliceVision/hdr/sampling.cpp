@@ -37,7 +37,7 @@ std::ostream& operator<<(std::ostream& os, const ImageSample& s)
     std::size_t size = s.descriptions.size();
     os.write((const char*)&size, sizeof(size));
 
-    for (int i = 0; i < s.descriptions.size(); ++i)
+    for (int i = 0; i < static_cast<int>(s.descriptions.size()); ++i)
     {
         os << s.descriptions[i];
     }
@@ -54,7 +54,7 @@ std::istream& operator>>(std::istream& is, ImageSample& s)
     is.read((char*)&size, sizeof(size));
     s.descriptions.resize(size);
 
-    for (int i = 0; i < size; ++i)
+    for (int i = 0; i < static_cast<int>(size); ++i)
     {
         is >> s.descriptions[i];
     }
@@ -164,10 +164,10 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
 
     std::vector<std::pair<int, int>> vec_blocks;
     const auto step = params.blockSize - diameter;
-    vec_blocks.reserve(int(imageHeight / step) * int(imageWidth / step));
-    for (int cy = 0; cy < imageHeight; cy += step)
+    vec_blocks.reserve(static_cast<int>(imageHeight / step) * static_cast<int>(imageWidth / step));
+    for (int cy = 0; cy < static_cast<int>(imageHeight); cy += step)
     {
-        for (int cx = 0; cx < imageWidth; cx += step)
+        for (int cx = 0; cx < static_cast<int>(imageWidth); cx += step)
         {
             vec_blocks.push_back(std::make_pair(cx, cy));
         }
@@ -184,7 +184,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
         // Load image
         readImage(imagePaths[idBracket], img, imgReadOptions);
 
-        if (img.width() != imageWidth || img.height() != imageHeight)
+        if (img.width() != static_cast<int>(imageWidth) || img.height() != static_cast<int>(imageHeight))
         {
             std::stringstream ss;
             ss << "Failed to extract samples, the images with multi-bracketing do not have the same image resolution.\n"
@@ -245,7 +245,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
         else
         {
 #pragma omp parallel for
-            for (int idx = 0; idx < vec_blocks.size(); ++idx)
+            for (int idx = 0; idx < static_cast<int>(vec_blocks.size()); ++idx)
             {
                 int cx = vec_blocks[idx].first;
                 int cy = vec_blocks[idx].second;
@@ -314,13 +314,11 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
                     continue;
                 }
 
-                int last_ok = 0;
-
                 // Make sure we don't have a patch with high variance on any bracket.
                 // If the variance is too high somewhere, ignore the whole coordinate samples
                 bool valid = true;
                 const float maxVariance = 0.05f;
-                for (int k = 0; k < sample.descriptions.size(); ++k)
+                for (int k = 0; k < static_cast<int>(sample.descriptions.size()); ++k)
                 {
                     if (sample.descriptions[k].variance.r() > maxVariance || sample.descriptions[k].variance.g() > maxVariance ||
                         sample.descriptions[k].variance.b() > maxVariance)
@@ -442,7 +440,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
                 const ImageSample& sample = samples(y, x);
                 UniqueDescriptor desc;
 
-                for (int k = 0; k < sample.descriptions.size(); ++k)
+                for (int k = 0; k < static_cast<int>(sample.descriptions.size()); ++k)
                 {
                     desc.exposure = sample.descriptions[k].exposure;
 
@@ -450,8 +448,8 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
                     {
                         desc.channel = channel;
                         // Get quantized value
-                        desc.quantizedValue = int(std::round(sample.descriptions[k].mean(channel) * (channelQuantization - 1)));
-                        if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization)
+                        desc.quantizedValue = static_cast<int>(std::round(sample.descriptions[k].mean(channel) * (channelQuantization - 1)));
+                        if (desc.quantizedValue < 0 || desc.quantizedValue >= static_cast<int>(channelQuantization))
                         {
                             continue;
                         }
@@ -462,7 +460,7 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
             }
         }
 
-        for (int i = 0; i < counters_vec.size(); ++i)
+        for (int i = 0; i < static_cast<int>(counters_vec.size()); ++i)
         {
             for (auto& item : counters_vec[i])
             {
@@ -587,7 +585,7 @@ void Sampling::extractUsefulSamples(std::vector<ImageSample>& out_samples, const
     {
         for (auto& pos : item.second)
         {
-            if (pos.imageIndex == imageIndex)
+            if (static_cast<int>(pos.imageIndex) == imageIndex)
             {
                 uniqueIndices.insert(pos.sampleIndex);
             }
