@@ -124,7 +124,7 @@ inline std::ostream& operator<<(std::ostream& os, const boost::any& value)
             if (!vect.empty())
             {
                 os << vect[0];
-                for (int i = 1; i < vect.size(); ++i)
+                for (int i = 1; i < static_cast<int>(vect.size()); ++i)
                     os << ", " << vect[i];
             }
             os << "]";
