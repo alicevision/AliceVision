@@ -16,8 +16,8 @@ ProgressDisplayImpl::~ProgressDisplayImpl() = default;
 class ProgressDisplayImplEmpty : public ProgressDisplayImpl
 {
   public:
-    void restart(unsigned long expectedCount) override {}
-    void increment(unsigned long count) override {}
+    void restart([[maybe_unused]] unsigned long expectedCount) override {}
+    void increment([[maybe_unused]] unsigned long count) override {}
     unsigned long count() override { return 0; }
     unsigned long expectedCount() override { return 0; }
 };
