@@ -110,56 +110,15 @@ alicevision_add_test(colmap_test.cpp
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set_property(SOURCE SfMDataIO.i PROPERTY CPLUSPLUS ON)
-    set_property(SOURCE SfMDataIO.i PROPERTY SWIG_MODULE_NAME sfmDataIO)
-
-    swig_add_library(sfmDataIO
-        TYPE MODULE
-        LANGUAGE python
+    alicevision_swig_add_library(sfmDataIO
         SOURCES SfMDataIO.i
-    )
-
-    if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR UNIX)
-        list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DLINUXPLATFORM")
-    endif()
-
-    set_property(
-        TARGET sfmDataIO
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
-    )
-
-    target_include_directories(sfmDataIO
-        PRIVATE
+        PUBLIC_LINKS
+            aliceVision_sfmDataIO
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
             ../include
             ${ALICEVISION_ROOT}/include
             ${Python3_INCLUDE_DIRS}
             ${Python3_NumPy_INCLUDE_DIRS}
-    )
-    set_property(
-        TARGET sfmDataIO
-        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
-    )
-    set_property(
-        TARGET sfmDataIO
-        PROPERTY COMPILE_OPTIONS -std=c++20
-    )
-
-    target_link_libraries(sfmDataIO
-        PUBLIC
-            aliceVision_sfmDataIO
-            ${Python3_LIBRARIES}
-    )
-
-    install(
-        TARGETS
-            sfmDataIO
-        DESTINATION
-            ${CMAKE_INSTALL_BINDIR}
-    )
-    install(
-        FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/sfmDataIO.py
-        DESTINATION
-            ${CMAKE_INSTALL_BINDIR}
     )
 endif()

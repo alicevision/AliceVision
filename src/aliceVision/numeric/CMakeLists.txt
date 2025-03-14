@@ -37,56 +37,15 @@ alicevision_add_test(gps_test.cpp NAME "numeric_gps" LINKS aliceVision_numeric)
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set_property(SOURCE numeric.i PROPERTY CPLUSPLUS ON)
-    set_property(SOURCE numeric.i PROPERTY SWIG_MODULE_NAME numeric)
-
-    swig_add_library(numeric
-        TYPE MODULE
-        LANGUAGE python
+    alicevision_swig_add_library(numeric
         SOURCES numeric.i
-    )
-
-    if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR UNIX)
-        list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DLINUXPLATFORM")
-    endif()
-
-    set_property(
-        TARGET numeric
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
-    )
-
-    target_include_directories(numeric
-    PRIVATE
-        ../include
-        ${ALICEVISION_ROOT}/include
-        ${Python3_INCLUDE_DIRS}
-        ${Python3_NumPy_INCLUDE_DIRS}
-    )
-    set_property(
-        TARGET numeric
-        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
-    )
-    set_property(
-        TARGET numeric
-        PROPERTY COMPILE_OPTIONS -std=c++20
-    )
-
-    target_link_libraries(numeric
-    PUBLIC
-        aliceVision_numeric
-        ${Python3_LIBRARIES}
-    )
-
-    install(
-    TARGETS
-    numeric
-    DESTINATION
-        ${CMAKE_INSTALL_BINDIR}
-    )
-    install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/numeric.py
-    DESTINATION
-        ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_LINKS
+            aliceVision_numeric
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
     )
 endif()

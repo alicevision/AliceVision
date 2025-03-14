@@ -61,56 +61,15 @@ alicevision_add_test(equidistant_test.cpp       NAME "camera_equidistant"       
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set_property(SOURCE Camera.i PROPERTY CPLUSPLUS ON)
-    set_property(SOURCE Camera.i PROPERTY SWIG_MODULE_NAME camera)
-
-    swig_add_library(camera
-        TYPE MODULE
-        LANGUAGE python
+    alicevision_swig_add_library(camera
         SOURCES Camera.i
-    )
-
-    if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR UNIX)
-        list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DLINUXPLATFORM")
-    endif()
-
-    set_property(
-        TARGET camera
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
-    )
-
-    target_include_directories(camera
-    PRIVATE
-        ../include
-        ${ALICEVISION_ROOT}/include
-        ${Python3_INCLUDE_DIRS}
-        ${Python3_NumPy_INCLUDE_DIRS}
-    )
-    set_property(
-        TARGET camera
-        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
-    )
-    set_property(
-        TARGET camera
-        PROPERTY COMPILE_OPTIONS -std=c++20
-    )
-
-    target_link_libraries(camera
-    PUBLIC
-        aliceVision_camera
-        ${Python3_LIBRARIES}
-    )
-
-    install(
-    TARGETS
-    camera
-    DESTINATION
-        ${CMAKE_INSTALL_BINDIR}
-    )
-    install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/camera.py
-    DESTINATION
-        ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_LINKS
+            aliceVision_camera
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
     )
 endif()

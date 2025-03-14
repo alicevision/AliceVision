@@ -29,56 +29,15 @@ alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase" LINKS 
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set_property(SOURCE SensorDB.i PROPERTY CPLUSPLUS ON)
-    set_property(SOURCE SensorDB.i PROPERTY SWIG_MODULE_NAME sensorDB)
-
-    swig_add_library(sensorDB
-        TYPE MODULE
-        LANGUAGE python
+    alicevision_swig_add_library(sensorDB
         SOURCES SensorDB.i
-    )
-
-    if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR UNIX)
-        list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DLINUXPLATFORM")
-    endif()
-
-    set_property(
-        TARGET sensorDB
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
-    )
-
-    target_include_directories(sensorDB
-    PRIVATE
-        ../include
-        ${ALICEVISION_ROOT}/include
-        ${Python3_INCLUDE_DIRS}
-        ${Python3_NumPy_INCLUDE_DIRS}
-    )
-    set_property(
-        TARGET sensorDB
-        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
-    )
-    set_property(
-        TARGET sensorDB
-        PROPERTY COMPILE_OPTIONS -std=c++20
-    )
-
-    target_link_libraries(sensorDB
-    PUBLIC
-        aliceVision_sensorDB
-        ${Python3_LIBRARIES}
-    )
-
-    install(
-    TARGETS
-        sensorDB
-    DESTINATION
-        ${CMAKE_INSTALL_BINDIR}
-    )
-    install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/sensorDB.py
-    DESTINATION
-        ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_LINKS
+            aliceVision_sensorDB
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
     )
 endif()
