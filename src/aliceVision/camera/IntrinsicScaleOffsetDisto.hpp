@@ -193,10 +193,7 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
         return params;
     }
 
-    std::size_t getParametersSize() const override
-    {
-        return 4;
-    }
+    std::size_t getParametersSize() const override { return 4; }
 
     // Data wrapper for non linear optimization (update from data)
     bool updateFromParams(const std::vector<double>& params) override;
@@ -250,7 +247,8 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
         return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
     }
 
-    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose, const Vec4& pt) const = 0;
+    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose,
+                                                                                                const Vec4& pt) const = 0;
 
     virtual Eigen::Matrix<double, 3, Eigen::Dynamic> getDerivativeBackProjectUnitWrtDistortion(const Vec2& pt2D) const = 0;
 

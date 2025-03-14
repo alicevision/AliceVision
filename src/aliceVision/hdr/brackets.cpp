@@ -26,8 +26,8 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     std::vector<LuminanceInfo> luminances;
     for (auto& viewIt : sfmData.getViews())
     {
-        auto view = viewIt.second; 
-        if (view ==nullptr)
+        auto view = viewIt.second;
+        if (view == nullptr)
         {
             continue;
         }
@@ -52,20 +52,20 @@ bool estimateBracketsFromSfmData(std::vector<std::vector<std::shared_ptr<sfmData
     }
 
     std::vector<std::vector<IndexT>> groupsids;
-    
+
     if (countBrackets == 0)
     {
         groupsids = estimateGroups(luminances);
-    } 
-    else 
+    }
+    else
     {
         groupsids = divideGroups(luminances, countBrackets);
     }
 
-    for (const auto & group : groupsids)
+    for (const auto& group : groupsids)
     {
         std::vector<std::shared_ptr<sfmData::View>> gview;
-        for (const auto & id : group)
+        for (const auto& id : group)
         {
             gview.push_back(sfmData.getViews().at(id));
         }
@@ -109,7 +109,8 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& targetViews,
         {
             lines.push_back(line);
         }
-        if ((lines.size() < 3) || (std::stoi(lines[0]) != static_cast<int>(groups.size())) || (std::stoi(lines[1]) < static_cast<int>(groups[0].size())) ||
+        if ((lines.size() < 3) || (std::stoi(lines[0]) != static_cast<int>(groups.size())) ||
+            (std::stoi(lines[1]) < static_cast<int>(groups[0].size())) ||
             (static_cast<int>(lines.size()) < 3 + std::stoi(lines[0]) * std::stoi(lines[1])))
         {
             ALICEVISION_THROW_ERROR("File '" << lumaStatFilepath << "' is not a valid file");
@@ -181,7 +182,7 @@ int selectTargetViews(std::vector<std::shared_ptr<sfmData::View>>& targetViews,
     return targetIndex;
 }
 
-std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<LuminanceInfo> & luminanceInfos)
+std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<LuminanceInfo>& luminanceInfos)
 {
     std::vector<std::vector<LuminanceInfo>> splitted;
 
@@ -190,12 +191,12 @@ std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<Luminance
         return splitted;
     }
 
-    //Ignore non existing files
-    //Remove relative paths
-    //Remove symlinks
-    //This will enable correct path comparison
+    // Ignore non existing files
+    // Remove relative paths
+    // Remove symlinks
+    // This will enable correct path comparison
     std::vector<LuminanceInfo> correctedPaths;
-    for (const auto &item : luminanceInfos)
+    for (const auto& item : luminanceInfos)
     {
         if (!std::filesystem::exists(item.mpath))
         {
@@ -208,14 +209,11 @@ std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<Luminance
         correctedPaths.push_back(corrected);
     }
 
-    //Sort luminanceinfos by names
-    std::sort(correctedPaths.begin(),
-              correctedPaths.end(),
-              [](const LuminanceInfo& a, const LuminanceInfo& b) -> bool {
-                return (a.mpath < b.mpath);
-              });
+    // Sort luminanceinfos by names
+    std::sort(
+      correctedPaths.begin(), correctedPaths.end(), [](const LuminanceInfo& a, const LuminanceInfo& b) -> bool { return (a.mpath < b.mpath); });
 
-    //Split items per base directory
+    // Split items per base directory
     std::vector<LuminanceInfo> current;
     for (std::size_t index = 0; index < correctedPaths.size(); index++)
     {
@@ -233,7 +231,7 @@ std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<Luminance
             splitted.push_back(current);
             current.clear();
         }
-        
+
         current.push_back(correctedPaths[index]);
     }
     splitted.push_back(current);
@@ -241,7 +239,7 @@ std::vector<std::vector<LuminanceInfo>> splitBasedir(const std::vector<Luminance
     return splitted;
 }
 
-std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<LuminanceInfo> & luminanceInfos)
+std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<LuminanceInfo>& luminanceInfos)
 {
     std::vector<std::vector<LuminanceInfo>> splitted;
 
@@ -250,20 +248,19 @@ std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<Lumina
         return splitted;
     }
 
-    //Split the luminanceInfos into groups which have monotonic values 
+    // Split the luminanceInfos into groups which have monotonic values
     //(either increasing or decreasing)
     std::vector<LuminanceInfo> current;
     current.push_back(luminanceInfos[0]);
     for (std::size_t index = 1; index < luminanceInfos.size(); index++)
-    {   
+    {
         float val = luminanceInfos[index].mexposure;
         float prev = luminanceInfos[index - 1].mexposure;
-
 
         if (val == prev)
         {
             splitted.push_back(current);
-            
+
             current.clear();
             current.push_back(luminanceInfos[index]);
             continue;
@@ -277,7 +274,7 @@ std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<Lumina
 
         float next = luminanceInfos[index + 1].mexposure;
 
-        //If sign is negative, then the function is not locally monotonic
+        // If sign is negative, then the function is not locally monotonic
         float sign = (next - val) * (val - prev);
 
         if (sign < 0)
@@ -285,7 +282,7 @@ std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<Lumina
             current.push_back(luminanceInfos[index]);
             splitted.push_back(current);
             current.clear();
-            //Extremity is added on both groups
+            // Extremity is added on both groups
             current.push_back(luminanceInfos[index]);
         }
         else
@@ -294,29 +291,29 @@ std::vector<std::vector<LuminanceInfo>> splitMonotonics(const std::vector<Lumina
         }
     }
 
-    //Close the last group
+    // Close the last group
     splitted.push_back(current);
 
     return splitted;
 }
 
 /**
-* @brief assume ref is smaller than larger
-* Try to find a subpart of larger which has the same set of exposures that smaller
-* @param smaller the set to compare
-* @param larger the set where the subpart should be
-* @return the index of the subpart or -1 if not found
-*/
-int extractIndex(const std::vector<LuminanceInfo> & smaller, const std::vector<LuminanceInfo> & larger)
+ * @brief assume ref is smaller than larger
+ * Try to find a subpart of larger which has the same set of exposures that smaller
+ * @param smaller the set to compare
+ * @param larger the set where the subpart should be
+ * @return the index of the subpart or -1 if not found
+ */
+int extractIndex(const std::vector<LuminanceInfo>& smaller, const std::vector<LuminanceInfo>& larger)
 {
     int largerSize = larger.size();
     int smallerSize = smaller.size();
     int diff = largerSize - smallerSize;
 
-    //For all continuous subparts of the erased sequence
+    // For all continuous subparts of the erased sequence
     for (int indexStart = 0; indexStart < diff; indexStart++)
     {
-        //Check that the subpart is the same set of exposures
+        // Check that the subpart is the same set of exposures
         bool allCorrect = true;
         for (int pos = 0; pos < smallerSize; pos++)
         {
@@ -335,8 +332,7 @@ int extractIndex(const std::vector<LuminanceInfo> & smaller, const std::vector<L
     return -1;
 }
 
-
-std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo> & luminanceInfos)
+std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>& luminanceInfos)
 {
     std::vector<std::vector<IndexT>> groups;
     if (luminanceInfos.size() == 0)
@@ -344,24 +340,20 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
         return groups;
     }
 
-    //Split and order the items using path
+    // Split and order the items using path
     std::vector<std::vector<LuminanceInfo>> splitted = splitBasedir(luminanceInfos);
-    //Create monotonic groups
+    // Create monotonic groups
     std::vector<std::vector<LuminanceInfo>> monotonics;
-    for (const auto & luminanceInfoOneDir : splitted)
+    for (const auto& luminanceInfoOneDir : splitted)
     {
         std::vector<std::vector<LuminanceInfo>> lmonotonics = splitMonotonics(luminanceInfoOneDir);
         monotonics.insert(monotonics.end(), lmonotonics.begin(), lmonotonics.end());
     }
 
-    //Sort the voters groups by exposure increasing
-    for (auto & group : monotonics)
+    // Sort the voters groups by exposure increasing
+    for (auto& group : monotonics)
     {
-        std::sort(group.begin(), 
-                  group.end(), 
-                  [](const LuminanceInfo& a, const LuminanceInfo& b) {
-                    return (a.mexposure < b.mexposure);
-                  });
+        std::sort(group.begin(), group.end(), [](const LuminanceInfo& a, const LuminanceInfo& b) { return (a.mexposure < b.mexposure); });
     }
 
     // Vote for the best bracket count
@@ -412,19 +404,18 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
         }
     }
 
-    //Try to push back erased
-    for (const auto & erased: eraseds)
+    // Try to push back erased
+    for (const auto& erased : eraseds)
     {
-        //If erased is larger than the most voted, then 
-        //Maybe it contains outliers. Try to find a correct subpart
+        // If erased is larger than the most voted, then
+        // Maybe it contains outliers. Try to find a correct subpart
         int diff = int(erased.size()) - bestBracketCount;
         if (diff < 0)
         {
             continue;
         }
-        
 
-        //Compare with all valid monotonics
+        // Compare with all valid monotonics
         int offset = -1;
         for (const auto& monotonic : monotonics)
         {
@@ -435,7 +426,7 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
             }
         }
 
-        //If something found, put it back on list of monotonics
+        // If something found, put it back on list of monotonics
         if (offset >= 0)
         {
             std::vector<LuminanceInfo> subpart;
@@ -447,7 +438,7 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
         }
     }
 
-    //check coherency
+    // check coherency
     bool coherency = true;
     for (std::size_t idref = 1; idref < monotonics.size(); ++idref)
     {
@@ -460,7 +451,7 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
                 Most likely the dataset has been captured with an automatic exposure mode enabled.\
                 Final result can be impacted.");
                 coherency = false;
-                
+
                 break;
             }
         }
@@ -471,22 +462,22 @@ std::vector<std::vector<IndexT>> estimateGroups(const std::vector<LuminanceInfo>
         }
     }
 
-    for (const auto & monotonic : monotonics)
+    for (const auto& monotonic : monotonics)
     {
         std::vector<IndexT> group;
-        for (const auto & li : monotonic)
+        for (const auto& li : monotonic)
         {
             group.push_back(li.mviewId);
         }
         groups.push_back(group);
     }
 
-    ALICEVISION_LOG_INFO("Groups found : "  << monotonics.size());
+    ALICEVISION_LOG_INFO("Groups found : " << monotonics.size());
 
     return groups;
 }
 
-std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<LuminanceInfo> & luminanceInfos, unsigned bracketSize)
+std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<LuminanceInfo>& luminanceInfos, unsigned bracketSize)
 {
     std::vector<std::vector<IndexT>> groups;
     if (luminanceInfos.size() == 0)
@@ -494,12 +485,12 @@ std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<Lum
         return groups;
     }
 
-    //Split and order the items using path
+    // Split and order the items using path
     std::vector<std::vector<LuminanceInfo>> splitted = splitBasedir(luminanceInfos);
 
     std::vector<std::vector<LuminanceInfo>> divided;
 
-    for (const auto & item : splitted)
+    for (const auto& item : splitted)
     {
         if (item.size() % bracketSize != 0)
         {
@@ -507,10 +498,10 @@ std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<Lum
             return groups;
         }
 
-        //For each group of bracketSize items
+        // For each group of bracketSize items
         for (std::size_t index = 0; index < item.size(); index += bracketSize)
-        {   
-            //Create a new set
+        {
+            // Create a new set
             std::vector<LuminanceInfo> part;
             for (unsigned int bracket = 0; bracket < bracketSize; bracket++)
             {
@@ -521,7 +512,7 @@ std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<Lum
         }
     }
 
-    //check coherency
+    // check coherency
     bool coherency = true;
     for (std::size_t idref = 1; idref < divided.size(); ++idref)
     {
@@ -534,7 +525,7 @@ std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<Lum
                 Most likely the dataset has been captured with an automatic exposure mode enabled.\
                 Final result can be impacted.");
                 coherency = false;
-                
+
                 break;
             }
         }
@@ -545,10 +536,10 @@ std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<Lum
         }
     }
 
-    for (const auto & item : divided)
+    for (const auto& item : divided)
     {
         std::vector<IndexT> group;
-        for (const auto & li : item)
+        for (const auto& li : item)
         {
             group.push_back(li.mviewId);
         }

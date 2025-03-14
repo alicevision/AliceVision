@@ -104,8 +104,8 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
             for (std::size_t channel = 0; channel < 3; ++channel)
             {
                 int firstIndex = mergingParams.refImageIndex;
-                while (firstIndex > 0 &&
-                       (response(images[firstIndex](y, x)(channel), channel) > v_minValue[channel] || firstIndex == static_cast<int>(images.size()) - 1))
+                while (firstIndex > 0 && (response(images[firstIndex](y, x)(channel), channel) > v_minValue[channel] ||
+                                          firstIndex == static_cast<int>(images.size()) - 1))
                 {
                     firstIndex--;
                 }

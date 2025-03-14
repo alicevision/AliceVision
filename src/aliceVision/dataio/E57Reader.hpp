@@ -18,7 +18,7 @@ namespace dataio {
 
 class E57Reader
 {
-public: 
+  public:
     struct PointInfo
     {
         unsigned short idMesh;
@@ -26,17 +26,14 @@ public:
         float intensity;
     };
 
-public:
-    E57Reader(const std::vector<std::string> & paths)
-    : 
-    _paths(paths),
-    _idPath(-1),
-    _idMesh(-1),
-    _countMeshesForFile(0),
-    _requiredIntensity(0.0)
-    {
-
-    }
+  public:
+    E57Reader(const std::vector<std::string>& paths)
+      : _paths(paths),
+        _idPath(-1),
+        _idMesh(-1),
+        _countMeshesForFile(0),
+        _requiredIntensity(0.0)
+    {}
 
     void reset()
     {
@@ -45,7 +42,7 @@ public:
         _countMeshesForFile = 0;
     }
 
-    bool getNext(Eigen::Vector3d & sensorPosition, std::vector<PointInfo> & vertices, Eigen::Matrix<size_t, -1, -1> & grid)
+    bool getNext(Eigen::Vector3d& sensorPosition, std::vector<PointInfo>& vertices, Eigen::Matrix<size_t, -1, -1>& grid)
     {
         // Go to next mesh of current file
         _idMesh++;
@@ -96,10 +93,7 @@ public:
         }
 
         // Get sensor pose (worldTsensor)
-        Eigen::Quaternion<double> q(scanHeader.pose.rotation.w, 
-                                    scanHeader.pose.rotation.x, 
-                                    scanHeader.pose.rotation.y, 
-                                    scanHeader.pose.rotation.z);
+        Eigen::Quaternion<double> q(scanHeader.pose.rotation.w, scanHeader.pose.rotation.x, scanHeader.pose.rotation.y, scanHeader.pose.rotation.z);
 
         Eigen::Matrix3d R = q.normalized().toRotationMatrix();
 
@@ -128,7 +122,7 @@ public:
         vertices.clear();
         vertices.reserve(countPoints);
 
-        //Prepare structured grid for sensor
+        // Prepare structured grid for sensor
         grid.resize(maxRows, maxColumns);
         grid.fill(std::numeric_limits<size_t>::max());
 
@@ -172,7 +166,7 @@ public:
                 {
                     continue;
                 }
-                
+
                 if (data3DPoints.intensity[pos] < _requiredIntensity)
                 {
                     continue;
@@ -199,7 +193,7 @@ public:
         return true;
     }
 
-    bool getNext(Eigen::Vector3d & sensorPosition)
+    bool getNext(Eigen::Vector3d& sensorPosition)
     {
         // Go to next mesh of current file
         _idMesh++;
@@ -260,17 +254,11 @@ public:
         return true;
     }
 
-    int getIdMesh()
-    {
-        return _idMesh;
-    }
+    int getIdMesh() { return _idMesh; }
 
-    void setRequiredIntensity(double requirement)
-    {
-        _requiredIntensity = requirement;
-    }
+    void setRequiredIntensity(double requirement) { _requiredIntensity = requirement; }
 
-private:
+  private:
     std::vector<std::string> _paths;
     std::unique_ptr<e57::Reader> _reader;
 

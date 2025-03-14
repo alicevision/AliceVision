@@ -13,28 +13,19 @@ namespace track {
 
 class TracksHandler
 {
-public:
-    bool load(const std::string & pathJson, const std::set<IndexT> & viewIds);
+  public:
+    bool load(const std::string& pathJson, const std::set<IndexT>& viewIds);
 
-    const track::TracksMap & getAllTracks() const
-    {
-        return _mapTracks;
-    }
+    const track::TracksMap& getAllTracks() const { return _mapTracks; }
 
-    track::TracksMap & getAllTracksMutable()
-    {
-        return _mapTracks;
-    }
+    track::TracksMap& getAllTracksMutable() { return _mapTracks; }
 
-    const track::TracksPerView & getTracksPerView() const
-    {
-        return _mapTracksPerView;
-    }
+    const track::TracksPerView& getTracksPerView() const { return _mapTracksPerView; }
 
-private:
+  private:
     track::TracksPerView _mapTracksPerView;
     track::TracksMap _mapTracks;
 };
 
-}
-}
+}  // namespace track
+}  // namespace aliceVision

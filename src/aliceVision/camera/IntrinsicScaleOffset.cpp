@@ -169,12 +169,12 @@ double IntrinsicScaleOffset::getFocalLength() const
     // The bigger the scale or focal (which have the same direction)
     // The smaller the observed area
     const double focalInMillimeters = fx * sensorWidth() / maxSize;
-    
+
     // Pixel aspect ratio is the how the x dimension is stretched
     // That means that it enlarge the observed area
     // That means a larger pixel ratio leads to a smaller focal (in X).
     const double pixelAspectRatio = getPixelAspectRatio();
-    
+
     // Assuming the focal length is *ignoring* the stretch
     // Thus the returned focal is the bigger focal canceling the pixelAspectRatio
     return focalInMillimeters * pixelAspectRatio;
@@ -190,17 +190,17 @@ double IntrinsicScaleOffset::getInitialFocalLength() const
         return -1.0;
     }
 
-    //The bigger the scale or focal (which have the same direction)
-    //The smaller the observed area
+    // The bigger the scale or focal (which have the same direction)
+    // The smaller the observed area
     const double focalInMillimeters = fx * sensorWidth() / maxSize;
-    
-    //Pixel aspect ratio is the how the x dimension is stretched
-    //That means that it enlarge the observed area
-    //That means a larger pixel ratio leads to a smaller focal (in X).
+
+    // Pixel aspect ratio is the how the x dimension is stretched
+    // That means that it enlarge the observed area
+    // That means a larger pixel ratio leads to a smaller focal (in X).
     const double pixelAspectRatio = getPixelAspectRatio();
-    
-    //Assuming the focal length is *ignoring* the stretch
-    //Thus the returned focal is the bigger focal canceling the pixelAspectRatio
+
+    // Assuming the focal length is *ignoring* the stretch
+    // Thus the returned focal is the bigger focal canceling the pixelAspectRatio
     return focalInMillimeters * pixelAspectRatio;
 }
 
@@ -224,9 +224,9 @@ void IntrinsicScaleOffset::setFocalLength(double focalInMillimeters, double pixe
         _scale(0) = focalInMillimeters * millimetersToPixels;
         _scale(1) = focalInMillimetersY * millimetersToPixels;
     }
-    else 
+    else
     {
-        //We assume focalInMillimeters ignore the pixelAspectRatio in X
+        // We assume focalInMillimeters ignore the pixelAspectRatio in X
         const double focalInMillimetersX = focalInMillimeters / pixelAspectRatio;
         const double millimetersToPixels = double(w()) / sensorWidth();
         _scale(0) = focalInMillimetersX * millimetersToPixels;
@@ -243,23 +243,22 @@ void IntrinsicScaleOffset::setInitialFocalLength(double initialFocalInMillimeter
     }
 
     const double millimetersToPixels = double(w()) / sensorWidth();
-    
+
     if (useCompatibility)
     {
-        //We assume focalInMillimeters ignore the pixelAspectRatio in X
+        // We assume focalInMillimeters ignore the pixelAspectRatio in X
         const double initialFocalInMillimetersY = initialFocalInMillimeters * pixelAspectRatio;
         _initialScale(0) = initialFocalInMillimeters * millimetersToPixels;
         _initialScale(1) = initialFocalInMillimetersY * millimetersToPixels;
     }
     else
     {
-        //We assume focalInMillimeters ignore the pixelAspectRatio in X
+        // We assume focalInMillimeters ignore the pixelAspectRatio in X
         const double initialFocalInMillimetersX = initialFocalInMillimeters / pixelAspectRatio;
         _initialScale(0) = initialFocalInMillimetersX * millimetersToPixels;
         _initialScale(1) = initialFocalInMillimeters * millimetersToPixels;
     }
 }
-
 
 }  // namespace camera
 }  // namespace aliceVision

@@ -32,15 +32,9 @@ class Equirectangular : public IntrinsicScaleOffsetDisto
       : Equirectangular(1, 1, 1.0, 1.0, 0.0, 0.0)
     {}
 
-    Equirectangular(unsigned int w,
-                unsigned int h,
-                double focalLengthPixX,
-                double focalLengthPixY,
-                double offsetX,
-                double offsetY)
+    Equirectangular(unsigned int w, unsigned int h, double focalLengthPixX, double focalLengthPixY, double offsetX, double offsetY)
       : IntrinsicScaleOffsetDisto(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY)
     {}
-
 
     ~Equirectangular() override = default;
 
@@ -109,11 +103,10 @@ class Equirectangular : public IntrinsicScaleOffsetDisto
      */
     double getVerticalFov() const override;
 
-
     /**
      * @brief how a one pixel change relates to an angular change
      * @return a value in radians
-    */
+     */
     double pixelProbability() const override;
 };
 

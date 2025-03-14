@@ -73,7 +73,6 @@ class Distortion
 
     virtual ~Distortion() = default;
 
-
   protected:
     std::vector<double> _distortionParams{};
     bool _isLocked{false};

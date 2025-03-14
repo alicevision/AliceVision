@@ -11,7 +11,6 @@
 namespace aliceVision {
 namespace hdr {
 
-
 struct LuminanceInfo
 {
     aliceVision::IndexT mviewId;
@@ -20,13 +19,11 @@ struct LuminanceInfo
 
     LuminanceInfo() = default;
 
-    LuminanceInfo(aliceVision::IndexT vid, const std::string & path, float exposure):
-        mviewId(vid),
+    LuminanceInfo(aliceVision::IndexT vid, const std::string& path, float exposure)
+      : mviewId(vid),
         mpath(path),
         mexposure(exposure)
-    {
-
-    }
+    {}
 };
 
 enum class ECalibrationMethod
@@ -128,22 +125,20 @@ int selectTargetViews(std::vector<std::shared_ptr<aliceVision::sfmData::View>>& 
                       const std::string& targetIndexesFilename,
                       const double meanTargetedLuma = 0.4);
 
-
-
 /**
  * @brief compute a set of group of viewids
  * Each group should be the brackets of the same image
  * @param luminanceInfos the input information about each image
-*/
-std::vector<std::vector<aliceVision::IndexT>> estimateGroups(const std::vector<LuminanceInfo> & luminanceInfos);
+ */
+std::vector<std::vector<aliceVision::IndexT>> estimateGroups(const std::vector<LuminanceInfo>& luminanceInfos);
 
 /**
  * @brief build a set of group of viewids
  * Each group should be the brackets of the same image
  * @param luminanceInfos the input information about each image
  * @param bracketSize the number of brackets per hdr image (not estimated)
-*/
-std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<LuminanceInfo> & luminanceInfos, unsigned bracketSize);
+ */
+std::vector<std::vector<aliceVision::IndexT>> divideGroups(const std::vector<LuminanceInfo>& luminanceInfos, unsigned bracketSize);
 
 }  // namespace hdr
 }  // namespace aliceVision

@@ -29,7 +29,7 @@ class IntrinsicBase
   public:
     using sptr = std::shared_ptr<IntrinsicBase>;
     using ptr = IntrinsicBase*;
-    
+
   public:
     explicit IntrinsicBase(unsigned int width, unsigned int height, const std::string& serialNumber = "")
       : _w(width),
@@ -127,7 +127,10 @@ class IntrinsicBase
      * @param[in] depth The depth
      * @return The 3D point
      */
-    Vec3 backprojectTransform(const Vec2& pt2D, bool applyUndistortion = true, const geometry::Pose3& pose = geometry::Pose3(), double depth = 1.0) const;
+    Vec3 backprojectTransform(const Vec2& pt2D,
+                              bool applyUndistortion = true,
+                              const geometry::Pose3& pose = geometry::Pose3(),
+                              double depth = 1.0) const;
 
     /**
      * @brief Back-projection of a 2D point on a unitsphere
@@ -140,7 +143,6 @@ class IntrinsicBase
 
     Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(const Vec3& pt);
 
-  
     /**
      * @brief Get the derivative of a projection of a 3D point into the camera plane
      * @param[in] pose The pose
@@ -177,7 +179,7 @@ class IntrinsicBase
         // We will compare to an undistorted point, so always ignore the distortion when computing coordinates
         const Vec2 proj = this->transformProject(pose, X, false);
 
-        return ((applyDistortion)?this->getUndistortedPixel(x):x) - proj;
+        return ((applyDistortion) ? this->getUndistortedPixel(x) : x) - proj;
     }
 
     /**
@@ -367,7 +369,7 @@ class IntrinsicBase
     /**
      * @brief What is the probability of a pixel wrt the whole fov
      * @return a value in radians
-    */
+     */
     virtual double pixelProbability() const = 0;
 
     /**
@@ -443,7 +445,7 @@ class IntrinsicBase
      * The estimator state is used in the bundle adjustment to decide if we update it.
      * It is set to constant if the intrinsic is locked
      * It is set to refined if unlocked
-    */
+     */
     virtual void initializeState()
     {
         if (_locked)
@@ -455,17 +457,17 @@ class IntrinsicBase
             _state = EEstimatorParameterState::REFINED;
         }
     }
-    
+
     /**
      * @brief accessor to estimator state
      * @return a state
-    */
+     */
     EEstimatorParameterState getState() const { return _state; }
 
     /**
      * @brief mutator for the estimator state
      * @param state the new state of the intrinsic
-    */
+     */
     void setState(EEstimatorParameterState state) { _state = state; }
 
   protected:
@@ -549,6 +551,5 @@ inline double angleBetweenRays(const geometry::Pose3& pose1, const geometry::Pos
 }
 
 }  // namespace camera
-
 
 }  // namespace aliceVision
