@@ -51,11 +51,11 @@ public:
         _idMesh++;
 
         // Load next file if needed
-        if (_idMesh >= _countMeshesForFile)
+        if (_idMesh >= static_cast<int>(_countMeshesForFile))
         {
             _idPath++;
             _idMesh = 0;
-            if (_idPath >= _paths.size())
+            if (_idPath >= static_cast<int>(_paths.size()))
             {
                 return false;
             }
@@ -77,7 +77,7 @@ public:
             _countMeshesForFile = _reader->GetData3DCount();
         }
 
-        if (_idMesh >= _countMeshesForFile)
+        if (_idMesh >= static_cast<int>(_countMeshesForFile))
         {
             return false;
         }
@@ -132,7 +132,7 @@ public:
         grid.resize(maxRows, maxColumns);
         grid.fill(std::numeric_limits<size_t>::max());
 
-        unsigned readCount = 0;
+        unsigned int readCount = 0;
         while ((readCount = datareader.read()) > 0)
         {
             // Check input compatibility
@@ -166,7 +166,7 @@ public:
                 continue;
             }
 
-            for (int pos = 0; pos < readCount; pos++)
+            for (unsigned int pos = 0; pos < readCount; pos++)
             {
                 if (data3DPoints.cartesianInvalidState[pos])
                 {
@@ -205,11 +205,11 @@ public:
         _idMesh++;
 
         // Load next file if needed
-        if (_idMesh >= _countMeshesForFile)
+        if (_idMesh >= static_cast<int>(_countMeshesForFile))
         {
             _idPath++;
             _idMesh = 0;
-            if (_idPath >= _paths.size())
+            if (_idPath >= static_cast<int>(_paths.size()))
             {
                 return false;
             }
@@ -231,7 +231,7 @@ public:
             _countMeshesForFile = _reader->GetData3DCount();
         }
 
-        if (_idMesh >= _countMeshesForFile)
+        if (_idMesh >= static_cast<int>(_countMeshesForFile))
         {
             return false;
         }
@@ -250,13 +250,6 @@ public:
         }
 
         // Get sensor pose (worldTsensor)
-        Eigen::Quaternion<double> q(scanHeader.pose.rotation.w, 
-                                    scanHeader.pose.rotation.x, 
-                                    scanHeader.pose.rotation.y, 
-                                    scanHeader.pose.rotation.z);
-
-        Eigen::Matrix3d R = q.normalized().toRotationMatrix();
-
         Eigen::Vector3d t;
         t(0) = scanHeader.pose.translation.x;
         t(1) = scanHeader.pose.translation.y;

@@ -2,7 +2,7 @@
 
 namespace aliceVision 
 {
-std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_code& ec)
+std::vector<boost::json::value> readJsons(std::istream& is, boost::system::error_code& ec)
 {
     std::vector<boost::json::value> jvs;
     boost::json::stream_parser p;
