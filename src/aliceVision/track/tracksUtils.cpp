@@ -170,7 +170,7 @@ void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
 
     // sort tracks Ids in each view
 #pragma omp parallel for
-    for (int i = 0; i < tracksPerView.size(); ++i)
+    for (std::size_t i = 0; i < tracksPerView.size(); ++i)
     {
         TracksPerView::iterator it = tracksPerView.begin();
         std::advance(it, i);
