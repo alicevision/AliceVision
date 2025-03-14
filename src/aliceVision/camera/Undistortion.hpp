@@ -130,7 +130,7 @@ class Undistortion
             return;
         }
 
-        for (int i = 0; i < _undistortionParams.size(); i++)
+        for (std::size_t i = 0; i < _undistortionParams.size(); i++)
         {
             _undistortionParams[i] = params[i];
         }

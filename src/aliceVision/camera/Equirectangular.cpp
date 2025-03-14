@@ -17,7 +17,7 @@ std::shared_ptr<Equirectangular> Equirectangular::cast(std::shared_ptr<Intrinsic
     return std::dynamic_pointer_cast<Equirectangular>(sptr);
 }
 
-Vec2 Equirectangular::transformProject(const Eigen::Matrix4d& pose, const Vec4& pt, bool applyDistortion) const
+Vec2 Equirectangular::transformProject(const Eigen::Matrix4d& pose, const Vec4& pt, [[maybe_unused]] bool applyDistortion) const
 {
     Vec4 X = pose * pt;
     Vec3 spherical = X.head(3).normalized();
@@ -31,7 +31,7 @@ Vec2 Equirectangular::transformProject(const Eigen::Matrix4d& pose, const Vec4& 
     return imapt;
 }
 
-Vec2 Equirectangular::project(const Vec4& pt, bool applyDistortion) const
+Vec2 Equirectangular::project(const Vec4& pt, [[maybe_unused]] bool applyDistortion) const
 {
     Vec3 spherical = pt.head(3).normalized();
 
@@ -44,7 +44,7 @@ Vec2 Equirectangular::project(const Vec4& pt, bool applyDistortion) const
     return imapt;
 }
 
-Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& T, const Vec4& pt) const
+Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtPoint3([[maybe_unused]] const Eigen::Matrix4d& T, const Vec4& pt) const
 {   
     Vec3 spherical = pt.head(3).normalized();
     
@@ -84,12 +84,12 @@ Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtPoi
     return getDerivativeCam2ImaWrtPoint() * d_coords_d_spherical * d_spherical_d_pt3;
 }
 
-Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtDisto(const Eigen::Matrix4d& pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtDisto([[maybe_unused]] const Eigen::Matrix4d& pose, [[maybe_unused]] const Vec4& pt) const
 {
     return Eigen::Matrix<double, 2, 3>::Zero();
 }
 
-Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtScale(const Eigen::Matrix4d& pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtScale([[maybe_unused]] const Eigen::Matrix4d& pose, const Vec4& pt) const
 {
     Vec3 spherical = pt.head(3).normalized();
 
@@ -100,7 +100,7 @@ Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtSca
     return getDerivativeCam2ImaWrtScale(angles);
 }
 
-Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtPrincipalPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtPrincipalPoint([[maybe_unused]] const Eigen::Matrix4d& pose, [[maybe_unused]] const Vec4& pt) const
 {
     return getDerivativeCam2ImaWrtPrincipalPoint();
 }
@@ -152,7 +152,6 @@ Eigen::Matrix<double, 3, 2> Equirectangular::getDerivativetoUnitSphereWrtPoint(c
 Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProjectUnitWrtParams(const Vec2& pt2D) const 
 {
     const Vec2 ptMeters = ima2cam(pt2D);
-    const Vec3 ptSphere = toUnitSphere(ptMeters);
 
     Eigen::Matrix<double, 3, Eigen::Dynamic> ret(3, 4);
 
@@ -164,19 +163,19 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProje
     return ret;
 }
 
-Eigen::Matrix<double, 2, Eigen::Dynamic> Equirectangular::getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, Eigen::Dynamic> Equirectangular::getDerivativeTransformProjectWrtDistortion([[maybe_unused]] const Eigen::Matrix4d& pose, [[maybe_unused]] const Vec4& pt) const
 {
     return Eigen::Matrix<double, 2, 1>::Zero();
 }
 
-Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProjectUnitWrtDistortion(const Vec2& pt2D) const
+Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProjectUnitWrtDistortion([[maybe_unused]] const Vec2& pt2D) const
 {
     return Eigen::Matrix<double, 3, 1>::Zero();
 }
 
-double Equirectangular::imagePlaneToCameraPlaneError(double value) const { return 0.0; }
+double Equirectangular::imagePlaneToCameraPlaneError([[maybe_unused]] double value) const { return 0.0; }
 
-bool Equirectangular::isVisibleRay(const Vec3& ray) const
+bool Equirectangular::isVisibleRay([[maybe_unused]] const Vec3& ray) const
 {
     return true;
 }

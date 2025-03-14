@@ -119,12 +119,9 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNo
 
     const double xx = xu * xu;
     const double yy = yu * yu;
-    const double xy = xu * yu;
     const double xxxx = xx * xx;
     const double yyyy = yy * yy;
     const double xxyy = xx * yy;
-    const double xxxy = xx * xy;
-    const double xyyy = xy * xy;
 
     const double distx = 1.0 + xx * cx_xx + yy * cx_yy + xxxx * cx_xxxx + xxyy * cx_xxyy + yyyy * cx_yyyy;
     const double disty = 1.0 + xx * cy_xx + yy * cy_yy + xxxx * cy_xxxx + xxyy * cy_xxyy + yyyy * cy_yyyy;
@@ -211,17 +208,6 @@ Eigen::Matrix<double, 2, 2> Undistortion3DEAnamorphic4::getDerivativeUndistortNo
 
 Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivativeUndistortNormalizedwrtParametersBase(const Vec2& p) const
 {
-    const double& cx02 = _undistortionParams[0];
-    const double& cy02 = _undistortionParams[1];
-    const double& cx22 = _undistortionParams[2];
-    const double& cy22 = _undistortionParams[3];
-    const double& cx04 = _undistortionParams[4];
-    const double& cy04 = _undistortionParams[5];
-    const double& cx24 = _undistortionParams[6];
-    const double& cy24 = _undistortionParams[7];
-    const double& cx44 = _undistortionParams[8];
-    const double& cy44 = _undistortionParams[9];
-
     const double& xu = p.x();
     const double& yu = p.y();
 
@@ -232,9 +218,6 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DEAnamorphic4::getDerivati
     const double cos_4theta = cos(4.0 * theta);
    
     // Compute dist
-    const double xd = xu * (1.0 + cx02 * r2 + cx04 * r4 + cx22 * r2 * cos_2theta + cx24 * r4 * cos_2theta + cx44 * r4 * cos_4theta);
-    const double yd = yu * (1.0 + cy02 * r2 + cx04 * r4 + cx22 * r2 * cos_2theta + cx24 * r4 * cos_2theta + cx44 * r4 * cos_4theta);
-
     Eigen::Matrix<double, 2, 10> d_ptd_d_params = Eigen::Matrix<double, 2, 10>::Zero();
     d_ptd_d_params(0, 0) = r2 * xu;
     d_ptd_d_params(0, 2) = r2 * cos_2theta * xu;

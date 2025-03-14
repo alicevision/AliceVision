@@ -81,7 +81,6 @@ Eigen::MatrixXd DistortionFisheye1::getDerivativeAddDistoWrtDisto(const Vec2& p)
     const double part1 = 2.0 * r * std::tan(0.5 * k1);
     const double part2 = std::atan(part1);
     const double part3 = k1 * r;
-    const double coef = part2 / part3;
 
     double ca = cos(0.5 * k1);
     double d_part1_d_params = r / (ca * ca);

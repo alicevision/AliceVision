@@ -149,17 +149,14 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DERadial4::getDerivativeUn
     const double d_invq_d_q = - 1.0 / (q * q);
 
     const double d_m11_d_cphi = 2.0 * cphi * q;
-    const double d_m12_d_cphi = (q - 1.0 / q) * sphi;
     const double d_m21_d_cphi = (q - 1.0 / q) * sphi;
     const double d_m22_d_cphi = 2.0 * cphi / q;
 
     const double d_m11_d_sphi = 2.0 * sphi / q;
-    const double d_m12_d_sphi = (q - 1.0 / q) * cphi;
     const double d_m21_d_sphi = (q - 1.0 / q) * cphi;
     const double d_m22_d_sphi = 2.0 * sphi * q;
 
     const double d_m11_d_q = cphi * cphi + sphi * sphi * d_invq_d_q;
-    const double d_m12_d_q = (1.0 - d_invq_d_q) * cphi * sphi;
     const double d_m21_d_q = (q - d_invq_d_q) * cphi * sphi;
     const double d_m22_d_q = cphi * cphi * d_invq_d_q + sphi * sphi;
 

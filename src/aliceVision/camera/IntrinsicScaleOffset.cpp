@@ -137,7 +137,7 @@ bool IntrinsicScaleOffset::importFromParams(const std::vector<double>& params, c
         paramsLocal[0] = params[0];
         paramsLocal[1] = params[0];
 
-        for (int i = 1; i < params.size(); i++)
+        for (std::size_t i = 1; i < params.size(); i++)
         {
             paramsLocal[i + 1] = params[i];
         }
@@ -165,19 +165,18 @@ double IntrinsicScaleOffset::getFocalLength() const
 {
     const double maxSize = static_cast<double>(std::max(w(), h()));
     const double fx = _scale(0);
-    const double fy = _scale(1);
 
-    //The bigger the scale or focal (which have the same direction)
-    //The smaller the observed area
+    // The bigger the scale or focal (which have the same direction)
+    // The smaller the observed area
     const double focalInMillimeters = fx * sensorWidth() / maxSize;
     
-    //Pixel aspect ratio is the how the x dimension is stretched
-    //That means that it enlarge the observed area
-    //That means a larger pixel ratio leads to a smaller focal (in X).
+    // Pixel aspect ratio is the how the x dimension is stretched
+    // That means that it enlarge the observed area
+    // That means a larger pixel ratio leads to a smaller focal (in X).
     const double pixelAspectRatio = getPixelAspectRatio();
     
-    //Assuming the focal length is *ignoring* the stretch
-    //Thus the returned focal is the bigger focal canceling the pixelAspectRatio
+    // Assuming the focal length is *ignoring* the stretch
+    // Thus the returned focal is the bigger focal canceling the pixelAspectRatio
     return focalInMillimeters * pixelAspectRatio;
 }
 
@@ -185,7 +184,6 @@ double IntrinsicScaleOffset::getInitialFocalLength() const
 {
     const double maxSize = static_cast<double>(std::max(w(), h()));
     const double fx = _initialScale(0);
-    const double fy = _initialScale(1);
 
     if (fx < 0)
     {

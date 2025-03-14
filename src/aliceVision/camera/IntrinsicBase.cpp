@@ -47,7 +47,7 @@ Vec4 IntrinsicBase::getCartesianfromSphericalCoordinates(const Vec3& pt)
     return rpt;
 }
 
-Eigen::Matrix<double, 4, 3> IntrinsicBase::getDerivativeCartesianfromSphericalCoordinates(const Vec3& pt)
+Eigen::Matrix<double, 4, 3> IntrinsicBase::getDerivativeCartesianfromSphericalCoordinates([[maybe_unused]] const Vec3& pt)
 {
     Eigen::Matrix<double, 4, 3> ret = Eigen::Matrix<double, 4, 3>::Zero();
 
@@ -78,10 +78,10 @@ bool IntrinsicBase::isVisible(const Vec2f& pix) const
     return true;
 }
 
-float IntrinsicBase::getMaximalDistortion(double min_radius, double max_radius) const
+float IntrinsicBase::getMaximalDistortion([[maybe_unused]] double minRadius, double maxRadius) const
 {
-    /*Without distortion, obvious*/
-    return max_radius;
+    /* Without distortion, obvious*/
+    return maxRadius;
 }
 
 std::size_t IntrinsicBase::hashValue() const

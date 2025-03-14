@@ -175,7 +175,7 @@ Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeTransformProjectWrtScale(c
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
 }
 
-Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeTransformProjectWrtPrincipalPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeTransformProjectWrtPrincipalPoint([[maybe_unused]] const Eigen::Matrix4d& pose, [[maybe_unused]] const Vec4& pt) const
 {
     return getDerivativeCam2ImaWrtPrincipalPoint();
 }
@@ -266,7 +266,6 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equidistant::getDerivativeBackProjectUn
 {
     const Vec2 ptMeters = ima2cam(pt2D);
     const Vec2 ptUndist = removeDistortion(ptMeters);
-    const Vec3 ptSphere = toUnitSphere(ptUndist);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, getParameters().size());
 
@@ -282,7 +281,6 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equidistant::getDerivativeBackProjectUn
 
     const Vec2 ptMeters = ima2cam(pt2D);
     const Vec2 ptUndist = removeDistortion(ptMeters);
-    const Vec3 ptSphere = toUnitSphere(ptUndist);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, disto_size);
     J = getDerivativetoUnitSphereWrtPoint(ptUndist) * getDerivativeRemoveDistoWrtDisto(ptMeters);
