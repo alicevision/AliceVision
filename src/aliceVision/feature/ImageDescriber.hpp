@@ -191,22 +191,22 @@ class ImageDescriber
     virtual std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const = 0;
 
     /**
-     * @brief Set image describer always upRight
+     * @brief Set whether the image describer is always upright
      * @param[in] upRight
      */
-    virtual void setUpRight(bool upRight) {}
+    virtual void setUpRight([[maybe_unused]] bool upRight) {}
 
     /**
-     * @brief Set if yes or no imageDescriber need to use cuda implementation
+     * @brief Set whether the image describer needs to use CUDA implementation
      * @param[in] useCuda
      */
-    virtual void setUseCuda(bool useCuda) {}
+    virtual void setUseCuda([[maybe_unused]] bool useCuda) {}
 
     /**
-     * @brief set the CUDA pipe
+     * @brief Set the CUDA pipe
      * @param[in] pipe The CUDA pipe id
      */
-    virtual void setCudaPipe(int pipe) {}
+    virtual void setCudaPipe([[maybe_unused]] int pipe) {}
 
     /**
      * @brief Use a preset to control the number of detected regions
@@ -221,9 +221,9 @@ class ImageDescriber
      * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
      * Non-zero values depict the region of interest.
      */
-    virtual bool describe(const image::Image<unsigned char>& image,
-                          std::unique_ptr<Regions>& regions,
-                          const image::Image<unsigned char>* mask = nullptr)
+    virtual bool describe([[maybe_unused]] const image::Image<unsigned char>& image,
+                          [[maybe_unused]] std::unique_ptr<Regions>& regions,
+                          [[maybe_unused]] const image::Image<unsigned char>* mask = nullptr)
     {
         throw std::logic_error("Cannot use " + EImageDescriberType_enumToString(getDescriberType()) + " image describer with an 8-bit image.");
         return false;
@@ -236,7 +236,9 @@ class ImageDescriber
      * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
      * Non-zero values depict the region of interest.
      */
-    virtual bool describe(const image::Image<float>& image, std::unique_ptr<Regions>& regions, const image::Image<unsigned char>* mask = nullptr)
+    virtual bool describe([[maybe_unused]] const image::Image<float>& image,
+                          [[maybe_unused]] std::unique_ptr<Regions>& regions,
+                          [[maybe_unused]] const image::Image<unsigned char>* mask = nullptr)
     {
         throw std::logic_error("Cannot use " + EImageDescriberType_enumToString(getDescriberType()) + " image describer with a float image.");
         return false;

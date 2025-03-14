@@ -149,12 +149,12 @@ class AKAZE
     inline const std::vector<TEvolution>& getSlices() const { return _evolution; }
 
   private:
+    /// input image
+    image::Image<float> _input;
     /// configuration options for AKAZE
     AKAZEOptions _options;
     /// vector of nonlinear diffusion evolution (Scale Space)
     std::vector<TEvolution> _evolution;
-    /// input image
-    image::Image<float> _input;
 };
 
 }  // namespace feature

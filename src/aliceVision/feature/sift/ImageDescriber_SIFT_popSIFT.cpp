@@ -30,7 +30,7 @@ void ImageDescriber_SIFT_popSIFT::setConfigurationPreset(ConfigurationPreset pre
 
 bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<float>& image,
                                            std::unique_ptr<Regions>& regions,
-                                           const image::Image<unsigned char>* mask)
+                                           [[maybe_unused]] const image::Image<unsigned char>* mask)
 {
     if (_popSift == nullptr)
         resetConfiguration();

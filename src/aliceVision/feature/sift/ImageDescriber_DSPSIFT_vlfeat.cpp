@@ -72,7 +72,7 @@ bool extractDSPSIFT(const image::Image<float>& image,
                     std::unique_ptr<Regions>& regions,
                     const DspSiftParams& params,
                     bool orientation,
-                    const image::Image<unsigned char>* mask)
+                    [[maybe_unused]] const image::Image<unsigned char>* mask)
 {
     const int w = image.width(), h = image.height();
     // Setup covariant SIFT detector.
@@ -142,8 +142,6 @@ bool extractDSPSIFT(const image::Image<float>& image,
 
         vl_covdetbuffer_clear(&internalBuffer);
     }
-
-    VlCovDet const* plopD = covdet.get();
 
     int nbFeatures = vl_covdet_get_num_features(covdet.get());
     VlCovDetFeature* features = vl_covdet_get_features(covdet.get());
@@ -238,7 +236,7 @@ bool extractDSPSIFT(const image::Image<float>& image,
     else if (params._gridSize && params._maxTotalKeypoints && (params._contrastFiltering != EFeatureConstrastFiltering::Static))
     {
         // Only filter features if we have more features than the maxTotalKeypoints
-        if (nbFeatures > params._maxTotalKeypoints)
+        if (nbFeatures > static_cast<int>(params._maxTotalKeypoints))
         {
             std::vector<IndexT> filteredIndexes;
             std::vector<IndexT> rejectedIndexes;
@@ -320,7 +318,7 @@ bool extractDSPSIFT(const image::Image<float>& image,
             std::vector<float> patchXY(2 * kPatchSide * kPatchSide);
 
 #pragma omp for
-            for (int oIndex = 0; oIndex < indexSort.size(); ++oIndex)
+            for (std::size_t oIndex = 0; oIndex < indexSort.size(); ++oIndex)
             {
                 const int iIndex = indexSort[oIndex];
                 const auto& inFeat = features[iIndex];

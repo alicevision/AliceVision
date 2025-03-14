@@ -17,7 +17,7 @@ namespace feature {
 
 bool ImageDescriber_AKAZE_OCV::describe(const image::Image<unsigned char>& image,
                                         std::unique_ptr<Regions>& regions,
-                                        const image::Image<unsigned char>* mask)
+                                        [[maybe_unused]] const image::Image<unsigned char>* mask)
 {
     cv::Mat img;
     cv::eigen2cv(image.getMat(), img);
