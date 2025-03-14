@@ -199,12 +199,10 @@ void getRealNormalOnSphere(const cv::Mat& maskCV,
     estimateSphereNormals(sphereCenter, sphereRadius, K, normals, newMask);
 }
 
-void getEllipseMaskFromSphereParameters(const std::array<float, 3>& sphereParam, const Eigen::Matrix3f& K, std::array<float, 5>& ellipseParameters, cv::Mat maskCV)
+void getEllipseMaskFromSphereParameters(const std::array<float, 3>& sphereParam, const Eigen::Matrix3f& K, std::array<float, 5>& ellipseParameters)
 {
 
-    // Distance between center of image and center of disk :
-    float imX = K(0, 2);
-    float imY = K(1, 2);
+    // Distance between center of image and center of disk:
     float f = K(0, 0);
     float delta = sqrt((sphereParam[0])*(sphereParam[0]) + (sphereParam[1])*(sphereParam[1]));
     // sphere params = x,y, radius
@@ -217,7 +215,7 @@ void getEllipseMaskFromSphereParameters(const std::array<float, 3>& sphereParam,
     // ellipse center = disc center
 
     float radians =  atan((sphereParam[0]) / (sphereParam[1]));
-    ellipseParameters[0] = radians * (180.0/3.141592653589793238463);
+    ellipseParameters[0] = radians * (180.0 / 3.141592653589793238463);
 
     ellipseParameters[1] = sphereParam[0];
     ellipseParameters[2] = sphereParam[1];
@@ -225,7 +223,7 @@ void getEllipseMaskFromSphereParameters(const std::array<float, 3>& sphereParam,
 
 
     // a² = b² ((distance between image center and disc center)² + f² + b²)/(f² + b²)
-    ellipseParameters[4] = sqrt((ellipseParameters[3]*ellipseParameters[3]) * (delta * delta + f*f + ellipseParameters[3]*ellipseParameters[3])/(f*f + ellipseParameters[3]*ellipseParameters[3]));
+    ellipseParameters[4] = sqrt((ellipseParameters[3] * ellipseParameters[3]) * (delta * delta + f * f + ellipseParameters[3] * ellipseParameters[3]) / (f * f + ellipseParameters[3] * ellipseParameters[3]));
 }
 
 } // namespace lightingEstimation

@@ -145,7 +145,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
             image::Image<float> imageFloat;
             image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
-            getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam, maskCV);
+            getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam);
             calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity);
         }
         else
