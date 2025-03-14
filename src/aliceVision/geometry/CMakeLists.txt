@@ -38,52 +38,15 @@ alicevision_add_test(frustumIntersection_test.cpp
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
-    set_property(SOURCE Geometry.i PROPERTY CPLUSPLUS ON)
-    set_property(SOURCE Geometry.i PROPERTY SWIG_MODULE_NAME geometry)
-
-    swig_add_library(geometry
-        TYPE MODULE
-        LANGUAGE python
+    alicevision_swig_add_library(geometry
         SOURCES Geometry.i
-    )
-
-    set_property(
-        TARGET geometry
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
-    )
-
-    target_include_directories(geometry
-    PRIVATE
-        ../include
-        ${ALICEVISION_ROOT}/include
-        ${Python3_INCLUDE_DIRS}
-        ${Python3_NumPy_INCLUDE_DIRS}
-    )
-    set_property(
-        TARGET geometry
-        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
-    )
-    set_property(
-        TARGET geometry
-        PROPERTY COMPILE_OPTIONS -std=c++20
-    )
-
-    target_link_libraries(geometry
-    PUBLIC
-        aliceVision_geometry
-    )
-
-    install(
-    TARGETS
-        geometry
-    DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
-    )
-    install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/geometry.py
-    DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        PUBLIC_LINKS
+            aliceVision_geometry
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+             ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
     )
 endif()

@@ -340,7 +340,7 @@ def test_sfmdata_get_set_folders():
         data.getRelativeMatchesFolders()[0] == relative_folder
 
     # Add single features and matches folders
-    other_folder = "../other"
+    other_folder = os.path.join("..", "other")
     data.addFeaturesFolder(other_folder)
     data.addMatchesFolder(other_folder)
     assert len(data.getFeaturesFolders()) == 2, \
@@ -354,8 +354,8 @@ def test_sfmdata_get_set_folders():
     assert os.path.relpath(data.getMatchesFolders()[1], projectFolder) == other_folder
 
     # Reset features and matches folders and add new ones
-    new_folder1 = "../new"
-    new_folder2 = "../.."
+    new_folder1 = os.path.join("..", "new")
+    new_folder2 = os.path.join("..", "..")
     new_folder3 = "folder"
     new_folders = [new_folder1, new_folder2, new_folder3]
 

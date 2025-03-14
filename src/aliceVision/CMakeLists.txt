@@ -82,53 +82,17 @@ if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
 endif()
 
 
-if(ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
-    set_property(SOURCE aliceVision.i PROPERTY CPLUSPLUS ON)
-    set_property(SOURCE aliceVision.i PROPERTY SWIG_MODULE_NAME pyalicevision)
-
-    swig_add_library(pyalicevision
-        TYPE MODULE
-        LANGUAGE python
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(pyalicevision
         SOURCES aliceVision.i
-    )
-
-    set_property(
-        TARGET pyalicevision
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
-    )
-
-    target_include_directories(pyalicevision
-    PRIVATE
-        ../include
-        ${ALICEVISION_ROOT}/include
-        ${Python3_INCLUDE_DIRS}
-        ${Python3_NumPy_INCLUDE_DIRS}
-    )
-    set_property(
-        TARGET pyalicevision
-        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
-    )
-    set_property(
-        TARGET pyalicevision
-        PROPERTY COMPILE_OPTIONS -std=c++20
-    )
-
-    target_link_libraries(pyalicevision
-    PUBLIC
-        aliceVision_numeric
-    )
-    install(
-    TARGETS
-        pyalicevision
-    DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
-    )
-    install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/pyalicevision.py
-    DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        PUBLIC_LINKS
+            aliceVision_numeric
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
     )
 endif()
 

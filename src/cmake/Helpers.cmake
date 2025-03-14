@@ -285,3 +285,56 @@ function(alicevision_add_test test_file)
   endif()
 
 endfunction()
+
+# Add SWIG library function
+function(alicevision_swig_add_library module_name)
+  set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_INCLUDE_DIRS)
+  cmake_parse_arguments(SWIG_MODULE "" "" "${multipleValues}" ${ARGN})
+
+  set_property(SOURCE ${SWIG_MODULE_SOURCES} PROPERTY CPLUSPLUS ON)
+  set_property(SOURCE ${SWIG_MODULE_SOURCES} PROPERTY SWIG_MODULE_NAME ${module_name})
+
+  swig_add_library(${module_name}
+    TYPE MODULE
+    LANGUAGE python
+    SOURCES ${SWIG_MODULE_SOURCES}
+  )
+
+  if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR UNIX)
+    list(APPEND SWIG_EXTRA_COMPILE_OPTIONS "-DLINUXPLATFORM")
+  endif()
+
+  set_property(
+    TARGET ${module_name}
+    PROPERTY SWIG_COMPILE_OPTIONS -doxygen ${SWIG_EXTRA_COMPILE_OPTIONS}
+  )
+
+  target_include_directories(${module_name}
+    PRIVATE ${SWIG_MODULE_PRIVATE_INCLUDE_DIRS}
+  )
+  set_property(
+    TARGET ${module_name}
+    PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
+  )
+  set_property(
+    TARGET ${module_name}
+    PROPERTY COMPILE_OPTIONS -std=c++20
+  )
+
+  target_link_libraries(${module_name}
+    PUBLIC ${SWIG_MODULE_PUBLIC_LINKS}
+  )
+
+  install(
+    TARGETS
+      ${module_name}
+    DESTINATION
+      ${CMAKE_INSTALL_BINDIR}
+  )
+  install(
+    FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/${module_name}.py
+    DESTINATION
+      ${CMAKE_INSTALL_BINDIR}
+  )
+endfunction()

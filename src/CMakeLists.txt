@@ -770,6 +770,9 @@ endif()
 if(ALICEVISION_BUILD_SWIG_BINDING)
   find_package(SWIG REQUIRED)  # SWIG dependency
   if(SWIG_FOUND)
+    # Remove CMake warnings related to SWIG old policies
+    cmake_policy(SET CMP0078 NEW)  # Use the specified module name for the target's name
+    cmake_policy(SET CMP0086 NEW)  # Use "-module {name}" when the module name has been set with SWIG_MODULE_NAME
     include(UseSWIG)
     message(STATUS "SWIG found.")
   else()

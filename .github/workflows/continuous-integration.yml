@@ -59,7 +59,7 @@ jobs:
            -DALICEVISION_USE_CUDA=ON \
            -DALICEVISION_USE_CCTAG="${BUILD_CCTAG}" \
            -DALICEVISION_USE_POPSIFT=ON \
-           -DALICEVISION_USE_ALEMBIC=ON  \
+           -DALICEVISION_USE_ALEMBIC=ON \
            -DOpenCV_DIR="${DEPS_INSTALL_DIR}/share/OpenCV" \
            -DALICEVISION_USE_OPENGV=ON \
            -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
@@ -102,7 +102,7 @@ jobs:
           meshroom_avBranch=$(git ls-remote --heads https://github.com/alicevision/Meshroom.git $GITHUB_HEAD_REF | cut -f 1)
           if [ $meshroom_avBranch != "" ]; then git checkout $meshroom_avBranch; echo "Use Meshroom/$GITHUB_HEAD_REF"; fi
           export MESHROOM_INSTALL_DIR=$PWD
-          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}:${PYTHONPATH}
+          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export PATH=$PATH:${ALICEVISION_ROOT}/bin
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           mkdir ./outputData
@@ -121,7 +121,7 @@ jobs:
           cd SfM_quality_evaluation/
           # checkout a specific commit to ensure repeatability
           git checkout 36e3bf2d05c64d1726cb4a0e770923794f203f98
-          export PYTHONPATH=${ALICEVISION_ROOT}:${PYTHONPATH}
+          export PYTHONPATH=${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           echo "ldd aliceVision_cameraInit"
           ldd ${ALICEVISION_ROOT}/bin/aliceVision_cameraInit
@@ -130,7 +130,7 @@ jobs:
 
       - name: Python Binding - Unit Tests
         run: |
-          export PYTHONPATH=${ALICEVISION_ROOT}:${PYTHONPATH}
+          export PYTHONPATH=${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           pip3 install pytest
           pytest ./pyTests
@@ -146,6 +146,7 @@ jobs:
       CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: '${{ github.workspace }}/install'
       VCPKG_ROOT: '${{ github.workspace}}\..\vcpkg'
+      PYTHONPATH: '${{ github.workspace }}/install/bundle/bin'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -227,13 +228,28 @@ jobs:
                              -DALICEVISION_USE_OPENGV=OFF
                              -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
                              -DALICEVISION_BUILD_SEGMENTATION=OFF
+                             -DALICEVISION_BUILD_SWIG_BINDING=ON
                              -DBOOST_NO_CXX11=ON
 
-          # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
           cmakeBuildType: Release
           buildWithCMake: true
 
-      - name: UnitTests
+      - name: Bundle
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          buildDirectory: ${{ env.buildDir }}
+          buildWithCMakeArgs: '--config Release --target bundle'
+          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
+          cmakeBuildType: Release
+          buildWithCMake: true
+
+      - name: Python Binding - Unit Tests
+        run: |
+          ${{ env.VCPKG_ROOT }}\installed\x64-windows\tools\python3\python -m pytest ./pyTests
+
+      - name: Unit Tests
         uses: lukka/run-cmake@v3
         with:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced

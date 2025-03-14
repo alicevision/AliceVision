@@ -51,56 +51,19 @@ alicevision_add_test(hdrLaguerre_test.cpp
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
-    set_property(SOURCE Hdr.i PROPERTY CPLUSPLUS ON)
-    set_property(SOURCE Hdr.i PROPERTY SWIG_MODULE_NAME hdr)
-
-    swig_add_library(hdr
-        TYPE MODULE
-        LANGUAGE python
+    alicevision_swig_add_library(hdr
         SOURCES Hdr.i
-    )
-
-    set_property(
-        TARGET hdr
-        PROPERTY SWIG_COMPILE_OPTIONS -doxygen
-    )
-
-    target_include_directories(hdr
-    PRIVATE
-        ../include
-        ${ALICEVISION_ROOT}/include
-        ${Python3_INCLUDE_DIRS}
-        ${Python3_NumPy_INCLUDE_DIRS}
-    )
-    set_property(
-        TARGET hdr
-        PROPERTY SWIG_USE_TARGET_INCLUDE_DIRECTORIES ON
-    )
-    set_property(
-        TARGET hdr
-        PROPERTY COMPILE_OPTIONS -std=c++20
-    )
-
-    target_link_libraries(hdr
-    PUBLIC
-        aliceVision_hdr
-        aliceVision_system
-        aliceVision_numeric
-        aliceVision_image
-        aliceVision_sfmData
-    )
-
-    install(
-    TARGETS
-        hdr
-    DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
-    )
-    install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/hdr.py
-    DESTINATION
-        ${CMAKE_INSTALL_PREFIX}
+        PUBLIC_LINKS
+            aliceVision_hdr
+            aliceVision_system
+            aliceVision_numeric
+            aliceVision_image
+            aliceVision_sfmData
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
     )
 endif()
