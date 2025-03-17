@@ -1,17 +1,17 @@
 # Headers
 set(stl_files_headers
-  bitmask.hpp
-  DynamicBitset.hpp
-  FlatMap.hpp
-  hash.hpp
-  indexedSort.hpp
-  stl.hpp
-  mapUtils.hpp
+    bitmask.hpp
+    DynamicBitset.hpp
+    FlatMap.hpp
+    hash.hpp
+    indexedSort.hpp
+    stl.hpp
+    mapUtils.hpp
 )
 
 alicevision_add_interface(aliceVision_stl
-  SOURCES ${stl_files_headers}
-  LINKS Boost::container
+    SOURCES ${stl_files_headers}
+    LINKS Boost::container
 )
 
 # Unit tests

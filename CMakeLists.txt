@@ -10,7 +10,7 @@ option(AV_USE_OPENMP "Enable OpenMP" $<$<CXX_COMPILER_ID:"AppleClang">,OFF,ON>) 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(ALICEVISION_INSTALL_MESHROOM_PLUGIN "Install AliceVision's plugin for Meshroom" ON)
 
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
 endif()
 
@@ -27,7 +27,7 @@ set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
 # ==============================================================================
 include(GNUInstallDirs)
 
-if(CMAKE_BUILD_TYPE MATCHES Release)
+if (CMAKE_BUILD_TYPE MATCHES Release)
     message(STATUS "Force CMAKE_INSTALL_DO_STRIP in Release")
     set(CMAKE_INSTALL_DO_STRIP TRUE)
 endif()
@@ -48,7 +48,7 @@ message(STATUS "----------------------------------------")
 # be aligned to 64 bytes). Fortunately this is fixed in C++17.
 # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
 # Only change this option to disable it for older compilers or for debug purposes.
-if(NOT AV_EIGEN_MEMORY_ALIGNMENT)
+if (NOT AV_EIGEN_MEMORY_ALIGNMENT)
     set(EIGEN_CMAKE_ALIGNMENT_FLAGS
         "-DCMAKE_CXX_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0"
         "-DCMAKE_C_FLAGS:STRING=-DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0")
@@ -58,31 +58,30 @@ endif()
 # ==============================================================================
 # Enable cmake UNIT TEST framework
 # ==============================================================================
-if(ALICEVISION_BUILD_TESTS)
+if (ALICEVISION_BUILD_TESTS)
     include(CTest)
     enable_testing()
 endif()
 
 
-if(ALICEVISION_BUILD_DEPENDENCIES)
+if (ALICEVISION_BUILD_DEPENDENCIES)
     include(src/cmake/Dependencies.cmake)
 else()
+    # ==============================================================================
+    # Standard cmake project without internal support for dependencies
+    # ==============================================================================
 
-# ==============================================================================
-# Standard cmake project without internal support for dependencies
-# ==============================================================================
+    # Add sources
+    add_subdirectory(src)
 
-# Add sources
-add_subdirectory(src)
-
-install(
-    FILES 
-        LICENSE-MPL2.md 
-        LICENSE-MIT-libmv.md 
-        COPYING.md 
-        CONTRIBUTORS.md
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
-)
+    install(
+        FILES 
+            LICENSE-MPL2.md 
+            LICENSE-MIT-libmv.md 
+            COPYING.md 
+            CONTRIBUTORS.md
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
+    )
 
 endif()
 
@@ -97,7 +96,7 @@ endif()
 # Note: require that the install rule has been executed
 # Include VCPKG installed dir for runtime dependencies lookup
 set(BUNDLE_LIBS_PATHS "")
-if(_VCPKG_INSTALLED_DIR)
+if (_VCPKG_INSTALLED_DIR)
     set(BUNDLE_LIBS_PATHS ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin)
 endif()
 

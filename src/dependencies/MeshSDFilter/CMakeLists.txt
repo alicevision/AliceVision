@@ -29,24 +29,24 @@ endif()
 
 # Detect OpenMP environment
 set(OPENMP ON CACHE BOOL "OpenMP")
-if(OPENMP)
-  find_package(OpenMP QUIET)
-  if(OPENMP_FOUND)
-      message("OpenMP found. OpenMP activated in release.")
-      add_definitions(-DUSE_OPENMP)
+if (OPENMP)
+    find_package(OpenMP QUIET)
+    if (OPENMP_FOUND)
+        message("OpenMP found. OpenMP activated in release.")
+        add_definitions(-DUSE_OPENMP)
 
-  else()
-      message("OpenMP not found.")
-  endif()
+    else()
+        message("OpenMP not found.")
+    endif()
 endif()
 
 
 # Detect Eigen3
-if(NOT EIGEN3_FOUND)
-  find_package(Eigen3 REQUIRED)
-  if(EIGEN3_FOUND)
-    message("Found external Eigen. include: ${EIGEN3_INCLUDE_DIR}, version: ${EIGEN3_VERSION_STRING}.")
-  endif()
+if (NOT EIGEN3_FOUND)
+    find_package(Eigen3 REQUIRED)
+    if (EIGEN3_FOUND)
+        message("Found external Eigen. include: ${EIGEN3_INCLUDE_DIR}, version: ${EIGEN3_VERSION_STRING}.")
+    endif()
 endif()
 
 find_package(OpenMesh REQUIRED)
@@ -58,37 +58,37 @@ target_link_libraries(MeshSDLibrary INTERFACE Eigen3::Eigen OpenMeshCore)
 
 # Executable for filtering
 add_executable(MeshSDFilter
-  EigenTypes.h
-  MeshTypes.h
-  SDFilter.h
-  MeshNormalFilter.h
-  MeshSDFilter.cpp
+    EigenTypes.h
+    MeshTypes.h
+    SDFilter.h
+    MeshNormalFilter.h
+    MeshSDFilter.cpp
 )
 target_link_libraries(MeshSDFilter MeshSDLibrary)
 
 
 # Executable for denoising
 add_executable(MeshDenoiser
-  EigenTypes.h
-  MeshTypes.h
-  SDFilter.h
-  MeshNormalFilter.h
-  MeshNormalDenoising.h
-  MeshDenoiser.cpp
+    EigenTypes.h
+    MeshTypes.h
+    SDFilter.h
+    MeshNormalFilter.h
+    MeshNormalDenoising.h
+    MeshDenoiser.cpp
 )
 target_link_libraries(MeshDenoiser MeshSDLibrary)
 
 
-if(OPENMP_FOUND)
-  #target_compile_options(MeshSDLibrary PUBLIC "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
-  #target_compile_definitions(MeshSDLibrary PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
-  #target_link_libraries(MeshSDLibrary "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
+if (OPENMP_FOUND)
+    # target_compile_options(MeshSDLibrary PUBLIC "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
+    # target_compile_definitions(MeshSDLibrary PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
+    # target_link_libraries(MeshSDLibrary "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
 
-  target_compile_options(MeshSDFilter PUBLIC "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
-  target_compile_definitions(MeshSDFilter PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
-  target_link_libraries(MeshSDFilter "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
+    target_compile_options(MeshSDFilter PUBLIC "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
+    target_compile_definitions(MeshSDFilter PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
+    target_link_libraries(MeshSDFilter "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
 
-  target_compile_options(MeshDenoiser PUBLIC "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
-  target_compile_definitions(MeshDenoiser PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
-  target_link_libraries(MeshDenoiser "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
+    target_compile_options(MeshDenoiser PUBLIC "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
+    target_compile_definitions(MeshDenoiser PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
+    target_link_libraries(MeshDenoiser "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
 endif()
