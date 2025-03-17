@@ -279,6 +279,19 @@ if(ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
+    # SfM Survey Injecting
+    alicevision_add_software(aliceVision_sfmSurveyInjecting
+        SOURCE main_sfmSurveyInjecting.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              aliceVision_sfm
+              Boost::program_options
+              Boost::json
+    )
+
     # SfM Colorizing
     alicevision_add_software(aliceVision_sfmColorizing
         SOURCE main_sfmColorizing.cpp

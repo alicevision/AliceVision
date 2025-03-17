@@ -12,6 +12,7 @@ set(sfmData_files_headers
   ExposureSetting.hpp
   Observation.hpp
   ConstraintPoint.hpp
+  SurveyPoint.hpp
   Constraint2D.hpp
 )
 

@@ -186,23 +186,34 @@ int aliceVision_main(int argc, char** argv)
          "Input SfMData file.")
         ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(),
          "SfMData output file with the injected poses.")
-        ("posesFilename,p", po::value<std::string>(&posesFilename)->required(),
-         "JSON file containing the poses to inject.")
         ("rotationFormat,r", po::value<ERotationFormat>(&format)->required(),
          "Rotation format for the input poses: EulerZXY.");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("posesFilename,p", po::value<std::string>(&posesFilename)->default_value(posesFilename),
+        "JSON file containing the poses to inject.");
     // clang-format on
 
     CmdLine cmdline("AliceVision SfM Pose injecting");
 
     cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
     }
+    
 
     // Set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();
     omp_set_num_threads(hwc.getMaxThreads());
+
+    if (posesFilename.empty())
+    {
+        ALICEVISION_LOG_INFO("Nothing to do.");
+        return EXIT_SUCCESS;
+    }
 
     // Load input SfMData scene
     sfmData::SfMData sfmData;
