@@ -102,6 +102,14 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
 
 /**
  * @brief Estimate the brackets information from the SfM data
+ * The bracket groups are estimated using the capturing time metadata of each picture.
+ * if the duration between 2 consecutive pictures is less than 2.5 seconds the 2 pictures are considered to be part of the
+ * same brackecting group.In case several single pictures, located at the beginning or at the end of the image set after
+ * it has been sorted, they are considered as outliers and they won't be added to any returned group.
+ * With the remaining pictures, a check is done to be sure that every groups contain the same number of pictures. If this
+ * is not the case, this first tentative of splitting aborts. A second method is then applied. It consists to group pictures
+ * with monotonic exposure variation after sorting them in the alphabetic order. Outliers can be removed at the beginiing
+ * and at the end of the sorted pictures or between 2 groups.
  * @param[out] groups the estimated groups
  * @param[in] sfmData SfM data to estimate the brackets from
  * @param[in] countBrackets the number of brackets (optional, 0 means that it will be guessed)
