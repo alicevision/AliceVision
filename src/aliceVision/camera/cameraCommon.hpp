@@ -42,9 +42,9 @@ enum EUNDISTORTION
 enum EINTRINSIC
 {
     UNKNOWN = (1u << 0),
-    PINHOLE_CAMERA = (1u << 1),                 // plain pinhole model
-    EQUIDISTANT_CAMERA = (1u << 2),            // plain equidistant model
-    EQUIRECTANGULAR_CAMERA = (1u << 3),            // plain equirectangular model
+    PINHOLE_CAMERA = (1u << 1),          // plain pinhole model
+    EQUIDISTANT_CAMERA = (1u << 2),      // plain equidistant model
+    EQUIRECTANGULAR_CAMERA = (1u << 3),  // plain equirectangular model
 };
 
 BOOST_BITMASK(EINTRINSIC);
@@ -170,7 +170,6 @@ inline EUNDISTORTION EUNDISTORTION_stringToEnum(const std::string& undistortion)
     std::string type = undistortion;
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
 
-    
     if (type == "3deanamorphic4")
     {
         return EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4;
@@ -213,7 +212,10 @@ inline std::string EUNDISTORTION_enumToString(EUNDISTORTION undistortion)
     throw std::out_of_range("Invalid Undistortion Enum");
 }
 
-inline void compatibilityStringToEnums(const std::string& intrinsic, EINTRINSIC & intrinsicType, EDISTORTION & distortionType, EUNDISTORTION & undistortionType)
+inline void compatibilityStringToEnums(const std::string& intrinsic,
+                                       EINTRINSIC& intrinsicType,
+                                       EDISTORTION& distortionType,
+                                       EUNDISTORTION& undistortionType)
 {
     std::string type = intrinsic;
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);  // tolower
@@ -272,7 +274,7 @@ inline void compatibilityStringToEnums(const std::string& intrinsic, EINTRINSIC 
         distortionType = EDISTORTION::DISTORTION_RADIALK3PT;
         undistortionType = EUNDISTORTION::UNDISTORTION_NONE;
     }
-    else 
+    else
     {
         throw std::out_of_range(intrinsic);
     }

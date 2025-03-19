@@ -23,7 +23,7 @@ namespace rig {
 
 Rig::~Rig() {}
 
-const std::size_t Rig::getRelativePosesSize() const { return _vRelativePoses.size(); }
+std::size_t Rig::getRelativePosesSize() const { return _vRelativePoses.size(); }
 
 const geometry::Pose3& Rig::getRelativePose(std::size_t i) const { return _vRelativePoses.at(i - 1); }
 
@@ -31,7 +31,7 @@ const std::vector<geometry::Pose3>& Rig::getRelativePoses() const { return _vRel
 
 const geometry::Pose3& Rig::getPose(std::size_t i) const { return _vPoses.at(i); }
 
-const std::size_t Rig::getPosesSize() const { return _vPoses.size(); }
+std::size_t Rig::getPosesSize() const { return _vPoses.size(); }
 
 const std::vector<geometry::Pose3>& Rig::getPoses() const { return _vPoses; }
 
@@ -172,7 +172,7 @@ void Rig::findBestRelativePose(const std::vector<geometry::Pose3>& vPoses, std::
 }
 
 // Display reprojection error based on a relative pose
-void Rig::displayRelativePoseReprojection(const geometry::Pose3& relativePose, std::size_t iLocalizer)
+void Rig::displayRelativePoseReprojection([[maybe_unused]] const geometry::Pose3& relativePose, [[maybe_unused]] std::size_t iLocalizer)
 {
 #ifdef VISUAL_DEBUG_MODE
     std::vector<localization::LocalizationResult>& mainLocalizerResults = _vLocalizationResults[0];

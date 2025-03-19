@@ -77,7 +77,7 @@ class Equidistant : public IntrinsicScaleOffsetDisto
     Vec2 project(const Vec4& pt, bool applyDistortion = true) const override;
 
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
-    
+
     Eigen::Matrix<double, 2, 2> getDerivativeTransformProjectWrtScale(const Eigen::Matrix4d& pose, const Vec4& pt) const;
 
     Eigen::Matrix<double, 2, 2> getDerivativeTransformProjectWrtPrincipalPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const;
@@ -148,11 +148,10 @@ class Equidistant : public IntrinsicScaleOffsetDisto
      */
     double getVerticalFov() const override;
 
-
     /**
      * @brief how a one pixel change relates to an angular change
      * @return a value in radians
-    */
+     */
     double pixelProbability() const override;
 
   protected:

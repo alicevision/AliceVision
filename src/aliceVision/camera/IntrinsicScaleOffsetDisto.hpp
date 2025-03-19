@@ -131,7 +131,7 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
 
     void setDistortionParams(const std::vector<double>& distortionParams)
     {
-        int expected = 0;
+        std::size_t expected = 0;
         if (_pDistortion != nullptr)
         {
             expected = _pDistortion->getDistortionParametersCount();
@@ -193,22 +193,19 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
         return params;
     }
 
-    std::size_t getParametersSize() const override
-    {
-        return 4;
-    }
+    std::size_t getParametersSize() const override { return 4; }
 
     // Data wrapper for non linear optimization (update from data)
     bool updateFromParams(const std::vector<double>& params) override;
 
-    float getMaximalDistortion(double min_radius, double max_radius) const override
+    float getMaximalDistortion([[maybe_unused]] double minRadius, double maxRadius) const override
     {
         if (_pDistortion == nullptr)
         {
-            return max_radius;
+            return maxRadius;
         }
 
-        return _pDistortion->getUndistortedRadius(max_radius);
+        return _pDistortion->getUndistortedRadius(maxRadius);
     }
 
     Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2& pt) const
@@ -250,7 +247,8 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
         return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
     }
 
-    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose, const Vec4& pt) const = 0;
+    virtual Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeTransformProjectWrtDistortion(const Eigen::Matrix4d& pose,
+                                                                                                const Vec4& pt) const = 0;
 
     virtual Eigen::Matrix<double, 3, Eigen::Dynamic> getDerivativeBackProjectUnitWrtDistortion(const Vec2& pt2D) const = 0;
 

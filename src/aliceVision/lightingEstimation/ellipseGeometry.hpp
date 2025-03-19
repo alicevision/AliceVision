@@ -36,8 +36,7 @@ void sphereRayIntersection(const Eigen::Vector3f& direction,
                            float& delta,
                            Eigen::Vector3f& normal);
 
-void quadraticFromEllipseParameters(const std::array<float, 5>& ellipseParameters,
-                                       Eigen::Matrix3f& Q);
+void quadraticFromEllipseParameters(const std::array<float, 5>& ellipseParameters, Eigen::Matrix3f& Q);
 
 int findUniqueIndex(const std::vector<int>& vec);
 
@@ -61,15 +60,14 @@ void estimateSphereNormals(const std::array<float, 3>& sphereCenter,
  * @param[in] K Intrinsic parameters of the camera
  * @param[out] normals Normals on the sphere in camera frame
  * @param[out] newMask The mask of the sphere after ray tracing
-*/
+ */
 void getRealNormalOnSphere(const cv::Mat& maskCV,
-                       const Eigen::Matrix3f& K,
-                       const float sphereRadius,
-                       image::Image<image::RGBfColor>& normals,
-                       image::Image<float>& newMask);
+                           const Eigen::Matrix3f& K,
+                           const float sphereRadius,
+                           image::Image<image::RGBfColor>& normals,
+                           image::Image<float>& newMask);
 
+void getEllipseMaskFromSphereParameters(const std::array<float, 3>& sphereParam, const Eigen::Matrix3f& K, std::array<float, 5>& ellipseParameters);
 
-void getEllipseMaskFromSphereParameters(const std::array<float, 3>& sphereParam, const Eigen::Matrix3f& K, std::array<float, 5>& ellipseParameters, cv::Mat maskCV);
-
-} // namespace lightingEstimation
-} // namespace aliceVision
+}  // namespace lightingEstimation
+}  // namespace aliceVision

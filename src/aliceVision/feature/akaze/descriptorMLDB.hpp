@@ -35,7 +35,7 @@ inline void ComputeMeanValuesInSubdivisions(const Eigen::Matrix<Real, Eigen::Dyn
                                             const Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& samples_Ly,
                                             const int nb_subdiv,
                                             const int subdiv_size,
-                                            const int pattern_size,
+                                            [[maybe_unused]] const int pattern_size,
                                             const Real c,  // cos( theta )
                                             const Real s,  // sin( theta )
                                             Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& mean_Li,

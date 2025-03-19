@@ -16,13 +16,13 @@ set(geometry_files_sources
 )
 
 alicevision_add_library(aliceVision_geometry
-  SOURCES ${geometry_files_headers} ${geometry_files_sources}
-  PUBLIC_LINKS
-    aliceVision_numeric
-    aliceVision_linearProgramming
-  # PRIVATE_LINKS
-  # TODO: fix cross-dependency
-  # aliceVision_robustEstimation
+    SOURCES ${geometry_files_headers} ${geometry_files_sources}
+    PUBLIC_LINKS
+        aliceVision_numeric
+        aliceVision_linearProgramming
+    # PRIVATE_LINKS
+        # TODO: fix cross-dependency
+        # aliceVision_robustEstimation
 )
 
 # Unit tests
@@ -30,10 +30,10 @@ alicevision_add_test(rigidTransformation3D_test.cpp NAME "geometry_rigidTransfor
 alicevision_add_test(halfSpaceIntersection_test.cpp NAME "geometry_halfSpaceIntersection" LINKS aliceVision_geometry)
 alicevision_add_test(Pose3d_test.cpp NAME "geometry_pose3D" LINKS aliceVision_geometry)
 alicevision_add_test(frustumIntersection_test.cpp
-  NAME "geometry_frustumIntersection"
-  LINKS aliceVision_geometry
-        aliceVision_multiview
-        aliceVision_multiview_test_data
+    NAME "geometry_frustumIntersection"
+    LINKS aliceVision_geometry
+          aliceVision_multiview
+          aliceVision_multiview_test_data
 )
 
 # SWIG Binding

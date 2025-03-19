@@ -39,7 +39,7 @@ class Distortion
             return;
         }
 
-        for (int i = 0; i < _distortionParams.size(); i++)
+        for (std::size_t i = 0; i < _distortionParams.size(); i++)
         {
             _distortionParams[i] = params[i];
         }
@@ -59,20 +59,19 @@ class Distortion
 
     virtual double getUndistortedRadius(double r) const { return r; }
 
-    virtual Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2& p) const { return Eigen::Matrix2d::Identity(); }
+    virtual Eigen::Matrix2d getDerivativeAddDistoWrtPt([[maybe_unused]] const Vec2& p) const { return Eigen::Matrix2d::Identity(); }
 
-    virtual Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2& p) const { return Eigen::MatrixXd(0, 0); }
+    virtual Eigen::MatrixXd getDerivativeAddDistoWrtDisto([[maybe_unused]] const Vec2& p) const { return Eigen::MatrixXd(0, 0); }
 
-    virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2& p) const { return Eigen::Matrix2d::Identity(); }
+    virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt([[maybe_unused]] const Vec2& p) const { return Eigen::Matrix2d::Identity(); }
 
-    virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2& p) const { return Eigen::MatrixXd(0, 0); }
+    virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto([[maybe_unused]] const Vec2& p) const { return Eigen::MatrixXd(0, 0); }
 
     inline void setLocked(bool lock) { _isLocked = lock; }
 
     inline bool isLocked() const { return _isLocked; }
 
     virtual ~Distortion() = default;
-
 
   protected:
     std::vector<double> _distortionParams{};

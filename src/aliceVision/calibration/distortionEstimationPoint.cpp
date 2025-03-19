@@ -15,12 +15,12 @@ namespace calibration {
 
 class CostPoint : public ceres::CostFunction
 {
-public:
-    CostPoint(std::shared_ptr<camera::Undistortion> & undistortion, const Vec2& ptUndistorted, const Vec2 &ptDistorted, double sigma)
-        : _ptUndistorted(ptUndistorted)
-        , _ptDistorted(ptDistorted)
-        , _undistortion(undistortion)
-        , _sigma(sigma)
+  public:
+    CostPoint(std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& ptUndistorted, const Vec2& ptDistorted, double sigma)
+      : _undistortion(undistortion),
+        _ptUndistorted(ptUndistorted),
+        _ptDistorted(ptDistorted),
+        _sigma(sigma)
     {
         set_num_residuals(2);
         mutable_parameter_block_sizes()->push_back(2);
@@ -34,7 +34,7 @@ public:
 
         const int undistortionSize = _undistortion->getUndistortionParametersCount();
 
-        //Read parameters and update camera
+        // Read parameters and update camera
         std::vector<double> undistortionParams(undistortionSize);
 
         for (int idParam = 0; idParam < undistortionSize; idParam++)
@@ -48,7 +48,7 @@ public:
         offset.y() = parameter_center[1];
         _undistortion->setOffset(offset);
 
-        //Estimate measure
+        // Estimate measure
         const Vec2 ipt = _undistortion->undistort(_ptDistorted);
 
         const Vec2 hsize = (_undistortion->getSize() * 0.5);
@@ -62,20 +62,19 @@ public:
         residuals[0] = w * (ipt.x() - _ptUndistorted.x());
         residuals[1] = w * (ipt.y() - _ptUndistorted.y());
 
-        if(jacobians == nullptr)
+        if (jacobians == nullptr)
         {
             return true;
         }
 
-
-        if(jacobians[0] != nullptr)
+        if (jacobians[0] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[0]);
 
             J = w * _undistortion->getDerivativeUndistortWrtOffset(_ptDistorted);
         }
 
-        if(jacobians[1] != nullptr)
+        if (jacobians[1] != nullptr)
         {
             Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 2, undistortionSize);
 
@@ -85,7 +84,7 @@ public:
         return true;
     }
 
-private:
+  private:
     std::shared_ptr<camera::Undistortion> _undistortion;
     Vec2 _ptUndistorted;
     Vec2 _ptDistorted;
@@ -155,7 +154,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         // At least one parameter is not locked
 
         std::vector<int> constantDistortions;
-        for (int idParamDistortion = 0; idParamDistortion < lockDistortions.size(); ++idParamDistortion)
+        for (int idParamDistortion = 0; idParamDistortion < static_cast<int>(lockDistortions.size()); ++idParamDistortion)
         {
             if (lockDistortions[idParamDistortion])
             {
@@ -195,7 +194,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     undistortionToEstimate->setOffset(undistortionOffset);
     undistortionToEstimate->setParameters(undistortionParameters);
     std::vector<double> errors;
-    
+
     for (auto& ppt : pointpairs)
     {
         const Vec2 ipt = undistortionToEstimate->undistort(ppt.distortedPoint);
@@ -217,7 +216,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
     statistics.median = median;
     statistics.max = max;
     statistics.lastDecile = lastDecile;
-    
+
     return true;
 }
 

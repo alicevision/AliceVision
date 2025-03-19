@@ -1,19 +1,18 @@
 #include "json.hpp"
 
-namespace aliceVision 
-{
-std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_code& ec)
+namespace aliceVision {
+std::vector<boost::json::value> readJsons(std::istream& is, boost::system::error_code& ec)
 {
     std::vector<boost::json::value> jvs;
     boost::json::stream_parser p;
     std::string line;
     std::size_t n = 0;
 
-    while(true)
+    while (true)
     {
-        if(n == line.size())
+        if (n == line.size())
         {
-            if(!std::getline(is, line))
+            if (!std::getline(is, line))
             {
                 break;
             }
@@ -21,10 +20,10 @@ std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_c
             n = 0;
         }
 
-        //Consume at least part of the line
-        n += p.write_some( line.data() + n, line.size() - n, ec);
+        // Consume at least part of the line
+        n += p.write_some(line.data() + n, line.size() - n, ec);
 
-        //If the parser found a value, add it
+        // If the parser found a value, add it
         if (p.done())
         {
             jvs.push_back(p.release());
@@ -34,7 +33,7 @@ std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_c
 
     if (!p.done())
     {
-        //Try to extract the end
+        // Try to extract the end
         p.finish(ec);
         if (ec.failed())
         {
@@ -46,4 +45,4 @@ std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_c
 
     return jvs;
 }
-}
+}  // namespace aliceVision

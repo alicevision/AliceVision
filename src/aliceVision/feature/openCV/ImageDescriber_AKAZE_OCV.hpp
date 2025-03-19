@@ -65,7 +65,10 @@ class ImageDescriber_AKAZE_OCV : public ImageDescriber
      * @param[in] preset The preset configuration
      * @return True if configuration succeed. (here always false)
      */
-    void setConfigurationPreset(ConfigurationPreset preset) override { ALICEVISION_LOG_DEBUG("Image describer preset ignored for AKAZE_OCV."); }
+    void setConfigurationPreset([[maybe_unused]] ConfigurationPreset preset) override
+    {
+        ALICEVISION_LOG_DEBUG("Image describer preset ignored for AKAZE_OCV.");
+    }
 
     /**
      * @brief Detect regions on the 8-bit image and compute their attributes (description)

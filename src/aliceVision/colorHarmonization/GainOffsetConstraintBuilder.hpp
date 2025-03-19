@@ -37,21 +37,21 @@ namespace histogram {
 
 // Normalize a distribution function
 template<typename T>
-inline void normalizeHisto(const std::vector<T>& vec_df, std::vector<double>& vec_normalized_df)
+inline void normalizeHisto(const std::vector<T>& vecDf, std::vector<double>& vecNormalizedDf)
 {
-    double totalCount = static_cast<double>(std::accumulate(vec_df.begin(), vec_df.end(), 0));
-    vec_normalized_df.resize(vec_df.size(), 0.0);
-    for (std::size_t i = 0; i < vec_df.size(); ++i)
-        vec_normalized_df[i] = vec_df[i] / totalCount;
+    double totalCount = static_cast<double>(std::accumulate(vecDf.begin(), vecDf.end(), 0));
+    vecNormalizedDf.resize(vecDf.size(), 0.0);
+    for (std::size_t i = 0; i < vecDf.size(); ++i)
+        vecNormalizedDf[i] = vecDf[i] / totalCount;
 }
 
 // Compute cumulative distribution functions (cdf)
 template<typename T>
-inline void cdf(const std::vector<T>& vec_df, std::vector<T>& vec_cdf)
+inline void cdf(const std::vector<T>& vecDf, std::vector<T>& vecCdf)
 {
-    vec_cdf = vec_df;
-    for (size_t i = 1; i < vec_cdf.size(); i++)
-        vec_cdf[i] = vec_cdf[i] + vec_cdf[i - 1];
+    vecCdf = vecDf;
+    for (size_t i = 1; i < vecCdf.size(); i++)
+        vecCdf[i] = vecCdf[i] + vecCdf[i - 1];
 }
 
 };  // namespace histogram
@@ -69,16 +69,16 @@ void Encode_histo_relation(const std::size_t nImage,
 
 struct GainOffsetConstraintBuilder
 {
-    GainOffsetConstraintBuilder(const std::vector<relativeColorHistogramEdge>& vec_relativeHistograms, const std::vector<std::size_t>& vec_indexToFix)
-      : _vec_relative(vec_relativeHistograms),
-        _vec_indexToFix(vec_indexToFix)
+    GainOffsetConstraintBuilder(const std::vector<relativeColorHistogramEdge>& vecRelativeHistograms, const std::vector<std::size_t>& vecIndexToFix)
+      : _vecRelative(vecRelativeHistograms),
+        _vecIndexToFix(vecIndexToFix)
     {
         // Count the number of images
         std::set<std::size_t> countSet;
-        for (int i = 0; i < _vec_relative.size(); ++i)
+        for (int i = 0; i < static_cast<int>(_vecRelative.size()); ++i)
         {
-            countSet.insert(_vec_relative[i].I);
-            countSet.insert(_vec_relative[i].J);
+            countSet.insert(_vecRelative[i].I);
+            countSet.insert(_vecRelative[i].J);
         }
         _Nima = countSet.size();
     }
@@ -88,8 +88,8 @@ struct GainOffsetConstraintBuilder
     bool Build(linearProgramming::LPConstraintsSparse& constraint)
     {
         Encode_histo_relation(_Nima,
-                              _vec_relative,
-                              _vec_indexToFix,
+                              _vecRelative,
+                              _vecIndexToFix,
                               constraint._constraintMat,
                               constraint._Cst_objective,
                               constraint._vec_sign,
@@ -105,8 +105,8 @@ struct GainOffsetConstraintBuilder
     }
     // Internal data
     size_t _Nima;
-    const std::vector<relativeColorHistogramEdge>& _vec_relative;
-    const std::vector<std::size_t>& _vec_indexToFix;
+    const std::vector<relativeColorHistogramEdge>& _vecRelative;
+    const std::vector<std::size_t>& _vecIndexToFix;
 };
 
 };  // namespace lInfinity

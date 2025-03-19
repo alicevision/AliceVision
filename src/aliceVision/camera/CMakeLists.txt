@@ -41,13 +41,13 @@ set(camera_files_sources
 )
 
 alicevision_add_library(aliceVision_camera
-  SOURCES ${camera_files_headers} ${camera_files_sources}
-  PUBLIC_LINKS
-    aliceVision_numeric
-    aliceVision_geometry
-    aliceVision_image
-    aliceVision_stl
-    aliceVision_system
+    SOURCES ${camera_files_headers} ${camera_files_sources}
+    PUBLIC_LINKS
+        aliceVision_numeric
+        aliceVision_geometry
+        aliceVision_image
+        aliceVision_stl
+        aliceVision_system
 )
 
 # Unit tests

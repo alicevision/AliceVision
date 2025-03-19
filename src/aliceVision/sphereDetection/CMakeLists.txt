@@ -9,9 +9,9 @@ set(sphereDetection_sources
 )
 
 alicevision_add_library(aliceVision_sphereDetection
-  SOURCES ${sphereDetection_headers} ${sphereDetection_sources}
-  PUBLIC_LINKS
-    ${OpenCV_LIBS}
-    aliceVision_image
-    ONNXRuntime::ONNXRuntime
+    SOURCES ${sphereDetection_headers} ${sphereDetection_sources}
+    PUBLIC_LINKS
+        ${OpenCV_LIBS}
+        aliceVision_image
+        ONNXRuntime::ONNXRuntime
 )

@@ -430,7 +430,7 @@ int aliceVision_main(int argc, char** argv)
     
     if (useJson)
     {
-        boost::json::error_code ec;
+        boost::system::error_code ec;
         std::ifstream inputfile(calibrationFilename); 
         std::vector<boost::json::value> content = readJsons(inputfile, ec);
         if (content.size() != 1)

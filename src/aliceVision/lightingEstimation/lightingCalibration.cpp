@@ -107,9 +107,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
                 Eigen::MatrixXf currentK = Eigen::MatrixXf::Zero(3, 3);
                 // Create K matrix
-                currentK << focalPx, 0.0, x_p,
-                    0.0, focalPx, y_p,
-                    0.0, 0.0, 1.0;
+                currentK << focalPx, 0.0, x_p, 0.0, focalPx, y_p, 0.0, 0.0, 1.0;
 
                 KMatrices.push_back(currentK);
             }
@@ -135,7 +133,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
         float focal = focals.at(i);
         std::array<float, 3> sphereParam = allSpheresParams.at(i);
-        if(ellipticEstimation)
+        if (ellipticEstimation)
         {
             Eigen::Matrix3f K = KMatrices.at(i);
             float sphereRadius = 1.0;
@@ -145,7 +143,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
             image::Image<float> imageFloat;
             image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
-            getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam, maskCV);
+            getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam);
             calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity);
         }
         else
@@ -156,10 +154,11 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         lightMat.row(i) = lightingDirection;
         intList.push_back(intensity);
 
-        if(doDebug)
+        if (doDebug)
         {
             int outputSize = 1024;
-            std::string outputFileName = fs::path(outputPath).parent_path().string() + "/" + fs::path(picturePath).stem().string() + "_" + method + ".png";
+            std::string outputFileName =
+              fs::path(outputPath).parent_path().string() + "/" + fs::path(picturePath).stem().string() + "_" + method + ".png";
             sphereFromLighting(lightingDirection, lightingDirection.norm(), outputFileName, outputSize);
         }
     }
@@ -208,8 +207,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
         observationRayPersp = -observationRayPersp / observationRayPersp.norm();
 
         // Evaluate lighting direction :
-        //lightingDirection = 2 * normalBrightestPoint.dot(observationRayPersp) * normalBrightestPoint - observationRayPersp;
-        //lightingDirection = lightingDirection / lightingDirection.norm();
+        // lightingDirection = 2 * normalBrightestPoint.dot(observationRayPersp) * normalBrightestPoint - observationRayPersp;
+        // lightingDirection = lightingDirection / lightingDirection.norm();
 
         lightingDirection = 2 * normalBrightestPoint.dot(observationRay) * normalBrightestPoint - observationRay;
 
@@ -376,8 +375,8 @@ void calibrateLightFromRealSphere(const image::Image<float>& imageFloat,
         Eigen::Vector3f observationRayPersp;
 
         // orthographic approximation :
-        observationRayPersp(0) = brigthestPoint_xy(0) / K(0,0);
-        observationRayPersp(1) = brigthestPoint_xy(1) / K(0,0);
+        observationRayPersp(0) = brigthestPoint_xy(0) / K(0, 0);
+        observationRayPersp(1) = brigthestPoint_xy(1) / K(0, 0);
         observationRayPersp(2) = 1.0;
         observationRayPersp = -observationRayPersp / observationRayPersp.norm();
 
@@ -405,14 +404,14 @@ void calibrateLightFromRealSphere(const image::Image<float>& imageFloat,
         {
             for (int i = 0; i < newMask.rows(); ++i)
             {
-                if (newMask(i,j) > 0.1 && (imageFloat(i, j) > 0.2) && (imageFloat(i, j) < 0.8))
+                if (newMask(i, j) > 0.1 && (imageFloat(i, j) > 0.2) && (imageFloat(i, j) < 0.8))
                 {
                     // imSphere = normalSphere.s
                     imSphere(currentIndex) = imageFloat(i, j);
 
-                    normalSphere(currentIndex, 0) = normals(i,j)(0);
-                    normalSphere(currentIndex, 1) = normals(i,j)(1);
-                    normalSphere(currentIndex, 2) = normals(i,j)(2);
+                    normalSphere(currentIndex, 0) = normals(i, j)(0);
+                    normalSphere(currentIndex, 1) = normals(i, j)(1);
+                    normalSphere(currentIndex, 2) = normals(i, j)(2);
 
                     ++currentIndex;
                 }
@@ -541,16 +540,16 @@ void cutImage(const image::Image<float>& imageFloat,
         {
             if (newMask(i, j) == 1)
             {
-                if(minISphere > i)
+                if (minISphere > i)
                     minISphere = i;
 
-                if(minJSphere > j)
+                if (minJSphere > j)
                     minJSphere = j;
 
-                if(maxISphere < i)
+                if (maxISphere < i)
                     maxISphere = i;
 
-                if(maxJSphere < j)
+                if (maxJSphere < j)
                     maxJSphere = j;
             }
         }
@@ -559,7 +558,7 @@ void cutImage(const image::Image<float>& imageFloat,
     patchOrigin[0] = minJSphere;
     patchOrigin[1] = minISphere;
 
-    patch = imageFloat.block(minISphere, minJSphere, maxISphere-minISphere,  maxJSphere-minJSphere);
+    patch = imageFloat.block(minISphere, minJSphere, maxISphere - minISphere, maxJSphere - minJSphere);
 }
 
 void writeJSON(const std::string& fileName,

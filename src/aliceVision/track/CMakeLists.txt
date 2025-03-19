@@ -1,29 +1,29 @@
 # Headers
 set(tracks_files_headers
-  Track.hpp
-  TracksBuilder.hpp
-  TracksHandler.hpp
-  tracksUtils.hpp
-  trackIO.hpp
+    Track.hpp
+    TracksBuilder.hpp
+    TracksHandler.hpp
+    tracksUtils.hpp
+    trackIO.hpp
 )
 
 # Sources
 set(tracks_files_sources
-  TracksBuilder.cpp
-  TracksHandler.cpp
-  tracksUtils.cpp
-  trackIO.cpp
+    TracksBuilder.cpp
+    TracksHandler.cpp
+    tracksUtils.cpp
+    trackIO.cpp
 )
 
 alicevision_add_library(aliceVision_track
-  SOURCES ${tracks_files_headers} ${tracks_files_sources}
-  PUBLIC_LINKS
-    aliceVision_feature
-    aliceVision_matching
-    aliceVision_stl
-    Boost::json
-  PRIVATE_LINKS
-    ${LEMON_LIBRARY}
+    SOURCES ${tracks_files_headers} ${tracks_files_sources}
+    PUBLIC_LINKS
+        aliceVision_feature
+        aliceVision_matching
+        aliceVision_stl
+        Boost::json
+    PRIVATE_LINKS
+        ${LEMON_LIBRARY}
 )
 
 # Unit tests

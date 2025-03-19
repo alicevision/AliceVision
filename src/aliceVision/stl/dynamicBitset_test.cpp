@@ -25,18 +25,18 @@ BOOST_AUTO_TEST_CASE(DYNAMIC_BITSET_InitAndReset_64)
     BOOST_CHECK_EQUAL(64 / dynamic_bitset::bits_per_block, mybitset.num_blocks());
 
     // Set some bits to 1
-    for (int i = 0; i < mybitset.size(); i += 2)
+    for (int i = 0; i < static_cast<int>(mybitset.size()); i += 2)
         mybitset[i] = true;
 
     // Check that some bits have been correctly set to 1
-    for (int i = 0; i < mybitset.size(); ++i)
+    for (int i = 0; i < static_cast<int>(mybitset.size()); ++i)
     {
         BOOST_CHECK_EQUAL(!(i % 2), mybitset[i]);
     }
 
     // Reset the value to 0
     mybitset.reset();
-    for (int i = 0; i < mybitset.size(); ++i)
+    for (int i = 0; i < static_cast<int>(mybitset.size()); ++i)
     {
         BOOST_CHECK_EQUAL(false, mybitset[i]);
     }
@@ -54,18 +54,18 @@ BOOST_AUTO_TEST_CASE(DYNAMIC_BITSET_InitAndReset_4)
     BOOST_CHECK_EQUAL(1, mybitset.num_blocks());
 
     // Set some bits to 1
-    for (int i = 0; i < mybitset.size(); i += 2)
+    for (int i = 0; i < static_cast<int>(mybitset.size()); i += 2)
         mybitset[i] = true;
 
     // Check that some bits have been correctly set to 1
-    for (int i = 0; i < mybitset.size(); ++i)
+    for (int i = 0; i < static_cast<int>(mybitset.size()); ++i)
     {
         BOOST_CHECK_EQUAL(!(i % 2), mybitset[i]);
     }
 
     // Reset the value to 0
     mybitset.reset();
-    for (int i = 0; i < mybitset.size(); ++i)
+    for (int i = 0; i < static_cast<int>(mybitset.size()); ++i)
     {
         BOOST_CHECK_EQUAL(false, mybitset[i]);
     }

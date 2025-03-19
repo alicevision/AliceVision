@@ -23,9 +23,8 @@ enum class EImageDescriberType : unsigned char
     SIFT = 10,
     SIFT_FLOAT = 11,
     SIFT_UPRIGHT = 12,
-    DSPSIFT = 13
+    DSPSIFT = 13,
 
-    ,
     AKAZE = 20,
     AKAZE_LIOP = 21,
     AKAZE_MLDB = 22
@@ -78,7 +77,7 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
  */
 std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::string& describerMethods);
 
-inline bool isMarker(EImageDescriberType imageDescriberType)
+inline bool isMarker([[maybe_unused]] EImageDescriberType imageDescriberType)
 {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     if (imageDescriberType == EImageDescriberType::CCTAG3 || imageDescriberType == EImageDescriberType::CCTAG4)

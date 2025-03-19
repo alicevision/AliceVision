@@ -22,7 +22,7 @@ namespace aliceVision {
 namespace hdr {
 
 bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
-                               const std::vector<std::vector<double>>& times,
+                               [[maybe_unused]] const std::vector<std::vector<double>>& times,
                                const std::size_t channelQuantization,
                                const rgbCurve& weight,
                                float lambda,
@@ -66,9 +66,8 @@ bool DebevecCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrS
         size_t countPoints = 0;
         for (size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
         {
-            /*Process a group of brackets*/
+            /* Process a group of brackets */
             const std::vector<ImageSample>& group = ldrSamples[groupId];
-            const std::vector<double>& local_times = times[groupId];
 
             for (size_t sampleId = 0; sampleId < group.size(); sampleId++)
             {

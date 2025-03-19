@@ -159,15 +159,15 @@ inline void EncodeTi_from_tij(const size_t nTranslation,
 //-- Estimate the translation from heading relative translations.
 struct Tifromtij_ConstraintBuilder
 {
-    Tifromtij_ConstraintBuilder(const std::vector<translationAveraging::relativeInfo>& vec_relative)
-      : _vec_relative(vec_relative)
+    Tifromtij_ConstraintBuilder(const std::vector<translationAveraging::relativeInfo>& vecRelative)
+      : _vecRelative(vecRelative)
     {
         // Count the number of camera that are represented
         std::set<size_t> countSet;
-        for (size_t i = 0; i < vec_relative.size(); ++i)
+        for (size_t i = 0; i < vecRelative.size(); ++i)
         {
-            countSet.insert(vec_relative[i].first.first);
-            countSet.insert(vec_relative[i].first.second);
+            countSet.insert(vecRelative[i].first.first);
+            countSet.insert(vecRelative[i].first.second);
         }
         _Ncam = countSet.size();
     }
@@ -177,7 +177,7 @@ struct Tifromtij_ConstraintBuilder
     bool Build(LPConstraintsSparse& constraint)
     {
         EncodeTi_from_tij(_Ncam,
-                          _vec_relative,
+                          _vecRelative,
                           constraint._constraintMat,
                           constraint._Cst_objective,
                           constraint._vec_sign,
@@ -192,13 +192,13 @@ struct Tifromtij_ConstraintBuilder
         //  - #translations parameters,
         //  - #relative lambda factors,
         //  - one gamma parameter.
-        constraint._nbParams = _Ncam * 3 + _vec_relative.size() + 1;
+        constraint._nbParams = _Ncam * 3 + _vecRelative.size() + 1;
         return true;
     }
 
     // Internal data
     size_t _Ncam;
-    const std::vector<translationAveraging::relativeInfo>& _vec_relative;  // /!\ memory Alias
+    const std::vector<translationAveraging::relativeInfo>& _vecRelative;  // /!\ memory Alias
 };
 
 }  // namespace lInfinityCV

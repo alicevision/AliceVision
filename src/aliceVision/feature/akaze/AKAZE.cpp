@@ -266,7 +266,7 @@ void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
 
     // filter duplicates
     detectDuplicates(ptsPerSlice[0], ptsPerSlice[0]);
-    for (int k = 1; k < ptsPerSlice.size(); ++k)
+    for (std::size_t k = 1; k < ptsPerSlice.size(); ++k)
     {
         detectDuplicates(ptsPerSlice[k], ptsPerSlice[k]);      // detect inter scale duplicates
         detectDuplicates(ptsPerSlice[k - 1], ptsPerSlice[k]);  // detect duplicates using previous octave
@@ -401,7 +401,8 @@ inline float getAngle(float x, float y)
 
 void AKAZE::computeMainOrientation(AKAZEKeypoint& keypoint, const image::Image<float>& Lx, const image::Image<float>& Ly) const
 {
-    int ix = 0, iy = 0, idx = 0;
+    int ix = 0, iy = 0;
+    std::size_t idx = 0;
     const int TABSIZE = 109;
     float resX[TABSIZE], resY[TABSIZE], Ang[TABSIZE];
     const short id[] = {6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6};

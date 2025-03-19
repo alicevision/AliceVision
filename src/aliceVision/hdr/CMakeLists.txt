@@ -27,26 +27,29 @@ set(hdr_files_sources
 )
 
 alicevision_add_library(aliceVision_hdr
-  SOURCES ${hdr_files_headers} ${hdr_files_sources}
-  PRIVATE_LINKS
-    aliceVision_system
-    aliceVision_image
-    aliceVision_sfmData
-    ${CERES_LIBRARIES}
+    SOURCES ${hdr_files_headers} ${hdr_files_sources}
+    PRIVATE_LINKS
+        aliceVision_system
+        aliceVision_image
+        aliceVision_sfmData
+        ${CERES_LIBRARIES}
 )
 
 # Unit tests
 alicevision_add_test(hdrDebevec_test.cpp
     NAME "hdr_debevec"
-    LINKS aliceVision_image aliceVision_hdr)
+    LINKS aliceVision_image aliceVision_hdr
+)
 
 alicevision_add_test(hdrGrossberg_test.cpp
     NAME "hdr_grossberg"
-    LINKS aliceVision_image aliceVision_hdr)
+    LINKS aliceVision_image aliceVision_hdr
+)
 
 alicevision_add_test(hdrLaguerre_test.cpp
     NAME "hdr_laguerre"
-    LINKS aliceVision_image aliceVision_hdr)
+    LINKS aliceVision_image aliceVision_hdr
+)
 
 
 # SWIG Binding

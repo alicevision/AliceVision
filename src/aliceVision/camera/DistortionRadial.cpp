@@ -36,7 +36,6 @@ Eigen::Matrix2d DistortionRadialK1::getDerivativeAddDistoWrtPt(const Vec2& p) co
 
 Eigen::MatrixXd DistortionRadialK1::getDerivativeAddDistoWrtDisto(const Vec2& p) const
 {
-    const double k1 = _distortionParams[0];
     const double r2 = p(0) * p(0) + p(1) * p(1);
     const Eigen::MatrixXd ret = p * r2;
     return ret;

@@ -5,7 +5,7 @@
 set(FOLDER_SOFTWARE_UTILS "Software/Utils")
 
 
-if(ALICEVISION_HAVE_CUDA)
+if (ALICEVISION_HAVE_CUDA)
     alicevision_add_software(aliceVision_hardwareResources
         SOURCE main_hardwareResources.cpp
         FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -16,9 +16,9 @@ if(ALICEVISION_HAVE_CUDA)
     )
 endif()
 
-if(ALICEVISION_BUILD_SFM)
+if (ALICEVISION_BUILD_SFM)
     # Uncertainty
-    if(ALICEVISION_HAVE_UNCERTAINTYTE)
+    if (ALICEVISION_HAVE_UNCERTAINTYTE)
         alicevision_add_software(aliceVision_computeUncertainty
             SOURCE main_computeUncertainty.cpp
             FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -62,7 +62,7 @@ if(ALICEVISION_BUILD_SFM)
               ${Boost_LIBRARIES}
     )
 
-    if(ALICEVISION_HAVE_OPENCV)
+    if (ALICEVISION_HAVE_OPENCV)
         target_link_libraries(aliceVision_imageProcessing_exe PRIVATE ${OpenCV_LIBS})
     endif()
 
@@ -134,7 +134,7 @@ if(ALICEVISION_BUILD_SFM)
     )
 
     # Transform rig
-    if(ALICEVISION_HAVE_ALEMBIC)
+    if (ALICEVISION_HAVE_ALEMBIC)
         alicevision_add_software(aliceVision_rigTransform
             SOURCE main_rigTransform.cpp
             FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -341,7 +341,7 @@ if(ALICEVISION_BUILD_SFM)
 
     # Keyframe selection
     # - export keyframes from video files / image sequence directories
-    if(ALICEVISION_HAVE_OPENCV)
+    if (ALICEVISION_HAVE_OPENCV)
         alicevision_add_software(aliceVision_keyframeSelection
             SOURCE main_keyframeSelection.cpp
             FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -368,7 +368,7 @@ if(ALICEVISION_BUILD_SFM)
     )
 
     # Perform color chart detection
-    if(ALICEVISION_HAVE_OPENCV_CONTRIB)
+    if (ALICEVISION_HAVE_OPENCV_CONTRIB)
         alicevision_add_software(aliceVision_colorCheckerDetection
             SOURCE main_colorCheckerDetection.cpp
             FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -377,7 +377,7 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
-                  ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
+                  ${OpenCV_LIBS} # opencv_core opencv_imgproc opencv_video opencv_imgcodecs opencv_videoio opencv_features2d opencv_xfeatures2d
                   opencv_mcc
         )
 
@@ -398,7 +398,7 @@ if(ALICEVISION_BUILD_SFM)
 
 
     # Perform color correction
-    if(ALICEVISION_HAVE_OPENCV_CONTRIB)
+    if (ALICEVISION_HAVE_OPENCV_CONTRIB)
         alicevision_add_software(aliceVision_colorCheckerCorrection
             SOURCE main_colorCheckerCorrection.cpp
             FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -407,7 +407,7 @@ if(ALICEVISION_BUILD_SFM)
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
-                  ${OpenCV_LIBS} # opencv_core  opencv_imgproc  opencv_video  opencv_imgcodecs  opencv_videoio  opencv_features2d  opencv_xfeatures2d
+                  ${OpenCV_LIBS} # opencv_core opencv_imgproc opencv_video opencv_imgcodecs opencv_videoio opencv_features2d opencv_xfeatures2d
                   opencv_mcc
         )
     endif()
@@ -432,8 +432,8 @@ if (ALICEVISION_BUILD_PANORAMA)
     )
 endif()
 
-if(ALICEVISION_BUILD_MVS)
-    if(ALICEVISION_BUILD_PHOTOMETRICSTEREO)
+if (ALICEVISION_BUILD_MVS)
+    if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
         # Lighting estimation from picture, albedo and geometry
         alicevision_add_software(aliceVision_lightingEstimation
             SOURCE main_lightingEstimation.cpp

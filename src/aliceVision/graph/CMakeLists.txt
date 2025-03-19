@@ -1,16 +1,16 @@
 # Headers
 set(graph_files_headers
-  graph.hpp
-  connectedComponent.hpp
-  IndexedGraph.hpp
-  indexedGraphGraphvizExport.hpp
-  Triplet.hpp
+    graph.hpp
+    connectedComponent.hpp
+    IndexedGraph.hpp
+    indexedGraphGraphvizExport.hpp
+    Triplet.hpp
 )
 
 alicevision_add_interface(aliceVision_graph
-  SOURCES ${graph_files_headers}
-  LINKS
-    aliceVision_system
+    SOURCES ${graph_files_headers}
+    LINKS
+        aliceVision_system
 )
 
 # Unit tests

@@ -158,14 +158,14 @@ class ExposureConstraint : public ceres::SizedCostFunction<1, 1>
 
 void LaguerreBACalibration::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
                                     std::vector<std::vector<double>>& cameraExposures,
-                                    const std::size_t channelQuantization,
+                                    [[maybe_unused]] const std::size_t channelQuantization,
                                     bool refineExposures,
                                     rgbCurve& response)
 {
     std::map<std::pair<double, double>, double> exposureParameters;
     for (std::vector<double>& group : cameraExposures)
     {
-        for (int index = 0; index < group.size() - 1; index++)
+        for (int index = 0; index < static_cast<int>(group.size()) - 1; index++)
         {
             std::pair<double, double> exposurePair;
             exposurePair.first = group[index];
@@ -185,15 +185,15 @@ void LaguerreBACalibration::process(const std::vector<std::vector<ImageSample>>&
     }
 
     // Convert selected samples into residual blocks
-    for (int groupId = 0; groupId < ldrSamples.size(); ++groupId)
+    for (int groupId = 0; groupId < static_cast<int>(ldrSamples.size()); ++groupId)
     {
         const std::vector<ImageSample>& group = ldrSamples[groupId];
 
-        for (int sampleId = 0; sampleId < group.size(); sampleId++)
+        for (int sampleId = 0; sampleId < static_cast<int>(group.size()); sampleId++)
         {
             const ImageSample& sample = group[sampleId];
 
-            for (int bracketPos = 0; bracketPos < sample.descriptions.size() - 1; bracketPos++)
+            for (int bracketPos = 0; bracketPos < static_cast<int>(sample.descriptions.size()) - 1; bracketPos++)
             {
                 std::pair<double, double> exposurePair;
                 exposurePair.first = sample.descriptions[bracketPos].exposure;
@@ -265,7 +265,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<ImageSample>>&
             // Copy !
             std::vector<double> res = cameraExposures[idGroup];
 
-            for (int index = 0; index < group.size() - 1; index++)
+            for (int index = 0; index < static_cast<int>(group.size()) - 1; index++)
             {
                 std::pair<double, double> exposurePair;
                 exposurePair.first = group[index];
