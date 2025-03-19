@@ -8,6 +8,7 @@ option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 option(AV_USE_CUDA "Enable CUDA" ON)
 option(AV_USE_OPENMP "Enable OpenMP" $<$<CXX_COMPILER_ID:"AppleClang">,OFF,ON>) # disable by default for AppleClang
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(ALICEVISION_INSTALL_MESHROOM_PLUGIN "Install AliceVision's plugin for Meshroom" ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
@@ -83,6 +84,13 @@ install(
     DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
 )
 
+endif()
+
+if (ALICEVISION_INSTALL_MESHROOM_PLUGIN)
+    install(
+        DIRECTORY meshroom
+        DESTINATION ${CMAKE_INSTALL_DATADIR}
+    )
 endif()
 
 # Bundle target (see src/cmake/MakeBundle.cmake)

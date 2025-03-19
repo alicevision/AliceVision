@@ -94,24 +94,27 @@ jobs:
       - name: Functional Tests - PanoramaFisheyeHdr Pipeline
         working-directory: ./functional_tests
         run: |
-          # clone required repos
+          # Clone required repos
           git clone --branch develop https://github.com/alicevision/Meshroom.git
           git clone --branch main https://github.com/alicevision/dataset_panoramaFisheyeHdr.git
           cd Meshroom/
-          # select meshroom branch
           meshroom_avBranch=$(git ls-remote --heads https://github.com/alicevision/Meshroom.git $GITHUB_HEAD_REF | cut -f 1)
           if [ $meshroom_avBranch != "" ]; then git checkout $meshroom_avBranch; echo "Use Meshroom/$GITHUB_HEAD_REF"; fi
+
+          # Set environment variables specific to Meshroom
           export MESHROOM_INSTALL_DIR=$PWD
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+
+          # Set environment variables to find executables and libraries
           export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export PATH=$PATH:${ALICEVISION_ROOT}/bin
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-          mkdir ./outputData
-          cd bin/
-          python3 --version
-          pip3 --version
+
+          # Run the test pipeline
           pip3 install psutil
-          echo "ldd aliceVision_cameraInit"
-          ldd ${ALICEVISION_ROOT}/bin/aliceVision_cameraInit
+          cd bin/
+          mkdir ./outputData
           python3 meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
 
       - name: Functional Tests - SfM Quality Evaluation
@@ -119,13 +122,11 @@ jobs:
         run: |
           git clone --branch master https://github.com/alicevision/SfM_quality_evaluation.git
           cd SfM_quality_evaluation/
-          # checkout a specific commit to ensure repeatability
+          # Checkout a specific commit to ensure repeatability
           git checkout 36e3bf2d05c64d1726cb4a0e770923794f203f98
           export PYTHONPATH=${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-          echo "ldd aliceVision_cameraInit"
-          ldd ${ALICEVISION_ROOT}/bin/aliceVision_cameraInit
-          python3 --version
+
           python3 EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
       - name: Python Binding - Unit Tests
@@ -134,6 +135,27 @@ jobs:
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           pip3 install pytest
           pytest ./pyTests
+
+      - name: Meshroom Plugin - Templates validity
+        working-directory: ./functional_tests
+        run: |
+          git clone https://github.com/meshroomHub/mrSegmentation.git
+          cd Meshroom/
+          export MESHROOM_INSTALL_DIR=$PWD
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom:$PWD/../mrSegmentation/meshroom/nodes
+          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
+          export PATH=$PATH:${ALICEVISION_ROOT}/bin
+          export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
+
+          echo "
+          import sys
+          from meshroom.core import test
+          if test.checkAllTemplatesVersions():
+              sys.exit(0)
+          sys.exit(1)
+          " | tee test_templatesVersions.py
+          python3 test_templatesVersions.py
 
   build-windows:
     runs-on: windows-latest
@@ -229,6 +251,7 @@ jobs:
                              -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
                              -DALICEVISION_BUILD_SEGMENTATION=OFF
                              -DALICEVISION_BUILD_SWIG_BINDING=ON
+                             -DALICEVISION_INSTALL_MESHROOM_PLUGIN=OFF
                              -DBOOST_NO_CXX11=ON
 
           cmakeBuildType: Release
