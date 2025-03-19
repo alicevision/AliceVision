@@ -89,7 +89,7 @@ endif()
 if (ALICEVISION_INSTALL_MESHROOM_PLUGIN)
     install(
         DIRECTORY meshroom
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
+        DESTINATION ${CMAKE_INSTALL_DATADIR}
     )
 endif()
 
