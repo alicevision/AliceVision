@@ -103,8 +103,8 @@ jobs:
 
           # Set environment variables specific to Meshroom
           export MESHROOM_INSTALL_DIR=$PWD
-          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/aliceVision/meshroom
-          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/aliceVision/meshroom
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
 
           # Set environment variables to find executables and libraries
           export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
@@ -142,8 +142,8 @@ jobs:
           git clone https://github.com/meshroomHub/mrSegmentation.git
           cd Meshroom/
           export MESHROOM_INSTALL_DIR=$PWD
-          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/aliceVision/meshroom:$PWD/../mrSegmentation/meshroom/nodes
-          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/aliceVision/meshroom
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom:$PWD/../mrSegmentation/meshroom/nodes
+          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
           export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export PATH=$PATH:${ALICEVISION_ROOT}/bin
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
