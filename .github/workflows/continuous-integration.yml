@@ -140,9 +140,12 @@ jobs:
         working-directory: ./functional_tests
         run: |
           git clone https://github.com/meshroomHub/mrSegmentation.git
-          cd Meshroom/
+          cd mrSegmentation
+          mrSegmentation_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrSegmentation.git $GITHUB_HEAD_REF | cut -f 1)
+          if [ $mrSegmentation_avBranch != "" ]; then git checkout $mrSegmentation_avBranch; echo "Use mrSegmentation/$GITHUB_HEAD_REF"; fi
+          cd ../Meshroom/
           export MESHROOM_INSTALL_DIR=$PWD
-          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom:$PWD/../mrSegmentation/meshroom/nodes
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom:$PWD/../mrSegmentation/meshroom
           export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
           export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export PATH=$PATH:${ALICEVISION_ROOT}/bin
