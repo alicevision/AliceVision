@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "2.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -16,10 +16,10 @@ Performs Macbeth color checker chart detection.
 
 Outputs:
 - the detected color charts position and colors
-- the associated transform matrix from "theoric" to "measured"
-assuming that the "theoric" Macbeth chart corners coordinates are:
+- the associated transform matrix from "theoric" to "measured" 
+assuming that the "theoric" Macbeth chart corners coordinates are: 
 (0, 0), (1675, 0), (1675, 1125), (0, 1125)
-
+  
 Dev notes:
 - Fisheye/pinhole is not handled
 - ColorCheckerViewer is unstable with multiple color chart within a same image
@@ -30,9 +30,25 @@ Dev notes:
             name="input",
             label="Input",
             description="SfMData file input, image filenames or regex(es) on the image file path.\n"
-                        "Supported regex: '#' matches a single digit, '@' one or more digits, '?' one character "
-                        "and '*' zero or more.",
+                        "Supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more.",
             value="",
+        ),
+        desc.ChoiceParam(
+            name="ccType",
+            label="Colorchart Type",
+            description="Colorchart type:\n"
+                        " - mcc24   classical macbeth 24 patches\n"
+                        " - sg140   Digital SG 140 patches\n"
+                        " - Vinyl18 DKK colorchart 12 patches + 6 rectangles)",
+            value="mcc24",
+            values=["mcc24", "sg140", "Vinyl18"],
+            exclusive=True,
+        ),
+        desc.File(
+            name="modelFolder",
+            label="Model Folder",
+            description="DNN model directory path.",
+            value="${ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER}",
         ),
         desc.IntParam(
             name="maxCount",
@@ -47,6 +63,20 @@ Dev notes:
             label="Debug",
             description="If checked, debug data will be generated.",
             value=False,
+        ),
+        desc.BoolParam(
+            name="processAllImages",
+            label="Process All Images",
+            description="If checked, detection will be launched on all images.\n"
+                        "If unchecked, only images with a name fitting a regular expression are considered.",
+            value=True,
+        ),
+        desc.File(
+            name="filter",
+            label="Filter",
+            description="Regex to select the images on which the colorchecker detection will be computed.",
+            value="*_macbeth.*",
+            enabled=lambda node: not node.processAllImages.value
         ),
         desc.ChoiceParam(
             name="verboseLevel",

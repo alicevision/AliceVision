@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "2.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
@@ -33,9 +33,33 @@ If multiple color charts are submitted, only the first one will be taken in acco
             name="input",
             label="Input",
             description="Input SfMData file, image filenames or regex(es) on the image file path.\n"
-                        "Supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and "
-                        "'*' zero or more.",
+                        "Supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more.",
             value="",
+        ),
+        desc.ChoiceParam(
+            name="correctionMethod",
+            label="Correction Level",
+            description="Level of correction:\n"
+                        " - luminance: Ajust luminance level only.\n"
+                        " - whiteBalance: Apply white balancing in addition to luminance adjustment.\n"
+                        " - full: Full color correction."
+                        " - bypass: Do nothing.",
+            value="luminance",
+            values=["luminance", "whiteBalance", "full", "bypass"],
+            exclusive=True,
+        ),
+        desc.BoolParam(
+            name="useBestColorCheckerOnly",
+            label="Use Best Color Chart Only",
+            description="If checked, use only the color chart with the best orientation and size to compute the color correction model.\n"
+                        "If unchecked, combine all detected color checkers.",
+            value=True,
+        ),
+        desc.BoolParam(
+            name="keepImageName",
+            label="Keep Image Name",
+            description="Keep image names if different from the view Ids.",
+            value=True,
         ),
         desc.ChoiceParam(
             name="extension",
@@ -43,6 +67,7 @@ If multiple color charts are submitted, only the first one will be taken in acco
             description="Output image file extension.",
             value="exr",
             values=["exr", ""],
+            exclusive=True,
         ),
         desc.ChoiceParam(
             name="storageDataType",
