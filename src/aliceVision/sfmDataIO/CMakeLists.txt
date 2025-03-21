@@ -28,10 +28,12 @@ if (ALICEVISION_HAVE_ALEMBIC)
     list(APPEND sfmDataIO_files_headers
         AlembicExporter.hpp
         AlembicImporter.hpp
+        ExternalAlembicImporter.hpp
     )
     list(APPEND sfmDataIO_files_sources
         AlembicExporter.cpp
         AlembicImporter.cpp
+        ExternalAlembicImporter.cpp
     )
 endif()
 
