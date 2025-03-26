@@ -4,8 +4,6 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 from pathlib import Path
 
-import pyalicevision as av
-
 import distutils.dir_util as du
 import shutil
 import glob
@@ -73,6 +71,7 @@ Using exifTool, this node extracts metadata of all images referenced in a sfmDat
     ]
 
     def processChunk(self, chunk):
+        import pyalicevision as av
         try:
             chunk.logManager.start(chunk.node.verboseLevel.value)
             
