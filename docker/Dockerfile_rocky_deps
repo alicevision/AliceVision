@@ -54,6 +54,9 @@ RUN echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVis
 COPY dl/fcn_resnet50.onnx ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx" >> /etc/profile.d/alicevision.sh
 
+COPY dl/ColorchartDetectionModel ${AV_INSTALL}/share/aliceVision
+RUN echo "export ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=${AV_INSTALL}/share/aliceVision/ColorchartDetectionModel" >> /etc/profile.d/alicevision.sh
+
 COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
 RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh` && echo "Build multithreading number of cores: ${CPU_CORES}"
 
