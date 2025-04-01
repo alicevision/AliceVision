@@ -40,7 +40,7 @@ If multiple color charts are submitted, only the first one will be taken in acco
             name="correctionMethod",
             label="Correction Level",
             description="Level of correction:\n"
-                        " - luminance: Ajust luminance level only.\n"
+                        " - luminance: Adjust luminance level only.\n"
                         " - whiteBalance: Apply white balancing in addition to luminance adjustment.\n"
                         " - full: Full color correction."
                         " - bypass: Do nothing.",

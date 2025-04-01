@@ -19,7 +19,7 @@ Outputs:
 - the associated transform matrix from "theoric" to "measured" 
 assuming that the "theoric" Macbeth chart corners coordinates are: 
 (0, 0), (1675, 0), (1675, 1125), (0, 1125)
-  
+
 Dev notes:
 - Fisheye/pinhole is not handled
 - ColorCheckerViewer is unstable with multiple color chart within a same image
@@ -39,7 +39,7 @@ Dev notes:
             description="Colorchart type:\n"
                         " - mcc24   classical macbeth 24 patches\n"
                         " - sg140   Digital SG 140 patches\n"
-                        " - Vinyl18 DKK colorchart 12 patches + 6 rectangles)",
+                        " - Vinyl18 DKK colorchart 12 patches + 6 rectangles",
             value="mcc24",
             values=["mcc24", "sg140", "Vinyl18"],
             exclusive=True,
