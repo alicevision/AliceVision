@@ -228,20 +228,22 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
-    # SfM transform
-    alicevision_add_software(aliceVision_sfmTransform
-        SOURCE main_sfmTransform.cpp
-        FOLDER ${FOLDER_SOFTWARE_UTILS}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_mesh
-              aliceVision_sfm
-              aliceVision_sfmData
-              aliceVision_sfmDataIO
-              Boost::program_options
-              Boost::json
-    )
+    if (ALICEVISION_BUILD_MVS)
+        # SfM transform
+        alicevision_add_software(aliceVision_sfmTransform
+            SOURCE main_sfmTransform.cpp
+            FOLDER ${FOLDER_SOFTWARE_UTILS}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_feature
+                aliceVision_mesh
+                aliceVision_sfm
+                aliceVision_sfmData
+                aliceVision_sfmDataIO
+                Boost::program_options
+                Boost::json
+        )
+    endif()
 
     # SfM filter
     alicevision_add_software(aliceVision_sfmFilter
