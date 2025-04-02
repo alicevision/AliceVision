@@ -70,7 +70,7 @@ if (ALICEVISION_BUILD_SFM AND ALICEVISION_BUILD_MVS)
 endif()
 
 if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
-    if(ALICEVISION_HAVE_OPENCV)
+    if (ALICEVISION_HAVE_OPENCV)
         add_subdirectory(photometricStereo)
         if (ALICEVISION_HAVE_ONNX)
             add_subdirectory(sphereDetection)
