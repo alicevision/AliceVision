@@ -228,20 +228,22 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
-    # SfM transform
-    alicevision_add_software(aliceVision_sfmTransform
-        SOURCE main_sfmTransform.cpp
-        FOLDER ${FOLDER_SOFTWARE_UTILS}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_mesh
-              aliceVision_sfm
-              aliceVision_sfmData
-              aliceVision_sfmDataIO
-              Boost::program_options
-              Boost::json
-    )
+    if (ALICEVISION_BUILD_MVS)
+        # SfM transform
+        alicevision_add_software(aliceVision_sfmTransform
+            SOURCE main_sfmTransform.cpp
+            FOLDER ${FOLDER_SOFTWARE_UTILS}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_feature
+                aliceVision_mesh
+                aliceVision_sfm
+                aliceVision_sfmData
+                aliceVision_sfmDataIO
+                Boost::program_options
+                Boost::json
+        )
+    endif()
 
     # SfM filter
     alicevision_add_software(aliceVision_sfmFilter
@@ -449,23 +451,25 @@ endif()
 if (ALICEVISION_BUILD_MVS)
     if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
         # Lighting estimation from picture, albedo and geometry
-        alicevision_add_software(aliceVision_lightingEstimation
-            SOURCE main_lightingEstimation.cpp
-            FOLDER ${FOLDER_SOFTWARE_UTILS}
-            LINKS aliceVision_system
-                  aliceVision_cmdline
-                  aliceVision_numeric
-                  aliceVision_sfmData
-                  aliceVision_sfmDataIO
-                  aliceVision_mvsUtils
-                  aliceVision_image
-                  aliceVision_lightingEstimation
-                  ${Boost_LIBRARIES}
-        )
+        if (ALICEVISION_HAVE_OPENCV)
+            alicevision_add_software(aliceVision_lightingEstimation
+                SOURCE main_lightingEstimation.cpp
+                FOLDER ${FOLDER_SOFTWARE_UTILS}
+                LINKS aliceVision_system
+                    aliceVision_cmdline
+                    aliceVision_numeric
+                    aliceVision_sfmData
+                    aliceVision_sfmDataIO
+                    aliceVision_mvsUtils
+                    aliceVision_image
+                    aliceVision_lightingEstimation
+                    ${Boost_LIBRARIES}
+            )
+        endif()
     endif()
 
 
-    # Lighting estimation from picture, albedo and geometry
+    # Create SfMData with some arbitrary data
     alicevision_add_software(aliceVision_generateSampleScene
         SOURCE main_generateSampleScene.cpp
         FOLDER ${FOLDER_SOFTWARE_UTILS}

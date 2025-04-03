@@ -326,7 +326,7 @@ endif()
 # ==============================================================================
 # Nanoflann
 # ==============================================================================
-if (ALICEVISION_BUILD_MVS)
+if (ALICEVISION_BUILD_MVS OR ALICEVISION_BUILD_LIDAR)
     find_package(nanoflann REQUIRED)
 endif()
 
@@ -495,7 +495,7 @@ endif()
 # ==============================================================================
 # Assimp
 # ==============================================================================
-if (ALICEVISION_BUILD_MVS)
+if (ALICEVISION_BUILD_MVS OR ALICEVISION_BUILD_SFM)
     find_package(assimp REQUIRED)
     message(STATUS "Assimp: ${ASSIMP_LIBRARIES}, ${ASSIMP_INCLUDE_DIRS}, ${ASSIMP_LIBRARY_DIRS}")
 endif()

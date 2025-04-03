@@ -31,7 +31,7 @@ if (ALICEVISION_BUILD_SFM)
               Boost::timer
     )
 
-    if (TARGET E57Format)
+    if (TARGET E57Format AND ALICEVISION_BUILD_MVS)
         alicevision_add_software(aliceVision_importE57
             SOURCE main_importE57.cpp
             FOLDER ${FOLDER_SOFTWARE_CONVERT}

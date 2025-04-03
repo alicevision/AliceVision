@@ -118,37 +118,39 @@ if (ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
-    # Bootstrapping SfM
-    alicevision_add_software(aliceVision_sfmBootstraping
-        SOURCE main_sfmBootstraping.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_sfm
-              aliceVision_sfmData
-              aliceVision_track
-              aliceVision_dataio
-              aliceVision_mesh
-              Boost::program_options
-              Boost::json
-    )
+    if (ALICEVISION_BUILD_MVS)
+        # Bootstrapping SfM
+        alicevision_add_software(aliceVision_sfmBootstraping
+            SOURCE main_sfmBootstraping.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_feature
+                aliceVision_sfm
+                aliceVision_sfmData
+                aliceVision_track
+                aliceVision_dataio
+                aliceVision_mesh
+                Boost::program_options
+                Boost::json
+        )
 
-    # Expanding SfM
-    alicevision_add_software(aliceVision_sfmExpanding
-        SOURCE main_sfmExpanding.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_sfm
-              aliceVision_sfmData
-              aliceVision_track
-              aliceVision_dataio
-              aliceVision_mesh
-              Boost::program_options
-              Boost::json
-    )
+        # Expanding SfM
+        alicevision_add_software(aliceVision_sfmExpanding
+            SOURCE main_sfmExpanding.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_feature
+                aliceVision_sfm
+                aliceVision_sfmData
+                aliceVision_track
+                aliceVision_dataio
+                aliceVision_mesh
+                Boost::program_options
+                Boost::json
+        )
+    endif()
 
     # Global Rotation Estimating
     alicevision_add_software(aliceVision_globalRotationEstimating
