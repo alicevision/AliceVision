@@ -75,19 +75,25 @@ void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
  * @param dstFileName the image output file name
  * @param outputIntrinsic the virtual camera intrinsic
  * @param sourceIntrinsic read image real intrinsic
+ * @param viewId the image view Id
  * @param srcFileName the initial image file path
  * @param evCorrection do we apply exposure compensation
  * @param cameraExposure current image camera exposure
  * @param medianCameraExposure median camera exposure for the sfmData
+ * @param masksFolders the mask folders list
+ * @param maskExtension the mask extension
  * @return false on error
 */
 bool processImage(const std::string& dstFileName,
              const camera::IntrinsicBase & outputIntrinsic,
              const camera::IntrinsicBase & sourceIntrinsic,
+             const IndexT & viewId,
              const std::string& srcFileName,
              bool evCorrection,
              double cameraExposure,
-             double medianCameraExposure)
+             double medianCameraExposure,
+             const std::vector<std::string> & masksFolders,
+             const std::string & maskExtension)
 {
     image::Image<image::RGBAfColor> image;
     image::Image<image::RGBAfColor> image_ud;
@@ -119,6 +125,26 @@ bool processImage(const std::string& dstFileName,
     {
         ALICEVISION_LOG_ERROR("Impossible to read image");
         return false;
+    }
+
+
+    //Applying optional external mask to image
+    image::Image<unsigned char> mask;
+    if (tryLoadMask(&mask, masksFolders, viewId, srcFileName, maskExtension))
+    {
+        if (image.width() * image.height() != mask.width() * mask.height())
+        {
+            ALICEVISION_LOG_DEBUG("Invalid image mask size: mask is ignored.");
+        }
+        else 
+        {
+            ALICEVISION_LOG_DEBUG("Applying mask.");
+            for (int pix = 0; pix < image.width() * image.height(); ++pix)
+            {
+                const bool masked = (mask(pix) == 0);
+                image(pix).a() = masked ? 0.f : 1.f;
+            }
+        }
     }
     
 
@@ -156,6 +182,8 @@ bool processImage(const std::string& dstFileName,
  * @param target the transformed sfmData which will be used for intrinsics properties
  * @param namingFunction function which defines how is the image named given the view object
  * @param evCorrection do we correct the exposure
+ * @param masksFolders the mask folders list
+ * @param maskExtension the mask extension
  * @param rangeStart the initial view index to process (range selection)
  * @param rangeEnd the last view index to process (range selection)
 */
@@ -163,6 +191,8 @@ bool process(const sfmData::SfMData & input,
              const sfmData::SfMData & target, 
              const NameFunction & namingFunction,
              bool evCorrection,
+             const std::vector<std::string> & masksFolders,
+             const std::string & maskExtension,
              size_t rangeStart,
              size_t rangeEnd)
 {
@@ -203,10 +233,13 @@ bool process(const sfmData::SfMData & input,
         processImage(outFileName,
                     targetIntrinsic,
                     intrinsic,
+                    viewId,
                     srcFileName,
                     evCorrection,
                     view.getImage().getCameraExposureSetting().getExposure(),
-                    medianCameraExposure);
+                    medianCameraExposure,
+                    masksFolders,
+                    maskExtension);
     }
 
     return true;
@@ -221,6 +254,8 @@ int aliceVision_main(int argc, char* argv[])
     std::string outFolder;
     std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
     std::string namingMode = "frameid";
+    std::vector<std::string> masksFolders;
+    std::string maskExtension = "png";
     int rangeStart = -1;
     int rangeSize = 1;
     bool evCorrection = false;
@@ -246,7 +281,12 @@ int aliceVision_main(int argc, char* argv[])
         ("evCorrection", po::value<bool>(&evCorrection)->default_value(evCorrection),
          "Correct exposure value.")
         ("namingMode", po::value<std::string>(&namingMode)->default_value(namingMode),
-         "naming mode.");
+         "naming mode.")
+        ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
+         "Use masks from specific folder(s).\n"
+         "Filename should be the same or the image UID.")
+        ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
+         "File extension of the masks to use.");
     // clang-format on
 
     CmdLine cmdline("AliceVision prepareDenseScene");
@@ -348,7 +388,14 @@ int aliceVision_main(int argc, char* argv[])
         };
     }
 
-    if (!process(inputSfmData, targetSfmData, namingFunction, evCorrection, rangeStart, rangeEnd))
+    if (!process(inputSfmData, 
+                targetSfmData, 
+                namingFunction, 
+                evCorrection, 
+                masksFolders, 
+                maskExtension,
+                rangeStart, 
+                rangeEnd))
     {
         ALICEVISION_LOG_ERROR("Process failed");
         return EXIT_FAILURE;
