@@ -450,6 +450,9 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
 
     ALICEVISION_LOG_DEBUG("nbAtlasMax: " << nbAtlasMax);
 
+    if (availableMem < memoryPerAtlas)
+        ALICEVISION_LOG_WARNING("Memory may be insufficient to complete the job. Lack (MB): " << memoryPerAtlas - availableMem);
+
     // Add rounding to have a uniform repartition between chunks (avoid a small chunk at the end)
     const int nChunks = divideRoundUp(nbAtlas, nbAtlasMax);
     nbAtlasMax = divideRoundUp(nbAtlas, nChunks);
