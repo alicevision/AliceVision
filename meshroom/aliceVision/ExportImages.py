@@ -55,6 +55,24 @@ class ExportImages(desc.AVCommandLineNode):
             value="frameid",
             values=["viewid", "frameid", "keep"],
         ),
+        desc.ListAttribute(
+            elementDesc=desc.File(
+                name="masksFolder",
+                label="Masks Folder",
+                description="",
+                value="",
+            ),
+            name="masksFolders",
+            label="Masks Folders",
+            description="Use masks from specific folder(s). Filename should be the same or the image UID.",
+        ),
+        desc.ChoiceParam(
+            name="maskExtension",
+            label="Mask Extension",
+            description="File extension for the masks to use.",
+            value="png",
+            values=["exr", "jpg", "png"],
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
