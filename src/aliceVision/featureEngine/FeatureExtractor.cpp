@@ -272,9 +272,6 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
             for (size_t i = 0, n = regions->RegionCount(); i != n; ++i)
             {
                 const Vec2 position = regions->GetRegionPosition(i);
-                
-                
-
                 bool masked = false;
 
                 //Check if point lies inside potential fisheye circle
@@ -284,10 +281,10 @@ void FeatureExtractor::computeViewJob(const FeatureExtractorViewJob& job, bool u
                 }
                 else 
                 {
+                    const double scale = regions->Features()[i].scale();
                     //Check if the optional image mask tells us to ignore this coordinate
                     for (int idx = 0; idx < shifts.size(); idx++)
                     {
-                        const double scale = regions->Features()[i].scale();
                         const Vec2 npos = position + scale * shifts[idx];
                         const int x = int(npos.x());
                         const int y = int(npos.y());
