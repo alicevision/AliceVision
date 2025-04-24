@@ -19,7 +19,7 @@ namespace hdr {
 GrossbergCalibrate::GrossbergCalibrate(unsigned int dimension) { _dimension = dimension; }
 
 void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ldrSamples,
-                                 const std::vector<std::vector<double>>& times,
+                                 [[maybe_unused]] const std::vector<std::vector<double>>& times,
                                  std::size_t channelQuantization,
                                  rgbCurve& response)
 {
@@ -44,18 +44,18 @@ void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ld
     // f0(Ba) + sum(c_i * f_i(Ba)) - k*f0(Bb) - k*sum(c_i * f_i(Bb)) = 0
     // sum(c_i * f_i(Ba)) - k*sum(c_i * f_i(Bb)) = k*f0(Bb) - f0(Ba)
 
-    size_t count_measures = 0;
-    for (size_t group = 0; group < ldrSamples.size(); group++)
+    std::size_t count_measures = 0;
+    for (std::size_t group = 0; group < ldrSamples.size(); group++)
     {
         const std::vector<ImageSample>& groupSamples = ldrSamples[group];
 
-        for (size_t sampleId = 0; sampleId < groupSamples.size(); sampleId++)
+        for (std::size_t sampleId = 0; sampleId < groupSamples.size(); sampleId++)
         {
             count_measures += groupSamples[sampleId].descriptions.size() - 1;
         }
     }
 
-    for (int channel = 0; channel < 3; channel++)
+    for (std::size_t channel = 0; channel < channels; channel++)
     {
         Eigen::MatrixXd E(count_measures, _dimension);
         Eigen::MatrixXd v(count_measures, 1);
@@ -63,21 +63,21 @@ void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ld
         rgbCurve f0(channelQuantization);
         f0.setEmorInv(0);
 
-        for (size_t dim = 0; dim < _dimension; dim++)
+        for (std::size_t dim = 0; dim < _dimension; dim++)
         {
             rgbCurve fdim(channelQuantization);
             fdim.setEmorInv(dim + 1);
 
-            size_t rowId = 0;
-            for (size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
+            std::size_t rowId = 0;
+            for (std::size_t groupId = 0; groupId < ldrSamples.size(); groupId++)
             {
                 const std::vector<ImageSample>& groupSamples = ldrSamples[groupId];
 
-                for (size_t sampleId = 0; sampleId < groupSamples.size(); sampleId++)
+                for (std::size_t sampleId = 0; sampleId < groupSamples.size(); sampleId++)
                 {
                     const ImageSample& sample = groupSamples[sampleId];
 
-                    for (size_t bracketPos = 0; bracketPos < sample.descriptions.size() - 1; bracketPos++)
+                    for (std::size_t bracketPos = 0; bracketPos < sample.descriptions.size() - 1; bracketPos++)
                     {
                         image::Rgb<float> Ba = sample.descriptions[bracketPos].mean;
                         image::Rgb<float> Bb = sample.descriptions[bracketPos + 1].mean;
@@ -109,7 +109,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ld
 
         Eigen::MatrixXd dF0(channelQuantization - 1, 1);
         dF0.setZero();
-        for (int i = 0; i < channelQuantization - 1; i++)
+        for (std::size_t i = 0; i < channelQuantization - 1; i++)
         {
             double eval_cur = double(i) * step;
             double eval_next = double(i + 1) * step;
@@ -120,12 +120,12 @@ void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ld
         Eigen::MatrixXd D(channelQuantization - 1, _dimension);
         D.setZero();
 
-        for (int dim = 0; dim < _dimension; dim++)
+        for (std::size_t dim = 0; dim < _dimension; dim++)
         {
             rgbCurve fdim(channelQuantization);
             fdim.setEmorInv(dim + 1);
 
-            for (int i = 0; i < channelQuantization - 1; i++)
+            for (std::size_t i = 0; i < channelQuantization - 1; i++)
             {
                 double eval_cur = double(i) * step;
                 double eval_next = double(i + 1) * step;
@@ -134,19 +134,13 @@ void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ld
         }
 
         Eigen::MatrixXd CE(_dimension, 1);
-        for (int i = 0; i < 1; i++)
+        for (std::size_t j = 0; j < _dimension; j++)
         {
-            for (int j = 0; j < _dimension; j++)
-            {
-                CE(j, i) = 0.0;
-            }
+            CE(j, 0) = 0.0;
         }
 
         Eigen::VectorXd ce0(1);
-        for (int i = 0; i < 1; i++)
-        {
-            ce0[i] = 0.0;
-        }
+        ce0[0] = 0.0;
 
         quadprogpp::solve_quadprog(H, d, CE, ce0, D.transpose(), dF0, c);
 
@@ -159,7 +153,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<ImageSample>>& ld
 
             const double val = double(i) * step;
             double curve_val = f0(val, 0);
-            for (int d = 0; d < _dimension; d++)
+            for (std::size_t d = 0; d < _dimension; d++)
             {
                 rgbCurve fdim(channelQuantization);
                 fdim.setEmorInv(d + 1);

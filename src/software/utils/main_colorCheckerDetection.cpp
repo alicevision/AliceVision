@@ -16,16 +16,17 @@
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/regex.hpp>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/mcc.hpp>
 
-#include <filesystem>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -33,7 +34,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -42,19 +43,78 @@ namespace fs = std::filesystem;
 namespace bpt = boost::property_tree;
 namespace po = boost::program_options;
 
+enum class ECCType
+{
+    MCC24,
+    SG140,
+    VINYL18
+};
+
+inline std::string ECCType_enumToString(ECCType ccType)
+{
+    switch (ccType)
+    {
+        case ECCType::MCC24:
+            return "mcc24";
+        case ECCType::SG140:
+            return "sg140";
+        case ECCType::VINYL18:
+            return "vinyl18";
+    }
+    throw std::invalid_argument("Invalid openCV color checker type enum");
+}
+
+inline ECCType ECCType_stringToEnum(std::string ccType)
+{
+    boost::to_lower(ccType);
+    if (ccType == "mcc24")
+        return ECCType::MCC24;
+    if (ccType == "sg140")
+        return ECCType::SG140;
+    if (ccType == "vinyl18")
+        return ECCType::VINYL18;
+
+    throw std::invalid_argument("Unrecognized color checker type '" + ccType + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, ECCType e) { return os << ECCType_enumToString(e); }
+
+inline std::istream& operator>>(std::istream& in, ECCType& e)
+{
+    std::string token;
+    in >> token;
+    e = ECCType_stringToEnum(token);
+    return in;
+}
+
+inline cv::mcc::TYPECHART ECCType_to_OpenCVECCType(ECCType ccType)
+{
+    switch (ccType)
+    {
+        case ECCType::MCC24:
+            return cv::mcc::TYPECHART::MCC24;
+        case ECCType::SG140:
+            return cv::mcc::TYPECHART::SG140;
+        case ECCType::VINYL18:
+            return cv::mcc::TYPECHART::VINYL18;
+    }
+    throw std::invalid_argument("Invalid openCV color checker type enum");
+}
+
 // Match values used in OpenCV MCC
 // See https://github.com/opencv/opencv_contrib/blob/342f8924cca88fe6ce979024b7776f6815c89978/modules/mcc/src/dictionary.hpp#L72
 const std::vector<cv::Point2f> MACBETH_CCHART_CORNERS_POS = {
-  {0.f, 0.f},
-  {1675.f, 0.f},
-  {1675.f, 1125.f},
-  {0.f, 1125.f},
+    {0.f, 0.f},
+    {1675.f, 0.f},
+    {1675.f, 1125.f},
+    {0.f, 1125.f},
 };
 
 const std::vector<cv::Point2f> MACBETH_CCHART_CELLS_POS_CENTER = {
-  {150.f, 150.f},  {425.f, 150.f},  {700.f, 150.f},  {975.f, 150.f},  {1250.f, 150.f}, {1525.f, 150.f}, {150.f, 425.f},  {425.f, 425.f},
-  {700.f, 425.f},  {975.f, 425.f},  {1250.f, 425.f}, {1525.f, 425.f}, {150.f, 700.f},  {425.f, 700.f},  {700.f, 700.f},  {975.f, 700.f},
-  {1250.f, 700.f}, {1525.f, 700.f}, {150.f, 975.f},  {425.f, 975.f},  {700.f, 975.f},  {975.f, 975.f},  {1250.f, 975.f}, {1525.f, 975.f}};
+    {150.f, 150.f},  {425.f, 150.f},  {700.f, 150.f},  {975.f, 150.f},  {1250.f, 150.f}, {1525.f, 150.f}, {150.f, 425.f},  {425.f, 425.f},
+    {700.f, 425.f},  {975.f, 425.f},  {1250.f, 425.f}, {1525.f, 425.f}, {150.f, 700.f},  {425.f, 700.f},  {700.f, 700.f},  {975.f, 700.f},
+    {1250.f, 700.f}, {1525.f, 700.f}, {150.f, 975.f},  {425.f, 975.f},  {700.f, 975.f},  {975.f, 975.f},  {1250.f, 975.f}, {1525.f, 975.f}
+};
 
 const float MACBETH_CCHART_CELLS_SIZE = 250.f * .5f;
 
@@ -77,7 +137,7 @@ struct QuadSVG
             xCoords.push_back(p.x);
             yCoords.push_back(p.y);
         }
-        // close polyline
+        // Close polyline
         xCoords.push_back(points[0].x);
         yCoords.push_back(points[0].y);
     }
@@ -260,16 +320,19 @@ struct MacbethCCheckerQuad : Quad
         _colorData = cv::Mat::zeros(24, 1, CV_64FC3);
         cv::Mat pixelsCount = cv::Mat::zeros(24, 1, CV_32S);
 
-        for (int y = 0; y < (int)_bbox.sizeY(); ++y)
+        for (int y = 0; y < static_cast<int>(_bbox.sizeY()); ++y)
         {
-            for (int x = 0; x < (int)_bbox.sizeX(); ++x)
+            for (int x = 0; x < static_cast<int>(_bbox.sizeX()); ++x)
             {
-                for (int i = 0; i < _cellMasks.size(); ++i)
+                for (int i = 0; i < static_cast<int>(_cellMasks.size()); ++i)
                 {
+                    const int coordX = x + _bbox.min.x;
+                    const int coordY = y + _bbox.min.y;
+
                     // Check current pixel for the current image mask
-                    if (_cellMasks[i].at<uchar>(y, x) == 255)
+                    if (_cellMasks[i].at<uchar>(y, x) == 255 && coordX >= 0 && coordX < img.width() && coordY >= 0 && coordY < img.height())
                     {
-                        const image::RGBAfColor& px = img(y + _bbox.min.y, x + _bbox.min.x);
+                        const image::RGBAfColor& px = img(coordY, coordX);
                         _colorData.at<cv::Vec3d>(i, 0) += cv::Vec3d(px.r(), px.g(), px.b());
                         ++pixelsCount.at<int>(i);
                     }
@@ -329,7 +392,10 @@ struct MacbethCCheckerQuad : Quad
     }
 };
 
-void detectColorChecker(std::vector<MacbethCCheckerQuad>& detectedCCheckers, ImageOptions& imgOpt, CCheckerDetectionSettings& settings)
+void detectColorChecker(std::vector<MacbethCCheckerQuad>& detectedCCheckers,
+                        ImageOptions& imgOpt,
+                        CCheckerDetectionSettings& settings,
+                        cv::Ptr<cv::mcc::CCheckerDetector> cnnDetector = nullptr)
 {
     const std::string outputFolder = fs::path(settings.outputData).parent_path().string() + "/";
     const std::string imgSrcPath = imgOpt.imgFsPath.string();
@@ -343,14 +409,22 @@ void detectColorChecker(std::vector<MacbethCCheckerQuad>& detectedCCheckers, Ima
 
     if (imgBGR.cols == 0 || imgBGR.rows == 0)
     {
-        ALICEVISION_LOG_ERROR("Image at: '" << imgSrcPath << "'.\n"
-                                            << "is empty.");
+        ALICEVISION_LOG_ERROR("Image at: '" << imgSrcPath << "'.\n" << "is empty.");
         exit(EXIT_FAILURE);
     }
 
-    cv::Ptr<cv::mcc::CCheckerDetector> detector = cv::mcc::CCheckerDetector::create();
+    cv::Ptr<cv::mcc::CCheckerDetector> detector;
 
-    if (!detector->process(imgBGR, settings.typechart, settings.maxCountByImage))
+    if (cnnDetector != nullptr)
+    {
+        detector = cnnDetector;
+    }
+    else
+    {
+        detector = cv::mcc::CCheckerDetector::create();
+    }
+
+    if (!detector->process(imgBGR, settings.typechart, settings.maxCountByImage, cnnDetector != nullptr))
     {
         ALICEVISION_LOG_INFO("Checker not detected in image at: '" << imgSrcPath << "'");
         return;
@@ -394,22 +468,33 @@ int aliceVision_main(int argc, char** argv)
     // user optional parameters
     bool debug = false;
     unsigned int maxCountByImage = 1;
+    bool processAllImages = true;
+    std::string filter = "*_macbeth.*";
+    std::string modelFolder = "";
+    ECCType ccType = ECCType::MCC24;
 
     // clang-format off
     po::options_description inputParams("Required parameters");
     inputParams.add_options()
         ("input,i", po::value<std::string>(&inputExpression)->required(),
-         "SfMData file input, image filenames or regex(es) on the image file path (supported regex: '#' matches "
-         "a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
+         "SfMData file input, image filenames or regex(es) on the image file path "
+         "(supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more).")
         ("outputData", po::value<std::string>(&outputData)->required(),
          "Output path for the color checker data.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("debug", po::value<bool>(&debug),
-         "Output debug data.")
+        ("debug", po::value<bool>(&debug), "Output debug data.")
+        ("processAllImages", po::value<bool>(&processAllImages)->default_value(processAllImages),
+         "If True, process all available images.")
+        ("filter", po::value<std::string>(&filter)->default_value(filter),
+         "Regular expression to select images to be processed.")
+        ("modelFolder", po::value<std::string>(&modelFolder)->default_value(modelFolder),
+         "Path to folder containing a cnn model.")
         ("maxCount", po::value<unsigned int>(&maxCountByImage),
-         "Maximum color charts count to detect in a single image.");
+         "Maximum color charts count to detect in a single image.")
+        ("ccType", po::value<ECCType>(&ccType)->default_value(ccType),
+         "Color chart type: mcc24 (Classical macbeth 24 patches), sg140 (Digital SG 140 patches), vinyl18 (DKK colorchart 12 patches + 6 rectangles).");
     // clang-format on
 
     CmdLine cmdline("This program is used to perform Macbeth color checker chart detection.\n"
@@ -422,19 +507,43 @@ int aliceVision_main(int argc, char** argv)
     }
 
     CCheckerDetectionSettings settings;
-    settings.typechart = cv::mcc::TYPECHART::MCC24;
+    settings.typechart = ECCType_to_OpenCVECCType(ccType);
     settings.maxCountByImage = maxCountByImage;
     settings.outputData = outputData;
     settings.debug = debug;
 
     std::vector<MacbethCCheckerQuad> detectedCCheckers;
 
+    cv::Ptr<cv::mcc::CCheckerDetector> detectorCNN = nullptr;
+
+    const std::string modelPath = modelFolder + "/frozen_inference_graph.pb";
+    const std::string pbtxtPath = modelFolder + "/graph.pbtxt";
+
+    if (fs::exists(fs::path(modelPath)) && fs::exists(fs::path(pbtxtPath)))
+    {
+        cv::dnn::Net net = cv::dnn::readNetFromTensorflow(modelPath, pbtxtPath);
+
+        net.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
+        net.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA);
+
+        detectorCNN = cv::mcc::CCheckerDetector::create();
+        if (!detectorCNN->setNet(net))
+        {
+            ALICEVISION_LOG_INFO("Loading Model failed: Aborting");
+            detectorCNN = nullptr;
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("Loading Model OK");
+        }
+    }
+
     // Check if inputExpression is recognized as sfm data file
     const std::string inputExt = boost::to_lower_copy(fs::path(inputExpression).extension().string());
     static const std::array<std::string, 2> sfmSupportedExtensions = {".sfm", ".abc"};
     if (std::find(sfmSupportedExtensions.begin(), sfmSupportedExtensions.end(), inputExt) != sfmSupportedExtensions.end())
     {
-        // load input as sfm data file
+        // Load input as SfMData file
         sfmData::SfMData sfmData;
         if (!sfmDataIO::load(sfmData, inputExpression, sfmDataIO::ESfMData(sfmDataIO::VIEWS)))
         {
@@ -449,19 +558,25 @@ int aliceVision_main(int argc, char** argv)
         {
             const sfmData::View& view = *(viewIt.second);
 
-            ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '" << view.getImage().getImagePath() << "'.");
-            ImageOptions imgOpt = {view.getImage().getImagePath(),
-                                   std::to_string(view.getViewId()),
-                                   view.getImage().getMetadataBodySerialNumber(),
-                                   view.getImage().getMetadataLensSerialNumber()};
-            imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
-            imgOpt.readOptions.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
-            detectColorChecker(detectedCCheckers, imgOpt, settings);
+            boost::filesystem::path p(view.getImage().getImagePath());
+            const std::regex regex = utils::filterToRegex(filter);
+            if (processAllImages || std::regex_match(p.generic_string(), regex))
+            {
+                ALICEVISION_LOG_INFO(++counter << "/" << sfmData.getViews().size() << " - Process image at: '" << view.getImage().getImagePath()
+                                               << "'.");
+                ImageOptions imgOpt = {view.getImage().getImagePath(),
+                                       std::to_string(view.getViewId()),
+                                       view.getImage().getMetadataBodySerialNumber(),
+                                       view.getImage().getMetadataLensSerialNumber()};
+                imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
+                imgOpt.readOptions.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
+                detectColorChecker(detectedCCheckers, imgOpt, settings, detectorCNN);
+            }
         }
     }
     else
     {
-        // load input as image file or image folder
+        // Load input as image file or image folder
         const fs::path inputPath(inputExpression);
         std::vector<std::string> filesStrPaths;
 
@@ -471,11 +586,12 @@ int aliceVision_main(int argc, char** argv)
         }
         else
         {
-            ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.parent_path().generic_string() + "'.");
+            ALICEVISION_LOG_INFO("Working directory Path '" + inputPath.generic_string() + "'.");
 
-            const std::regex regex = utils::filterToRegex(inputExpression);
+            const std::regex regex = utils::filterToRegex(processAllImages ? "" : filter);
             // Get supported files in inputPath directory which matches our regex filter
-            filesStrPaths = utils::getFilesPathsFromFolder(inputPath.parent_path().generic_string(), [&regex](const fs::path& path) {
+            filesStrPaths = utils::getFilesPathsFromFolder(inputPath.generic_string(), [&regex](const fs::path& path) {
+                ALICEVISION_LOG_INFO(path);
                 return image::isSupported(path.extension().string()) && std::regex_match(path.generic_string(), regex);
             });
         }
@@ -496,11 +612,16 @@ int aliceVision_main(int argc, char** argv)
         int counter = 0;
         for (const std::string& imgSrcPath : filesStrPaths)
         {
-            ALICEVISION_LOG_INFO(++counter << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
-            ImageOptions imgOpt;
-            imgOpt.imgFsPath = imgSrcPath;
-            imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
-            detectColorChecker(detectedCCheckers, imgOpt, settings);
+            boost::filesystem::path p(imgSrcPath);
+            const std::regex regex = utils::filterToRegex(filter);
+            if (processAllImages || std::regex_match(p.generic_string(), regex))
+            {
+                ALICEVISION_LOG_INFO(++counter << "/" << size << " - Process image at: '" << imgSrcPath << "'.");
+                ImageOptions imgOpt;
+                imgOpt.imgFsPath = imgSrcPath;
+                imgOpt.readOptions.workingColorSpace = image::EImageColorSpace::SRGB;
+                detectColorChecker(detectedCCheckers, imgOpt, settings, detectorCNN);
+            }
         }
     }
 

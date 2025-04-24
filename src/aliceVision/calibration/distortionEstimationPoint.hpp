@@ -11,20 +11,18 @@
 namespace aliceVision {
 namespace calibration {
 
-
 /**
  * @brief a pair of points coordinates
- * 
+ *
  * One vector for the distorted coordinates
  * One vector from the undistorted coordinates
-*/
+ */
 struct PointPair
 {
     Vec2 distortedPoint;
     Vec2 undistortedPoint;
     double scale;
 };
-
 
 /**
  * @brief Estimate the undistortion parameters of a camera using a set of pair of undistorted/distorted points.

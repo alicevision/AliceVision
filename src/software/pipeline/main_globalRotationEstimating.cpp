@@ -112,7 +112,7 @@ int aliceVision_main(int argc, char** argv)
 
         std::ifstream inputfile(file.path().string());
 
-        boost::json::error_code ec;
+        boost::system::error_code ec;
         std::vector<boost::json::value> values = readJsons(inputfile, ec);
         for (const boost::json::value& value : values)
         {

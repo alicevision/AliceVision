@@ -36,6 +36,7 @@ struct AlembicExporter::DataImpl
         _mvgCloud = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCloud");
         _mvgPointCloud = Alembic::AbcGeom::OXform(_mvgCloud, "mvgPointCloud");
         _mvgAncestors = Alembic::AbcGeom::OXform(_mvgRoot, "mvgAncestors");
+        _mvgSurveys = Alembic::AbcGeom::OXform(_mvgCloud, "mvgSurveys");
 
         // add version as custom property
         const std::vector<::uint32_t> abcVersion = {
@@ -76,6 +77,7 @@ struct AlembicExporter::DataImpl
     Alembic::AbcGeom::OXform _mvgAncestors;
     Alembic::AbcGeom::OXform _mvgCloud;
     Alembic::AbcGeom::OXform _mvgPointCloud;
+    Alembic::AbcGeom::OXform _mvgSurveys;
     Alembic::AbcGeom::OXform _xform;
     Alembic::AbcGeom::OCamera _camObj;
     Alembic::AbcGeom::OUInt32ArrayProperty _propSensorSize_pix;
@@ -112,6 +114,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     {
         OBoolProperty(userProps, "mvg_poseLocked").set(pose->isLocked());
         OBoolProperty(userProps, "mvg_rotationOnly").set(pose->isRotationOnly());
+        OBoolProperty(userProps, "mvg_removable").set(pose->isRemovable());
 
         // Convert from computer vision convention to computer graphics (opengl-like)
         Eigen::Matrix4d M = Eigen::Matrix4d::Identity();
@@ -355,6 +358,11 @@ void AlembicExporter::addSfM(const sfmData::SfMData& sfmData, ESfMData flagsPart
                      (flagsPart & ESfMData::LANDMARKS_UNCERTAINTY) ? sfmData._landmarksUncertainty : noUncertainty,
                      ((flagsPart & ESfMData::OBSERVATIONS || flagsPart & ESfMData::OBSERVATIONS_WITH_FEATURES)),
                      (flagsPart & ESfMData::OBSERVATIONS_WITH_FEATURES));
+    }
+
+    if (flagsPart & ESfMData::SURVEYS)
+    {
+        addSurveys(sfmData.getSurveyPoints());
     }
 
     if (flagsPart & ESfMData::VIEWS || flagsPart & ESfMData::EXTRINSICS)
@@ -609,6 +617,32 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
         OV3dArrayProperty propUncertainty(userProps, "mvg_uncertaintyEigenValues");
         propUncertainty.set(uncertainties);
     }
+}
+
+void AlembicExporter::addSurveys(const sfmData::SurveyPoints & points)
+{
+    OPoints outPoints(_dataImpl->_mvgSurveys, "surveys");
+    OPointsSchema& pSchema = outPoints.getSchema();
+    OCompoundProperty userProps = pSchema.getUserProperties();
+
+    std::vector<IndexT> indices;
+    std::vector<double> data;
+
+    for (const auto & [viewId, vsp] : points)
+    {
+        for (const auto & sp : vsp)
+        {
+            indices.push_back(viewId);
+            data.push_back(sp.point3d.x());
+            data.push_back(sp.point3d.y());
+            data.push_back(sp.point3d.z());
+            data.push_back(sp.survey.x());
+            data.push_back(sp.survey.y());
+        }
+    }
+
+    OUInt32ArrayProperty(userProps, "mvg_surveyIds").set(indices);
+    ODoubleArrayProperty(userProps, "mvg_surveyData").set(data);
 }
 
 void AlembicExporter::addCamera(const std::string& name,

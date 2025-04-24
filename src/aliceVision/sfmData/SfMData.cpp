@@ -21,17 +21,59 @@ using namespace aliceVision::image;
 
 namespace fs = std::filesystem;
 
-SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
+SfMData::SfMData(const SfMData & other, bool unused)
 {
-    _views = other._views;
-    _intrinsics  = other._intrinsics;
-    constraints2d = other.constraints2d;
-    rotationpriors = other.rotationpriors;
+    //First copy all the non pointers
+    _landmarks = other._landmarks;
+    _constraints2d = other._constraints2d;
+    _constraintsPoint = other._constraintsPoint;
+    _rotationpriors = other._rotationpriors;
     _absolutePath = other._absolutePath;
     _featuresFolders = other._featuresFolders;
     _matchesFolders = other._matchesFolders;
     _poses = other._poses;
     _rigs = other._rigs;
+    _posesUncertainty = other._posesUncertainty;
+    _landmarksUncertainty = other._landmarksUncertainty;
+
+    for (const auto & [idView, pView]: other._views)
+    {
+        sfmData::View::sptr pOutView(pView->clone());
+        _views[idView] = pOutView;
+    }
+
+    for (const auto & [idIntrinsic, pIntrinsic]: other._intrinsics)
+    {
+        camera::IntrinsicBase::sptr pOutIntrinsic(pIntrinsic->clone());
+        _intrinsics[idIntrinsic] = pOutIntrinsic;
+    }
+}
+
+SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
+{
+    //First copy all the non pointers
+    _constraints2d = other._constraints2d;
+    _constraintsPoint = other._constraintsPoint;
+    _rotationpriors = other._rotationpriors;
+    _absolutePath = other._absolutePath;
+    _featuresFolders = other._featuresFolders;
+    _matchesFolders = other._matchesFolders;
+    _poses = other._poses;
+    _rigs = other._rigs;
+    _posesUncertainty = other._posesUncertainty;
+    _landmarksUncertainty = other._landmarksUncertainty;
+
+    for (const auto & [idView, pView]: other._views)
+    {
+        sfmData::View::sptr pOutView(pView->clone());
+        _views[idView] = pOutView;
+    }
+
+    for (const auto & [idIntrinsic, pIntrinsic]: other._intrinsics)
+    {
+        camera::IntrinsicBase::sptr pOutIntrinsic(pIntrinsic->clone());
+        _intrinsics[idIntrinsic] = pOutIntrinsic;
+    }
 
     for (const auto & pl : other._landmarks)
     {
@@ -52,23 +94,31 @@ bool SfMData::operator==(const SfMData& other) const
 {
     // Views
     if (_views.size() != other._views.size())
+    {
         return false;
+    }
 
     for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
     {
         const View& view1 = *(it->second.get());
         const View& view2 = *(other._views.at(it->first).get());
         if (view1 != view2)
+        {
             return false;
+        }
 
         // Image paths
         if (view1.getImage().getImagePath() != view2.getImage().getImagePath())
+        {
             return false;
+        }
     }
 
     // Ancestors
     if (_ancestors.size() != other._ancestors.size())
+    {
         return false;
+    }
 
     for (ImageInfos::const_iterator it = _ancestors.begin(); it != _ancestors.end(); ++it)
     {
@@ -76,20 +126,28 @@ bool SfMData::operator==(const SfMData& other) const
         const ImageInfo& ancestor2 = *(other._ancestors.at(it->first));
 
         if (ancestor1 != ancestor2)
+        {
             return false;
+        }
     }
 
     // Poses
     if ((_poses != other._poses))
+    {
         return false;
+    }
 
     // Rigs
     if (_rigs != other._rigs)
+    {
         return false;
+    }
 
     // Intrinsics
     if (_intrinsics.size() != other._intrinsics.size())
+    {
         return false;
+    }
 
     Intrinsics::const_iterator it = _intrinsics.begin();
     Intrinsics::const_iterator otherIt = other._intrinsics.begin();
@@ -97,18 +155,24 @@ bool SfMData::operator==(const SfMData& other) const
     {
         // Index
         if (it->first != otherIt->first)
+        {
             return false;
+        }
 
         // Intrinsic
         camera::IntrinsicBase& intrinsic1 = *(it->second.get());
         camera::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
         if (intrinsic1 != intrinsic2)
+        {
             return false;
+        }
     }
 
     // Points IDs are not preserved
     if (_landmarks.size() != other._landmarks.size())
+    {
         return false;
+    }
 
     Landmarks::const_iterator landMarkIt = _landmarks.begin();
     Landmarks::const_iterator otherLandmarkIt = other._landmarks.begin();
@@ -119,18 +183,39 @@ bool SfMData::operator==(const SfMData& other) const
         const Landmark& landmark1 = landMarkIt->second;
         const Landmark& landmark2 = otherLandmarkIt->second;
         if (landmark1 != landmark2)
+        {
             return false;
+        }
     }
 
-    if (constraints2d.size() != other.constraints2d.size())
+    if (_constraints2d.size() != other._constraints2d.size())
+    {
         return false;
+    }
 
-    Constraints2D::const_iterator constraint2dIt = constraints2d.begin();
-    Constraints2D::const_iterator otherconstraint2dIt = other.constraints2d.begin();
-    for (; constraint2dIt != constraints2d.end() && otherconstraint2dIt != other.constraints2d.end(); ++constraint2dIt, ++otherconstraint2dIt)
+    Constraints2D::const_iterator constraint2dIt = _constraints2d.begin();
+    Constraints2D::const_iterator otherconstraint2dIt = other._constraints2d.begin();
+    for (; constraint2dIt != _constraints2d.end() && otherconstraint2dIt != other._constraints2d.end(); ++constraint2dIt, ++otherconstraint2dIt)
     {
         if (*constraint2dIt != *otherconstraint2dIt)
+        {
             return false;
+        }
+    }
+
+    if (_constraintsPoint.size() != other._constraintsPoint.size())
+    {
+        return false;
+    }
+
+    ConstraintsPoint::const_iterator constraintPointIt = _constraintsPoint.begin();
+    ConstraintsPoint::const_iterator otherconstraintPointIt = other._constraintsPoint.begin();
+    for (; constraintPointIt != _constraintsPoint.end() && otherconstraintPointIt != other._constraintsPoint.end(); ++constraintPointIt, ++otherconstraintPointIt)
+    {
+        if (*constraintPointIt != *otherconstraintPointIt)
+        {
+            return false;
+        }
     }
 
     // Root path can be reset during exports
@@ -273,7 +358,7 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
         return;
     }
 
-    throw std::runtime_error("SfMData::setPose: dependant view pose not part of an initialized rig.");
+    throw std::runtime_error("SfMData::setPose: dependent view pose not part of an initialized rig.");
 }
 
 void SfMData::combine(const SfMData& sfmData)
@@ -303,7 +388,10 @@ void SfMData::combine(const SfMData& sfmData)
     _landmarks.insert(sfmData._landmarks.begin(), sfmData._landmarks.end());
 
     // constraints
-    constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
+    _constraints2d.insert(_constraints2d.end(), sfmData._constraints2d.begin(), sfmData._constraints2d.end());
+
+    // constraints
+    _constraintsPoint.insert(sfmData._constraintsPoint.begin(), sfmData._constraintsPoint.end());
 }
 
 void SfMData::clear()
@@ -313,9 +401,9 @@ void SfMData::clear()
     _landmarks.clear();
     _posesUncertainty.clear();
     _landmarksUncertainty.clear();
-    constraints2d.clear();
-    rotationpriors.clear();
-
+    _constraints2d.clear();
+    _constraintsPoint.clear();
+    _rotationpriors.clear();
     _absolutePath.clear();
     _featuresFolders.clear();
     _matchesFolders.clear();

@@ -41,7 +41,7 @@ struct SamplerNearest
      ** @brief Computes weight associated to neighboring pixels
      ** @author Romuald Perrot <perrot.romuald_AT_gmail.com>
      ** @param x Sampling position
-     ** @param[out] weigth Sampling factors associated to the neighboring
+     ** @param[out] weight Sampling factors associated to the neighboring
      ** @note weight must be at least neighborWidth length
      **/
     void operator()(const double x, double* const weight) const
@@ -111,10 +111,10 @@ struct SamplerCubic
         // remember :
         // A      B    x  C       D
 
-        // weigth[0] -> weight for A
+        // weight[0] -> weight for A
         // weight[1] -> weight for B
         // weight[2] -> weight for C
-        // weight[3] -> weigth for D
+        // weight[3] -> weight for D
 
         weight[0] = CubicInter12(_sharpness, x + 1.0);
         weight[1] = CubicInter01(_sharpness, x);

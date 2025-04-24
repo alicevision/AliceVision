@@ -48,6 +48,7 @@ int aliceVision_main(int argc, char** argv)
     bool flagExtrinsics = true;
     bool flagStructure = true;
     bool flagObservations = true;
+    bool flagSurveys = true;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -72,6 +73,8 @@ int aliceVision_main(int argc, char** argv)
          "Export extrinsics.")
         ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),
          "Export structure.")
+        ("surveys", po::value<bool>(&flagSurveys)->default_value(flagSurveys),
+         "Export surveys.")
         ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
          "Export observations.");
     // clang-format on
@@ -90,8 +93,12 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    int flags = (flagViews ? sfmDataIO::VIEWS : 0) | (flagIntrinsics ? sfmDataIO::INTRINSICS : 0) | (flagExtrinsics ? sfmDataIO::EXTRINSICS : 0) |
-                (flagObservations ? sfmDataIO::OBSERVATIONS_WITH_FEATURES : 0) | (flagStructure ? sfmDataIO::STRUCTURE : 0);
+    int flags = (flagViews ? sfmDataIO::VIEWS : 0) | 
+                (flagIntrinsics ? sfmDataIO::INTRINSICS : 0) | 
+                (flagExtrinsics ? sfmDataIO::EXTRINSICS : 0) |
+                (flagObservations ? sfmDataIO::OBSERVATIONS_WITH_FEATURES : 0) | 
+                (flagStructure ? sfmDataIO::STRUCTURE : 0) |
+                (flagSurveys ? sfmDataIO::SURVEYS : 0);
 
     flags = (flags) ? flags : sfmDataIO::ALL;
 

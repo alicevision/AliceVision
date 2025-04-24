@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: ["alicevision/alicevision-deps:2025.01.06-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.01.06-rocky9-cuda12.1.1"]
+        container: ["alicevision/alicevision-deps:2025.03.27-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.03.27-rocky9-cuda12.1.1"]
     container:
       image: ${{ matrix.container }}
     env:
@@ -33,7 +33,7 @@ jobs:
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
       ALICEVISION_SENSOR_DB: ${{ github.workspace }}/../AV_install/share/aliceVision/cameraSensors.db
       ALICEVISION_LENS_PROFILE_INFO: ""
-      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.01.06-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
+      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.03.27-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
     steps:
       - uses: actions/checkout@v1
 
@@ -59,7 +59,7 @@ jobs:
            -DALICEVISION_USE_CUDA=ON \
            -DALICEVISION_USE_CCTAG="${BUILD_CCTAG}" \
            -DALICEVISION_USE_POPSIFT=ON \
-           -DALICEVISION_USE_ALEMBIC=ON  \
+           -DALICEVISION_USE_ALEMBIC=ON \
            -DOpenCV_DIR="${DEPS_INSTALL_DIR}/share/OpenCV" \
            -DALICEVISION_USE_OPENGV=ON \
            -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
@@ -94,24 +94,27 @@ jobs:
       - name: Functional Tests - PanoramaFisheyeHdr Pipeline
         working-directory: ./functional_tests
         run: |
-          # clone required repos
+          # Clone required repos
           git clone --branch develop https://github.com/alicevision/Meshroom.git
           git clone --branch main https://github.com/alicevision/dataset_panoramaFisheyeHdr.git
           cd Meshroom/
-          # select meshroom branch
           meshroom_avBranch=$(git ls-remote --heads https://github.com/alicevision/Meshroom.git $GITHUB_HEAD_REF | cut -f 1)
           if [ $meshroom_avBranch != "" ]; then git checkout $meshroom_avBranch; echo "Use Meshroom/$GITHUB_HEAD_REF"; fi
+
+          # Set environment variables specific to Meshroom
           export MESHROOM_INSTALL_DIR=$PWD
-          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}:${PYTHONPATH}
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+
+          # Set environment variables to find executables and libraries
+          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export PATH=$PATH:${ALICEVISION_ROOT}/bin
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-          mkdir ./outputData
-          cd bin/
-          python3 --version
-          pip3 --version
+
+          # Run the test pipeline
           pip3 install psutil
-          echo "ldd aliceVision_cameraInit"
-          ldd ${ALICEVISION_ROOT}/bin/aliceVision_cameraInit
+          cd bin/
+          mkdir ./outputData
           python3 meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
 
       - name: Functional Tests - SfM Quality Evaluation
@@ -119,21 +122,43 @@ jobs:
         run: |
           git clone --branch master https://github.com/alicevision/SfM_quality_evaluation.git
           cd SfM_quality_evaluation/
-          # checkout a specific commit to ensure repeatability
+          # Checkout a specific commit to ensure repeatability
           git checkout 36e3bf2d05c64d1726cb4a0e770923794f203f98
-          export PYTHONPATH=${ALICEVISION_ROOT}:${PYTHONPATH}
+          export PYTHONPATH=${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-          echo "ldd aliceVision_cameraInit"
-          ldd ${ALICEVISION_ROOT}/bin/aliceVision_cameraInit
-          python3 --version
+
           python3 EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
       - name: Python Binding - Unit Tests
         run: |
-          export PYTHONPATH=${ALICEVISION_ROOT}:${PYTHONPATH}
+          export PYTHONPATH=${ALICEVISION_ROOT}/bin:${PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           pip3 install pytest
           pytest ./pyTests
+
+      - name: Meshroom Plugin - Templates validity
+        working-directory: ./functional_tests
+        run: |
+          git clone https://github.com/meshroomHub/mrSegmentation.git
+          cd mrSegmentation
+          mrSegmentation_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrSegmentation.git $GITHUB_HEAD_REF | cut -f 1)
+          if [ $mrSegmentation_avBranch != "" ]; then git checkout $mrSegmentation_avBranch; echo "Use mrSegmentation/$GITHUB_HEAD_REF"; fi
+          cd ../Meshroom/
+          export MESHROOM_INSTALL_DIR=$PWD
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom:$PWD/../mrSegmentation/meshroom
+          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
+          export PATH=$PATH:${ALICEVISION_ROOT}/bin
+          export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
+
+          echo "
+          import sys
+          from meshroom.core import test
+          if test.checkAllTemplatesVersions():
+              sys.exit(0)
+          sys.exit(1)
+          " | tee test_templatesVersions.py
+          python3 test_templatesVersions.py
 
   build-windows:
     runs-on: windows-latest
@@ -146,6 +171,7 @@ jobs:
       CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: '${{ github.workspace }}/install'
       VCPKG_ROOT: '${{ github.workspace}}\..\vcpkg'
+      PYTHONPATH: '${{ github.workspace }}/install/bundle/bin'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -168,7 +194,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2024.08.28.zip?ref_type=heads&inline=false"
+          url: "https://github.com/alicevision/vcpkg/releases/download/2025.03.11/aliceVisionDeps-2025.03.11.zip"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 
@@ -185,15 +211,17 @@ jobs:
           rm ${{ env.vcpkgArchive }}
 
       - name: Get CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.10
+        uses: Jimver/cuda-toolkit@v0.2.21
         id: cuda-toolkit
         with:
-          cuda: '11.6.0'
+          cuda: '12.5.0'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev"]'
 
       - name: Display CUDA information
         run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
              echo "Cuda install location "${{steps.cuda-toolkit.outputs.CUDA_PATH}}
              nvcc -V
+             echo ${{ env.CUDA_PATH }}
 
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
@@ -223,16 +251,31 @@ jobs:
                              -DALICEVISION_USE_POPSIFT=OFF
                              -DALICEVISION_USE_ALEMBIC=ON
                              -DALICEVISION_USE_OPENGV=OFF
-                             -DALICEVISION_BUILD_STEREOPHOTOMETRY=OFF
+                             -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
                              -DALICEVISION_BUILD_SEGMENTATION=OFF
+                             -DALICEVISION_BUILD_SWIG_BINDING=ON
+                             -DALICEVISION_INSTALL_MESHROOM_PLUGIN=OFF
                              -DBOOST_NO_CXX11=ON
-                             -DCUDA_NVCC_FLAGS=--allow-unsupported-compiler;-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH
 
-          # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
           cmakeBuildType: Release
           buildWithCMake: true
 
-      - name: UnitTests
+      - name: Bundle
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          buildDirectory: ${{ env.buildDir }}
+          buildWithCMakeArgs: '--config Release --target bundle'
+          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
+          cmakeBuildType: Release
+          buildWithCMake: true
+
+      - name: Python Binding - Unit Tests
+        run: |
+          ${{ env.VCPKG_ROOT }}\installed\x64-windows\tools\python3\python -m pytest ./pyTests
+
+      - name: Unit Tests
         uses: lukka/run-cmake@v3
         with:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced

@@ -106,7 +106,7 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
 
     ALICEVISION_LOG_INFO("[CheckerDetector] extracting checkerboards with " << _corners.size() << " corners");
 
-    buildCheckerboards(_boards, _corners, normalized);
+    buildCheckerboards(_boards, _corners);
 
     ALICEVISION_LOG_DEBUG("[CheckerDetector] built " << _boards.size() << " checkerboards");
 
@@ -441,9 +441,6 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner>& refinedCorners
         Vec2 corner = sc.center;
         bool isValid = true;
 
-        const double cx = corner(0);
-        const double cy = corner(1);
-
         for (int iter = 0; iter < 20; ++iter)
         {
             AtA.fill(0);
@@ -484,7 +481,6 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner>& refinedCorners
             const double a3 = x(2);
             const double a4 = x(3);
             const double a5 = x(4);
-            const double a6 = x(5);
 
             const double determinantH = 4.0 * a1 * a3 - a2 * a2;
             if (std::abs(determinantH) < 1e-6)
@@ -533,9 +529,6 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner>& refinedCorners
 
     for (CheckerBoardCorner& corner : refinedCorners)
     {
-        const double cx = corner.center(0);
-        const double cy = corner.center(1);
-
         AtA.fill(0);
         Atb.fill(0);
 
@@ -563,9 +556,6 @@ void CheckerDetector::fitCorners(std::vector<CheckerBoardCorner>& refinedCorners
         }
 
         Eigen::Vector<double, 6> x = AtA.inverse() * Atb;
-        const double c1 = x(0);
-        const double c2 = x(1);
-        const double c3 = x(2);
         const double c4 = x(3);
         const double c5 = x(4);
         const double c6 = x(5);
@@ -596,7 +586,6 @@ IndexT CheckerDetector::findClosestCorner(const Vec2& center, const Vec2& dir, c
 {
     IndexT ret = UndefinedIndexT;
     double min = std::numeric_limits<double>::max();
-    double angle = 0.0;
 
     for (IndexT cid = 0; cid < refinedCorners.size(); ++cid)
     {
@@ -617,7 +606,6 @@ IndexT CheckerDetector::findClosestCorner(const Vec2& center, const Vec2& dir, c
         {
             min = dist;
             ret = cid;
-            angle = std::abs(std::atan2(diff.y(), diff.x()) - std::atan2(dir.y(), dir.x()));
         }
     }
 
@@ -1027,16 +1015,11 @@ bool CheckerDetector::growIteration(CheckerBoard& board, const std::vector<Check
     return false;
 }
 
-void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard>& boards,
-                                         const std::vector<CheckerBoardCorner>& refinedCorners,
-                                         const image::Image<float>& input) const
+void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard>& boards, const std::vector<CheckerBoardCorner>& refinedCorners) const
 {
-    double minE = std::numeric_limits<double>::max();
-
     std::vector<bool> used(refinedCorners.size(), false);
     for (IndexT cid = 0; cid < refinedCorners.size(); ++cid)
     {
-        const CheckerBoardCorner& seed = refinedCorners[cid];
         if (used[cid])
             continue;
 
@@ -1448,7 +1431,7 @@ bool CheckerDetector::removeInvalidCheckerboards()
 
         /**
          * Check squares for not too important angles
-        */
+         */
         for (int i = 0; i < board.rows() - 1; ++i)
         {
             for (int j = 0; j < board.cols() - 1; j++)
@@ -1465,18 +1448,16 @@ bool CheckerDetector::removeInvalidCheckerboards()
 
                 Vec2 dir1 = (_corners[c01].center - _corners[c00].center).normalized();
                 Vec2 dir2 = (_corners[c10].center - _corners[c00].center).normalized();
-                Vec2 dir3 = (_corners[c10].center - _corners[c11].center).normalized();
-                Vec2 dir4 = (_corners[c01].center - _corners[c11].center).normalized();
 
                 double a1 = std::acos(dir1.dot(dir2));
                 double a2 = std::acos(dir1.dot(dir2));
 
-                if (a1 < M_PI_4 || a1 > 3.0 * M_PI_4) 
+                if (a1 < M_PI_4 || a1 > 3.0 * M_PI_4)
                 {
                     return true;
                 }
 
-                if (a2 < M_PI_4 || a2 > 3.0 * M_PI_4) 
+                if (a2 < M_PI_4 || a2 > 3.0 * M_PI_4)
                 {
                     return true;
                 }
@@ -1486,8 +1467,6 @@ bool CheckerDetector::removeInvalidCheckerboards()
         for (int i = 0; i < board.rows() - delta.y(); ++i)
         {
             Vec2 sum{0, 0};
-            int count = 0;
-
             std::vector<Vec2> dirs;
 
             // Store directions between consecutive corners in row

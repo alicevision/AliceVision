@@ -248,8 +248,8 @@ if(AV_BUILD_TBB)
     set(TBB_TARGET tbb)
 
     ExternalProject_Add(${TBB_TARGET}
-        URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.8.0.tar.gz
-        URL_HASH MD5=392421c6f33ebd00edb57eba36054da9
+        URL https://github.com/uxlfoundation/oneTBB/archive/refs/tags/v2022.1.0-rc1.tar.gz
+        URL_HASH MD5=e37f0538269b454c1bf2b5356c2bb617
         DOWNLOAD_DIR ${BUILD_DIR}/download/tbb
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -982,8 +982,8 @@ if(AV_BUILD_OPENCV)
     set(OPENCV_TARGET opencv)
 
     ExternalProject_Add(opencv_contrib
-        URL https://github.com/opencv/opencv_contrib/archive/4.7.0.zip
-        URL_HASH MD5=a3969f1db6732340e492c0323178f6f1
+        URL https://github.com/opencv/opencv_contrib/archive/refs/tags/4.11.0.tar.gz
+        URL_HASH MD5=7dd4bc67eb67faff96ce71745a5e3abe
         DOWNLOAD_DIR ${BUILD_DIR}/download/opencv_contrib
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
         BUILD_ALWAYS 0
@@ -994,8 +994,8 @@ if(AV_BUILD_OPENCV)
     )
 
     ExternalProject_Add(${OPENCV_TARGET}
-        URL https://github.com/opencv/opencv/archive/4.7.0.zip
-        URL_HASH MD5=481a9ee5b0761978832d02d8861b8156
+        URL https://github.com/opencv/opencv/archive/refs/tags/4.11.0.tar.gz
+        URL_HASH MD5=f35fbd46350cc677af13e198805b58f7
         DOWNLOAD_DIR ${BUILD_DIR}/download/opencv
         UPDATE_COMMAND ""
         BUILD_IN_SOURCE 0
@@ -1271,8 +1271,8 @@ if(AV_BUILD_LEMON)
     set(LEMON_TARGET LEMON)
 
     ExternalProject_Add(${LEMON_TARGET}
-        GIT_REPOSITORY https://github.com/The-OpenROAD-Project/lemon-graph.git
-        GIT_TAG 62ac75337e5a8d7221823f03e9cc782270cfef4b
+        GIT_REPOSITORY https://github.com/alicevision/lemon.git
+        GIT_TAG 90244e2b16301d286ca5087fbb3f0130b6a1812e
         DOWNLOAD_DIR ${BUILD_DIR}/download/${LEMON_TARGET}
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0

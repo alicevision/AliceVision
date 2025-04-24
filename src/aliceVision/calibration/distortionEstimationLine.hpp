@@ -13,7 +13,7 @@ namespace calibration {
 
 /**
  * Coordinates plus scale space information
-*/
+ */
 struct PointWithScale
 {
     Vec2 center;
@@ -36,7 +36,6 @@ struct LineWithPoints
     std::vector<PointWithScale> points;
 };
 
-
 /**
  * @brief Estimate the undistortion parameters of a camera using a set of line aligned points.
  *
@@ -55,8 +54,6 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               const bool lockCenter,
               const bool lockAngles,
               const std::vector<bool>& lockDistortions);
-
-
 
 }  // namespace calibration
 }  // namespace aliceVision

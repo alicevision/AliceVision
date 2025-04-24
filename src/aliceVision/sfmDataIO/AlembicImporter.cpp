@@ -373,6 +373,53 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
     return true;
 }
 
+bool readSurveys(IObject iObj, sfmData::SfMData& sfmdata)
+{
+    using namespace aliceVision::geometry;
+
+    IPoints points(iObj, kWrapExisting);
+    IPointsSchema& ms = points.getSchema();
+    ICompoundProperty userProps = getAbcUserProperties(ms);
+
+    if (!(userProps.getPropertyHeader("mvg_surveyIds") && userProps.getPropertyHeader("mvg_surveyData")))
+    {
+        return false;
+    }
+
+    AV_UInt32ArraySamplePtr sampleId;
+    DoubleArraySamplePtr sampleData;
+
+    sampleId.read(userProps, "mvg_surveyIds");
+
+    IDoubleArrayProperty propData(userProps, "mvg_surveyData");
+    propData.get(sampleData);
+
+    const int sampleDataSize = 5;
+
+    if (sampleId.size() * sampleDataSize != sampleData->size())
+    {
+        return false;
+    }
+
+    sfmData::SurveyPoints & output = sfmdata.getSurveyPoints();
+    for (int pos = 0; pos < sampleId.size(); pos++)
+    {
+        IndexT viewId = sampleId[pos];
+
+        sfmData::SurveyPoint pt;
+        pt.point3d.x() = (*sampleData)[pos * sampleDataSize + 0];
+        pt.point3d.y() = (*sampleData)[pos * sampleDataSize + 1];
+        pt.point3d.z() = (*sampleData)[pos * sampleDataSize + 2];
+        pt.survey.x() = (*sampleData)[pos * sampleDataSize + 3];
+        pt.survey.y() = (*sampleData)[pos * sampleDataSize + 4];
+
+        output[viewId].push_back(pt);
+    }
+
+    return true;
+}
+
+
 bool readCamera(const Version& abcVersion,
                 const ICamera& camera,
                 const M44d& mat,
@@ -418,6 +465,7 @@ bool readCamera(const Version& abcVersion,
     bool intrinsicLocked = false;
     bool poseLocked = false;
     bool rotationOnly = false;
+    bool removable = true;
     bool poseIndependant = true;
     bool lockRatio = true;
     bool lockOffset = false;
@@ -494,6 +542,10 @@ bool readCamera(const Version& abcVersion,
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_rotationOnly"))
             {
                 rotationOnly = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_rotationOnly", sampleFrame);
+            }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_removable"))
+            {
+                removable = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_removable", sampleFrame);
             }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_poseIndependant"))
             {
@@ -818,6 +870,7 @@ bool readCamera(const Version& abcVersion,
         {
             sfmData::CameraPose cp(pose, poseLocked);
             cp.setRotationOnly(rotationOnly);
+            cp.setRemovable(removable);
             sfmData.setPose(*view, cp);
         }
     }
@@ -999,9 +1052,22 @@ void visitObject(const Version& abcVersion, IObject iObj, M44d mat, sfmData::SfM
         isReconstructed = false;
 
     const MetaData& md = iObj.getMetaData();
-    if (IPoints::matches(md) && (flagsPart & ESfMData::STRUCTURE))
+    if (IPoints::matches(md))
     {
-        readPointCloud(abcVersion, iObj, mat, sfmdata, flagsPart);
+        if (iObj.getName() == "surveys")
+        {
+            if (flagsPart & ESfMData::SURVEYS)
+            {
+                readSurveys(iObj, sfmdata);
+            }
+        }
+        else 
+        {
+            if (flagsPart & ESfMData::STRUCTURE )
+            {
+                readPointCloud(abcVersion, iObj, mat, sfmdata, flagsPart);
+            }
+        }
     }
     else if (IXform::matches(md))
     {

@@ -4,9 +4,9 @@
 # Software PROPERTY FOLDER is 'Software/Export'
 set(FOLDER_SOFTWARE_EXPORT "Software/Export")
 
-if(ALICEVISION_BUILD_SFM)
+if (ALICEVISION_BUILD_SFM)
     # Export an alembic animated camera from a SfMData file
-    if(ALICEVISION_HAVE_ALEMBIC)
+    if (ALICEVISION_HAVE_ALEMBIC)
         alicevision_add_software(aliceVision_exportAnimatedCamera
             SOURCE main_exportAnimatedCamera.cpp
             FOLDER ${FOLDER_SOFTWARE_EXPORT}
@@ -110,7 +110,7 @@ if(ALICEVISION_BUILD_SFM)
     )
 
     # Export a SfM aliceVision scene to MayaMVG
-    if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
+    if (ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
         alicevision_add_software(aliceVision_exportMeshroomMaya
             SOURCE main_exportMeshroomMaya.cpp
             FOLDER ${FOLDER_SOFTWARE_EXPORT}
@@ -186,7 +186,7 @@ if(ALICEVISION_BUILD_SFM)
     )
 
     # Export geometry and textures as USD
-    if(ALICEVISION_HAVE_USD)
+    if (ALICEVISION_HAVE_USD)
         alicevision_add_software(aliceVision_exportUSD
             SOURCE main_exportUSD.cpp
             FOLDER ${FOLDER_SOFTWARE_EXPORT}

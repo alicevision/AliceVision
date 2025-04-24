@@ -23,10 +23,18 @@
 %}
 
 %inline %{
-    typedef long unsigned int size_t;
     typedef uint32_t IndexT;
 %}
 
+#ifdef LINUXPLATFORM
+    %inline %{
+        typedef long unsigned int size_t;
+    %}
+#else
+    %inline %{
+        typedef unsigned long long size_t;
+    %}
+#endif
 
 %template(IntVector) std::vector<int>;
 %template(DoubleVector) std::vector<double>;

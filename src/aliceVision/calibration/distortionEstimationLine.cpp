@@ -17,8 +17,8 @@ class CostLine : public ceres::CostFunction
 {
   public:
     CostLine(const std::shared_ptr<camera::Undistortion>& undistortion, const Vec2& pt, double sigma)
-      : _pt(pt),
-        _undistortion(undistortion),
+      : _undistortion(undistortion),
+        _pt(pt),
         _sigma(sigma)
     {
         set_num_residuals(1);
@@ -59,7 +59,7 @@ class CostLine : public ceres::CostFunction
         const double pa = _undistortion->getPixelAspectRatio();
         const double ny = ipt.y() / pa;
         const double w = 1.0 / _sigma;
-        
+
         residuals[0] = w * (cangle * ipt.x() + sangle * ny - distanceToLine);
 
         if (jacobians == nullptr)
@@ -109,7 +109,6 @@ class CostLine : public ceres::CostFunction
     Vec2 _pt;
     double _sigma;
 };
-
 
 bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
               Statistics& statistics,
@@ -174,7 +173,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         // At least one parameter is not locked
 
         std::vector<int> constantDistortions;
-        for (int idParamDistortion = 0; idParamDistortion < lockDistortions.size(); ++idParamDistortion)
+        for (int idParamDistortion = 0; idParamDistortion < static_cast<int>(lockDistortions.size()); ++idParamDistortion)
         {
             if (lockDistortions[idParamDistortion])
             {
@@ -189,7 +188,6 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         }
     }
 
-
     for (auto& l : lines)
     {
         problem.AddParameterBlock(&l.angle, 1);
@@ -200,14 +198,13 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
             problem.SetParameterBlockConstant(&l.angle);
         }
 
-        for (const auto & pt : l.points)
+        for (const auto& pt : l.points)
         {
             ceres::CostFunction* costFunction = new CostLine(undistortionToEstimate, pt.center, pow(2.0, pt.scale));
             problem.AddResidualBlock(costFunction, lossFunction, &l.angle, &l.dist, center, ptrUndistortionParameters);
         }
     }
 
-   
     ceres::Solver::Options options;
     options.use_inner_iterations = true;
     options.max_num_iterations = 1000;
@@ -233,7 +230,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
         const double sangle = std::sin(l.angle);
         const double cangle = std::cos(l.angle);
 
-        for (const auto & pt : l.points)
+        for (const auto& pt : l.points)
         {
             const Vec2 ipt = undistortionToEstimate->undistort(pt.center);
             const double pa = undistortionToEstimate->getPixelAspectRatio();
@@ -243,7 +240,7 @@ bool estimate(std::shared_ptr<camera::Undistortion> undistortionToEstimate,
             errors.push_back(std::abs(res));
         }
     }
- 
+
     const double mean = std::accumulate(errors.begin(), errors.end(), 0.0) / static_cast<double>(errors.size());
     const double sqSum = std::inner_product(errors.begin(), errors.end(), errors.begin(), 0.0);
     const double stddev = std::sqrt(sqSum / errors.size() - mean * mean);

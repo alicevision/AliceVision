@@ -5,7 +5,7 @@
 set(FOLDER_SOFTWARE_PIPELINE "Software/Pipeline")
 
 ### SfM software
-if(ALICEVISION_BUILD_SFM)
+if (ALICEVISION_BUILD_SFM)
 
     # Intrinsic image analysis and SfMData container initialization
     alicevision_add_software(aliceVision_cameraInit
@@ -24,7 +24,7 @@ if(ALICEVISION_BUILD_SFM)
     )
 
     # Image processing
-    if(ALICEVISION_HAVE_OPENCV)
+    if (ALICEVISION_HAVE_OPENCV)
         alicevision_add_software(aliceVision_imageMasking
             SOURCE main_imageMasking.cpp
             FOLDER ${FOLDER_SOFTWARE_PIPELINE}
@@ -118,37 +118,39 @@ if(ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
-    # Bootstrapping SfM
-    alicevision_add_software(aliceVision_sfmBootstraping
-        SOURCE main_sfmBootstraping.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_sfm
-              aliceVision_sfmData
-              aliceVision_track
-              aliceVision_dataio
-              aliceVision_mesh
-              Boost::program_options
-              Boost::json
-    )
+    if (ALICEVISION_BUILD_MVS)
+        # Bootstrapping SfM
+        alicevision_add_software(aliceVision_sfmBootstraping
+            SOURCE main_sfmBootstraping.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_feature
+                aliceVision_sfm
+                aliceVision_sfmData
+                aliceVision_track
+                aliceVision_dataio
+                aliceVision_mesh
+                Boost::program_options
+                Boost::json
+        )
 
-    # Expanding SfM
-    alicevision_add_software(aliceVision_sfmExpanding
-        SOURCE main_sfmExpanding.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_sfm
-              aliceVision_sfmData
-              aliceVision_track
-              aliceVision_dataio
-              aliceVision_mesh
-              Boost::program_options
-              Boost::json
-    )
+        # Expanding SfM
+        alicevision_add_software(aliceVision_sfmExpanding
+            SOURCE main_sfmExpanding.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_feature
+                aliceVision_sfm
+                aliceVision_sfmData
+                aliceVision_track
+                aliceVision_dataio
+                aliceVision_mesh
+                Boost::program_options
+                Boost::json
+        )
+    endif()
 
     # Global Rotation Estimating
     alicevision_add_software(aliceVision_globalRotationEstimating
@@ -235,7 +237,7 @@ if(ALICEVISION_BUILD_SFM)
     )
 
     # Calibrate a camera
-    if(ALICEVISION_HAVE_OPENCV)
+    if (ALICEVISION_HAVE_OPENCV)
         alicevision_add_software(aliceVision_cameraCalibration
             SOURCE main_cameraCalibration.cpp
             FOLDER ${FOLDER_SOFTWARE_PIPELINE}
@@ -308,7 +310,7 @@ if(ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
-    if(ALICEVISION_HAVE_CCTAG)
+    if (ALICEVISION_HAVE_CCTAG)
         target_link_libraries(aliceVision_rigCalibration_exe PUBLIC CCTag::CCTag)
     endif()
 
@@ -326,7 +328,7 @@ if(ALICEVISION_BUILD_SFM)
               Boost::timer
     )
 
-    if(ALICEVISION_HAVE_CCTAG)
+    if (ALICEVISION_HAVE_CCTAG)
         target_link_libraries(aliceVision_cameraLocalization_exe PUBLIC CCTag::CCTag)
     endif()
 
@@ -345,7 +347,7 @@ if(ALICEVISION_BUILD_SFM)
               Boost::timer
     )
 
-    if(ALICEVISION_HAVE_CCTAG)
+    if (ALICEVISION_HAVE_CCTAG)
         target_link_libraries(aliceVision_rigLocalization_exe PUBLIC CCTag::CCTag)
     endif()
 
@@ -366,7 +368,7 @@ if(ALICEVISION_BUILD_SFM)
          
 endif() # if(ALICEVISION_BUILD_SFM)
 
-if(ALICEVISION_BUILD_PANORAMA)
+if (ALICEVISION_BUILD_PANORAMA)
     # Panorama
     alicevision_add_software(aliceVision_panoramaPrepareImages
         SOURCE main_panoramaPrepareImages.cpp
@@ -463,9 +465,9 @@ if(ALICEVISION_BUILD_PANORAMA)
 endif()
 
 ### MVS software
-if(ALICEVISION_BUILD_MVS)
+if (ALICEVISION_BUILD_MVS)
 
-    if(ALICEVISION_HAVE_CUDA) # Depth map computation need CUDA
+    if (ALICEVISION_HAVE_CUDA) # Depth map computation need CUDA
         # Depth Map Estimation
         alicevision_add_software(aliceVision_depthMapEstimation
             SOURCE main_depthMapEstimation.cpp
@@ -528,41 +530,41 @@ if(ALICEVISION_BUILD_MVS)
               Boost::json
     )
 
-     # Lidar merging
-     alicevision_add_software(aliceVision_lidarMerging
-     SOURCE main_lidarMerging.cpp
-     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-     LINKS aliceVision_system
-           aliceVision_cmdline
-           aliceVision_mvsData
-           aliceVision_mvsUtils
-           aliceVision_mesh
-           aliceVision_fuseCut
-           aliceVision_sfmData
-           aliceVision_sfmDataIO
-           Boost::program_options
-           Boost::json
+    # Lidar merging
+    alicevision_add_software(aliceVision_lidarMerging
+        SOURCE main_lidarMerging.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_mvsData
+              aliceVision_mvsUtils
+              aliceVision_mesh
+              aliceVision_fuseCut
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+              Boost::json
     )
 
     # Lidar decimation
     alicevision_add_software(aliceVision_lidarDecimating
-    SOURCE main_lidarDecimating.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_cmdline
-          aliceVision_mvsData
-          aliceVision_mvsUtils
-          aliceVision_mesh
-          aliceVision_fuseCut
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          Boost::program_options
-          Boost::json
-          OpenMeshCore
-          OpenMeshTools
-   )
+        SOURCE main_lidarDecimating.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+            aliceVision_cmdline
+            aliceVision_mvsData
+            aliceVision_mvsUtils
+            aliceVision_mesh
+            aliceVision_fuseCut
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            Boost::program_options
+            Boost::json
+            OpenMeshCore
+            OpenMeshTools
+    )
 
-    if(ALICEVISION_HAVE_MESHSDFILTER)
+    if (ALICEVISION_HAVE_MESHSDFILTER)
 
         # Mesh Denoising
         alicevision_add_software(aliceVision_meshDenoising
@@ -639,14 +641,14 @@ if(ALICEVISION_BUILD_MVS)
               aliceVision_sfmDataIO
               Boost::program_options
     )
-endif() # if(ALICEVISION_BUILD_MVS)
+endif() # if (ALICEVISION_BUILD_MVS)
 
 
 if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
-    if(ALICEVISION_HAVE_OPENCV)
+    if (ALICEVISION_HAVE_OPENCV)
         # Photometric Stereo
 
-        if(ALICEVISION_BUILD_MVS)
+        if (ALICEVISION_BUILD_MVS)
             alicevision_add_software(aliceVision_photometricStereo
                 SOURCE main_photometricStereo.cpp
                 FOLDER ${FOLDER_SOFTWARE_PIPELINE}
@@ -674,7 +676,7 @@ if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
             )
         endif()
         
-        if(ALICEVISION_HAVE_ONNX)
+        if (ALICEVISION_HAVE_ONNX)
             # SphereDetection
             alicevision_add_software(aliceVision_sphereDetection
                 SOURCE main_sphereDetection.cpp
@@ -703,7 +705,7 @@ if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
     endif()
 endif()
 
-if(ALICEVISION_BUILD_HDR)
+if (ALICEVISION_BUILD_HDR)
     alicevision_add_software(aliceVision_LdrToHdrSampling
         SOURCE main_LdrToHdrSampling.cpp
         FOLDER ${FOLDER_SOFTWARE_PIPELINE}
@@ -743,8 +745,8 @@ if(ALICEVISION_BUILD_HDR)
 endif()
 
 
-if(ALICEVISION_BUILD_SEGMENTATION)
-    if(ALICEVISION_HAVE_ONNX)
+if (ALICEVISION_BUILD_SEGMENTATION)
+    if (ALICEVISION_HAVE_ONNX)
         # Image Segmentation
         alicevision_add_software(aliceVision_imageSegmentation
             SOURCE main_imageSegmentation.cpp

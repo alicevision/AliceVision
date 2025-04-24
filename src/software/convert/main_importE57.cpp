@@ -59,10 +59,12 @@ struct PointInfoVectorAdaptator
 using PointInfoKdTree =
   nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, PointInfoVectorAdaptator>, PointInfoVectorAdaptator, 3>;
 
-template<typename DistanceType, typename IndexType = size_t>
+template<typename _DistanceType, typename IndexType = size_t>
 class BestPointInRadius
 {
   public:
+    // Necessary since nanoflann 1.7.0: https://github.com/jlblancoc/nanoflann/commit/9c84c4c32c2bfa7077cc8873dd3b5bcbb557da90
+    using DistanceType = _DistanceType;
     const DistanceType m_radius;
     const std::vector<dataio::E57Reader::PointInfo>& m_points;
     const std::map<int, Eigen::Vector3d>& m_cameras;
@@ -122,6 +124,9 @@ class BestPointInRadius
 
     // Upper bound on distance
     inline DistanceType worstDist() const { return m_radius; }
+
+    // Necessary since nanoflann 1.6.0: https://github.com/jlblancoc/nanoflann/commit/a74fc3b5b359c941d9a00eb9d92c2202c22eca3a
+    inline void sort() {}
 };
 
 // convert from a SfMData format to another
@@ -234,7 +239,7 @@ int aliceVision_main(int argc, char** argv)
 
         std::vector<std::vector<dataio::E57Reader::PointInfo>> vec_allVertices(omp_get_max_threads());
 
-// Loop trough all vertices
+// Loop through all vertices
 #pragma omp parallel for
         for (int vIndex = 0; vIndex < vertices.size(); ++vIndex)
         {

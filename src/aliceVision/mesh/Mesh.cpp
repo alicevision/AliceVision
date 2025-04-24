@@ -2529,19 +2529,26 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
     if (mergeCoincidentVerts)
     {
         std::map<int, int> oldToNewMap;
+        std::unordered_map<Point3d, size_t, Point3dHash> mapPoints;
         StaticVector<Point3d> uniquePoints;
+
         for (int i = 0; i < pts.size(); ++i)
         {
             const Point3d& p = pts[i];
-            const auto it = std::find(uniquePoints.begin(), uniquePoints.end(), p);
-            if (it == uniquePoints.end())
+
+            
+            const auto it = mapPoints.find(p);
+            if (it == mapPoints.end())
             {
+                //If the points was never found before
                 oldToNewMap[i] = uniquePoints.size();
+                mapPoints[p] = uniquePoints.size();
                 uniquePoints.push_back(p);
             }
             else
             {
-                oldToNewMap[i] = static_cast<int>(std::distance(uniquePoints.begin(), it));
+                //If it is an exact copy, then get the original position
+                oldToNewMap[i] = it->second;
             }
         }
 

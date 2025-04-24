@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.5)
 
 add_executable(main_svgSample main.cpp)
 
 set_property(TARGET main_svgSample
-  PROPERTY FOLDER Dependencies/vectorGraphics
+    PROPERTY FOLDER Dependencies/vectorGraphics
 )

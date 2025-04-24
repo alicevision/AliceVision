@@ -35,6 +35,7 @@ ENV AV_DEV=/opt/AliceVision_git \
 
 COPY CMakeLists.txt *.md ${AV_DEV}/
 COPY src ${AV_DEV}/src
+COPY meshroom ${AV_DEV}/meshroom
 
 WORKDIR "${AV_BUILD}"
 

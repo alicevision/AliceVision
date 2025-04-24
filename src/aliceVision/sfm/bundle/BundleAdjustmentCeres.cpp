@@ -60,6 +60,31 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const std::shared_ptr<Intr
     return costFunction;
 }
 
+ceres::CostFunction* createSurveyPointCostFunction(const std::shared_ptr<IntrinsicBase> intrinsic, 
+                                                   const Vec3 & point,
+                                                   const sfmData::Observation& observation)
+{
+    auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionSurveyErrorFunctor>(new ProjectionSurveyErrorFunctor(point, observation, intrinsic));
+
+    int distortionSize = 1;
+    auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+    if (isod)
+    {
+        auto distortion = isod->getDistortion();
+        if (distortion)
+        {
+            distortionSize = distortion->getParameters().size();
+        }
+    }
+
+    costFunction->AddParameterBlock(intrinsic->getParameters().size());
+    costFunction->AddParameterBlock(distortionSize);
+    costFunction->AddParameterBlock(6);
+    costFunction->SetNumResiduals(2);
+
+    return costFunction;
+}
+
 /**
  * @brief Create the appropriate cost functor according the provided input rig camera intrinsic model
  * @param[in] intrinsicPtr The intrinsic pointer
@@ -723,6 +748,58 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
     }
 }
 
+void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+   
+    // build the residual blocks corresponding to the track observations
+    for (const auto& [idView, vspoints] : sfmData.getSurveyPoints())
+    {
+        double* fakeDistortionBlockPtr = _fakeDistortionBlock.data();
+
+        const sfmData::View& view = sfmData.getView(idView);
+        const IndexT intrinsicId = view.getIntrinsicId();
+
+        // each residual block takes a point and a camera as input and outputs a 2
+        // dimensional residual. Internally, the cost function stores the observed
+        // image location and compares the reprojection against the observation.
+        const auto& pose = sfmData.getPose(view);
+
+        // needed parameters to create a residual block (K, pose)
+        double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
+        double* intrinsicBlockPtr = _intrinsicsBlocks.at(intrinsicId).data();
+        const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[intrinsicId];
+
+        double * distortionBlockPtr = fakeDistortionBlockPtr;
+        if (_distortionsBlocks.find(intrinsicId) != _distortionsBlocks.end())
+        {
+            distortionBlockPtr = _distortionsBlocks.at(intrinsicId).data();
+        }
+
+        // apply a specific parameter ordering:
+        if (_ceresOptions.useParametersOrdering)
+        {
+            _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
+            _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
+            _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
+        }
+
+
+        for (const auto & spoint: vspoints)
+        {
+            sfmData::Observation observation(spoint.survey, 0, 1.0);
+            ceres::CostFunction* costFunction = createSurveyPointCostFunction(intrinsic, spoint.point3d, observation);
+
+            
+            std::vector<double*> params;
+            params.push_back(intrinsicBlockPtr);
+            params.push_back(distortionBlockPtr);
+            params.push_back(poseBlockPtr);
+
+            problem.AddResidualBlock(costFunction, nullptr, params);
+        }
+    }
+}
+
 void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
 {
     // set a LossFunction to be less penalized by false measurements.
@@ -844,6 +921,9 @@ void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData, ERefi
 
     // add SfM landmarks to the Ceres problem
     addLandmarksToProblem(sfmData, refineOptions, problem);
+
+    // add SfM landmarks to the Ceres problem
+    addSurveyPointsToProblem(sfmData, refineOptions, problem);
 
     // add 2D constraints to the Ceres problem
     addConstraints2DToProblem(sfmData, refineOptions, problem);

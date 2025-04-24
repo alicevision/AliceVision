@@ -64,7 +64,7 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
     radiance.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
 
     ALICEVISION_LOG_TRACE("[hdrMerge] Images to fuse:");
-    for (int i = 0; i < images.size(); ++i)
+    for (int i = 0; i < static_cast<int>(images.size()); ++i)
     {
         ALICEVISION_LOG_TRACE(images[i].width() << "x" << images[i].height() << ", time: " << times[i]);
     }
@@ -84,9 +84,9 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
     noMidLight.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
 
 #pragma omp parallel for
-    for (int y = 0; y < height; ++y)
+    for (int y = 0; y < static_cast<int>(height); ++y)
     {
-        for (int x = 0; x < width; ++x)
+        for (std::size_t x = 0; x < width; ++x)
         {
             // for each pixels
             image::RGBfColor& radianceColor = radiance(y, x);
@@ -104,15 +104,15 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
             for (std::size_t channel = 0; channel < 3; ++channel)
             {
                 int firstIndex = mergingParams.refImageIndex;
-                while (firstIndex > 0 &&
-                       (response(images[firstIndex](y, x)(channel), channel) > v_minValue[channel] || firstIndex == images.size() - 1))
+                while (firstIndex > 0 && (response(images[firstIndex](y, x)(channel), channel) > v_minValue[channel] ||
+                                          firstIndex == static_cast<int>(images.size()) - 1))
                 {
                     firstIndex--;
                 }
                 v_firstIndex.push_back(firstIndex);
 
                 int lastIndex = v_firstIndex[channel] + 1;
-                while (lastIndex < images.size() - 1 && response(images[lastIndex](y, x)(channel), channel) < v_maxValue[channel])
+                while (lastIndex < static_cast<int>(images.size()) - 1 && response(images[lastIndex](y, x)(channel), channel) < v_maxValue[channel])
                 {
                     lastIndex++;
                 }
@@ -150,8 +150,6 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
             {
                 for (std::size_t channel = 0; channel < 3; ++channel)
                 {
-                    int idxMaxValue = 0;
-                    int idxMinValue = 0;
                     double maxValue = 0.0;
                     double minValue = 10000.0;
                     bool jump = true;
@@ -160,12 +158,10 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
                         if (vv_value[channel][e] > maxValue)
                         {
                             maxValue = vv_value[channel][e];
-                            idxMaxValue = e;
                         }
                         if (vv_value[channel][e] < minValue)
                         {
                             minValue = vv_value[channel][e];
-                            idxMinValue = e;
                         }
                         jump = jump && ((vv_value[channel][e] < mergingParams.minSignificantValue && e < images.size() - 1) ||
                                         (vv_value[channel][e] > mergingParams.maxSignificantValue && e > 0));
@@ -181,7 +177,7 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
             {
                 double v = 0.0;
                 double sumCoeff = 0.0;
-                for (std::size_t i = v_firstIndex[channel]; i <= v_lastIndex[channel]; ++i)
+                for (int i = v_firstIndex[channel]; i <= v_lastIndex[channel]; ++i)
                 {
                     v += vv_coeff[channel][i] * vv_normalizedValue[channel][i];
                     sumCoeff += vv_coeff[channel][i];
@@ -195,7 +191,7 @@ void hdrMerge::process(const std::vector<image::Image<image::RGBfColor>>& images
 
 void hdrMerge::postProcessHighlight(const std::vector<image::Image<image::RGBfColor>>& images,
                                     const std::vector<double>& times,
-                                    const rgbCurve& weight,
+                                    [[maybe_unused]] const rgbCurve& weight,
                                     const rgbCurve& response,
                                     image::Image<image::RGBfColor>& radiance,
                                     float targetCameraExposure,
@@ -216,18 +212,15 @@ void hdrMerge::postProcessHighlight(const std::vector<image::Image<image::RGBfCo
 
     // get images width, height
     const std::size_t width = inputImage.width();
-
     const std::size_t height = inputImage.height();
     image::Image<float> isPixelClamped(width, height);
 
 #pragma omp parallel for
-    for (int y = 0; y < height; ++y)
+    for (int y = 0; y < static_cast<int>(height); ++y)
     {
-        for (int x = 0; x < width; ++x)
+        for (std::size_t x = 0; x < width; ++x)
         {
             // for each pixels
-            image::RGBfColor& radianceColor = radiance(y, x);
-
             float& isClamped = isPixelClamped(y, x);
             isClamped = 0.0f;
 
@@ -250,9 +243,9 @@ void hdrMerge::postProcessHighlight(const std::vector<image::Image<image::RGBfCo
     image::imageGaussianFilter(isPixelClamped, 1.0f, isPixelClamped_g, 3, 3);
 
 #pragma omp parallel for
-    for (int y = 0; y < height; ++y)
+    for (int y = 0; y < static_cast<int>(height); ++y)
     {
-        for (int x = 0; x < width; ++x)
+        for (std::size_t x = 0; x < width; ++x)
         {
             image::RGBfColor& radianceColor = radiance(y, x);
 

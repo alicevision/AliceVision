@@ -12,10 +12,10 @@ namespace track {
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, aliceVision::track::TrackItem const& input)
 {
     jv = {
-            {"featureId", boost::json::value_from(input.featureId)},
-            {"coords", boost::json::value_from(input.coords)},
-            {"scale", boost::json::value_from(input.scale)},
-        };
+      {"featureId", boost::json::value_from(input.featureId)},
+      {"coords", boost::json::value_from(input.coords)},
+      {"scale", boost::json::value_from(input.scale)},
+    };
 }
 
 aliceVision::track::TrackItem tag_invoke(boost::json::value_to_tag<aliceVision::track::TrackItem>, boost::json::value const& jv)

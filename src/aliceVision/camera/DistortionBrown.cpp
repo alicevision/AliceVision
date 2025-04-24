@@ -64,12 +64,6 @@ Eigen::Matrix2d DistortionBrown::getDerivativeAddDistoWrtPt(const Vec2& p) const
 
 Eigen::MatrixXd DistortionBrown::getDerivativeAddDistoWrtDisto(const Vec2& p) const
 {
-    const double k1 = _distortionParams[0];
-    const double k2 = _distortionParams[1];
-    const double k3 = _distortionParams[2];
-    const double t1 = _distortionParams[3];
-    const double t2 = _distortionParams[4];
-
     double px = p(0);
     double py = p(1);
 
@@ -117,13 +111,13 @@ Vec2 DistortionBrown::removeDistortion(const Vec2& p) const
     return undistorted_value;
 }
 
-Eigen::Matrix2d DistortionBrown::getDerivativeRemoveDistoWrtPt(const Vec2& p) const
+Eigen::Matrix2d DistortionBrown::getDerivativeRemoveDistoWrtPt([[maybe_unused]] const Vec2& p) const
 {
     ALICEVISION_THROW_ERROR("Brown inverse jacobian are not implemented");
     return Eigen::Matrix2d::Identity();
 }
 
-Eigen::MatrixXd DistortionBrown::getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
+Eigen::MatrixXd DistortionBrown::getDerivativeRemoveDistoWrtDisto([[maybe_unused]] const Vec2& p) const
 {
     ALICEVISION_THROW_ERROR("Brown inverse jacobian are not implemented");
     return Eigen::Matrix<double, 2, 5>::Zero();

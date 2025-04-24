@@ -60,10 +60,10 @@ from ..constants import IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH,
 ##################
 
 def test_sfmdata_get_views():
-    """ Test creating an emtpy SfMData object, retrieving and editing its Views. """
+    """ Test creating an empty SfMData object, retrieving and editing its Views. """
     data = av.SfMData()
     views = data.getViews()
-    assert len(views) == 0, "The SfMData object is emtpy, there should not be any View in it"
+    assert len(views) == 0, "The SfMData object is empty, there should not be any View in it"
 
     # Create a View object and add it to the list
     view = av.View()
@@ -340,13 +340,13 @@ def test_sfmdata_get_set_folders():
         data.getRelativeMatchesFolders()[0] == relative_folder
 
     # Add single features and matches folders
-    other_folder = "../other"
+    other_folder = os.path.join("..", "other")
     data.addFeaturesFolder(other_folder)
     data.addMatchesFolder(other_folder)
     assert len(data.getFeaturesFolders()) == 2, \
         "A second features folder should have been added to the list"
     assert len(data.getMatchesFolders()) == 2, \
-        "A second matches folder should have been addded to the list"
+        "A second matches folder should have been added to the list"
 
     assert os.path.relpath(data.getFeaturesFolders()[0], projectFolder) == relative_folder
     assert os.path.relpath(data.getFeaturesFolders()[1], projectFolder) == other_folder
@@ -354,8 +354,8 @@ def test_sfmdata_get_set_folders():
     assert os.path.relpath(data.getMatchesFolders()[1], projectFolder) == other_folder
 
     # Reset features and matches folders and add new ones
-    new_folder1 = "../new"
-    new_folder2 = "../.."
+    new_folder1 = os.path.join("..", "new")
+    new_folder2 = os.path.join("..", "..")
     new_folder3 = "folder"
     new_folders = [new_folder1, new_folder2, new_folder3]
 

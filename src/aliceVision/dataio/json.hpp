@@ -50,9 +50,8 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, Eige
 
 }  // namespace Eigen
 
-namespace aliceVision
-{
+namespace aliceVision {
 
-std::vector<boost::json::value> readJsons(std::istream& is, boost::json::error_code& ec);
+std::vector<boost::json::value> readJsons(std::istream& is, boost::system::error_code& ec);
 
 }

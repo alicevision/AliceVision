@@ -31,7 +31,7 @@ double computeReprojectionErrors(const std::vector<std::vector<cv::Point3f>>& ob
     double totalErr = 0;
     perViewErrors.resize(objectPoints.size());
 
-    for (std::size_t i = 0; i < (int)objectPoints.size(); i++)
+    for (std::size_t i = 0; i < objectPoints.size(); i++)
     {
         cv::projectPoints(cv::Mat(objectPoints[i]), rvecs[i], tvecs[i], cameraMatrix, distCoeffs, imagePoints2);
         const double err = cv::norm(cv::Mat(imagePoints[i]), cv::Mat(imagePoints2), cv::NORM_L2);

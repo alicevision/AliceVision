@@ -93,6 +93,24 @@ class CameraPose
         _rotationOnly = partial;
     }
 
+    /**
+     * @brief Can this pose be removed from sfmdata given heuristics ?
+     * @param removable true if it can be removed normally
+    */
+    void setRemovable(bool removable)
+    {
+        _removable = removable;
+    }
+
+    /**
+     * @brief Can this pose be removed from sfmdata given heuristics ?
+     * @return true if it can be removed normally
+    */
+    bool isRemovable() const
+    {
+        return _removable;
+    }
+
   private:
     /// camera 3d transformation
     geometry::Pose3 _transform;
@@ -100,6 +118,8 @@ class CameraPose
     bool _locked = false;
     /// Only rotation is solved
     bool _rotationOnly = false;
+    /// Can be removed
+    bool _removable = true;
     /// Estimator state
     EEstimatorParameterState _state = EEstimatorParameterState::REFINED;
 };

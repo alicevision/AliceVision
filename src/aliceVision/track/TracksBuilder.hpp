@@ -74,7 +74,7 @@ class TracksBuilder
      * @brief Export tracks as a map (each entry is a sequence of imageId and keypointId):
      *        {TrackIndex => {(imageIndex, keypointId), ... ,(imageIndex, keypointId)}
      * @param allTracks output to tracks
-     * @param featuresPerView is the feature per view map for accessing features information. 
+     * @param featuresPerView is the feature per view map for accessing features information.
      * If nullptr, then no coordinates or scale will be saved (For legacy purpose)
      */
     void exportToSTL(TracksMap& allTracks, const feature::FeaturesPerView* featuresPerView = nullptr) const;

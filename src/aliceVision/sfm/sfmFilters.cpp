@@ -160,56 +160,68 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
     // Count the observation poses occurrence
     std::map<IndexT, IndexT> posesCount;
 
-    // Init with 0 count, undefined rig id (in order to be able to remove non referenced elements)
-    for (sfmData::Poses::const_iterator itPoses = sfmData.getPoses().begin(); itPoses != sfmData.getPoses().end(); ++itPoses)
-        posesCount[itPoses->first] = 0;
+    // Loop over all poses
+    for (auto & [poseId, pose] : sfmData.getPoses())
+    {
+        if (!pose.isRemovable())
+        {
+            continue;
+        }
+
+        posesCount[poseId] = 0;
+    }
 
     // Count occurrence of the poses in the Landmark observations
-    for (sfmData::Landmarks::const_iterator itLandmarks = landmarks.begin(); itLandmarks != landmarks.end(); ++itLandmarks)
+    for (const auto & [idLandmark, landmark] : landmarks)
     {
-        const sfmData::Observations& observations = itLandmarks->second.getObservations();
-        for (sfmData::Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
-        {
-            const IndexT viewId = itObs->first;
-            const sfmData::View* v = sfmData.getViews().at(viewId).get();
-            const auto poseInfoIt = posesCount.find(v->getPoseId());
+        const sfmData::Observations& observations = landmark.getObservations();
 
+        for (const auto & [viewId, obs] : observations)
+        {
+            const sfmData::View & v = sfmData.getView(viewId);
+            
+            const auto poseInfoIt = posesCount.find(v.getPoseId());
             if (poseInfoIt != posesCount.end())
+            {
                 poseInfoIt->second++;
-            else  // all pose should be defined in map_PoseId_Count
-                throw std::runtime_error(std::string("eraseUnstablePoses: found unknown pose id referenced by a view.\n\t- view id: ") +
-                                         std::to_string(v->getViewId()) + std::string("\n\t- pose id: ") + std::to_string(v->getPoseId()));
+            }
         }
     }
 
     // If usage count is smaller than the threshold, remove the Pose
-    for (std::map<IndexT, IndexT>::const_iterator it = posesCount.begin(); it != posesCount.end(); ++it)
+    for (const auto & [idPose, count] : posesCount)
     {
-        if (it->second < minPointsPerPose)
+        if (count < minPointsPerPose)
         {
-            sfmData.erasePose(it->first, true);  // no throw
+            sfmData.erasePose(idPose, true);  // no throw
 
-            for (auto& viewPair : sfmData.getViews())
+            for (auto& [viewId, view] : sfmData.getViews())
             {
-                if (viewPair.second->getPoseId() == it->first)
+                if (view->getPoseId() == idPose)
                 {
-                    if (viewPair.second->isPartOfRig())
+                    if (view->isPartOfRig())
                     {
-                        // the pose is now independent
-                        viewPair.second->setPoseId(viewPair.first);
-                        viewPair.second->setIndependantPose(true);
+                        // the pose is now independant
+                        view->setPoseId(idPose);
+                        view->setIndependantPose(true);
                     }
 
                     // add view id to the removedViewsId set
                     if (outRemovedViewsId != NULL)
-                        outRemovedViewsId->insert(viewPair.first);
+                    {
+                        outRemovedViewsId->insert(viewId);
+                    }
                 }
             }
             ++removedElements;
         }
     }
+    
     if (removedElements)
+    {
         ALICEVISION_LOG_DEBUG("eraseUnstablePoses: " << removedElements);
+    }
+
     return removedElements > 0;
 }
 

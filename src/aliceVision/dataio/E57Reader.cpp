@@ -7,8 +7,5 @@
 #include "E57Reader.hpp"
 
 namespace aliceVision {
-namespace dataio {
-
-
-}  // namespace dataio
+namespace dataio {}  // namespace dataio
 }  // namespace aliceVision

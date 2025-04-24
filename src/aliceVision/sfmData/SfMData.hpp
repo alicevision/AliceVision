@@ -12,6 +12,7 @@
 #include <aliceVision/sfmData/Constraint2D.hpp>
 #include <aliceVision/sfmData/ConstraintPoint.hpp>
 #include <aliceVision/sfmData/RotationPrior.hpp>
+#include <aliceVision/sfmData/SurveyPoint.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
@@ -54,8 +55,13 @@ using Constraints2D = std::vector<Constraint2D>;
 /// Define a collection of constraints
 using ConstraintsPoint = std::map<IndexT, ConstraintPoint>;
 
+/// Define a collection of surveyed points
+using SurveyPoints = std::map<IndexT, std::vector<SurveyPoint>>;
+
 /// Define a collection of rotation priors
 using RotationPriors = std::vector<RotationPrior>;
+
+
 
 /**
  * @brief SfMData container
@@ -68,23 +74,24 @@ class SfMData
     PosesUncertainty _posesUncertainty;
     /// Uncertainty per landmark
     LandmarksUncertainty _landmarksUncertainty;
-    /// 2D Constraints
-    Constraints2D constraints2d;
-    /// Point constraints
-    ConstraintsPoint constraintsPoint;
-    /// Rotation priors
-    RotationPriors rotationpriors;
 
     SfMData() = default;
+    
+    /**
+     * @brief Copy constructor 
+     * @param other the copied sfmData
+     * @param unused a parameter to make sure we explicitly want this copy (for legacy)
+     * 
+    */
+    SfMData(const SfMData & other, bool unused);
 
     /**
-     * Copy constructor 
+     * @brief Copy constructor 
      * Use a bounding box to restrict the copied landmarks to the selected region
     */
     SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax);
 
     // Operators
-
     bool operator==(const SfMData& other) const;
 
     inline bool operator!=(const SfMData& other) const { return !(*this == other); }
@@ -137,22 +144,29 @@ class SfMData
      * @brief Get Constraints2D
      * @return Constraints2D
      */
-    const Constraints2D& getConstraints2D() const { return constraints2d; }
-    Constraints2D& getConstraints2D() { return constraints2d; }
+    const Constraints2D& getConstraints2D() const { return _constraints2d; }
+    Constraints2D& getConstraints2D() { return _constraints2d; }
 
     /**
      * @brief Get ConstraintsPoints
      * @return ConstraintsPoints
      */
-    const ConstraintsPoint& getConstraintsPoint() const { return constraintsPoint; }
-    ConstraintsPoint& getConstraintsPoint() { return constraintsPoint; }
+    const ConstraintsPoint& getConstraintsPoint() const { return _constraintsPoint; }
+    ConstraintsPoint& getConstraintsPoint() { return _constraintsPoint; }
+
+    /**
+     * @brief Get SurveyPoints
+     * @return SurveyPoints
+     */
+    const SurveyPoints & getSurveyPoints() const { return _surveyPoints; }
+    SurveyPoints& getSurveyPoints() { return _surveyPoints; }
 
     /**
      * @brief Get RotationPriors
      * @return RotationPriors
      */
-    const RotationPriors& getRotationPriors() const { return rotationpriors; }
-    RotationPriors& getRotationPriors() { return rotationpriors; }
+    const RotationPriors& getRotationPriors() const { return _rotationpriors; }
+    RotationPriors& getRotationPriors() { return _rotationpriors; }
 
     /**
      * @brief Get relative features folder paths
@@ -654,6 +668,14 @@ class SfMData
     Poses _poses;
     /// Considered rigs
     Rigs _rigs;
+    /// 2D Constraints
+    Constraints2D _constraints2d;
+    /// Point constraints
+    ConstraintsPoint _constraintsPoint;
+    /// Rotation priors
+    RotationPriors _rotationpriors;
+    /// Survey points
+    SurveyPoints _surveyPoints;
 
     /**
      * @brief Get Rig pose of a given camera view

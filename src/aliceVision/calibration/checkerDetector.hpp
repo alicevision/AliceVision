@@ -247,11 +247,8 @@ class CheckerDetector
      *
      * @param[out] boards Container for the built checkerboards.
      * @param[in] refinedCorners Corners with directions information.
-     * @param[in] input Input grayscale image.
      */
-    void buildCheckerboards(std::vector<CheckerBoard>& boards,
-                            const std::vector<CheckerBoardCorner>& refinedCorners,
-                            const image::Image<float>& input) const;
+    void buildCheckerboards(std::vector<CheckerBoard>& boards, const std::vector<CheckerBoardCorner>& refinedCorners) const;
 
     /**
      * @brief Find corner closest to a given position in an area constrained to a small cone around a given direction.

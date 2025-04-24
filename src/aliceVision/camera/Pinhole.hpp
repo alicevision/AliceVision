@@ -74,7 +74,6 @@ class Pinhole : public IntrinsicScaleOffsetDisto
 
     Vec2 project(const Vec4& pt, bool applyDistortion = true) const override;
 
-
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
 
     Eigen::Matrix<double, 2, 2> getDerivativeTransformProjectWrtPrincipalPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const;
@@ -91,7 +90,7 @@ class Pinhole : public IntrinsicScaleOffsetDisto
 
     Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2& pt) const;
 
-     /**
+    /**
      * @brief Get the derivative of the unit sphere backprojection
      * @param[in] pt2D The 2D point
      * @return The backproject jacobian with respect to the pose
@@ -124,7 +123,7 @@ class Pinhole : public IntrinsicScaleOffsetDisto
     /**
      * @brief how a one pixel change relates to an angular change
      * @return a value in radians
-    */
+     */
     double pixelProbability() const override;
 };
 

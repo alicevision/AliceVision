@@ -14,6 +14,7 @@
 %include <aliceVision/sfmData/CameraPose.i>
 %include <aliceVision/sfmData/Constraint2D.i>
 %include <aliceVision/sfmData/ConstraintPoint.i>
+%include <aliceVision/sfmData/SurveyPoint.i>
 %include <aliceVision/sfmData/Landmark.i>
 %include <aliceVision/sfmData/Observation.i>
 %include <aliceVision/sfmData/Rig.i>

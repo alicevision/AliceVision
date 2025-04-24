@@ -36,7 +36,7 @@ class Rig
 
     std::vector<localization::LocalizationResult>& getLocalizationResults(IndexT i) { return _vLocalizationResults[i]; }
 
-    const std::size_t getRelativePosesSize() const;
+    std::size_t getRelativePosesSize() const;
 
     const geometry::Pose3& getRelativePose(std::size_t i) const;
 
@@ -44,7 +44,7 @@ class Rig
 
     const geometry::Pose3& getPose(std::size_t i) const;
 
-    const std::size_t getPosesSize() const;
+    std::size_t getPosesSize() const;
 
     const std::vector<geometry::Pose3>& getPoses() const;
 

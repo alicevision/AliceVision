@@ -170,7 +170,7 @@ void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
 
     // sort tracks Ids in each view
 #pragma omp parallel for
-    for (int i = 0; i < tracksPerView.size(); ++i)
+    for (int i = 0; i < static_cast<int>(tracksPerView.size()); ++i)
     {
         TracksPerView::iterator it = tracksPerView.begin();
         std::advance(it, i);
@@ -185,17 +185,14 @@ void getTracksIdVector(const TracksMap& tracks, std::set<std::size_t>* tracksIds
         tracksIds->insert(iterT->first);
 }
 
-bool getFeatureIdInViewPerTrack(const TracksMap& allTracks,
-                                       const std::set<std::size_t>& trackIds,
-                                       IndexT viewId,
-                                       std::vector<FeatureId>& out_featId)
+bool getFeatureIdInViewPerTrack(const TracksMap& allTracks, const std::set<std::size_t>& trackIds, IndexT viewId, std::vector<FeatureId>& out_featId)
 {
-    for(std::size_t trackId : trackIds)
+    for (std::size_t trackId : trackIds)
     {
         TracksMap::const_iterator iterT = allTracks.find(trackId);
 
         // ignore it if the track doesn't exist
-        if(iterT == allTracks.end())
+        if (iterT == allTracks.end())
         {
             continue;
         }

@@ -126,7 +126,7 @@ void KeyframeSelector::processRegular()
     // Check if minimum number of frame is zero
     if (nbFrames == 0)
     {
-        ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or empty!");
+        ALICEVISION_THROW(std::invalid_argument, "One or multiple media can't be found or empty!");
     }
 
     // All frames are unselected so far
@@ -403,7 +403,7 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness,
     // Check if minimum number of frame is zero
     if (nbFrames == 0)
     {
-        ALICEVISION_THROW(std::invalid_argument, "One or multiple medias can't be found or is empty!");
+        ALICEVISION_THROW(std::invalid_argument, "One or multiple media can't be found or is empty!");
     }
 
     // With the number of threads available and the number of frames to process known,

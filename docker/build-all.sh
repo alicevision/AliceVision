@@ -5,7 +5,7 @@
 set -e
 
 test -e docker/fetch.sh || {
-	echo This script must bu run from the top level of the AliceVision tree
+	echo This script must be run from the top level of the AliceVision tree
 	exit 1
 }
 

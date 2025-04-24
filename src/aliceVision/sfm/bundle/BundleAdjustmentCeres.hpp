@@ -182,6 +182,14 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
     /**
+     * @brief Create a residual block for each survey point according to the Ceres format
+     * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+     * @param[in] refineOptions The chosen refine flag
+     * @param[out] problem The Ceres bundle adjustment problem
+     */
+    void addSurveyPointsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+    /**
      * @brief Create a residual block for each 2D constraints
      * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
      * @param[in] refineOptions The chosen refine flag

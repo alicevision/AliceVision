@@ -75,7 +75,7 @@ class View
      * @brief Deep View Copy
      * return a pointer to a new View
      */
-    View* clone()
+    View* clone() const
     {
         View* v = new View(*this);
         v->_image = std::make_shared<ImageInfo>(*this->_image);
@@ -185,7 +185,7 @@ class View
 
     /**
      * @brief setIndependantPose
-     * @param independant
+     * @param independent
      */
     void setIndependantPose(bool independent) { _isPoseIndependent = independent; }
 

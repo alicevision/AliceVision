@@ -12,10 +12,7 @@
 namespace aliceVision {
 namespace camera {
 
-std::shared_ptr<Equidistant> Equidistant::cast(std::shared_ptr<IntrinsicBase> sptr)
-{
-    return std::dynamic_pointer_cast<Equidistant>(sptr);
-}
+std::shared_ptr<Equidistant> Equidistant::cast(std::shared_ptr<IntrinsicBase> sptr) { return std::dynamic_pointer_cast<Equidistant>(sptr); }
 
 Vec2 Equidistant::transformProject(const Eigen::Matrix4d& pose, const Vec4& pt, bool applyDistortion) const
 {
@@ -175,7 +172,8 @@ Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeTransformProjectWrtScale(c
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
 }
 
-Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeTransformProjectWrtPrincipalPoint(const Eigen::Matrix4d& pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, 2> Equidistant::getDerivativeTransformProjectWrtPrincipalPoint([[maybe_unused]] const Eigen::Matrix4d& pose,
+                                                                                        [[maybe_unused]] const Vec4& pt) const
 {
     return getDerivativeCam2ImaWrtPrincipalPoint();
 }
@@ -262,16 +260,16 @@ Eigen::Matrix<double, 3, 2> Equidistant::getDerivativetoUnitSphereWrtScale(const
     return d_ret_d_angles * d_angles_d_fov * d_fov_d_scale;
 }
 
-Eigen::Matrix<double, 3, Eigen::Dynamic> Equidistant::getDerivativeBackProjectUnitWrtParams(const Vec2& pt2D) const 
+Eigen::Matrix<double, 3, Eigen::Dynamic> Equidistant::getDerivativeBackProjectUnitWrtParams(const Vec2& pt2D) const
 {
     const Vec2 ptMeters = ima2cam(pt2D);
     const Vec2 ptUndist = removeDistortion(ptMeters);
-    const Vec3 ptSphere = toUnitSphere(ptUndist);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, getParameters().size());
 
     J.block<3, 2>(0, 0) = getDerivativetoUnitSphereWrtScale(ptUndist);
-    J.block<3, 2>(0, 2) = getDerivativetoUnitSphereWrtPoint(ptUndist) * getDerivativeRemoveDistoWrtPt(ptMeters) * getDerivativeIma2CamWrtPrincipalPoint();
+    J.block<3, 2>(0, 2) =
+      getDerivativetoUnitSphereWrtPoint(ptUndist) * getDerivativeRemoveDistoWrtPt(ptMeters) * getDerivativeIma2CamWrtPrincipalPoint();
 
     return J;
 }
@@ -282,7 +280,6 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equidistant::getDerivativeBackProjectUn
 
     const Vec2 ptMeters = ima2cam(pt2D);
     const Vec2 ptUndist = removeDistortion(ptMeters);
-    const Vec3 ptSphere = toUnitSphere(ptUndist);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, disto_size);
     J = getDerivativetoUnitSphereWrtPoint(ptUndist) * getDerivativeRemoveDistoWrtDisto(ptMeters);
@@ -318,10 +315,7 @@ bool Equidistant::isVisibleRay(const Vec3& ray) const
     return centered.norm() <= _circleRadius;
 }
 
-EINTRINSIC Equidistant::getType() const
-{
-    return EINTRINSIC::EQUIDISTANT_CAMERA;
-}
+EINTRINSIC Equidistant::getType() const { return EINTRINSIC::EQUIDISTANT_CAMERA; }
 
 double Equidistant::getHorizontalFov() const
 {
@@ -335,12 +329,7 @@ double Equidistant::getHorizontalFov() const
 
 double Equidistant::getVerticalFov() const { return getHorizontalFov(); }
 
-double Equidistant::pixelProbability() const
-{
-    return 1.0 / double(w());
-}
-
-
+double Equidistant::pixelProbability() const { return 1.0 / double(w()); }
 
 }  // namespace camera
 }  // namespace aliceVision

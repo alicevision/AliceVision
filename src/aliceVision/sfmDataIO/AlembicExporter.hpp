@@ -64,6 +64,12 @@ class AlembicExporter
                       bool withFeatures = true);
 
     /**
+     * @brief Add a set of point survey
+     * @param[in] points The survey points to add
+     */
+    void addSurveys(const sfmData::SurveyPoints & points);
+
+    /**
      * @brief Add a camera
      * @param[in] name The camera identifier
      * @param[in] view The corresponding view
