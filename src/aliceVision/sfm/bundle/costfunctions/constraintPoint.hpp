@@ -30,6 +30,23 @@ struct ConstraintPointErrorFunctor
         return true;
     }
 
+    /**
+     * Create cost function for this class
+     * @param landmark the point coordinates
+     * @param normal the tangent surface to this point
+     * @return a cost function
+    */
+    inline static ceres::CostFunction* createCostFunction(const sfmData::Landmark & landmark, const Vec3 & normal)
+    {
+        const double weight = 100.0;
+        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ConstraintPointErrorFunctor>(new ConstraintPointErrorFunctor(weight, normal, landmark.X));
+
+        costFunction->AddParameterBlock(3);
+        costFunction->SetNumResiduals(1);
+
+        return costFunction;
+    }   
+
     double _weight;
     Vec3 _normal;
     double _constraintDistance;
