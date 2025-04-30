@@ -186,6 +186,18 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         }
     }
 
+    AV_UInt32ArraySamplePtr sampleReferenceViewIndices;
+    if (userProps && userProps.getPropertyHeader("mvg_referenceViewIndices"))
+    {
+        sampleReferenceViewIndices.read(userProps, "mvg_referenceViewIndices");
+        if (sampleReferenceViewIndices.size() != positions->size())
+        {
+            ALICEVISION_LOG_WARNING("[Alembic Importer] Describer type will be ignored. describerType vector size: "
+                                    << sampleReferenceViewIndices.size() << ", positions vector size: " << positions->size());
+            sampleReferenceViewIndices.reset();
+        }
+    }
+
     // Number of points before adding the Alembic data
     const std::size_t nbPointsInit = sfmdata.getLandmarks().size();
     for (std::size_t point3d_i = 0; point3d_i < positions->size(); ++point3d_i)
@@ -216,6 +228,11 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         {
             const std::size_t descType_i = sampleDescs[point3d_i];
             landmark.descType = static_cast<feature::EImageDescriberType>(descType_i);
+        }
+
+        if (sampleReferenceViewIndices)
+        {
+            landmark.referenceViewIndex = sampleReferenceViewIndices[point3d_i];
         }
     }
 

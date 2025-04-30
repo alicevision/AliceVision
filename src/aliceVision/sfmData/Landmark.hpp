@@ -41,11 +41,15 @@ class Landmark
     feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
     image::RGBColor rgb = image::WHITE;  //!> the color associated to the point
     EEstimatorParameterState state = EEstimatorParameterState::REFINED;
+    IndexT referenceViewIndex = UndefinedIndexT;
 
     bool operator==(const Landmark& other) const
     {
-        return AreVecNearEqual(X, other.X, 1e-3) && AreVecNearEqual(rgb, other.rgb, 1e-3) && _observations == other._observations &&
-               descType == other.descType;
+        return AreVecNearEqual(X, other.X, 1e-3) 
+        && AreVecNearEqual(rgb, other.rgb, 1e-3) 
+        && _observations == other._observations 
+        && descType == other.descType
+        && referenceViewIndex == other.referenceViewIndex;
     }
 
     inline bool operator!=(const Landmark& other) const { return !(*this == other); }
