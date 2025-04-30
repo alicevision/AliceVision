@@ -30,135 +30,6 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
-/**
- * @brief Create the appropriate cost functor according the provided input camera intrinsic model
- * @param[in] intrinsicPtr The intrinsic pointer
- * @param[in] observation The corresponding observation
- * @return cost functor
- */
-ceres::CostFunction* createCostFunctionFromIntrinsics(const std::shared_ptr<IntrinsicBase> intrinsic, const sfmData::Observation& observation)
-{
-    auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionSimpleErrorFunctor>(new ProjectionSimpleErrorFunctor(observation, intrinsic));
-
-    int distortionSize = 1;
-    auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-    if (isod)
-    {
-        auto distortion = isod->getDistortion();
-        if (distortion)
-        {
-            distortionSize = distortion->getParameters().size();
-        }
-    }
-
-    costFunction->AddParameterBlock(intrinsic->getParameters().size());
-    costFunction->AddParameterBlock(distortionSize);
-    costFunction->AddParameterBlock(6);
-    costFunction->AddParameterBlock(3);
-    costFunction->SetNumResiduals(2);
-
-    return costFunction;
-}
-
-ceres::CostFunction* createSurveyPointCostFunction(const std::shared_ptr<IntrinsicBase> intrinsic, 
-                                                   const Vec3 & point,
-                                                   const sfmData::Observation& observation)
-{
-    auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionSurveyErrorFunctor>(new ProjectionSurveyErrorFunctor(point, observation, intrinsic));
-
-    int distortionSize = 1;
-    auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-    if (isod)
-    {
-        auto distortion = isod->getDistortion();
-        if (distortion)
-        {
-            distortionSize = distortion->getParameters().size();
-        }
-    }
-
-    costFunction->AddParameterBlock(intrinsic->getParameters().size());
-    costFunction->AddParameterBlock(distortionSize);
-    costFunction->AddParameterBlock(6);
-    costFunction->SetNumResiduals(2);
-
-    return costFunction;
-}
-
-/**
- * @brief Create the appropriate cost functor according the provided input rig camera intrinsic model
- * @param[in] intrinsicPtr The intrinsic pointer
- * @param[in] observation The corresponding observation
- * @return cost functor
- */
-ceres::CostFunction* createRigCostFunctionFromIntrinsics(std::shared_ptr<IntrinsicBase> intrinsic, const sfmData::Observation& observation)
-{
-    auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionErrorFunctor>(new ProjectionErrorFunctor(observation, intrinsic));
-
-    int distortionSize = 1;
-    auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-    if (isod)
-    {
-        auto distortion = isod->getDistortion();
-        if (distortion)
-        {
-            distortionSize = distortion->getParameters().size();
-        }
-    }
-
-    costFunction->AddParameterBlock(intrinsic->getParameters().size());
-    costFunction->AddParameterBlock(distortionSize);
-    costFunction->AddParameterBlock(6);
-    costFunction->AddParameterBlock(6);
-    costFunction->AddParameterBlock(3);
-    costFunction->SetNumResiduals(2);
-
-    return costFunction;
-}
-
-/**
- * @brief Create the appropriate cost functor according the provided input camera intrinsic model
- * @param[in] intrinsicPtr The intrinsic pointer
- * @param[in] observation The corresponding observation
- * @return cost functor
- */
-ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(std::shared_ptr<IntrinsicBase> intrinsic,
-                                                                 const sfmData::Observation& observation_first,
-                                                                 const sfmData::Observation& observation_second)
-{       
-    auto costFunction = new ceres::DynamicAutoDiffCostFunction<Constraint2dErrorFunctor>(new Constraint2dErrorFunctor(observation_first, observation_second, intrinsic));
-
-    int distortionSize = 1;
-    auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-    if (isod)
-    {
-        auto distortion = isod->getDistortion();
-        if (distortion)
-        {
-            distortionSize = distortion->getParameters().size();
-        }
-    }
-
-
-    costFunction->AddParameterBlock(intrinsic->getParameters().size()); 
-    costFunction->AddParameterBlock(distortionSize);
-    costFunction->AddParameterBlock(6);
-    costFunction->AddParameterBlock(6);
-    costFunction->SetNumResiduals(2);
-
-    return costFunction;
-}
-
-ceres::CostFunction* createCostFunctionFromContraintPoint(const sfmData::Landmark & landmark, const Vec3 & normal)
-{
-    const double weight = 100.0;
-    auto costFunction = new ceres::DynamicAutoDiffCostFunction<ConstraintPointErrorFunctor>(new ConstraintPointErrorFunctor(weight, normal, landmark.X));
-
-    costFunction->AddParameterBlock(3);
-    costFunction->SetNumResiduals(1);
-
-    return costFunction;
-}
 
 void BundleAdjustmentCeres::CeresOptions::setDenseBA()
 {
@@ -707,7 +578,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
             if (view.isPartOfRig() && !view.isPoseIndependant())
             {
-                ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(intrinsic, observation);
+                ceres::CostFunction* costFunction = ProjectionErrorFunctor::createCostFunction(intrinsic, observation);
 
                 double* rigBlockPtr = _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data();
                 _linearSolverOrdering.AddElementToGroup(rigBlockPtr, 1);
@@ -723,7 +594,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             }
             else
             {
-                ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(intrinsic, observation);
+                ceres::CostFunction* costFunction = ProjectionSimpleErrorFunctor::createCostFunction(intrinsic, observation);
  
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
@@ -787,8 +658,8 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         for (const auto & spoint: vspoints)
         {
             sfmData::Observation observation(spoint.survey, 0, 1.0);
-            ceres::CostFunction* costFunction = createSurveyPointCostFunction(intrinsic, spoint.point3d, observation);
-
+            ceres::CostFunction* costFunction = 
+                    ProjectionSurveyErrorFunctor::createCostFunction(intrinsic, spoint.point3d, observation);
             
             std::vector<double*> params;
             params.push_back(intrinsicBlockPtr);
@@ -843,7 +714,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
             distortionBlockPtr_1 = _distortionsBlocks.at(intrinsicId_1).data();
         }
 
-        ceres::CostFunction* costFunction = createConstraintsCostFunctionFromIntrinsics(intrinsicObject1,
+        ceres::CostFunction* costFunction = Constraint2dErrorFunctor::createCostFunction(intrinsicObject1,
                                                                                         constraint.ObservationFirst,
                                                                                         constraint.ObservationSecond);
         
@@ -872,7 +743,7 @@ void BundleAdjustmentCeres::addConstraintsPointToProblem(const sfmData::SfMData&
         const sfmData::Landmark & l = sfmData.getLandmarks().at(landmarkId);
         double * ldata = _landmarksBlocks.at(landmarkId).data();
 
-        ceres::CostFunction* costFunction = createCostFunctionFromContraintPoint(l, constraint.normal);
+        ceres::CostFunction* costFunction = ConstraintPointErrorFunctor::createCostFunction(l, constraint.normal);
         
         problem.AddResidualBlock(costFunction, lossFunction, ldata);
     }
