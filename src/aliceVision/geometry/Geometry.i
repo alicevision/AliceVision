@@ -11,4 +11,3 @@
 %include <aliceVision/geometry/Intersection.i>
 %include <aliceVision/geometry/Pose3.i>
 %include <aliceVision/geometry/RigidTransformation3D.i>
-%include <aliceVision/geometry/Similarity3.i>
