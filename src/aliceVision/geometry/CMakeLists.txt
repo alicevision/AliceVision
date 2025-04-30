@@ -5,7 +5,6 @@ set(geometry_files_headers
     lie.hpp
     Pose3.hpp
     rigidTransformation3D.hpp
-    Similarity3.hpp
     Intersection.hpp
 )
 
