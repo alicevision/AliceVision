@@ -860,22 +860,10 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
     if (refinePoses)
     {
         // absolute poses
-        for (auto& posePair : sfmData.getPoses())
+        for (auto& [poseId, pose] : sfmData.getPoses())
         {
-            const IndexT poseId = posePair.first;
-
-            // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (posePair.second.getState() != EEstimatorParameterState::REFINED)
-                continue;
-
-            const std::array<double, 6>& poseBlock = _posesBlocks.at(poseId);
-
-            Mat3 R_refined;
-            ceres::AngleAxisToRotationMatrix(poseBlock.data(), R_refined.data());
-            const Vec3 t_refined(poseBlock.at(3), poseBlock.at(4), poseBlock.at(5));
-
-            // update the pose
-            posePair.second.setTransform(poseFromRT(R_refined, t_refined));
+            const std::array<double, 6> & poseBlock = _posesBlocks.at(poseId);
+            pose.updateFromExternal(poseBlock);
         }
 
         // rig sub-poses
@@ -901,11 +889,9 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
     // update camera intrinsics with refined data
     if (refineIntrinsics)
     {
-        for (const auto& intrinsicBlockPair : _intrinsicsBlocks)
+        for (const auto& [idIntrinsic, block] : _intrinsicsBlocks)
         {
-            const IndexT intrinsicId = intrinsicBlockPair.first;
-
-            const auto& intrinsic = sfmData.getIntrinsicSharedPtr(intrinsicId);
+            const auto& intrinsic = sfmData.getIntrinsicSharedPtr(idIntrinsic);
 
             // do not update a camera pose set as Ignored or Constant in the Local strategy
             if (intrinsic->getState() != EEstimatorParameterState::REFINED)
@@ -913,7 +899,7 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
                 continue;
             }
 
-            sfmData.getIntrinsics().at(intrinsicId)->updateFromParams(intrinsicBlockPair.second);
+            sfmData.getIntrinsics().at(idIntrinsic)->updateFromParams(block);
         }
 
         for (const auto& [idIntrinsic, distortionBlock]: _distortionsBlocks)
@@ -941,21 +927,10 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
     // update landmarks
     if (refineStructure)
     {
-        for (const auto& landmarksBlockPair : _landmarksBlocks)
+        for (const auto& [idLandmark, block] : _landmarksBlocks)
         {
-            const IndexT landmarkId = landmarksBlockPair.first;
-            sfmData::Landmark& landmark = sfmData.getLandmarks().at(landmarkId);
-
-            // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (landmark.state != EEstimatorParameterState::REFINED)
-            {
-                continue;
-            }
-
-            for (std::size_t i = 0; i < 3; ++i)
-            {
-                landmark.X(Eigen::Index(i)) = landmarksBlockPair.second.at(i);
-            }
+            sfmData::Landmark& landmark = sfmData.getLandmarks().at(idLandmark);
+            landmark.updateFromExternal(block);
         }
     }
 }
@@ -1048,6 +1023,11 @@ void BundleAdjustmentCeres::PrepareForEvaluation(bool evaluate_jacobians, bool n
                     distortion->setParameters(distortionBlock);
                 }
             }
+        }
+
+        for (const auto & [idLandmark, landmarkBlock]: _landmarksBlocks)
+        {
+            
         }
     }
 }

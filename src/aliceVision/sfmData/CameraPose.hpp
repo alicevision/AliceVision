@@ -111,6 +111,23 @@ class CameraPose
         return _removable;
     }
 
+    inline void updateFromExternal(const std::array<double, 6> & data) 
+    {
+        // do not update a camera pose set as Ignored or Constant in the Local strategy
+        if (getState() != EEstimatorParameterState::REFINED)
+        {
+            return;
+        }
+        
+        const Vec3 r_refined(data.at(0), data.at(1), data.at(2));
+        const Vec3 t_refined(data.at(3), data.at(4), data.at(5));
+
+        const Mat3 R_refined = SO3::expm(r_refined);
+
+        // update the pose
+        setTransform(geometry::poseFromRT(R_refined, t_refined));
+    }
+
   private:
     /// camera 3d transformation
     geometry::Pose3 _transform;

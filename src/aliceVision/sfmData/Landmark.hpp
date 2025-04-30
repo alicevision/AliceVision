@@ -58,6 +58,20 @@ class Landmark
 
     Observations& getObservations() { return _observations; }
 
+    inline void updateFromExternal(const std::array<double, 3> & data)
+    {
+        // do not update a camera pose set as Ignored or Constant in the Local strategy
+        if (state != EEstimatorParameterState::REFINED)
+        {
+            return;
+        }
+
+        for (std::size_t i = 0; i < 3; ++i)
+        {
+            X(Eigen::Index(i)) = data.at(i);
+        }
+    }
+
   private:
     Observations _observations;
 };
