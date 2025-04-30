@@ -842,8 +842,9 @@ void BundleAdjustmentCeres::resetProblem()
     _intrinsicsBlocks.clear();
     _landmarksBlocks.clear();
     _rigBlocks.clear();
-
-    _linearSolverOrdering.Clear();
+    _fakeDistortionBlock.clear();
+    _intrinsicObjects.clear();
+    _distortionsBlocks.clear();
 }
 
 void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const
