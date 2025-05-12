@@ -381,7 +381,7 @@ int aliceVision_main(int argc, char** argv)
     std::stringstream buffer;
     buffer << tracksFile.rdbuf();
     boost::json::value jv = boost::json::parse(buffer.str());
-    track::TracksMap mapTracks(track::flat_map_value_to<track::Track>(jv));
+    track::TracksMap mapTracks(track::unordered_map_value_to<track::Track>(jv));
 
     // We have loaded a list of tracks
     // A track is a list of observations per view of (we think) a same point.

@@ -118,7 +118,7 @@ struct FunctorMapFirstEqual
  * @warning The input tracks must be composed of only two images index.
  * @warning Image index are considered sorted (increasing order).
  */
-void tracksToIndexedMatches(const TracksMap& tracks, const std::vector<IndexT>& filterIndex, std::vector<IndMatch>* outIndex);
+void tracksToIndexedMatches(const TracksMap& tracks, const std::vector<IndexT>& filterIndex, std::vector<matching::IndMatch>* outIndex);
 
 /**
  * @brief Return the occurrence of tracks length.

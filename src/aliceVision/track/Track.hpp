@@ -19,12 +19,12 @@
 #include <set>
 #include <map>
 #include <memory>
+#include <unordered_map>
 #include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
 namespace track {
 
-using namespace aliceVision::matching;
 
 using FeatureId = std::pair<feature::EImageDescriberType, std::size_t>;
 
@@ -70,7 +70,7 @@ struct TrackItem
 struct Track
 {
     /// Data structure to store a track: collection of {ViewId, FeatureId}
-    using TrackInfoPerView = stl::flat_map<std::size_t, TrackItem>;
+    using TrackInfoPerView = std::unordered_map<std::size_t, TrackItem>;
 
     Track() {}
 
@@ -81,7 +81,7 @@ struct Track
 };
 
 /// A track is a collection of {trackId, Track}
-using TracksMap = stl::flat_map<std::size_t, Track>;
+using TracksMap = std::unordered_map<std::size_t, Track>;
 using TrackIdSet = std::vector<std::size_t>;
 
 /**
