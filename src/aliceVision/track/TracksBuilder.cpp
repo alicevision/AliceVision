@@ -42,7 +42,7 @@ TracksBuilder::TracksBuilder() { _d.reset(new TracksBuilderData()); }
 
 TracksBuilder::~TracksBuilder() = default;
 
-void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
+void TracksBuilder::build(const matching::PairwiseMatches& pairwiseMatches)
 {
     typedef std::set<IndexedFeaturePair> SetIndexedPair;
 
@@ -54,14 +54,14 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
     {
         const std::size_t& I = matchesPerDescIt.first.first;
         const std::size_t& J = matchesPerDescIt.first.second;
-        const MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
+        const matching::MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
 
         for (const auto& matchesIt : matchesPerDesc)
         {
             const feature::EImageDescriberType descType = matchesIt.first;
-            const IndMatches& matches = matchesIt.second;
+            const matching::IndMatches& matches = matchesIt.second;
             // we have correspondences between I and J image index.
-            for (const IndMatch& m : matches)
+            for (const matching::IndMatch& m : matches)
             {
                 IndexedFeaturePair pairI(I, KeypointId(descType, m._i));
                 IndexedFeaturePair pairJ(J, KeypointId(descType, m._j));
@@ -97,14 +97,14 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
     {
         const std::size_t& I = matchesPerDescIt.first.first;
         const std::size_t& J = matchesPerDescIt.first.second;
-        const MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
+        const matching::MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
 
         for (const auto& matchesIt : matchesPerDesc)
         {
             const feature::EImageDescriberType descType = matchesIt.first;
-            const IndMatches& matches = matchesIt.second;
+            const matching::IndMatches& matches = matchesIt.second;
             // we have correspondences between I and J image index.
-            for (const IndMatch& m : matches)
+            for (const matching::IndMatch& m : matches)
             {
                 IndexedFeaturePair pairI(I, KeypointId(descType, m._i));
                 IndexedFeaturePair pairJ(J, KeypointId(descType, m._j));

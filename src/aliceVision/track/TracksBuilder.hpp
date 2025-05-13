@@ -53,7 +53,7 @@ class TracksBuilder
      * @param[in] pairwiseMatches PairWise matches
      * @param[in] featuresPerView all features (used for matching) in pairwiseMatches
      */
-    void build(const PairwiseMatches& pairwiseMatches);
+    void build(const matching::PairwiseMatches& pairwiseMatches);
 
     /**
      * @brief Remove bad tracks (too short or track with ids collision)

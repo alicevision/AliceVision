@@ -6,6 +6,8 @@
 
 #include "trackIO.hpp"
 #include <aliceVision/dataio/json.hpp>
+#include <fstream>
+
 namespace aliceVision {
 namespace track {
 
@@ -41,9 +43,43 @@ aliceVision::track::Track tag_invoke(boost::json::value_to_tag<aliceVision::trac
 
     aliceVision::track::Track ret;
     ret.descType = feature::EImageDescriberType_stringToEnum(boost::json::value_to<std::string>(obj.at("descType")));
-    ret.featPerView = flat_map_value_to<track::TrackItem>(obj.at("featPerView"));
+    ret.featPerView = unordered_map_value_to<track::TrackItem>(obj.at("featPerView"));
 
     return ret;
+}
+
+bool loadTracks(TracksMap& mapTracks, const std::string& filename)
+{
+    std::ifstream tracksFile(filename);
+    if (tracksFile.is_open() == false)
+    {
+        return false;
+    }
+
+    std::stringstream buffer;
+    buffer << tracksFile.rdbuf();
+
+    // Parse json
+    boost::json::value jv = boost::json::parse(buffer.str());
+    mapTracks = track::TracksMap(unordered_map_value_to<track::Track>(jv));
+
+    return true;
+}
+
+bool saveTracks(const TracksMap& mapTracks, const std::string& filename)
+{
+    std::ofstream tracksFile(filename);
+    if (tracksFile.is_open() == false)
+    {
+        return false;
+    } 
+
+    boost::json::value jv = boost::json::value_from(mapTracks);
+
+    tracksFile << boost::json::serialize(jv);
+    tracksFile.close();
+
+    return true;
 }
 
 }  // namespace track

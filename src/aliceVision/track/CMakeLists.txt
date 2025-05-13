@@ -28,3 +28,18 @@ alicevision_add_library(aliceVision_track
 
 # Unit tests
 alicevision_add_test(track_test.cpp NAME "track" LINKS aliceVision_track)
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(track
+        SOURCES track.i
+        PUBLIC_LINKS
+            aliceVision_track
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
+    )
+endif()
