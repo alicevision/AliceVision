@@ -109,7 +109,7 @@ jobs:
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
           # Run the test pipeline
-          pip install psutil
+          python3 -m pip install psutil
           cd bin/
           mkdir ./outputData
           python meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p dummy -o $PWD/../outputData
