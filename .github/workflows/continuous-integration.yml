@@ -106,7 +106,7 @@ jobs:
           pip3 install psutil
           cd bin/
           mkdir ./outputData
-          python3 meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
+          python3 meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p dummy -o $PWD/../outputData
           
 
   
