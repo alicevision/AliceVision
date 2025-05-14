@@ -47,7 +47,7 @@ def test_undistortion_radial_constructor():
     undistortion = av.UndistortionRadialK3(WIDTH, HEIGHT)
 
     size = undistortion.getSize()
-    assert avnum.getX(size) == WIDTH and avnum.getY(size) == HEIGHT
+    assert size[0] == WIDTH and size[1] == HEIGHT
 
     assert undistortion.getType() == av.UNDISTORTION_RADIALK3
 
@@ -117,12 +117,12 @@ def test_undistortion_radial_get_set_size():
     size. """
     undistortion = av.UndistortionRadialK3(WIDTH, HEIGHT)
     size = undistortion.getSize()
-    assert avnum.getX(size) == WIDTH and avnum.getY(size) == HEIGHT
+    assert size[0] == WIDTH and size[1] == HEIGHT
 
     undistortion.setSize(HEIGHT, WIDTH)
-    assert size != undistortion.getSize()
+    assert (size != undistortion.getSize()).any()
     size = undistortion.getSize()
-    assert avnum.getX(size) == HEIGHT and avnum.getY(size) == WIDTH
+    assert size[0] == HEIGHT and size[1] == WIDTH
 
 
 @pytest.mark.skip(reason="Vec2 not binded")
