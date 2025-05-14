@@ -6,7 +6,7 @@
 
 %module (module="pyalicevision") track
 
-%include <std_unordered_map.i>
+%include <std_map.i>
 %include <std_string.i>
 
 %include <aliceVision/track/Track.hpp>
@@ -24,6 +24,6 @@ namespace std
 using namespace aliceVision;
 %} 
 
-%template(TrackInfoPerView) std::unordered_map<std::size_t, aliceVision::track::TrackItem>;
-%template(TracksMap) std::unordered_map<std::size_t, aliceVision::track::Track>;
+%template(TrackInfoPerView) std::map<std::size_t, aliceVision::track::TrackItem>;
+%template(TracksMap) std::map<std::size_t, aliceVision::track::Track>;
 

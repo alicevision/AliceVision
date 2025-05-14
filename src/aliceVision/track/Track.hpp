@@ -70,7 +70,7 @@ struct TrackItem
 struct Track
 {
     /// Data structure to store a track: collection of {ViewId, FeatureId}
-    using TrackInfoPerView = std::unordered_map<std::size_t, TrackItem>;
+    using TrackInfoPerView = std::map<std::size_t, TrackItem>;
 
     Track() {}
 
@@ -81,7 +81,7 @@ struct Track
 };
 
 /// A track is a collection of {trackId, Track}
-using TracksMap = std::unordered_map<std::size_t, Track>;
+using TracksMap = std::map<std::size_t, Track>;
 using TrackIdSet = std::vector<std::size_t>;
 
 /**
