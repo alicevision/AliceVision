@@ -41,6 +41,7 @@ jobs:
         run: |
           which python
           python -v 
+          /usr/bin/env python -v
           mkdir ./build
           mkdir ./build_as_3rdparty
           mkdir ./functional_tests
