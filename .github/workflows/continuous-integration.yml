@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: ["alicevision/alicevision-deps:2025.03.27-ubuntu22.04-cuda12.1.1"]
+        container: ["alicevision/alicevision-deps:2025.03.27-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.03.27-rocky9-cuda12.1.1"]
     container:
       image: ${{ matrix.container }}
     env:
@@ -36,14 +36,15 @@ jobs:
       BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.03.27-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
     steps:
       - uses: actions/checkout@v1
-      
-      - name: Install python
-        run: |
-          sudo apt install -y python3
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: Prepare File Tree
         run: |
-          python3 -v
+          python -v
           mkdir ./build
           mkdir ./build_as_3rdparty
           mkdir ./functional_tests
