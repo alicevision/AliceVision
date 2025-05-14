@@ -39,7 +39,6 @@ jobs:
 
       - name: Prepare File Tree
         run: |
-          which python
           /usr/bin/env python -v
           python -v
           mkdir ./build
