@@ -36,7 +36,10 @@ jobs:
       BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.03.27-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
     steps:
       - uses: actions/checkout@v1
-
+      
+      - name: Set AGENT_TOOLSDIRECTORY
+        run: echo "AGENT_TOOLSDIRECTORY=${{ runner.temp }}/tools-rocky9" >>   $GITHUB_ENV
+        
       - name: Setup python
         uses: actions/setup-python@v5
         with:
