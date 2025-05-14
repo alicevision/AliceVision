@@ -9,6 +9,14 @@
         "template": true
     },
     "graph": {
+        "CameraInit_1": {
+            "nodeType": "CameraInit",
+            "position": [
+                0,
+                0
+            ],
+            "inputs": {}
+        },
         "Publish_1": {
             "nodeType": "Publish",
             "position": [
@@ -17,6 +25,7 @@
             ],
             "inputs": {
                 "inputFiles": [
+                    "{CameraInit_1.output}"
                 ]
             }
         }
