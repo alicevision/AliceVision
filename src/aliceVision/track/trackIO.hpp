@@ -45,6 +45,22 @@ std::unordered_map<size_t, T> unordered_map_value_to(const boost::json::value& j
     return ret;
 }
 
+template<class T>
+std::map<size_t, T> map_value_to(const boost::json::value& jv)
+{
+    std::map<size_t, T> ret;
+
+    const boost::json::array obj = jv.as_array();
+
+    for (const auto& item : obj)
+    {
+        const boost::json::array inner = item.as_array();
+        ret.insert({boost::json::value_to<std::size_t>(inner[0]), boost::json::value_to<T>(inner[1])});
+    }
+
+    return ret;
+}
+
 /**
  * @brief Serialize track to JSON object.
  */
