@@ -91,6 +91,8 @@ jobs:
       - name: Functional Tests - PanoramaFisheyeHdr Pipeline
         working-directory: ./functional_tests
         run: |
+          python3 -m pip install psutil
+          
           # Clone required repos
           git clone --branch develop https://github.com/alicevision/Meshroom.git
           git clone --branch main https://github.com/alicevision/dataset_panoramaFisheyeHdr.git
@@ -109,7 +111,7 @@ jobs:
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
           # Run the test pipeline
-          python3 -m pip install psutil
+          
           cd bin/
           mkdir ./outputData
           python meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p dummy -o $PWD/../outputData
