@@ -40,7 +40,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
       - name: Prepare File Tree
         run: |
@@ -92,7 +92,7 @@ jobs:
         working-directory: ./functional_tests
         run: |
           python3 -m pip install psutil
-          
+
           # Clone required repos
           git clone --branch develop https://github.com/alicevision/Meshroom.git
           git clone --branch main https://github.com/alicevision/dataset_panoramaFisheyeHdr.git
