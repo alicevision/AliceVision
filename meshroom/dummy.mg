@@ -25,7 +25,7 @@
             ],
             "inputs": {
                 "inputFiles": [
-                    "{CameraInit_1.output}",
+                    "{CameraInit_1.output}"
                 ]
             }
         }
