@@ -25,7 +25,7 @@
             ],
             "inputs": {
                 "inputFiles": [
-                    "{PanoramaInit_1.outSfMData}",
+                    "{CameraInit_1.output}",
                 ]
             }
         }
