@@ -49,45 +49,6 @@ jobs:
           mkdir ./functional_tests
           mkdir ../AV_install
 
-      - name: Configure CMake
-        working-directory: ./build
-        run: |
-          cmake .. \
-           -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-           -DBUILD_SHARED_LIBS=ON \
-           -DCMAKE_PREFIX_PATH="${DEPS_INSTALL_DIR}" \
-           -DCMAKE_INSTALL_PREFIX="${ALICEVISION_ROOT}" \
-           -DTARGET_ARCHITECTURE=core \
-           -DCMAKE_VERBOSE_MAKEFILE=ON \
-           -DALICEVISION_BUILD_SHARED=ON \
-           -DALICEVISION_BUILD_DOC=OFF \
-           -DALICEVISION_BUILD_MVS=OFF \
-           -DALICEVISION_BUILD_HDR=OFF \
-           -DALICEVISION_BUILD_SFM=ON \
-           -DALICEVISION_BUILD_PANORAMA=OFF \
-           -DALICEVISION_BUILD_STEREOPHOTOMETRY=OFF \
-           -DALICEVISION_BUILD_SEGMENTATION=OFF \
-           -DALICEVISION_BUILD_TESTS=OFF \
-           -DALICEVISION_USE_OPENCV=OFF \
-           -DALICEVISION_USE_CCTAG=OFF \
-           -DALICEVISION_USE_POPSIFT=OFF \
-           -DALICEVISION_USE_OPENGV=OFF \
-           -DALICEVISION_BUILD_SWIG_BINDING:BOOL=OFF \
-           -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
-           -DAlembic_DIR="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \
-           -DSWIG_DIR="${DEPS_INSTALL_DIR}/share/swig/4.3.0" \
-           -DSWIG_EXECUTABLE="${DEPS_INSTALL_DIR}/bin-deps/swig"
-
-      - name: Build
-        working-directory: ./build
-        run: |
-          make -j$(nproc)
-
-      - name: Install
-        working-directory: ./build
-        run: |
-          make install
-
       - name: Functional Tests - PanoramaFisheyeHdr Pipeline
         working-directory: ./functional_tests
         run: |
