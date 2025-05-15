@@ -78,6 +78,9 @@ RUN cmake "${AV_DEV}" \
 RUN mkdir -p "${AV_INSTALL}/lib" && \
     ln -s lib "${AV_INSTALL}/lib64"
 
+# Symlink to Python3 executable in case a call to "python" instead of "python3" is ever made
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
 # RUN make -j ${CPU_CORES} onnxruntime
