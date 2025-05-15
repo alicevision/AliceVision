@@ -164,10 +164,12 @@ def test_equidistant_default_constructor():
     assert intrinsic.h() == 1, "The Equidistant intrinsic's default height should be 1"
 
     scale = intrinsic.getScale()
-    assert avnum.getX(scale) == 1.0 and avnum.getY(scale) == 1.0
+    assert scale[0] == 1.0 and scale[1] == 1.0
+
+    print(scale)
 
     offset = intrinsic.getOffset()
-    assert avnum.getX(offset) == 0.0 and avnum.getY(offset) == 0.0
+    assert offset[0] == 0.0 and offset[1] == 0.0
 
     assert intrinsic.sensorWidth() == 36.0
     assert intrinsic.sensorHeight() == 24.0
@@ -199,10 +201,10 @@ def test_equidistant_constructors():
     assert intrinsic1.h() == height, "The Equidistant intrinsic's height has not been correctly set"
 
     scale = intrinsic1.getScale()
-    assert avnum.getX(scale) == focal and avnum.getY(scale) == focal
+    assert scale[0] == focal and scale[1] == focal
 
     offset = intrinsic1.getOffset()
-    assert avnum.getX(offset) == offset_x and avnum.getY(offset) == offset_y
+    assert offset[0] == offset_x and offset[1] == offset_y
 
     assert intrinsic1.sensorWidth() == 36.0
     assert intrinsic1.sensorHeight() == 24.0
@@ -222,10 +224,10 @@ def test_equidistant_constructors():
     assert intrinsic2.h() == height, "The Equidistant intrinsic's height has not been correctly set"
 
     scale = intrinsic2.getScale()
-    assert avnum.getX(scale) == focal and avnum.getY(scale) == focal
+    assert scale[0] == focal and scale[1] == focal
 
     offset = intrinsic2.getOffset()
-    assert avnum.getX(offset) == offset_x and avnum.getY(offset) == offset_y
+    assert offset[0] == offset_x and offset[1] == offset_y
 
     assert intrinsic2.sensorWidth() == 36.0
     assert intrinsic2.sensorHeight() == 24.0

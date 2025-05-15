@@ -8,6 +8,9 @@
 
 %include <aliceVision/global.i>
 
+%include <aliceVision/numeric/eigen.i>
+%eigen_typemaps(Vec2)
+
 %{
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>

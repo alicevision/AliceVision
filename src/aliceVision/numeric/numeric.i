@@ -6,11 +6,11 @@
 
 %module (module="pyalicevision") numeric
 
-%include <aliceVision/global.i>
-%include <aliceVision/numeric/numeric.hpp>
-
 %include <aliceVision/numeric/eigen.i>
 %eigen_typemaps(Vec2)
+
+%include <aliceVision/global.i>
+%include <aliceVision/numeric/numeric.hpp>
 
 double getX(const Vec2 & vec);
 double getY(const Vec2 & vec);

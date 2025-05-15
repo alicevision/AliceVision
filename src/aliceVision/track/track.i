@@ -14,7 +14,11 @@
 
 namespace std
 {
+    #ifdef LINUXPLATFORM
     typedef long unsigned int size_t;
+    #else
+    typedef long unsigned long size_t;
+    #endif
 }
 
 %{    
