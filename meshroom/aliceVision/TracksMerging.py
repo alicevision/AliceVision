@@ -6,7 +6,9 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 import os.path
 
 
-class TracksMerging(desc.Node):
+class TracksMerging(desc.AVCommandLineNode):
+    commandLine = 'aliceVision_tracksMerging {allParams}'
+
     category = 'Utils'
     documentation = '''
 Merges multiple track files into one
@@ -42,30 +44,4 @@ Merges multiple track files into one
             value="{nodeCacheFolder}/tracks.json",
         )
     ]
-
-    def processChunk(self, chunk):
-        from pyalicevision import track
-
-        chunk.logManager.start(chunk.node.verboseLevel.value)
-
-        trackOutput = track.TracksMap()
-
-        #Loop over inputs
-        pos = 0
-        for input in chunk.node.inputs:
-            
-            chunk.logger.info(f"Processing input file {input.value}")
-            trackInput = track.TracksMap()
-            if not track.loadTracks(trackInput, input.value):
-                chunk.logger.error("Cannot open input")
-                chunk.logManager.end()
-                raise RuntimeError()
-            
-            for key, value in trackInput.items():
-                trackOutput[pos] = value
-                pos = pos + 1
-
-        chunk.logger.info(f"Save output to file {chunk.node.output.value}")
-        track.saveTracks(trackOutput, chunk.node.output.value)
-
-        chunk.logManager.end()
+    

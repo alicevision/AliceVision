@@ -282,6 +282,16 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
+    # Tracks Merge
+    alicevision_add_software(aliceVision_tracksMerging
+        SOURCE main_tracksMerging.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_track
+              Boost::program_options
+    )
+
     # SfM Pose Injecting
     alicevision_add_software(aliceVision_sfmPoseInjecting
         SOURCE main_sfmPoseInjecting.cpp

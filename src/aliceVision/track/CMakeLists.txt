@@ -5,6 +5,7 @@ set(tracks_files_headers
     TracksHandler.hpp
     tracksUtils.hpp
     trackIO.hpp
+    TracksMerger.hpp
 )
 
 # Sources
@@ -13,6 +14,7 @@ set(tracks_files_sources
     TracksHandler.cpp
     tracksUtils.cpp
     trackIO.cpp
+    TracksMerger.cpp
 )
 
 alicevision_add_library(aliceVision_track
