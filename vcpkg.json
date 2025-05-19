@@ -1,0 +1,90 @@
+{
+  "dependencies": [
+    "boost-algorithm",
+    "boost-accumulators",
+    "boost-atomic",
+    "boost-container",
+    "boost-date-time",
+    "boost-exception",
+    "boost-geometry", 
+    "boost-graph", 
+    "boost-json", 
+    "boost-log", 
+    "boost-program-options", 
+    "boost-property-tree",
+    "boost-ptr-container",
+    "boost-regex",
+    "boost-serialization",
+    "boost-system",
+    "boost-test",
+    "boost-thread",
+    "boost-timer",
+    "boost-format",
+    "libe57format",
+    "assimp",
+    "openexr",
+    "alembic",
+    "geogram",
+    "eigen3",
+    "expat",
+    "flann",
+    "nanoflann",
+    "onnxruntime-gpu",
+    "openmesh",
+    "tbb",
+    "cuda",
+    "liblemon",
+    "clp",
+    "coinutils",
+    "osi",
+    "vcpkg-tool-swig",
+    {
+      "name":"openimageio",
+      "features": ["opencolorio","libraw","gif","openjpeg"],
+      "default-features": false
+    },
+    {
+      "name":"ceres",
+      "features": ["suitesparse"]
+    },
+    {
+      "name": "opencv",
+      "features": ["eigen", "contrib", "nonfree", "cuda"],
+      "default-features": false
+    }
+  ],
+  "overrides": [
+    { 
+      "name": "openimageio", 
+      "version": "2.5.16.0" 
+    },
+    {
+      "name": "suitesparse",
+      "version": "5.8.0"
+    },
+    {
+      "name": "opencv",
+      "version": "4.10.0#0"
+    },
+    {
+      "name": "liblemon",
+      "version": "2019-06-13#10"
+    },
+    {
+      "name": "clp",
+      "version": "1.17.6#1"
+    },
+    {
+      "name": "osi",
+      "version": "0.108.6#1"
+    },
+    {
+      "name": "coinutils",
+      "version": "2.11.4#1"
+    },
+    {
+      "name": "ceres",
+      "version": "2.2.0#0"
+    }
+  ]
+}

@@ -162,60 +162,66 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+
     env:
-      DEPS_INSTALL_DIR: '${{ github.workspace }}/install'
-      buildDir: '${{ github.workspace }}/build/'
-      vcpkgDir: '${{ github.workspace }}\..\vcpkg'
-      vcpkgArchive: '${{ github.workspace }}\..\vcpkg\installed.zip'
+      buildDir: '${{ github.workspace }}\build\'
+      dependenciesDir: '${{ github.workspace }}\dependencies'
+      archivePath: '${{ github.workspace }}\dependencies\installed.zip'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
-      ALICEVISION_ROOT: '${{ github.workspace }}/install'
-      VCPKG_ROOT: '${{ github.workspace}}\..\vcpkg'
-      PYTHONPATH: '${{ github.workspace }}/install/bundle/bin'
+      ALICEVISION_ROOT: '${{ github.workspace }}\install'
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
             submodules: recursive
+      
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: x64
 
-      - name: vcpkg - Clone repository
-        # Uses a specific version of vcpkg
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install python requirements
         run: |
-          cd ..
-          git clone https://github.com/alicevision/vcpkg.git
-          cd vcpkg
-          cd ${{ github.workspace }}
-
-      - name: vcpkg - Bootstrap
+          pip install -r requirements.txt 
+          
+      - name: create Directories
         run: |
-           ${{ env.vcpkgDir }}\bootstrap-vcpkg.bat
+          mkdir -p ${{ env.dependenciesDir }}
+          mkdir -p ${{ env.ALICEVISION_ROOT }}
 
-      - name: vcpkg - Download zip file with prebuilt binaries
+      - name: Download zip file with prebuilt binaries
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://github.com/alicevision/vcpkg/releases/download/2025.03.11/aliceVisionDeps-2025.03.11.zip"
-          target: "${{ env.vcpkgDir }}"
+          url: "https://github.com/alicevision/vcpkg/releases/download/2025.05.06/x64-windows-release.zip"
+          target: "${{ env.dependenciesDir }}"
           filename: installed.zip
 
       - name: vcpkg - Unzip prebuilt binaries
         run: |
-          tar -xvzf "${{ env.vcpkgArchive }}" -C "${{ env.vcpkgDir }}"
-
-      - name: vcpkg - Display installed packages
-        run: |
-          ${{ env.vcpkgDir }}\vcpkg list
+          tar -xvzf "${{ env.archivePath }}" -C "${{ env.dependenciesDir }}"
 
       - name: vcpkg - Remove zip file with prebuilt binaries
         run: |
-          rm ${{ env.vcpkgArchive }}
+          rm ${{ env.archivePath }}
 
       - name: Get CUDA Toolkit
         uses: Jimver/cuda-toolkit@v0.2.21
         id: cuda-toolkit
         with:
-          cuda: '12.5.0'
+          cuda: '12.8.0'
           sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev"]'
+      
+      - name: Display remaining disk space (16 Go max)
+        run: |
+          Get-CimInstance -Class Win32_logicaldisk
 
       - name: Display CUDA information
         run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
@@ -223,22 +229,17 @@ jobs:
              nvcc -V
              echo ${{ env.CUDA_PATH }}
 
-      # Install latest CMake.
-      - uses: lukka/get-cmake@latest
-
-      - name: Display remaining disk space (16 Go max)
-        run: |
-          Get-CimInstance -Class Win32_logicaldisk
-
       - name: Build
         uses: lukka/run-cmake@v3
         with:
+          cmakeBuildType: Release
+          buildWithCMake: true
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
           buildWithCMakeArgs: '--config Release --target install'
-          cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
-                             -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.dependenciesDir }}\x64-windows-release\scripts\buildsystems\vcpkg.cmake
+                             -DVCPKG_TARGET_TRIPLET=x64-windows-release
                              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
                              -A x64 -T host=x64
                              -DBUILD_SHARED_LIBS=ON
@@ -256,9 +257,8 @@ jobs:
                              -DALICEVISION_BUILD_SWIG_BINDING=ON
                              -DALICEVISION_INSTALL_MESHROOM_PLUGIN=OFF
                              -DBOOST_NO_CXX11=ON
-
-          cmakeBuildType: Release
-          buildWithCMake: true
+                             -DVCPKG_MANIFEST_MODE=OFF
+                             -DPython3_EXECUTABLE=${{ env.Python3_ROOT_DIR }}\python.exe
 
       - name: Bundle
         uses: lukka/run-cmake@v3
@@ -273,7 +273,10 @@ jobs:
 
       - name: Python Binding - Unit Tests
         run: |
-          ${{ env.VCPKG_ROOT }}\installed\x64-windows\tools\python3\python -m pytest ./pyTests
+          $Env:PYTHONPATH = "${{ env.ALICEVISION_ROOT }}\bundle\bin"
+          $Env:PYTHONPATH
+          python -m pip install pytest
+          python -m pytest ./pyTests
 
       - name: Unit Tests
         uses: lukka/run-cmake@v3

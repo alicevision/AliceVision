@@ -1,0 +1,8 @@
+{
+  "default": { 
+    "vcpkg-tool-swig": {
+      "baseline": "4.3.0",
+      "port-version": 0
+    }
+  }
+}
