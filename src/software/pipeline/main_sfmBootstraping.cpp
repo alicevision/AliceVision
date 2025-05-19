@@ -38,7 +38,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -115,6 +115,7 @@ int aliceVision_main(int argc, char** argv)
     std::string tracksFilename;
     std::string meshFilename;
     std::string pairsDirectory;
+    std::string outputSfMViewsAndPoses;
 
     // user optional parameters
     const double maxEpipolarDistance = 4.0;
@@ -136,6 +137,7 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description optionalParams("Required parameters");
     optionalParams.add_options()
+    ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
     ("minAngleInitialPair", po::value<double>(&minAngle)->default_value(minAngle), "Minimum angle for the initial pair.")
     ("maxAngleInitialPair", po::value<double>(&maxAngle)->default_value(maxAngle), "Maximum angle for the initial pair.")
     ("meshFilename,t", po::value<std::string>(&meshFilename)->required(), "Mesh object file.")
@@ -360,6 +362,13 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO(" - " << sfmData.getView(bestPair.next).getImage().getImagePath());
 
     sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
+
+    if (!outputSfMViewsAndPoses.empty())
+    {   
+        sfmDataIO::save(sfmData, outputSfMViewsAndPoses, 
+            sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)
+        );
+    }
 
     return EXIT_SUCCESS;
 }
