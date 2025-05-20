@@ -120,8 +120,8 @@ if (ALICEVISION_BUILD_SFM)
 
     if (ALICEVISION_BUILD_MVS)
         # Bootstrapping SfM
-        alicevision_add_software(aliceVision_sfmBootstraping
-            SOURCE main_sfmBootstraping.cpp
+        alicevision_add_software(aliceVision_sfmBootstrapping
+            SOURCE main_sfmBootstrapping.cpp
             FOLDER ${FOLDER_SOFTWARE_PIPELINE}
             LINKS aliceVision_system
                 aliceVision_cmdline

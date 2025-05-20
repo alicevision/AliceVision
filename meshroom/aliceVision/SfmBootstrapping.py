@@ -4,8 +4,8 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 
-class SfMBootStraping(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmBootstraping {allParams}'
+class SfMBootStrapping(desc.AVCommandLineNode):
+    commandLine = 'aliceVision_sfmBootstrapping {allParams}'
     size = desc.DynamicNodeSize('input')
 
     category = 'Sparse Reconstruction'
