@@ -15,7 +15,7 @@
             "PrepareDenseScene": "3.1",
             "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
-            "SfMBootStraping": "3.0",
+            "SfMBootStrapping": "4.0",
             "SfMExpanding": "2.0",
             "Texturing": "6.0",
             "TracksBuilding": "1.0"
@@ -145,8 +145,8 @@
                 "minInliers": 100
             }
         },
-        "SfMBootStraping_1": {
-            "nodeType": "SfMBootStraping",
+        "SfMBootStrapping_1": {
+            "nodeType": "SfMBootStrapping",
             "position": [
                 1200,
                 0
@@ -164,9 +164,9 @@
                 0
             ],
             "inputs": {
-                "input": "{SfMBootStraping_1.output}",
-                "tracksFilename": "{SfMBootStraping_1.tracksFilename}",
-                "meshFilename": "{SfMBootStraping_1.meshFilename}"
+                "input": "{SfMBootStrapping_1.output}",
+                "tracksFilename": "{SfMBootStrapping_1.tracksFilename}",
+                "meshFilename": "{SfMBootStrapping_1.meshFilename}"
             }
         },
         "Texturing_1": {

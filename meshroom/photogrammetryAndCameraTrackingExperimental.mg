@@ -17,7 +17,7 @@
             "ImageDetectionPrompt": "0.1",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.0",
-            "ImageSegmentationBox": "0.1",
+            "ImageSegmentationBox": "0.2",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",
             "MeshFiltering": "3.0",
@@ -26,10 +26,11 @@
             "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
             "ScenePreview": "2.0",
-            "SfMBootStraping": "3.0",
+            "SfMBootStrapping": "4.0",
             "SfMExpanding": "2.0",
             "Texturing": "6.0",
-            "TracksBuilding": "1.0"
+            "TracksBuilding": "1.0",
+            "TracksMerging": "3.0"
         },
         "template": true
     },
@@ -102,8 +103,8 @@
         "ConvertSfMFormat_1": {
             "nodeType": "ConvertSfMFormat",
             "position": [
-                2600,
-                200
+                2800,
+                205
             ],
             "inputs": {
                 "input": "{ExportAnimatedCamera_1.input}",
@@ -161,7 +162,7 @@
         "ExportAnimatedCamera_1": {
             "nodeType": "ExportAnimatedCamera",
             "position": [
-                2400,
+                2600,
                 200
             ],
             "inputs": {
@@ -284,7 +285,7 @@
             "nodeType": "FeatureMatching",
             "position": [
                 1200,
-                -300
+                -160
             ],
             "inputs": {
                 "input": "{ImageMatchingMultiSfM_2.outputCombinedSfM}",
@@ -333,7 +334,7 @@
             "nodeType": "ImageMatchingMultiSfM",
             "position": [
                 1000,
-                -300
+                -360
             ],
             "inputs": {
                 "input": "{KeyframeSelection_1.outputSfMDataKeyframes}",
@@ -434,7 +435,7 @@
         "MeshDecimate_1": {
             "nodeType": "MeshDecimate",
             "position": [
-                2600,
+                2800,
                 0
             ],
             "inputs": {
@@ -488,8 +489,8 @@
         "Publish_1": {
             "nodeType": "Publish",
             "position": [
-                3000,
-                -100
+                3200,
+                -160
             ],
             "inputs": {
                 "inputFiles": [
@@ -534,7 +535,7 @@
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
             "position": [
-                2800,
+                3000,
                 200
             ],
             "inputs": {
@@ -547,8 +548,8 @@
                 "color": "#4c594c"
             }
         },
-        "SfMBootStraping_1": {
-            "nodeType": "SfMBootStraping",
+        "SfMBootStrapping_1": {
+            "nodeType": "SfMBootStrapping",
             "position": [
                 600,
                 -500
@@ -562,8 +563,8 @@
                 "color": "#384a55"
             }
         },
-        "SfMBootStraping_2": {
-            "nodeType": "SfMBootStraping",
+        "SfMBootStrapping_2": {
+            "nodeType": "SfMBootStrapping",
             "position": [
                 1200,
                 0
@@ -584,9 +585,9 @@
                 -500
             ],
             "inputs": {
-                "input": "{SfMBootStraping_1.output}",
-                "tracksFilename": "{SfMBootStraping_1.tracksFilename}",
-                "meshFilename": "{SfMBootStraping_1.meshFilename}"
+                "input": "{SfMBootStrapping_1.output}",
+                "tracksFilename": "{SfMBootStrapping_1.tracksFilename}",
+                "meshFilename": "{SfMBootStrapping_1.meshFilename}"
             },
             "internalInputs": {
                 "label": "SfMExpandingPhotog",
@@ -600,8 +601,8 @@
                 0
             ],
             "inputs": {
-                "input": "{SfMBootStraping_2.output}",
-                "tracksFilename": "{SfMBootStraping_2.tracksFilename}",
+                "input": "{SfMBootStrapping_2.output}",
+                "tracksFilename": "{SfMBootStrapping_2.tracksFilename}",
                 "lockScenePreviouslyReconstructed": true,
                 "minAngleForTriangulation": 1.0,
                 "minAngleForLandmark": 0.5
@@ -615,12 +616,12 @@
         "SfMExpanding_3": {
             "nodeType": "SfMExpanding",
             "position": [
-                2200,
+                2400,
                 200
             ],
             "inputs": {
                 "input": "{TracksBuilding_3.input}",
-                "tracksFilename": "{TracksBuilding_3.output}",
+                "tracksFilename": "{TracksMerging_1.output}",
                 "nbFirstUnstableCameras": 0,
                 "maxImagesPerGroup": 0,
                 "bundleAdjustmentMaxOutliers": 5000000,
@@ -703,6 +704,22 @@
                 "describerTypes": "{FeatureMatching_3.describerTypes}",
                 "minInputTrackLength": 5,
                 "filterTrackForks": true
+            },
+            "internalInputs": {
+                "color": "#80766f"
+            }
+        },
+        "TracksMerging_1": {
+            "nodeType": "TracksMerging",
+            "position": [
+                2200,
+                200
+            ],
+            "inputs": {
+                "inputs": [
+                    "{TracksBuilding_3.output}",
+                    "{TracksBuilding_2.output}"
+                ]
             },
             "internalInputs": {
                 "color": "#80766f"
