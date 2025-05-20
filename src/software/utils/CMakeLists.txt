@@ -62,6 +62,20 @@ if (ALICEVISION_BUILD_SFM)
               ${Boost_LIBRARIES}
     )
 
+    # Track builder
+    alicevision_add_software(aliceVision_tracksSimulating
+        SOURCE main_tracksSimulating.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_feature
+              aliceVision_sfm
+              aliceVision_sfmData
+              aliceVision_track
+              Boost::program_options
+              Boost::json
+    )
+
     if (ALICEVISION_HAVE_OPENCV)
         target_link_libraries(aliceVision_imageProcessing_exe PRIVATE ${OpenCV_LIBS})
     endif()
