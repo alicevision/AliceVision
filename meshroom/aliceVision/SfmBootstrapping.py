@@ -1,11 +1,11 @@
-__version__ = "3.0"
+__version__ = "4.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 
-class SfMBootStraping(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmBootstraping {allParams}'
+class SfMBootStrapping(desc.AVCommandLineNode):
+    commandLine = 'aliceVision_sfmBootstrapping {allParams}'
     size = desc.DynamicNodeSize('input')
 
     category = 'Sparse Reconstruction'
@@ -81,4 +81,10 @@ class SfMBootStraping(desc.AVCommandLineNode):
             description="Path to the output SfMData file.",
             value="{nodeCacheFolder}/bootstrap.abc",
         ),
+        desc.File(
+            name="outputViewsAndPoses",
+            label="Views And Poses",
+            description="Path to the output SfMData file with cameras (views and poses).",
+            value="{nodeCacheFolder}/cameras.sfm",
+        )
     ]
