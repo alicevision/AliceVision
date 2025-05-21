@@ -200,22 +200,23 @@ std::vector<std::string> getSupportedExtensions()
 {
     std::vector<std::string> supportedExtensions;
 
-    // Map containing the parsed "extension_list" with each supported format and its associated extensions
-    static std::map<std::string, std::vector<std::string>> extensionList = oiio::get_extension_map();
-
-    for (auto& format : extensionList)
+    // oiio::get_extension_map() contains the parsed "extension_list" with each
+    // supported format and its associated extensions
+    for (const auto& [formatName, extensions] : oiio::get_extension_map())
     {
-        for (auto& extension : format.second)
+        for (const auto& extension : extensions)
         {
-            supportedExtensions.push_back(extension.insert(0, "."));
+            supportedExtensions.push_back("." + extension);
         }
     }
+
     return supportedExtensions;
 }
 
 bool isSupported(const std::string& extension)
 {
-    static const std::vector<std::string> supportedExtensions = getSupportedExtensions();
+    const std::vector<std::string> supportedExtensions = getSupportedExtensions();
+
     const auto start = supportedExtensions.begin();
     const auto end = supportedExtensions.end();
     return (std::find(start, end, boost::to_lower_copy(extension)) != end);
