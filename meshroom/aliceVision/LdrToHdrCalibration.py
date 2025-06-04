@@ -46,7 +46,7 @@ Calibrate LDR to HDR response curve from samples.
             name="samples",
             label="Samples Folder",
             description="Samples folder.",
-            value="{nodeCacheFolder}",
+            value="",
         ),
         desc.IntParam(
             name="userNbBrackets",
