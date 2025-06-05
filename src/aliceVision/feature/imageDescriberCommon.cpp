@@ -11,6 +11,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <sstream>
 #include <cassert>
 
 namespace aliceVision {

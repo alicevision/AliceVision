@@ -6,7 +6,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/types.hpp>
+
 #include <iosfwd>
+#include <string>
 
 namespace aliceVision {
 namespace matchingImageCollection {
