@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
 #include <cstdint>
 #include <limits>
 #include <map>

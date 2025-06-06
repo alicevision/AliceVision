@@ -8,9 +8,12 @@
 #pragma once
 
 #include <boost/detail/bitmask.hpp>
-#include <string>
+
 #include <algorithm>
+#include <iterator>
 #include <stdexcept>
+#include <string>
+
 
 namespace aliceVision {
 
