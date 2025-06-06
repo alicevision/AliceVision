@@ -395,6 +395,9 @@
             ],
             "inputs": {
                 "input": "{SfMTriangulation_1.output}",
+                "masksFolders": [
+                    "{ImageSegmentationBox_1.output}"
+                ],
                 "maskExtension": "exr"
             },
             "internalInputs": {
