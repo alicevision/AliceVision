@@ -1248,6 +1248,11 @@ void readImage(const std::string& path, Image<float>& image, const ImageReadOpti
     readImage(path, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
 }
 
+void readImage(const std::string& path, Image<IndexT>& image, const ImageReadOptions& imageReadOptions)
+{
+    readImage(path, oiio::TypeDesc::UINT32, 1, image, imageReadOptions);
+}
+
 void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions& imageReadOptions)
 {
     readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
