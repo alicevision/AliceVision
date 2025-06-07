@@ -2,7 +2,6 @@
     "header": {
         "releaseVersion": "2025.1.0-develop",
         "fileVersion": "2.0",
-        "template": true,
         "nodesVersions": {
             "ApplyCalibration": "1.0",
             "CameraInit": "12.0",
@@ -17,7 +16,7 @@
             "ImageDetectionPrompt": "0.1",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.0",
-            "ImageSegmentationBox": "0.1",
+            "ImageSegmentationBox": "0.2",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",
             "MeshFiltering": "3.0",
@@ -29,7 +28,8 @@
             "SfMTriangulation": "1.0",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"
-        }
+        },
+        "template": true
     },
     "graph": {
         "ApplyCalibration_1": {
@@ -362,6 +362,9 @@
             ],
             "inputs": {
                 "input": "{SfMTriangulation_1.output}",
+                "masksFolders": [
+                    "{ImageSegmentationBox_1.output}"
+                ],
                 "maskExtension": "exr"
             },
             "internalInputs": {
