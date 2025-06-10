@@ -22,7 +22,8 @@ namespace sfm {
 * @param tracksPerView tracks grouped by views
 * @param filterIn pair must contains one of the views inside this set (if non empty)
 * @param filterout pair must NOT contains one of the views inside this set (if non empty)
-* @param minAngle minimal angle allowed
+* @param hardMinAngle minimal angle allowed (rejected)
+* @param softMinAngle minimal angle allowed (tolerated, but heavily downgraded)
 * @param maxAngle maximal angle allowed
 * @return index in "pairs" of the best pair or UndefinedIndexT if no pair found
 */
@@ -32,7 +33,8 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
                     const track::TracksPerView & tracksPerView, 
                     const std::set<IndexT> & filterIn,
                     const std::set<IndexT> & filterOut,
-                    double minAngle,
+                    double hardMinAngle,
+                    double softMinAngle,
                     double maxAngle);
 
 }

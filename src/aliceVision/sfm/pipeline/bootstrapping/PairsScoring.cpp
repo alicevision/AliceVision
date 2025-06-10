@@ -18,7 +18,8 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
                 const track::TracksPerView & tracksPerView, 
                 const std::set<IndexT> & filterIn,
                 const std::set<IndexT> & filterOut,
-                double minAngle,
+                double hardMinAngle,
+                double softMinAngle,
                 double maxAngle)
 {
     IndexT bestPair = UndefinedIndexT;
@@ -74,26 +75,30 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
             continue;
         }
 
-        if (radianToDegree(angle) > maxAngle)
+        double degrees = radianToDegree(angle);
+        if (degrees > maxAngle)
         {
             continue;
         }
 
-       
+        if (degrees < hardMinAngle)
+        {
+            continue;
+        }
 
         const sfmData::View & vref = sfmData.getView(pair.reference);
         const sfmData::View & vnext = sfmData.getView(pair.next);
 
         int maxref = std::max(vref.getImage().getWidth(), vref.getImage().getHeight());
         int maxnext = std::max(vnext.getImage().getWidth(), vnext.getImage().getHeight());
-        
 
         double refScore = sfm::ExpansionPolicyLegacy::computeScore(tracksMap, usedTracks, pair.reference, maxref, 5);
         double nextScore = sfm::ExpansionPolicyLegacy::computeScore(tracksMap, usedTracks, pair.next, maxnext, 5);
 
         double score = std::min(refScore, nextScore) * std::max(1e-12, radianToDegree(angle));
-         //If the angle is too small, then dramatically reduce its chances
-        if (radianToDegree(angle) < minAngle)
+
+        //If the angle is too small, then dramatically reduce its chances
+        if (degrees < softMinAngle)
         {
             score = -1.0 / score;
         }
