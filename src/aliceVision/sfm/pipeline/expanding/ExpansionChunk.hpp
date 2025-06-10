@@ -69,7 +69,6 @@ public:
     /**
      * @brief set the maximal error allowed for ransac resection module
      * @param error the error value or <= 0 for automatic decision
-     * @param count the number of points
     */
     void setResectionMaxError(double error)
     {
@@ -87,6 +86,15 @@ public:
     void setTriangulationMinPoints(size_t count)
     {
         _triangulationMinPoints = count;
+    }
+
+    /**
+     * @brief set the maximal reprojection error in the triangulation process.
+     * @param count the number of points
+    */
+    void setTriangulationMaxError(double error)
+    {
+        _maxTriangulationError = error;
     }
 
     /**

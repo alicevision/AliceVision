@@ -21,16 +21,19 @@ public:
   /**
    * @brief Constructor.
    * @param[in] observations The observations 2d points in pixels.
+   * @param[in] weights The observations weights.
    * @param[in] poses the transformation for each observation.
    * @param[in] intrinsics the camera intrinsic for each observation.
    */
   TriangulationSphericalKernel(
         const std::vector<Vec2> & observations, 
+        const std::vector<double> & weights, 
         const std::vector<Eigen::Matrix4d>& poses, 
         std::vector<std::shared_ptr<camera::IntrinsicBase>> & intrinsics
     )
   : _poses(poses)
   , _intrinsics(intrinsics)
+  , _weights(weights)
   {
     for (int id = 0; id < observations.size(); id++)
     {
@@ -134,10 +137,10 @@ public:
   }
   
   /**
-   * @brief Error for the i-th view
-   * @param[in] sample The index of the view for which the error is computed.
+   * @brief Error for the i-th observation
+   * @param[in] sample The index of the observation for which the error is computed.
    * @param[in] model The 3D point.
-   * @return The estimation error for the given view and 3D point.
+   * @return The estimation error for the given observation and 3D point.
    */
   double error(std::size_t sample, const ModelT & model) const override
   {
@@ -147,9 +150,11 @@ public:
         X = X / X(3);
     }
 
+    double w = _weights[sample];
+
     Vec2 residual = _intrinsics[sample]->residual(_poses[sample], X, _observations[sample], false);
 
-    return residual.norm();
+    return residual.norm() * w;
   }
 
   /**
@@ -217,6 +222,7 @@ public:
 private:
   std::vector<Vec3> _lifted;
   std::vector<Vec2> _observations;
+  std::vector<double> _weights;
   const std::vector<Eigen::Matrix4d> _poses;
   const std::vector<std::shared_ptr<camera::IntrinsicBase>> _intrinsics;
   multiview::TriangulateNViewsSphericalSolver _solver;

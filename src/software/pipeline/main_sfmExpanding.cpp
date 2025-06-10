@@ -97,6 +97,7 @@ int aliceVision_main(int argc, char** argv)
     double minAngleForTriangulation = 3.0;
     double minAngleForLandmark = 2.0;
     double maxReprojectionError = 4.0;
+    double maxTriangulationError = 8.0;
     bool lockAllIntrinsics = false;
     int minNbCamerasToRefinePrincipalPoint = 3;
     bool useRigConstraint = true;
@@ -132,7 +133,8 @@ int aliceVision_main(int argc, char** argv)
     ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),"Minimum number of observations to triangulate a point")
     ("minAngleForTriangulation", po::value<double>(&minAngleForTriangulation)->default_value(minAngleForTriangulation),"Minimum angle for triangulation.")
     ("minAngleForLandmark", po::value<double>(&minAngleForLandmark)->default_value(minAngleForLandmark), "Minimum angle for landmark.")
-    ("maxReprojectionError", po::value<double>(&maxReprojectionError)->default_value(maxReprojectionError), "Maximum reprojection error.")
+    ("maxTriangulationError", po::value<double>(&maxTriangulationError)->default_value(maxTriangulationError), "Maximum reprojection error in the triangulation process.")
+    ("maxReprojectionError", po::value<double>(&maxReprojectionError)->default_value(maxReprojectionError), "Maximum reprojection error in the bundle verification step.")
     ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics), "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
     ("minNbCamerasToRefinePrincipalPoint", po::value<int>(&minNbCamerasToRefinePrincipalPoint)->default_value(minNbCamerasToRefinePrincipalPoint),
          "Minimal number of cameras to refine the principal point of the cameras (one of the intrinsic parameters of the camera). "
@@ -242,6 +244,7 @@ int aliceVision_main(int argc, char** argv)
     expansionChunk->setExpansionHistoryHandler(expansionHistory);
     expansionChunk->setResectionMaxIterations(localizerEstimatorMaxIterations);
     expansionChunk->setResectionMaxError(localizerEstimatorError);
+    expansionChunk->setTriangulationMaxError(maxTriangulationError);
     expansionChunk->setTriangulationMinPoints(minNbObservationsForTriangulation);
     expansionChunk->setMinAngleTriangulation(minAngleForTriangulation);
     expansionChunk->setPointFetcherHandler(pointFetcherHandler);

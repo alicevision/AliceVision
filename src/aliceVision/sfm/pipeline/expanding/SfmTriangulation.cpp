@@ -106,6 +106,7 @@ bool SfmTriangulation::processTrack(
 {
     feature::EImageDescriberType descType = track.descType;
 
+    std::vector<double> weights;
     std::vector<Vec2> observations;
     std::vector<std::shared_ptr<camera::IntrinsicBase>> intrinsics;
     std::vector<Eigen::Matrix4d> poses;
@@ -126,6 +127,9 @@ bool SfmTriangulation::processTrack(
         observations.push_back(coords);
         intrinsics.push_back(intrinsic);
         poses.push_back(pose);
+
+        //Weight is dependent on the feature scale
+        weights.push_back(1.0 / trackItem.scale);
         
         indexedViewIds.push_back(viewId);
     }
@@ -135,7 +139,7 @@ bool SfmTriangulation::processTrack(
     robustEstimation::MatrixModel<Vec4> model;
     std::vector<std::size_t> inliers;
     robustEstimation::ScoreEvaluator<multiview::TriangulationSphericalKernel> scorer(_maxError);
-    multiview::TriangulationSphericalKernel kernel(observations, poses, intrinsics);
+    multiview::TriangulationSphericalKernel kernel(observations, weights, poses, intrinsics);
 
     if (observations.size() <= 0)
     {
