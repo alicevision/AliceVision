@@ -5,11 +5,10 @@
         "nodesVersions": {
             "ApplyCalibration": "1.0",
             "CameraInit": "12.0",
-            "CheckerboardDetection": "1.0",
+            "ConvertDistortion": "1.0",
             "ConvertSfMFormat": "2.0",
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
-            "DistortionCalibration": "5.0",
             "ExportAnimatedCamera": "2.0",
             "ExportDistortion": "2.0",
             "FeatureExtraction": "1.3",
@@ -24,15 +23,11 @@
             "Meshing": "7.0",
             "PrepareDenseScene": "3.1",
             "Publish": "1.3",
-            "RelativePoseEstimating": "3.0",
             "ScenePreview": "2.0",
-            "SfMBootStrapping": "4.0",
-            "SfMExpanding": "2.0",
             "SfMTransfer": "2.1",
             "SfMTriangulation": "1.0",
-            "Texturing": "6.0",
-            "TracksBuilding": "1.0",
-            "TracksMerging": "3.0"
+            "StructureFromMotion": "3.3",
+            "Texturing": "6.0"
         },
         "template": true
     },
@@ -44,8 +39,7 @@
                 0
             ],
             "inputs": {
-                "input": "{CameraInit_1.output}",
-                "calibration": "{DistortionCalibration_1.output}"
+                "input": "{CameraInit_1.output}"
             },
             "internalInputs": {
                 "color": "#575963"
@@ -62,43 +56,29 @@
                 "color": "#575963"
             }
         },
-        "CameraInit_2": {
-            "nodeType": "CameraInit",
+        "ConvertDistortion_1": {
+            "nodeType": "ConvertDistortion",
             "position": [
-                -600,
-                -160
-            ],
-            "inputs": {},
-            "internalInputs": {
-                "label": "CameraInitLensGrid",
-                "color": "#302e2e"
-            }
-        },
-        "CheckerboardDetection_1": {
-            "nodeType": "CheckerboardDetection",
-            "position": [
-                -400,
-                -160
+                1600,
+                360
             ],
             "inputs": {
-                "input": "{CameraInit_2.output}",
-                "useNestedGrids": true,
-                "exportDebugImages": true
+                "input": "{StructureFromMotion_1.output}"
             },
             "internalInputs": {
-                "color": "#302e2e"
+                "color": "#80766f"
             }
         },
         "ConvertSfMFormat_1": {
             "nodeType": "ConvertSfMFormat",
             "position": [
-                4000,
+                3000,
                 200
             ],
             "inputs": {
                 "input": "{ExportAnimatedCamera_1.input}",
                 "fileExt": "json",
-                "describerTypes": "{TracksBuilding_2.describerTypes}",
+                "describerTypes": "{StructureFromMotion_1.describerTypes}",
                 "structure": false,
                 "observations": false
             },
@@ -109,7 +89,7 @@
         "DepthMapFilter_1": {
             "nodeType": "DepthMapFilter",
             "position": [
-                3400,
+                2400,
                 0
             ],
             "inputs": {
@@ -123,7 +103,7 @@
         "DepthMap_1": {
             "nodeType": "DepthMap",
             "position": [
-                3200,
+                2200,
                 0
             ],
             "inputs": {
@@ -135,28 +115,14 @@
                 "color": "#3f3138"
             }
         },
-        "DistortionCalibration_1": {
-            "nodeType": "DistortionCalibration",
-            "position": [
-                -200,
-                -160
-            ],
-            "inputs": {
-                "input": "{CheckerboardDetection_1.input}",
-                "checkerboards": "{CheckerboardDetection_1.output}"
-            },
-            "internalInputs": {
-                "color": "#302e2e"
-            }
-        },
         "ExportAnimatedCamera_1": {
             "nodeType": "ExportAnimatedCamera",
             "position": [
-                2600,
+                1600,
                 200
             ],
             "inputs": {
-                "input": "{SfMExpanding_2.output}",
+                "input": "{StructureFromMotion_1.output}",
                 "exportUndistortedImages": true
             },
             "internalInputs": {
@@ -166,14 +132,15 @@
         "ExportDistortion_1": {
             "nodeType": "ExportDistortion",
             "position": [
-                0,
-                -160
+                1800,
+                360
             ],
             "inputs": {
-                "input": "{DistortionCalibration_1.output}"
+                "input": "{ConvertDistortion_1.output}",
+                "exportLensGridsUndistorted": false
             },
             "internalInputs": {
-                "color": "#302e2e"
+                "color": "#80766f"
             }
         },
         "FeatureExtraction_1": {
@@ -211,8 +178,8 @@
         "FeatureMatching_2": {
             "nodeType": "FeatureMatching",
             "position": [
-                1800,
-                400
+                1200,
+                360
             ],
             "inputs": {
                 "input": "{ImageMatching_2.input}",
@@ -227,7 +194,7 @@
         "FeatureMatching_3": {
             "nodeType": "FeatureMatching",
             "position": [
-                1800,
+                1200,
                 200
             ],
             "inputs": {
@@ -257,12 +224,12 @@
         "ImageMatchingMultiSfM_1": {
             "nodeType": "ImageMatchingMultiSfM",
             "position": [
-                1600,
+                1000,
                 200
             ],
             "inputs": {
                 "input": "{KeyframeSelection_1.outputSfMDataFrames}",
-                "inputB": "{SfMExpanding_1.output}",
+                "inputB": "{StructureFromMotion_2.output}",
                 "featuresFolders": [
                     "{FeatureExtraction_1.output}"
                 ],
@@ -295,8 +262,8 @@
         "ImageMatching_2": {
             "nodeType": "ImageMatching",
             "position": [
-                1600,
-                400
+                1000,
+                360
             ],
             "inputs": {
                 "input": "{ApplyCalibration_1.output}",
@@ -344,7 +311,7 @@
         "MeshDecimate_1": {
             "nodeType": "MeshDecimate",
             "position": [
-                4000,
+                3000,
                 0
             ],
             "inputs": {
@@ -358,7 +325,7 @@
         "MeshFiltering_1": {
             "nodeType": "MeshFiltering",
             "position": [
-                3800,
+                2800,
                 0
             ],
             "inputs": {
@@ -372,7 +339,7 @@
         "Meshing_1": {
             "nodeType": "Meshing",
             "position": [
-                3600,
+                2600,
                 0
             ],
             "inputs": {
@@ -390,7 +357,7 @@
         "PrepareDenseScene_1": {
             "nodeType": "PrepareDenseScene",
             "position": [
-                3000,
+                2000,
                 0
             ],
             "inputs": {
@@ -407,7 +374,7 @@
         "Publish_1": {
             "nodeType": "Publish",
             "position": [
-                4400,
+                3600,
                 100
             ],
             "inputs": {
@@ -419,26 +386,10 @@
                 ]
             }
         },
-        "RelativePoseEstimating_1": {
-            "nodeType": "RelativePoseEstimating",
-            "position": [
-                1000,
-                0
-            ],
-            "inputs": {
-                "input": "{TracksBuilding_1.input}",
-                "tracksFilename": "{TracksBuilding_1.output}",
-                "countIterations": 50000,
-                "minInliers": 100
-            },
-            "internalInputs": {
-                "color": "#575963"
-            }
-        },
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
             "position": [
-                4200,
+                3200,
                 200
             ],
             "inputs": {
@@ -451,72 +402,15 @@
                 "color": "#4c594c"
             }
         },
-        "SfMBootStrapping_1": {
-            "nodeType": "SfMBootStrapping",
-            "position": [
-                1200,
-                0
-            ],
-            "inputs": {
-                "input": "{RelativePoseEstimating_1.input}",
-                "tracksFilename": "{RelativePoseEstimating_1.tracksFilename}",
-                "pairs": "{RelativePoseEstimating_1.output}"
-            },
-            "internalInputs": {
-                "color": "#575963"
-            }
-        },
-        "SfMExpanding_1": {
-            "nodeType": "SfMExpanding",
-            "position": [
-                1400,
-                0
-            ],
-            "inputs": {
-                "input": "{SfMBootStrapping_1.output}",
-                "tracksFilename": "{SfMBootStrapping_1.tracksFilename}",
-                "meshFilename": "{SfMBootStrapping_1.meshFilename}",
-                "minAngleForTriangulation": 1.0,
-                "minAngleForLandmark": 0.5
-            },
-            "internalInputs": {
-                "comment": "Estimate cameras parameters for the keyframes.",
-                "label": "SfMExpandingKeys",
-                "color": "#575963"
-            }
-        },
-        "SfMExpanding_2": {
-            "nodeType": "SfMExpanding",
-            "position": [
-                2400,
-                200
-            ],
-            "inputs": {
-                "input": "{TracksBuilding_2.input}",
-                "tracksFilename": "{TracksMerging_1.output}",
-                "meshFilename": "{SfMExpanding_1.meshFilename}",
-                "nbFirstUnstableCameras": 0,
-                "maxImagesPerGroup": 0,
-                "bundleAdjustmentMaxOutliers": 5000000,
-                "minNumberOfObservationsForTriangulation": 3,
-                "minAngleForTriangulation": 1.0,
-                "minAngleForLandmark": 0.5
-            },
-            "internalInputs": {
-                "comment": "Estimate cameras parameters for the complete camera tracking sequence.",
-                "label": "SfMExpandingAll",
-                "color": "#80766f"
-            }
-        },
         "SfMTransfer_1": {
             "nodeType": "SfMTransfer",
             "position": [
-                2600,
+                1600,
                 0
             ],
             "inputs": {
                 "input": "{KeyframeSelection_1.outputSfMDataKeyframes}",
-                "reference": "{SfMExpanding_2.output}",
+                "reference": "{StructureFromMotion_1.output}",
                 "transferLandmarks": false
             },
             "internalInputs": {
@@ -527,13 +421,13 @@
         "SfMTriangulation_1": {
             "nodeType": "SfMTriangulation",
             "position": [
-                2800,
+                1800,
                 0
             ],
             "inputs": {
                 "input": "{SfMTransfer_1.output}",
-                "featuresFolders": "{TracksBuilding_1.featuresFolders}",
-                "matchesFolders": "{TracksBuilding_1.matchesFolders}",
+                "featuresFolders": "{StructureFromMotion_2.featuresFolders}",
+                "matchesFolders": "{StructureFromMotion_2.matchesFolders}",
                 "minAngleForTriangulation": 1.0,
                 "minAngleForLandmark": 0.5
             },
@@ -541,23 +435,36 @@
                 "color": "#3f3138"
             }
         },
-        "Texturing_1": {
-            "nodeType": "Texturing",
+        "StructureFromMotion_1": {
+            "nodeType": "StructureFromMotion",
             "position": [
-                4200,
-                0
+                1400,
+                200
             ],
             "inputs": {
-                "input": "{Meshing_1.output}",
-                "imagesFolder": "{PrepareDenseScene_1.output}",
-                "inputMesh": "{MeshDecimate_1.output}"
+                "input": "{FeatureMatching_3.input}",
+                "featuresFolders": "{FeatureMatching_3.featuresFolders}",
+                "matchesFolders": [
+                    "{FeatureMatching_3.output}",
+                    "{FeatureMatching_2.output}"
+                ],
+                "describerTypes": "{FeatureMatching_3.describerTypes}",
+                "nbFirstUnstableCameras": 0,
+                "maxImagesPerGroup": 0,
+                "bundleAdjustmentMaxOutliers": -1,
+                "minInputTrackLength": 5,
+                "minNumberOfObservationsForTriangulation": 3,
+                "minAngleForTriangulation": 1.0,
+                "minAngleForLandmark": 0.5,
+                "filterTrackForks": true
             },
             "internalInputs": {
-                "color": "#3f3138"
+                "comment": "Estimate cameras parameters for the complete camera tracking sequence.",
+                "color": "#80766f"
             }
         },
-        "TracksBuilding_1": {
-            "nodeType": "TracksBuilding",
+        "StructureFromMotion_2": {
+            "nodeType": "StructureFromMotion",
             "position": [
                 800,
                 0
@@ -569,47 +476,29 @@
                     "{FeatureMatching_1.output}"
                 ],
                 "describerTypes": "{FeatureMatching_1.describerTypes}",
+                "minAngleForTriangulation": 1.0,
+                "minAngleForLandmark": 0.5,
                 "filterTrackForks": true
             },
             "internalInputs": {
+                "comment": "Solve all keyframes first.",
+                "label": "StructureFromMotionKeyframes",
                 "color": "#575963"
             }
         },
-        "TracksBuilding_2": {
-            "nodeType": "TracksBuilding",
+        "Texturing_1": {
+            "nodeType": "Texturing",
             "position": [
-                2000,
-                200
+                3200,
+                0
             ],
             "inputs": {
-                "input": "{FeatureMatching_3.input}",
-                "featuresFolders": "{FeatureMatching_3.featuresFolders}",
-                "matchesFolders": [
-                    "{FeatureMatching_2.output}",
-                    "{FeatureMatching_3.output}"
-                ],
-                "describerTypes": "{FeatureMatching_3.describerTypes}",
-                "minInputTrackLength": 5,
-                "filterTrackForks": true
+                "input": "{Meshing_1.output}",
+                "imagesFolder": "{PrepareDenseScene_1.output}",
+                "inputMesh": "{MeshDecimate_1.output}"
             },
             "internalInputs": {
-                "color": "#80766f"
-            }
-        },
-        "TracksMerging_1": {
-            "nodeType": "TracksMerging",
-            "position": [
-                2200,
-                200
-            ],
-            "inputs": {
-                "inputs": [
-                    "{TracksBuilding_2.output}",
-                    "{SfMExpanding_1.tracksFilename}"
-                ]
-            },
-            "internalInputs": {
-                "color": "#80766f"
+                "color": "#3f3138"
             }
         }
     }
