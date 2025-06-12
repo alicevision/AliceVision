@@ -5,7 +5,7 @@ Collection of unit tests for image
 import pytest
 import os
 
-import image as img
+from pyalicevision import image as img
 import numpy as np
 
 def loop(image):

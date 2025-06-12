@@ -4,7 +4,7 @@ Collection of unit tests for image
 
 import pytest
 
-import image as img
+from pyalicevision import image as img
 import numpy as np
 
 def test_default_constructor():

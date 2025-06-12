@@ -775,6 +775,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         cmake_policy(SET CMP0078 NEW)  # Use the specified module name for the target's name
         cmake_policy(SET CMP0086 NEW)  # Use "-module {name}" when the module name has been set with SWIG_MODULE_NAME
     
+        set(CMAKE_INSTALL_SWIGDIR "${CMAKE_INSTALL_LIBDIR}/python/pyalicevision")
         include(UseSWIG)
         message(STATUS "SWIG found.")
     else()
@@ -1089,5 +1090,11 @@ configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" ${cmakeUninstallFile}
     IMMEDIATE @ONLY
 )
+
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    set(initpyFile "${generatedDir}/aliceVision/__init__.py")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/init.py.in" "${initpyFile}" @ONLY)
+    install(FILES "${initpyFile}" DESTINATION "${CMAKE_INSTALL_SWIGDIR}")
+endif()
 
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${cmakeUninstallFile}")

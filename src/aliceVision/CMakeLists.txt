@@ -79,21 +79,6 @@ if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
     endif()
 endif()
 
-
-if (ALICEVISION_BUILD_SWIG_BINDING)
-    alicevision_swig_add_library(pyalicevision
-        SOURCES aliceVision.i
-        PUBLIC_LINKS
-            aliceVision_numeric
-            ${Python3_LIBRARIES}
-        PRIVATE_INCLUDE_DIRS
-            ../include
-            ${ALICEVISION_ROOT}/include
-            ${Python3_INCLUDE_DIRS}
-            ${Python3_NumPy_INCLUDE_DIRS}
-    )
-endif()
-
 # Install rules
 
 install(
