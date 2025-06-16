@@ -47,5 +47,6 @@ Import an external Alembic file that does not follow the SfMData convention, and
             label="SfMData",
             description="SfMData file populated with the camera poses from the external Alembic file.",
             value="{nodeCacheFolder}/importedAbc.sfm",
+            semantic="3d",
         ),
     ]
