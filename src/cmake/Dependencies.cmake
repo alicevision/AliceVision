@@ -618,8 +618,8 @@ if(AV_BUILD_BOOST)
     endif()
     
     ExternalProject_Add(${BOOST_TARGET}
-        URL https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.bz2
-        URL_HASH MD5=9dcd632441e4da04a461082ebbafd337
+        URL https://archives.boost.io/release/1.85.0/source/boost_1_85_0.tar.bz2
+        URL_HASH MD5=429d451cb9197143cc77962c5ff272ef
         DOWNLOAD_DIR ${BUILD_DIR}/download/boost
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
