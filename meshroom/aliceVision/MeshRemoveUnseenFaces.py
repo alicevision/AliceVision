@@ -65,5 +65,6 @@ Remove triangles from the mesh when the vertices are not visible by any camera.
             label="Mesh",
             description="Output mesh file.",
             value="{nodeCacheFolder}/mesh.{outputMeshFileTypeValue}",
+            semantic="3d",
         ),
     ]

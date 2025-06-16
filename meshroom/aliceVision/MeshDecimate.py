@@ -73,5 +73,6 @@ This node allows to reduce the density of the Mesh.
             label="Mesh",
             description="Output mesh in the OBJ file format.",
             value="{nodeCacheFolder}/mesh.obj",
+            semantic="3d",
         ),
     ]

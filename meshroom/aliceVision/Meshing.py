@@ -473,6 +473,7 @@ A Graph Cut Max-Flow is applied to optimally cut the volume. This cut represents
             label="Mesh",
             description="Output mesh.",
             value="{nodeCacheFolder}/mesh.{outputMeshFileTypeValue}",
+            semantic="3d",
         ),
         desc.File(
             name="output",

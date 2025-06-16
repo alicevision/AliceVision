@@ -78,5 +78,6 @@ This node allows to recompute the mesh surface with a new topology and uniform d
             label="Mesh",
             description="Output mesh in the OBJ file format.",
             value="{nodeCacheFolder}/mesh.obj",
+            semantic="3d",
         ),
     ]

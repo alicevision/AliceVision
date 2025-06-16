@@ -36,5 +36,6 @@ class LidarMerging(desc.AVCommandLineNode):
             label="Mesh Path Output",
             description="Output directory for mesh.",
             value="{nodeCacheFolder}/output.obj",
+            semantic="3d",
         ),
     ]

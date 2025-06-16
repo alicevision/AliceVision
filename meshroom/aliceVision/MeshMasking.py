@@ -99,5 +99,6 @@ Decimate triangles based on image masks.
             label="Mesh",
             description="Output mesh file.",
             value="{nodeCacheFolder}/mesh.{outputMeshFileTypeValue}",
-        ),
+            semantic="3d",
+       ),
     ]

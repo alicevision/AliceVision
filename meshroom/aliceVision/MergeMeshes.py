@@ -65,5 +65,6 @@ Operation types used to merge two meshes:
             label="Mesh",
             description="Output mesh (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).",
             value="{nodeCacheFolder}/mesh.stl",
+            semantic="3d",
         ),
     ]

@@ -88,5 +88,6 @@ for now, the parameters are difficult to control and vary a lot from one dataset
             label="Output",
             description="Output mesh in the OBJ file format.",
             value="{nodeCacheFolder}/mesh.obj",
+            semantic="3d",
         ),
     ]
