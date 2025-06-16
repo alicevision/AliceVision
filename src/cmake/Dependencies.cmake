@@ -339,13 +339,13 @@ if (AV_BUILD_ONNXRUNTIME)
     #     url="${BASE_URL}/${AV_ONNX_FILENAME}"; curl -sLO "$url" && checksum=$(sha256sum "${AV_ONNX_FILENAME}" | awk '{ print $1 }') && echo "SHA256 Checksum: $checksum" && rm "${AV_ONNX_FILENAME}"
     # done
 
-    set(AV_ONNX_VERSION "1.12.0")
+    set(AV_ONNX_VERSION "1.17.0")
     if(APPLE)
         set(AV_ONNX_FILENAME_PREFIX "onnxruntime-osx-${AV_ONNX_APPLE_ARCH}")
         if(AV_ONNX_APPLE_ARCH STREQUAL "arm64")
-            set(AV_ONNX_HASH "23117b6f5d7324d4a7c51184e5f808dd952aec411a6b99a1b6fd1011de06e300")
+            set(AV_ONNX_HASH "f72a2bcca40e2650756c6b96c69ef031236aaab1b98673e744da4eef0c4bddbd")
         elseif(AV_ONNX_APPLE_ARCH STREQUAL "x86_64")
-            set(AV_ONNX_HASH "09b17f712f8c6f19bb63da35d508815b443cbb473e16c6192abfaa297c02f600")
+            set(AV_ONNX_HASH "b87b2febef24e5645e13859d176e76473124325a0b1526baf7f68b4aa1eb1b49")
         else()
             message(FATAL_ERROR "Unsupported arch version ${AV_ONNX_APPLE_ARCH} for Apple")
         endif()
@@ -353,17 +353,17 @@ if (AV_BUILD_ONNXRUNTIME)
         string(FIND "${CMAKE_HOST_SYSTEM_PROCESSOR}" "aarch64" POSITION)
         if(NOT POSITION EQUAL -1)
             set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-aarch64")
-            set(AV_ONNX_HASH "5820d9f343df73c63b6b2b174a1ff62575032e171c9564bcf92060f46827d0ac")
-        else()        
+            set(AV_ONNX_HASH "ee5069252f549ef94759b6b60bdf10b2dc2cd71d064a7045dd66a052f956a68b")
+        else()
             set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-x64")
-            set(AV_ONNX_HASH "5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+            set(AV_ONNX_HASH "efc344d54d1969446ff5d3e55b54e205c6579c06333ecf1d34a04215eefae7c6")
         endif()
     endif()
 
     set(AV_ONNX_FILENAME "${AV_ONNX_FILENAME_PREFIX}-${AV_ONNX_VERSION}.tgz")
 
     set(ONNXRUNTIME_TARGET onnxruntime)
-    
+
     ExternalProject_Add(${ONNXRUNTIME_TARGET}
         URL https://github.com/microsoft/onnxruntime/releases/download/v${AV_ONNX_VERSION}/${AV_ONNX_FILENAME}
         URL_HASH SHA256=${AV_ONNX_HASH}
