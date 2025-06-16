@@ -1114,8 +1114,8 @@ if(AV_BUILD_OPENIMAGEIO)
     set(OPENIMAGEIO_TARGET openimageio)
 
     ExternalProject_Add(${OPENIMAGEIO_TARGET}
-        URL https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.5.8.0.tar.gz
-        URL_HASH MD5=1da1065711ad29fb123d2f21a12f72cc
+        URL https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.5.18.0.tar.gz
+        URL_HASH MD5=3975e5dc0970ad859244a58dc2b8e147
         DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -1124,8 +1124,8 @@ if(AV_BUILD_OPENIMAGEIO)
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
         BINARY_DIR ${BUILD_DIR}/openimageio_build
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-        CONFIGURE_COMMAND 
-            ${CMAKE_COMMAND} 
+        CONFIGURE_COMMAND
+            ${CMAKE_COMMAND}
             ${CMAKE_CORE_BUILD_FLAGS}
             -DCMAKE_PREFIX_PATH=${CMAKE_INSTALL_PREFIX}
             -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX}
