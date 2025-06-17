@@ -135,12 +135,10 @@ endif()
 if(AV_USE_CUDA AND AV_BUILD_CUDA)
     # Add Cuda
     set(CUDA_TARGET cuda)
-    set(CUDA_EXE cuda_12.0.0_525.60.13_linux.run)
+    set(CUDA_EXE cuda_12.1.1_530.30.02_linux.run)
 
     ExternalProject_Add(${CUDA_TARGET}
-        # URL https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
-        # URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
-        URL https://developer.download.nvidia.com/compute/cuda/12.0.0/local_installers/${CUDA_EXE}
+        URL https://developer.download.nvidia.com/compute/cuda/12.1.1/local_installers/${CUDA_EXE}
         DOWNLOAD_NO_EXTRACT 1
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -153,7 +151,7 @@ if(AV_USE_CUDA AND AV_BUILD_CUDA)
         BUILD_COMMAND ""
         INSTALL_COMMAND sh ${BUILD_DIR}/src/${CUDA_EXE} --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
     )
-    
+
     set(CUDA_CUDART_LIBRARY "")
     set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${CMAKE_INSTALL_PREFIX})
 else()
@@ -341,13 +339,13 @@ if (AV_BUILD_ONNXRUNTIME)
     #     url="${BASE_URL}/${AV_ONNX_FILENAME}"; curl -sLO "$url" && checksum=$(sha256sum "${AV_ONNX_FILENAME}" | awk '{ print $1 }') && echo "SHA256 Checksum: $checksum" && rm "${AV_ONNX_FILENAME}"
     # done
 
-    set(AV_ONNX_VERSION "1.12.0")
+    set(AV_ONNX_VERSION "1.17.0")
     if(APPLE)
         set(AV_ONNX_FILENAME_PREFIX "onnxruntime-osx-${AV_ONNX_APPLE_ARCH}")
         if(AV_ONNX_APPLE_ARCH STREQUAL "arm64")
-            set(AV_ONNX_HASH "23117b6f5d7324d4a7c51184e5f808dd952aec411a6b99a1b6fd1011de06e300")
+            set(AV_ONNX_HASH "f72a2bcca40e2650756c6b96c69ef031236aaab1b98673e744da4eef0c4bddbd")
         elseif(AV_ONNX_APPLE_ARCH STREQUAL "x86_64")
-            set(AV_ONNX_HASH "09b17f712f8c6f19bb63da35d508815b443cbb473e16c6192abfaa297c02f600")
+            set(AV_ONNX_HASH "b87b2febef24e5645e13859d176e76473124325a0b1526baf7f68b4aa1eb1b49")
         else()
             message(FATAL_ERROR "Unsupported arch version ${AV_ONNX_APPLE_ARCH} for Apple")
         endif()
@@ -355,17 +353,17 @@ if (AV_BUILD_ONNXRUNTIME)
         string(FIND "${CMAKE_HOST_SYSTEM_PROCESSOR}" "aarch64" POSITION)
         if(NOT POSITION EQUAL -1)
             set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-aarch64")
-            set(AV_ONNX_HASH "5820d9f343df73c63b6b2b174a1ff62575032e171c9564bcf92060f46827d0ac")
-        else()        
+            set(AV_ONNX_HASH "ee5069252f549ef94759b6b60bdf10b2dc2cd71d064a7045dd66a052f956a68b")
+        else()
             set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-x64")
-            set(AV_ONNX_HASH "5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+            set(AV_ONNX_HASH "efc344d54d1969446ff5d3e55b54e205c6579c06333ecf1d34a04215eefae7c6")
         endif()
     endif()
 
     set(AV_ONNX_FILENAME "${AV_ONNX_FILENAME_PREFIX}-${AV_ONNX_VERSION}.tgz")
 
     set(ONNXRUNTIME_TARGET onnxruntime)
-    
+
     ExternalProject_Add(${ONNXRUNTIME_TARGET}
         URL https://github.com/microsoft/onnxruntime/releases/download/v${AV_ONNX_VERSION}/${AV_ONNX_FILENAME}
         URL_HASH SHA256=${AV_ONNX_HASH}
@@ -620,8 +618,8 @@ if(AV_BUILD_BOOST)
     endif()
     
     ExternalProject_Add(${BOOST_TARGET}
-        URL https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.bz2
-        URL_HASH MD5=9dcd632441e4da04a461082ebbafd337
+        URL https://archives.boost.io/release/1.85.0/source/boost_1_85_0.tar.bz2
+        URL_HASH MD5=429d451cb9197143cc77962c5ff272ef
         DOWNLOAD_DIR ${BUILD_DIR}/download/boost
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -1116,8 +1114,8 @@ if(AV_BUILD_OPENIMAGEIO)
     set(OPENIMAGEIO_TARGET openimageio)
 
     ExternalProject_Add(${OPENIMAGEIO_TARGET}
-        URL https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.5.8.0.tar.gz
-        URL_HASH MD5=1da1065711ad29fb123d2f21a12f72cc
+        URL https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.5.18.0.tar.gz
+        URL_HASH MD5=3975e5dc0970ad859244a58dc2b8e147
         DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -1126,8 +1124,8 @@ if(AV_BUILD_OPENIMAGEIO)
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
         BINARY_DIR ${BUILD_DIR}/openimageio_build
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-        CONFIGURE_COMMAND 
-            ${CMAKE_COMMAND} 
+        CONFIGURE_COMMAND
+            ${CMAKE_COMMAND}
             ${CMAKE_CORE_BUILD_FLAGS}
             -DCMAKE_PREFIX_PATH=${CMAKE_INSTALL_PREFIX}
             -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX}
