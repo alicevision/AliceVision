@@ -397,7 +397,7 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
 
 double ImageInfo::getMetadataFocalLength() const
 {
-    double focalLength = getDoubleMetadata({"Exif:FocalLength", "focalLength", "focal length", "lens_focal_length"});
+    double focalLength = getDoubleMetadata({"Exif:FocalLength", "focalLength", "focal length", "lens_focal_length", "focal_length"});
 
     if (focalLength == -1)
     {
