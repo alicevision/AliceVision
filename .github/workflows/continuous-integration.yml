@@ -180,6 +180,16 @@ jobs:
         with:
             submodules: recursive
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install numpy and pytest
+        run: |
+          pip install numpy==1.*
+          pip install pytest
+
       - name: vcpkg - Clone repository
         # Uses a specific version of vcpkg
         run: |
@@ -196,7 +206,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://github.com/alicevision/vcpkg/releases/download/2025.03.11/aliceVisionDeps-2025.03.11.zip"
+          url: "https://github.com/alicevision/vcpkg/releases/download/2025.06.18/aliceVisionDeps-2025.06.18.zip"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 
@@ -219,18 +229,8 @@ jobs:
           cuda: '12.5.0'
           sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev"]'
 
-      - name: Display CUDA information
-        run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
-             echo "Cuda install location "${{steps.cuda-toolkit.outputs.CUDA_PATH}}
-             nvcc -V
-             echo ${{ env.CUDA_PATH }}
-
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
-
-      - name: Display remaining disk space (16 Go max)
-        run: |
-          Get-CimInstance -Class Win32_logicaldisk
 
       - name: Build
         uses: lukka/run-cmake@v3
@@ -240,7 +240,7 @@ jobs:
           buildDirectory: ${{ env.buildDir }}
           buildWithCMakeArgs: '--config Release --target install'
           cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
-                             -DVCPKG_TARGET_TRIPLET=x64-windows
+                             -DVCPKG_TARGET_TRIPLET=x64-windows-release
                              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
                              -A x64 -T host=x64
                              -DBUILD_SHARED_LIBS=ON
@@ -257,6 +257,7 @@ jobs:
                              -DALICEVISION_BUILD_SEGMENTATION=OFF
                              -DALICEVISION_BUILD_SWIG_BINDING=ON
                              -DALICEVISION_INSTALL_MESHROOM_PLUGIN=OFF
+                             -DPython3_EXECUTABLE=${{ env.pythonLocation }}\python
                              -DBOOST_NO_CXX11=ON
 
           cmakeBuildType: Release
@@ -275,7 +276,7 @@ jobs:
 
       - name: Python Binding - Unit Tests
         run: |
-          ${{ env.VCPKG_ROOT }}\installed\x64-windows\tools\python3\python -m pytest ./pyTests
+          pytest ./pyTests
 
       - name: Unit Tests
         uses: lukka/run-cmake@v3
