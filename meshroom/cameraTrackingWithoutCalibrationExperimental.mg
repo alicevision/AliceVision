@@ -26,8 +26,10 @@
             "RelativePoseEstimating": "3.0",
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.0",
+            "SfMColorizing": "1.0",
             "SfMExpanding": "2.0",
             "SfMTransfer": "2.1",
+            "SfMTransform": "3.1",
             "SfMTriangulation": "1.0",
             "Texturing": "6.0",
             "TracksBuilding": "1.0",
@@ -63,11 +65,11 @@
         "ConvertDistortion_1": {
             "nodeType": "ConvertDistortion",
             "position": [
-                2600,
-                400
+                3016,
+                398
             ],
             "inputs": {
-                "input": "{SfMExpanding_2.output}"
+                "input": "{SfMColorizing_2.output}"
             },
             "internalInputs": {
                 "color": "#80766f"
@@ -76,8 +78,8 @@
         "ConvertSfMFormat_1": {
             "nodeType": "ConvertSfMFormat",
             "position": [
-                4000,
-                200
+                4033,
+                198
             ],
             "inputs": {
                 "input": "{ExportAnimatedCamera_1.input}",
@@ -93,8 +95,8 @@
         "DepthMapFilter_1": {
             "nodeType": "DepthMapFilter",
             "position": [
-                3400,
-                0
+                3816,
+                -2
             ],
             "inputs": {
                 "input": "{DepthMap_1.input}",
@@ -107,8 +109,8 @@
         "DepthMap_1": {
             "nodeType": "DepthMap",
             "position": [
-                3200,
-                0
+                3616,
+                -2
             ],
             "inputs": {
                 "input": "{PrepareDenseScene_1.input}",
@@ -122,11 +124,11 @@
         "ExportAnimatedCamera_1": {
             "nodeType": "ExportAnimatedCamera",
             "position": [
-                2800,
-                200
+                3216,
+                198
             ],
             "inputs": {
-                "input": "{SfMExpanding_2.output}",
+                "input": "{SfMColorizing_2.output}",
                 "exportUndistortedImages": true
             },
             "internalInputs": {
@@ -136,8 +138,8 @@
         "ExportDistortion_1": {
             "nodeType": "ExportDistortion",
             "position": [
-                2800,
-                400
+                3216,
+                398
             ],
             "inputs": {
                 "input": "{ConvertDistortion_1.output}",
@@ -315,8 +317,8 @@
         "MeshDecimate_1": {
             "nodeType": "MeshDecimate",
             "position": [
-                4000,
-                0
+                4416,
+                -2
             ],
             "inputs": {
                 "input": "{MeshFiltering_1.outputMesh}",
@@ -329,8 +331,8 @@
         "MeshFiltering_1": {
             "nodeType": "MeshFiltering",
             "position": [
-                3800,
-                0
+                4216,
+                -2
             ],
             "inputs": {
                 "inputMesh": "{Meshing_1.outputMesh}",
@@ -343,8 +345,8 @@
         "Meshing_1": {
             "nodeType": "Meshing",
             "position": [
-                3600,
-                0
+                4016,
+                -2
             ],
             "inputs": {
                 "input": "{DepthMapFilter_1.input}",
@@ -361,8 +363,8 @@
         "PrepareDenseScene_1": {
             "nodeType": "PrepareDenseScene",
             "position": [
-                3000,
-                0
+                3416,
+                -2
             ],
             "inputs": {
                 "input": "{SfMTriangulation_1.output}",
@@ -378,8 +380,8 @@
         "Publish_1": {
             "nodeType": "Publish",
             "position": [
-                4600,
-                100
+                5016,
+                98
             ],
             "inputs": {
                 "inputFiles": [
@@ -409,8 +411,8 @@
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
             "position": [
-                4200,
-                200
+                4616,
+                198
             ],
             "inputs": {
                 "cameras": "{ConvertSfMFormat_1.output}",
@@ -435,6 +437,16 @@
             },
             "internalInputs": {
                 "color": "#575963"
+            }
+        },
+        "SfMColorizing_2": {
+            "nodeType": "SfMColorizing",
+            "position": [
+                2801.5,
+                202.0
+            ],
+            "inputs": {
+                "input": "{SfMTransform_1.output}"
             }
         },
         "SfMExpanding_1": {
@@ -482,12 +494,12 @@
         "SfMTransfer_1": {
             "nodeType": "SfMTransfer",
             "position": [
-                2600,
-                0
+                3016,
+                -2
             ],
             "inputs": {
                 "input": "{KeyframeSelection_1.outputSfMDataKeyframes}",
-                "reference": "{SfMExpanding_2.output}",
+                "reference": "{SfMColorizing_2.output}",
                 "transferLandmarks": false
             },
             "internalInputs": {
@@ -495,11 +507,21 @@
                 "color": "#3f3138"
             }
         },
+        "SfMTransform_1": {
+            "nodeType": "SfMTransform",
+            "position": [
+                2600.5,
+                201.0
+            ],
+            "inputs": {
+                "input": "{SfMExpanding_2.output}"
+            }
+        },
         "SfMTriangulation_1": {
             "nodeType": "SfMTriangulation",
             "position": [
-                2800,
-                0
+                3216,
+                -2
             ],
             "inputs": {
                 "input": "{SfMTransfer_1.output}",
@@ -515,8 +537,8 @@
         "Texturing_1": {
             "nodeType": "Texturing",
             "position": [
-                4200,
-                0
+                4616,
+                -2
             ],
             "inputs": {
                 "input": "{Meshing_1.output}",

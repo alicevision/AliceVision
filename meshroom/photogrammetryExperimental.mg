@@ -2,7 +2,6 @@
     "header": {
         "releaseVersion": "2025.1.0-develop",
         "fileVersion": "2.0",
-        "template": true,
         "nodesVersions": {
             "CameraInit": "12.0",
             "DepthMap": "5.0",
@@ -16,10 +15,13 @@
             "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
             "SfMBootStrapping": "4.0",
+            "SfMColorizing": "1.0",
             "SfMExpanding": "2.0",
+            "SfMTransform": "3.1",
             "Texturing": "6.0",
             "TracksBuilding": "1.0"
-        }
+        },
+        "template": true
     },
     "graph": {
         "CameraInit_1": {
@@ -33,7 +35,7 @@
         "DepthMapFilter_1": {
             "nodeType": "DepthMapFilter",
             "position": [
-                2000,
+                2400,
                 0
             ],
             "inputs": {
@@ -44,7 +46,7 @@
         "DepthMap_1": {
             "nodeType": "DepthMap",
             "position": [
-                1800,
+                2200,
                 0
             ],
             "inputs": {
@@ -91,7 +93,7 @@
         "MeshFiltering_1": {
             "nodeType": "MeshFiltering",
             "position": [
-                2400,
+                2800,
                 0
             ],
             "inputs": {
@@ -101,7 +103,7 @@
         "Meshing_1": {
             "nodeType": "Meshing",
             "position": [
-                2200,
+                2600,
                 0
             ],
             "inputs": {
@@ -112,17 +114,17 @@
         "PrepareDenseScene_1": {
             "nodeType": "PrepareDenseScene",
             "position": [
-                1600,
+                2000,
                 0
             ],
             "inputs": {
-                "input": "{SfMExpanding_1.output}"
+                "input": "{SfMColorizing_2.output}"
             }
         },
         "Publish_1": {
             "nodeType": "Publish",
             "position": [
-                2800,
+                3200,
                 0
             ],
             "inputs": {
@@ -157,6 +159,16 @@
                 "pairs": "{RelativePoseEstimating_1.output}"
             }
         },
+        "SfMColorizing_2": {
+            "nodeType": "SfMColorizing",
+            "position": [
+                1800,
+                0
+            ],
+            "inputs": {
+                "input": "{SfMTransform_1.output}"
+            }
+        },
         "SfMExpanding_1": {
             "nodeType": "SfMExpanding",
             "position": [
@@ -169,10 +181,20 @@
                 "meshFilename": "{SfMBootStrapping_1.meshFilename}"
             }
         },
+        "SfMTransform_1": {
+            "nodeType": "SfMTransform",
+            "position": [
+                1600,
+                0
+            ],
+            "inputs": {
+                "input": "{SfMExpanding_1.output}"
+            }
+        },
         "Texturing_1": {
             "nodeType": "Texturing",
             "position": [
-                2600,
+                3000,
                 0
             ],
             "inputs": {
