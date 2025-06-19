@@ -1093,9 +1093,7 @@ configure_file(
 )
 
 if (ALICEVISION_BUILD_SWIG_BINDING)
-    set(initpyFile "${generatedDir}/aliceVision/__init__.py")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/init.py.in" "${initpyFile}" @ONLY)
-    install(FILES "${initpyFile}" DESTINATION "${ALICEVISION_PYTHON_INSTALL_DIR}")
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/aliceVision/__init__.py" DESTINATION "${ALICEVISION_PYTHON_INSTALL_DIR}")
 endif()
 
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${cmakeUninstallFile}")
