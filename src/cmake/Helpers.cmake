@@ -329,13 +329,13 @@ function(alicevision_swig_add_library module_name)
         TARGETS
             ${module_name}
         DESTINATION
-            ${CMAKE_INSTALL_SWIGDIR}
+            ${ALICEVISION_PYTHON_INSTALL_DIR}
     )
 
     install(
         FILES
             ${CMAKE_CURRENT_BINARY_DIR}/${module_name}.py
         DESTINATION
-            ${CMAKE_INSTALL_SWIGDIR}
+            ${ALICEVISION_PYTHON_INSTALL_DIR}
     )
 endfunction()
