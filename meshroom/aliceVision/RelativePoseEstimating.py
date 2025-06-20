@@ -50,6 +50,12 @@ Estimate relative pose between each pair of views that share tracks.
             range=(1, 1000, 1),
             advanced=True,
         ),
+        desc.File(
+            name="imagePairsList",
+            label="Image Pairs",
+            description="Path to a file which contains the list of image pairs to match.",
+            value="",
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",

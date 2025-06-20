@@ -114,6 +114,7 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfm
               aliceVision_sfmData
               aliceVision_track
+              aliceVision_matchingImageCollection
               Boost::program_options
               Boost::json
     )
