@@ -1341,8 +1341,8 @@ void Texturing::saveAs(const fs::path& dir, const std::string& basename, EFileTy
         const aiString texName("material_" + Material::textureId(atlasId));
 
         scene.mMaterials[atlasId] = new aiMaterial;
-        scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_AMBIENT);
-        scene.mMaterials[atlasId]->AddProperty(&valambient, 1, AI_MATKEY_COLOR_DIFFUSE);
+        scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_DIFFUSE);
+        scene.mMaterials[atlasId]->AddProperty(&valambient, 1, AI_MATKEY_COLOR_AMBIENT);
         scene.mMaterials[atlasId]->AddProperty(&valspecular, 1, AI_MATKEY_COLOR_SPECULAR);
         scene.mMaterials[atlasId]->AddProperty(&shininess, 1, AI_MATKEY_SHININESS);
         scene.mMaterials[atlasId]->AddProperty(&texName, AI_MATKEY_NAME);
