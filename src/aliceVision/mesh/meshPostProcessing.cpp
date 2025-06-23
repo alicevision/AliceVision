@@ -51,6 +51,7 @@ void meshPostProcessing(Mesh*& inout_mesh,
             if (newId > -1)
             {
                 StaticVector<int>& ptCamsNew = inout_ptsCams[newId];
+                ptCamsNew.clear();
                 ptCamsNew.reserve(sizeOfStaticVector<int>(ptsCamsOld[i]));
                 for (int j = 0; j < sizeOfStaticVector<int>(ptsCamsOld[i]); ++j)
                 {
