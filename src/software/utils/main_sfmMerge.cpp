@@ -331,17 +331,27 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
 
     //Merge landmarks
     auto & landmarks1 = sfmData1.getLandmarks();
-    for (const auto & pl: sfmData2.getLandmarks())
+
+    //Find the largest landmarkId to start available index
+    IndexT availableId = 0;
+    for (const auto & [idLandmark, _]: landmarks1)
     {
-        IndexT l1id = mapL2toL1[pl.first];
+        availableId = std::max(availableId, idLandmark + 1);
+    }
+
+    for (const auto & [idLandmark, landmark]: sfmData2.getLandmarks())
+    {
+        IndexT l1id = mapL2toL1[idLandmark];
         if (l1id == UndefinedIndexT)
         {
-            landmarks1.insert(pl);
+            //Insert to an available id
+            landmarks1[availableId] = landmark;
+            availableId++;
         }
         else 
         {
             auto & obs1 = landmarks1[l1id].getObservations();
-            const auto & obs2 = pl.second.getObservations();
+            const auto & obs2 = landmark.getObservations();
             obs1.insert(obs2.begin(), obs2.end());
         }
     }
