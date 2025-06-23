@@ -107,7 +107,7 @@ jobs:
           export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
 
           # Set environment variables to find executables and libraries
-          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
+          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python:${PYTHONPATH}
           export PATH=$PATH:${ALICEVISION_ROOT}/bin
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
@@ -124,14 +124,14 @@ jobs:
           cd SfM_quality_evaluation/
           # Checkout a specific commit to ensure repeatability
           git checkout 36e3bf2d05c64d1726cb4a0e770923794f203f98
-          export PYTHONPATH=${ALICEVISION_ROOT}/bin:${PYTHONPATH}
+          export PYTHONPATH=${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python$:{PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
           python3 EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
       - name: Python Binding - Unit Tests
         run: |
-          export PYTHONPATH=${ALICEVISION_ROOT}/bin:${PYTHONPATH}
+          export PYTHONPATH=${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python:${PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           pip3 install pytest
           pytest ./pyTests
@@ -147,7 +147,7 @@ jobs:
           export MESHROOM_INSTALL_DIR=$PWD
           export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom:$PWD/../mrSegmentation/meshroom
           export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
-          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/bin:${PYTHONPATH}
+          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python:${PYTHONPATH}
           export PATH=$PATH:${ALICEVISION_ROOT}/bin
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
@@ -171,8 +171,12 @@ jobs:
       CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: '${{ github.workspace }}/install'
       VCPKG_ROOT: '${{ github.workspace}}\..\vcpkg'
-      PYTHONPATH: '${{ github.workspace }}/install/bundle/bin'
+      PYTHONPATH: '${{ github.workspace }}/install/bundle/lib/python;${{ github.workspace }}/install/bundle/lib64/python'
     steps:
+      - name: Add Bundle/bin to PATH
+        run: |
+          "${{ github.workspace }}/install/bundle/bin" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+      
       - name: Checkout
         uses: actions/checkout@v2
         with:

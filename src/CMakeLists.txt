@@ -775,6 +775,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         cmake_policy(SET CMP0078 NEW)  # Use the specified module name for the target's name
         cmake_policy(SET CMP0086 NEW)  # Use "-module {name}" when the module name has been set with SWIG_MODULE_NAME
     
+        set(ALICEVISION_PYTHON_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/python/pyalicevision")
         include(UseSWIG)
         message(STATUS "SWIG found.")
     else()
@@ -1004,6 +1005,7 @@ endif()
 if (ALICEVISION_BUILD_SWIG_BINDING)
     message("\n")
     message(STATUS "SWIG: " ${SWIG_VERSION} "")
+    message(STATUS "Python: " ${Python3_VERSION} "")
 endif()
 
 message("\n")
@@ -1089,5 +1091,9 @@ configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" ${cmakeUninstallFile}
     IMMEDIATE @ONLY
 )
+
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/aliceVision/__init__.py" DESTINATION "${ALICEVISION_PYTHON_INSTALL_DIR}")
+endif()
 
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${cmakeUninstallFile}")
