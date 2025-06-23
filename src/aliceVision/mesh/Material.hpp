@@ -32,7 +32,7 @@ class Material
     };
 
     Color diffuse = {0.6, 0.6, 0.6};
-    Color ambient = {0.6, 0.6, 0.6};
+    Color ambient = {0.1, 0.1, 0.1};
     Color specular = {0.0, 0.0, 0.0};
     float shininess = 0.0;
 
