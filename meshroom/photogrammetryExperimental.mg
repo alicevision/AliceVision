@@ -6,12 +6,13 @@
             "CameraInit": "12.0",
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
+            "ExportImages": "1.0",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageMatching": "2.0",
+            "IntrinsicsTransforming": "1.0",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
-            "PrepareDenseScene": "3.1",
             "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
             "SfMBootStrapping": "4.0",
@@ -35,8 +36,8 @@
         "DepthMapFilter_1": {
             "nodeType": "DepthMapFilter",
             "position": [
-                2400,
-                0
+                2605,
+                -12
             ],
             "inputs": {
                 "input": "{DepthMap_1.input}",
@@ -46,12 +47,24 @@
         "DepthMap_1": {
             "nodeType": "DepthMap",
             "position": [
-                2200,
-                0
+                2405,
+                -12
             ],
             "inputs": {
-                "input": "{PrepareDenseScene_1.input}",
-                "imagesFolder": "{PrepareDenseScene_1.output}"
+                "input": "{IntrinsicsTransforming_1.output}",
+                "imagesFolder": "{ExportImages_1.output}"
+            }
+        },
+        "ExportImages_1": {
+            "nodeType": "ExportImages",
+            "position": [
+                2208.5,
+                -10.0
+            ],
+            "inputs": {
+                "input": "{IntrinsicsTransforming_1.input}",
+                "target": "{IntrinsicsTransforming_1.output}",
+                "maskExtension": "exr"
             }
         },
         "FeatureExtraction_1": {
@@ -90,11 +103,21 @@
                 ]
             }
         },
+        "IntrinsicsTransforming_1": {
+            "nodeType": "IntrinsicsTransforming",
+            "position": [
+                2007.5,
+                -10.0
+            ],
+            "inputs": {
+                "input": "{SfMColorizing_2.output}"
+            }
+        },
         "MeshFiltering_1": {
             "nodeType": "MeshFiltering",
             "position": [
-                2800,
-                0
+                3005,
+                -12
             ],
             "inputs": {
                 "inputMesh": "{Meshing_1.outputMesh}"
@@ -103,29 +126,19 @@
         "Meshing_1": {
             "nodeType": "Meshing",
             "position": [
-                2600,
-                0
+                2805,
+                -12
             ],
             "inputs": {
                 "input": "{DepthMapFilter_1.input}",
                 "depthMapsFolder": "{DepthMapFilter_1.output}"
             }
         },
-        "PrepareDenseScene_1": {
-            "nodeType": "PrepareDenseScene",
-            "position": [
-                2000,
-                0
-            ],
-            "inputs": {
-                "input": "{SfMColorizing_2.output}"
-            }
-        },
         "Publish_1": {
             "nodeType": "Publish",
             "position": [
-                3200,
-                0
+                3405,
+                -12
             ],
             "inputs": {
                 "inputFiles": [
@@ -194,8 +207,8 @@
         "Texturing_1": {
             "nodeType": "Texturing",
             "position": [
-                3000,
-                0
+                3205,
+                -12
             ],
             "inputs": {
                 "input": "{Meshing_1.output}",

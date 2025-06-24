@@ -12,17 +12,18 @@
             "DistortionCalibration": "5.0",
             "ExportAnimatedCamera": "2.0",
             "ExportDistortion": "2.0",
+            "ExportImages": "1.0",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageDetectionPrompt": "0.1",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.0",
             "ImageSegmentationBox": "0.2",
+            "IntrinsicsTransforming": "1.0",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
-            "PrepareDenseScene": "3.1",
             "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
             "ScenePreview": "2.0",
@@ -94,8 +95,8 @@
         "ConvertSfMFormat_1": {
             "nodeType": "ConvertSfMFormat",
             "position": [
-                4477,
-                222
+                4679,
+                219
             ],
             "inputs": {
                 "input": "{ExportAnimatedCamera_1.input}",
@@ -111,8 +112,8 @@
         "DepthMapFilter_1": {
             "nodeType": "DepthMapFilter",
             "position": [
-                3877,
-                22
+                4079,
+                19
             ],
             "inputs": {
                 "input": "{DepthMap_1.input}",
@@ -125,12 +126,12 @@
         "DepthMap_1": {
             "nodeType": "DepthMap",
             "position": [
-                3677,
-                22
+                3879,
+                19
             ],
             "inputs": {
-                "input": "{PrepareDenseScene_1.input}",
-                "imagesFolder": "{PrepareDenseScene_1.output}",
+                "input": "{IntrinsicsTransforming_1.output}",
+                "imagesFolder": "{ExportImages_1.output}",
                 "downscale": 1
             },
             "internalInputs": {
@@ -176,6 +177,24 @@
             },
             "internalInputs": {
                 "color": "#302e2e"
+            }
+        },
+        "ExportImages_1": {
+            "nodeType": "ExportImages",
+            "position": [
+                3675,
+                17
+            ],
+            "inputs": {
+                "input": "{IntrinsicsTransforming_1.input}",
+                "target": "{IntrinsicsTransforming_1.output}",
+                "masksFolders": [
+                    "{ImageSegmentationBox_1.output}"
+                ],
+                "maskExtension": "exr"
+            },
+            "internalInputs": {
+                "color": "#3f3138"
             }
         },
         "FeatureExtraction_1": {
@@ -328,6 +347,19 @@
                 "color": "#575963"
             }
         },
+        "IntrinsicsTransforming_1": {
+            "nodeType": "IntrinsicsTransforming",
+            "position": [
+                3474,
+                17
+            ],
+            "inputs": {
+                "input": "{SfMTriangulation_1.output}"
+            },
+            "internalInputs": {
+                "color": "#3f3138"
+            }
+        },
         "KeyframeSelection_1": {
             "nodeType": "KeyframeSelection",
             "position": [
@@ -346,8 +378,8 @@
         "MeshDecimate_1": {
             "nodeType": "MeshDecimate",
             "position": [
-                4477,
-                22
+                4679,
+                19
             ],
             "inputs": {
                 "input": "{MeshFiltering_1.outputMesh}",
@@ -360,8 +392,8 @@
         "MeshFiltering_1": {
             "nodeType": "MeshFiltering",
             "position": [
-                4277,
-                22
+                4479,
+                19
             ],
             "inputs": {
                 "inputMesh": "{Meshing_1.outputMesh}",
@@ -374,8 +406,8 @@
         "Meshing_1": {
             "nodeType": "Meshing",
             "position": [
-                4077,
-                22
+                4279,
+                19
             ],
             "inputs": {
                 "input": "{DepthMapFilter_1.input}",
@@ -389,28 +421,11 @@
                 "color": "#3f3138"
             }
         },
-        "PrepareDenseScene_1": {
-            "nodeType": "PrepareDenseScene",
-            "position": [
-                3477,
-                22
-            ],
-            "inputs": {
-                "input": "{SfMTriangulation_1.output}",
-                "masksFolders": [
-                    "{ImageSegmentationBox_1.output}"
-                ],
-                "maskExtension": "exr"
-            },
-            "internalInputs": {
-                "color": "#3f3138"
-            }
-        },
         "Publish_1": {
             "nodeType": "Publish",
             "position": [
-                4877,
-                122
+                5079,
+                119
             ],
             "inputs": {
                 "inputFiles": [
@@ -431,7 +446,8 @@
                 "input": "{TracksBuilding_1.input}",
                 "tracksFilename": "{TracksBuilding_1.output}",
                 "countIterations": 50000,
-                "minInliers": 100
+                "minInliers": 100,
+                "imagePairsList": "{FeatureMatching_1.imagePairsList}"
             },
             "internalInputs": {
                 "color": "#575963"
@@ -440,8 +456,8 @@
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
             "position": [
-                4677,
-                222
+                4879,
+                219
             ],
             "inputs": {
                 "cameras": "{ConvertSfMFormat_1.output}",
@@ -476,6 +492,9 @@
             ],
             "inputs": {
                 "input": "{SfMTransform_1.output}"
+            },
+            "internalInputs": {
+                "color": "#80766f"
             }
         },
         "SfMExpanding_1": {
@@ -544,6 +563,9 @@
             ],
             "inputs": {
                 "input": "{SfMExpanding_2.output}"
+            },
+            "internalInputs": {
+                "color": "#80766f"
             }
         },
         "SfMTriangulation_1": {
@@ -566,12 +588,12 @@
         "Texturing_1": {
             "nodeType": "Texturing",
             "position": [
-                4677,
-                22
+                4879,
+                19
             ],
             "inputs": {
                 "input": "{Meshing_1.output}",
-                "imagesFolder": "{PrepareDenseScene_1.output}",
+                "imagesFolder": "{ExportImages_1.output}",
                 "inputMesh": "{MeshDecimate_1.output}"
             },
             "internalInputs": {

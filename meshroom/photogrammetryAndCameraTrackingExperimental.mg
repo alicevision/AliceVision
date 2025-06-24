@@ -12,17 +12,18 @@
             "DistortionCalibration": "5.0",
             "ExportAnimatedCamera": "2.0",
             "ExportDistortion": "2.0",
+            "ExportImages": "1.0",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageDetectionPrompt": "0.1",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.0",
             "ImageSegmentationBox": "0.2",
+            "IntrinsicsTransforming": "1.0",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
-            "PrepareDenseScene": "3.1",
             "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
             "ScenePreview": "2.0",
@@ -141,8 +142,8 @@
                 -529
             ],
             "inputs": {
-                "input": "{PrepareDenseScene_2.input}",
-                "imagesFolder": "{PrepareDenseScene_2.output}"
+                "input": "{ExportImages_1.input}",
+                "imagesFolder": "{ExportImages_1.output}"
             },
             "internalInputs": {
                 "color": "#384a55"
@@ -187,6 +188,21 @@
             },
             "internalInputs": {
                 "color": "#302e2e"
+            }
+        },
+        "ExportImages_1": {
+            "nodeType": "ExportImages",
+            "position": [
+                2661.5,
+                -526.0
+            ],
+            "inputs": {
+                "input": "{IntrinsicsTransforming_1.input}",
+                "target": "{IntrinsicsTransforming_1.output}",
+                "maskExtension": "exr"
+            },
+            "internalInputs": {
+                "color": "#384a55"
             }
         },
         "FeatureExtraction_1": {
@@ -418,6 +434,19 @@
                 "color": "#575963"
             }
         },
+        "IntrinsicsTransforming_1": {
+            "nodeType": "IntrinsicsTransforming",
+            "position": [
+                2460.5,
+                -526.0
+            ],
+            "inputs": {
+                "input": "{SfMColorizing_2.output}"
+            },
+            "internalInputs": {
+                "color": "#384a55"
+            }
+        },
         "KeyframeSelection_1": {
             "nodeType": "KeyframeSelection",
             "position": [
@@ -474,19 +503,6 @@
                 "color": "#384a55"
             }
         },
-        "PrepareDenseScene_2": {
-            "nodeType": "PrepareDenseScene",
-            "position": [
-                2665,
-                -529
-            ],
-            "inputs": {
-                "input": "{SfMColorizing_2.output}"
-            },
-            "internalInputs": {
-                "color": "#384a55"
-            }
-        },
         "Publish_1": {
             "nodeType": "Publish",
             "position": [
@@ -511,7 +527,8 @@
             "inputs": {
                 "input": "{TracksBuilding_1.input}",
                 "tracksFilename": "{TracksBuilding_1.output}",
-                "minInliers": 100
+                "minInliers": 100,
+                "imagePairsList": "{FeatureMatching_4.imagePairsList}"
             },
             "internalInputs": {
                 "color": "#384a55"
@@ -556,6 +573,9 @@
             ],
             "inputs": {
                 "input": "{SfMExpanding_3.output}"
+            },
+            "internalInputs": {
+                "color": "#80766f"
             }
         },
         "SfMColorizing_2": {
@@ -566,6 +586,9 @@
             ],
             "inputs": {
                 "input": "{SfMTransform_1.output}"
+            },
+            "internalInputs": {
+                "color": "#384a55"
             }
         },
         "SfMExpanding_1": {
@@ -636,7 +659,8 @@
                 "reference": "{SfMColorizing_1.output}"
             },
             "internalInputs": {
-                "label": "ShotWithPoses"
+                "label": "ShotWithPoses",
+                "color": "#80766f"
             }
         },
         "SfMTransform_1": {
@@ -647,6 +671,9 @@
             ],
             "inputs": {
                 "input": "{SfMExpanding_1.output}"
+            },
+            "internalInputs": {
+                "color": "#384a55"
             }
         },
         "Texturing_2": {
@@ -750,6 +777,9 @@
                     "{TracksBuilding_2.output}",
                     "{TracksBuilding_1.output}"
                 ]
+            },
+            "internalInputs": {
+                "color": "#575963"
             }
         }
     }
