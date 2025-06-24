@@ -7,7 +7,6 @@ import glob
 import os
 import json
 import zipfile
-import requests
 import io
 
 
@@ -173,6 +172,7 @@ Upload a textured mesh on Sketchfab.
     ]
     
     def upload(self, apiToken, modelFile, data, chunk):
+        import requests
         modelEndpoint = 'https://api.sketchfab.com/v3/models'
         f = open(modelFile, 'rb')
         file = {'modelFile': (os.path.basename(modelFile), f.read())}
