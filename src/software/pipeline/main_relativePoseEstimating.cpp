@@ -28,6 +28,8 @@
 #include <aliceVision/multiview/relativePose/RelativeSphericalKernel.hpp>
 #include <aliceVision/multiview/relativePose/RotationSphericalKernel.hpp>
 
+#include <aliceVision/matchingImageCollection/ImagePairListIO.hpp>
+
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/geometry/lie.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
@@ -143,6 +145,7 @@ int aliceVision_main(int argc, char** argv)
     size_t minInliers = 35;
     bool enforcePureRotation = false;
     size_t countIterations = 1024;
+    std::vector<std::string> predefinedPairList;
 
     // user optional parameters
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -161,6 +164,8 @@ int aliceVision_main(int argc, char** argv)
         ("enforcePureRotation,e", po::value<bool>(&enforcePureRotation)->default_value(enforcePureRotation), "Enforce pure rotation in estimation.")
         ("countIterations", po::value<size_t>(&countIterations)->default_value(countIterations), "Maximal number of iterations.")
         ("minInliers", po::value<size_t>(&minInliers)->default_value(minInliers), "Minimal number of inliers for a valid ransac.")
+        ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
+         "Path(s) to one or more files which contain the list of image pairs to match.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
     // clang-format on
@@ -217,31 +222,73 @@ int aliceVision_main(int argc, char** argv)
 
 
     // Load tracks
-    ALICEVISION_LOG_INFO("Load tracks");
+    ALICEVISION_LOG_INFO("Load tracks from " << tracksFilename << ".");
     track::TracksHandler tracksHandler;
     if (!tracksHandler.load(tracksFilename, sfmData.getViewsKeys()))
     {
         ALICEVISION_LOG_ERROR("The input tracks file '" + tracksFilename + "' cannot be read.");
         return EXIT_FAILURE;
-    }
-    
-    //Compute covisibility for tracks
-    //This will get the list of pair of views which observe common features
+    }   
+
     ALICEVISION_LOG_INFO("Compute co-visibility");
     std::map<Pair, unsigned int> covisibility;
-    track::computeCovisibility(covisibility, tracksHandler.getAllTracks());
+
+    int chunkStart = 0;
+    int chunkEnd = 0;
+        
+    if (predefinedPairList.empty())
+    {
+        //Compute covisibility for tracks
+        //This will get the list of pair of views which observe common features
+        ALICEVISION_LOG_INFO("Automatically select pairs.");
+        track::computeCovisibility(covisibility, tracksHandler.getAllTracks());
+        
+        //Divide the work among chunks
+        double ratioChunk = double(covisibility.size()) / double(sfmData.getViews().size());
+        chunkStart = int(double(rangeStart) * ratioChunk);
+        chunkEnd = int(double(rangeStart + rangeSize) * ratioChunk);
+    }
+    else
+    {
+        //Load pairs from file
+        for (const std::string& imagePairsFile : predefinedPairList)
+        {
+            PairSet pairs;
+                
+            ALICEVISION_LOG_INFO("Load pair list from file: " << imagePairsFile);
+            if (!matchingImageCollection::loadPairsFromFile(imagePairsFile, pairs, rangeStart, rangeSize))
+            {
+                return EXIT_FAILURE;
+            }
+
+            //Reformat to the same structure than track::computeCovisibility
+            for (const auto & pair : pairs)
+            {
+                covisibility[pair] = 1;
+
+                //Make sure we test symmetrically too
+                Pair other;
+                other.first = pair.second;
+                other.second = pair.first;
+                covisibility[other] = 1;
+            }
+        }
+
+        //Just process everything as it was already filtered during file loading
+        chunkStart = 0;
+        chunkEnd = covisibility.size();
+    }
+
+    ALICEVISION_LOG_INFO("A total of " << covisibility.size() << " pairs has to be processed.");
+    ALICEVISION_LOG_INFO("Current chunk will analyze pairs from " << chunkStart << " to " << chunkEnd << ".");
+
+    //Output container
+    std::vector<sfm::ReconstructedPair> reconstructedPairs;
 
     ALICEVISION_LOG_INFO("Process co-visibility");
     std::stringstream ss;
     ss << outputDirectory << "/pairs_" << rangeStart << ".json";
     std::ofstream of(ss.str());
-
-    //Output container
-    std::vector<sfm::ReconstructedPair> reconstructedPairs;
-
-    double ratioChunk = double(covisibility.size()) / double(sfmData.getViews().size());
-    int chunkStart = int(double(rangeStart) * ratioChunk);
-    int chunkEnd = int(double(rangeStart + rangeSize) * ratioChunk);
 
     // For each covisible pair
 #pragma omp parallel for

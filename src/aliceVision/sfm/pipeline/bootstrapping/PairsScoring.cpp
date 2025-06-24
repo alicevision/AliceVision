@@ -24,7 +24,10 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
     IndexT bestPair = UndefinedIndexT;
     double maxScore = std::numeric_limits<double>::lowest();
     
-    for (IndexT pairId = 0; pairId < pairs.size(); pairId++)
+    int isize = static_cast<int>(pairs.size());
+
+    #pragma omp parallel for
+    for (int pairId = 0; pairId < isize; pairId++)
     {
         const sfm::ReconstructedPair & pair = pairs[pairId];
 
@@ -95,10 +98,13 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
             score = -1.0 / score;
         }
 
-        if (score > maxScore)
+        #pragma omp critical
         {
-            maxScore = score;
-            bestPair = pairId;
+            if (score > maxScore)
+            {
+                maxScore = score;
+                bestPair = pairId;
+            }
         }
     }
     
