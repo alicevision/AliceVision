@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: ["alicevision/alicevision-deps:2025.05.15-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.05.15-rocky9-cuda12.1.1"]
+        container: ["alicevision/alicevision-deps:2025.06.23-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.06.23-rocky9-cuda12.1.1"]
     container:
       image: ${{ matrix.container }}
     env:
@@ -33,7 +33,7 @@ jobs:
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
       ALICEVISION_SENSOR_DB: ${{ github.workspace }}/../AV_install/share/aliceVision/cameraSensors.db
       ALICEVISION_LENS_PROFILE_INFO: ""
-      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.05.15-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
+      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.06.23-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
     steps:
       - uses: actions/checkout@v1
 
@@ -65,7 +65,8 @@ jobs:
            -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
            -DAlembic_DIR="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \
            -DSWIG_DIR="${DEPS_INSTALL_DIR}/share/swig/4.3.0" \
-           -DSWIG_EXECUTABLE="${DEPS_INSTALL_DIR}/bin-deps/swig"
+           -DSWIG_EXECUTABLE="${DEPS_INSTALL_DIR}/bin-deps/swig" \
+           -DPython3_EXECUTABLE=/usr/bin/python
 
       - name: Build
         working-directory: ./build
@@ -112,10 +113,10 @@ jobs:
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
           # Run the test pipeline
-          pip3 install psutil
+          python -m pip install psutil
           cd bin/
           mkdir ./outputData
-          python3 meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
+          python meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
 
       - name: Functional Tests - SfM Quality Evaluation
         working-directory: ./functional_tests
@@ -127,13 +128,13 @@ jobs:
           export PYTHONPATH=${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python$:{PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
-          python3 EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
+          python EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
       - name: Python Binding - Unit Tests
         run: |
           export PYTHONPATH=${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python:${PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-          pip3 install pytest
+          python -m pip install pytest
           pytest ./pyTests
 
       - name: Meshroom Plugin - Templates validity
@@ -158,7 +159,7 @@ jobs:
               sys.exit(0)
           sys.exit(1)
           " | tee test_templatesVersions.py
-          python3 test_templatesVersions.py
+          python test_templatesVersions.py
 
   build-windows:
     runs-on: windows-latest
