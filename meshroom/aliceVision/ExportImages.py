@@ -20,13 +20,13 @@ class ExportImages(desc.AVCommandLineNode):
     inputs = [
         desc.File(
             name="input",
-            label="SfMData",
+            label="Source SfmData",
             description="Input SfMData file. Contains the original intrinsics of the images.",
             value="",
         ),
         desc.File(
             name="target",
-            label="Target",
+            label="Target SfmData",
             description="This sfmData file contains the required intrinsics for the output images.",
             value="",
         ),
@@ -52,7 +52,7 @@ class ExportImages(desc.AVCommandLineNode):
                         " - viewid: viewid.ext.\n"
                         " - frameid: Frameid.ext.\n"
                         " - keep: Keep original name.\n",
-            value="frameid",
+            value="viewid",
             values=["viewid", "frameid", "keep"],
         ),
         desc.ListAttribute(

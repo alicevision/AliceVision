@@ -70,6 +70,11 @@ bool convertToPinhole(const sfmData::SfMData & sfmData,
                                                 intrinsicPtr->h(),
                                                 fx, fy, cx, cy
                                                 );
+
+        fakecam->setSensorWidth(originalIntrinsic.sensorWidth());
+        fakecam->setSensorHeight(originalIntrinsic.sensorHeight());
+        fakecam->setSerialNumber(originalIntrinsic.serialNumber());
+        fakecam->setInitializationMode(originalIntrinsic.getInitializationMode());
         
         outputSfmData.getIntrinsics().insert({intrinsicId, fakecam});
     }
