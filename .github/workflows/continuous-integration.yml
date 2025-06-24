@@ -170,12 +170,10 @@ jobs:
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: '${{ github.workspace }}/install'
+      ALICEVISION_LIBPATH: '${{ github.workspace }}/install/bundle/bin'
       VCPKG_ROOT: '${{ github.workspace}}\..\vcpkg'
       PYTHONPATH: '${{ github.workspace }}/install/bundle/lib/python;${{ github.workspace }}/install/bundle/lib64/python'
     steps:
-      - name: Add Bundle/bin to PATH
-        run: |
-          "${{ github.workspace }}/install/bundle/bin" | Out-File -FilePath "$env:GITHUB_PATH" -Append
       
       - name: Checkout
         uses: actions/checkout@v2
