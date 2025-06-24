@@ -32,9 +32,6 @@ void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
                     T fillcolor,
                     const oiio::ROI& roi = oiio::ROI())
 {
-    // There is distortion
-    const Vec2 center(imageIn.width() * 0.5, imageIn.height() * 0.5);
-
     int widthRoi = intrinsicOutput.w();
     int heightRoi = intrinsicOutput.h();
     int xOffset = 0;
@@ -60,6 +57,49 @@ void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
             // compute coordinates with distortion
             const Vec3 intermediate = intrinsicOutput.backProjectUnit(undisto_pix);
             const Vec2 disto_pix = intrinsicSource.project(intermediate.homogeneous(), true);
+
+            // pick pixel if it is in the image domain
+            if (imageIn.contains(disto_pix(1), disto_pix(0)))
+            {
+                image_ud(y, x) = sampler(imageIn, disto_pix(1), disto_pix(0));
+            }
+        }
+    }
+}
+
+template<typename T>
+void ImageRemoveDistortion(const image::Image<T>& imageIn,
+                        const camera::IntrinsicBase & intrinsicSource,
+                        const camera::IntrinsicBase & intrinsicOutput,
+                        image::Image<T>& image_ud,
+                        T fillcolor,
+                        const oiio::ROI& roi = oiio::ROI())
+{
+    int widthRoi = intrinsicOutput.w();
+    int heightRoi = intrinsicOutput.h();
+    int xOffset = 0;
+    int yOffset = 0;
+    if (roi.defined())
+    {
+        widthRoi = roi.width();
+        heightRoi = roi.height();
+        xOffset = roi.xbegin;
+        yOffset = roi.ybegin;
+    }
+
+    image_ud.resize(widthRoi, heightRoi, true, fillcolor);
+    const image::Sampler2d<image::SamplerLinear> sampler;
+
+#pragma omp parallel for
+    for (int y = 0; y < heightRoi; ++y)
+    {
+        for (int x = 0; x < widthRoi; ++x)
+        {
+            const Vec2 undisto_pix(x + xOffset, y + yOffset);
+
+            // compute coordinates with distortion
+            const Vec2 disto_pix = intrinsicSource.cam2ima(intrinsicSource.addDistortion(
+              intrinsicOutput.ima2cam(undisto_pix)));
 
             // pick pixel if it is in the image domain
             if (imageIn.contains(disto_pix(1), disto_pix(0)))
@@ -159,8 +199,18 @@ bool processImage(const std::string& dstFileName,
         }
     }
     
-    // undistort the image and save it
-    ImageIntrinsicsTransform(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0));
+    bool shortCut = (sourceIntrinsic.getType() == outputIntrinsic.getType()) &&
+                    (outputIntrinsic.hasDistortion() == false);
+    if (shortCut)
+    {
+        // undistort the image and save it
+        ImageRemoveDistortion(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0));
+    }
+    else 
+    {
+        // Transform the image and save it
+        ImageIntrinsicsTransform(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0));
+    }
 
     //Write the result
     try
