@@ -103,7 +103,7 @@ set(CMAKE_CORE_BUILD_FLAGS
         -DCMAKE_INSTALL_DO_STRIP:BOOL=${CMAKE_INSTALL_DO_STRIP} 
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} 
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} 
-        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD=20
 )
 
 
@@ -284,7 +284,7 @@ if(AV_BUILD_EIGEN)
         BINARY_DIR ${BUILD_DIR}/eigen_build
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
         CONFIGURE_COMMAND ${CMAKE_COMMAND} 
-            -DCMAKE_CXX_STANDARD=17
+            -DCMAKE_CXX_STANDARD=20
             ${EIGEN_CMAKE_ALIGNMENT_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
             <SOURCE_DIR>
@@ -618,8 +618,8 @@ if(AV_BUILD_BOOST)
     endif()
     
     ExternalProject_Add(${BOOST_TARGET}
-        URL https://archives.boost.io/release/1.85.0/source/boost_1_85_0.tar.bz2
-        URL_HASH MD5=429d451cb9197143cc77962c5ff272ef
+        URL https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.bz2
+        URL_HASH MD5=2d098ba2e1457708a02de996857c2b10
         DOWNLOAD_DIR ${BUILD_DIR}/download/boost
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -633,10 +633,10 @@ if(AV_BUILD_BOOST)
             ./bootstrap.${SCRIPT_EXTENSION} --prefix=<INSTALL_DIR> --with-libraries=atomic,container,date_time,exception,graph,iostreams,json,log,math,program_options,regex,serialization,system,test,thread,stacktrace,timer
         BUILD_COMMAND
             cd <SOURCE_DIR> &&
-            ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=17 link=shared threading=multi -j8
+            ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=20 link=shared threading=multi -j8
         INSTALL_COMMAND
             cd <SOURCE_DIR> &&
-            ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=17 link=shared threading=multi install
+            ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=20 link=shared threading=multi install
         DEPENDS ${ZLIB_TARGET}
     )
 
@@ -1068,7 +1068,7 @@ if(AV_BUILD_CCTAG)
             -DCCTAG_BUILD_TESTS=OFF
             -DCCTAG_BUILD_APPS=OFF
             -DCCTAG_EIGEN_MEMORY_ALIGNMENT=ON
-            -DCCTAG_CXX_STANDARD=17
+            -DCCTAG_CXX_STANDARD=20
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
             <SOURCE_DIR>
         BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}

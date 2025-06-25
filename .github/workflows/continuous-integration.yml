@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        container: ["alicevision/alicevision-deps:2025.05.15-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.05.15-rocky9-cuda12.1.1"]
+        container: ["alicevision/alicevision-deps:2025.06.23-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.06.23-rocky9-cuda12.1.1"]
     container:
       image: ${{ matrix.container }}
     env:
@@ -33,7 +33,7 @@ jobs:
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
       ALICEVISION_SENSOR_DB: ${{ github.workspace }}/../AV_install/share/aliceVision/cameraSensors.db
       ALICEVISION_LENS_PROFILE_INFO: ""
-      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.05.15-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
+      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.06.23-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
     steps:
       - uses: actions/checkout@v1
 
@@ -65,7 +65,8 @@ jobs:
            -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
            -DAlembic_DIR="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \
            -DSWIG_DIR="${DEPS_INSTALL_DIR}/share/swig/4.3.0" \
-           -DSWIG_EXECUTABLE="${DEPS_INSTALL_DIR}/bin-deps/swig"
+           -DSWIG_EXECUTABLE="${DEPS_INSTALL_DIR}/bin-deps/swig" \
+           -DPython3_EXECUTABLE=/usr/bin/python
 
       - name: Build
         working-directory: ./build
@@ -112,10 +113,10 @@ jobs:
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
           # Run the test pipeline
-          pip3 install psutil
+          python -m pip install psutil
           cd bin/
           mkdir ./outputData
-          python3 meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
+          python meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
 
       - name: Functional Tests - SfM Quality Evaluation
         working-directory: ./functional_tests
@@ -127,13 +128,13 @@ jobs:
           export PYTHONPATH=${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python$:{PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
-          python3 EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
+          python EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
       - name: Python Binding - Unit Tests
         run: |
           export PYTHONPATH=${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python:${PYTHONPATH}
           export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-          pip3 install pytest
+          python -m pip install pytest
           pytest ./pyTests
 
       - name: Meshroom Plugin - Templates validity
@@ -158,7 +159,7 @@ jobs:
               sys.exit(0)
           sys.exit(1)
           " | tee test_templatesVersions.py
-          python3 test_templatesVersions.py
+          python test_templatesVersions.py
 
   build-windows:
     runs-on: windows-latest
@@ -180,6 +181,16 @@ jobs:
         with:
             submodules: recursive
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install numpy and pytest
+        run: |
+          pip install numpy==1.*
+          pip install pytest
+
       - name: vcpkg - Clone repository
         # Uses a specific version of vcpkg
         run: |
@@ -196,7 +207,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://github.com/alicevision/vcpkg/releases/download/2025.03.11/aliceVisionDeps-2025.03.11.zip"
+          url: "https://github.com/alicevision/vcpkg/releases/download/2025.06.18/aliceVisionDeps-2025.06.18.zip"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 
@@ -219,18 +230,8 @@ jobs:
           cuda: '12.5.0'
           sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev"]'
 
-      - name: Display CUDA information
-        run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
-             echo "Cuda install location "${{steps.cuda-toolkit.outputs.CUDA_PATH}}
-             nvcc -V
-             echo ${{ env.CUDA_PATH }}
-
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
-
-      - name: Display remaining disk space (16 Go max)
-        run: |
-          Get-CimInstance -Class Win32_logicaldisk
 
       - name: Build
         uses: lukka/run-cmake@v3
@@ -240,7 +241,7 @@ jobs:
           buildDirectory: ${{ env.buildDir }}
           buildWithCMakeArgs: '--config Release --target install'
           cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
-                             -DVCPKG_TARGET_TRIPLET=x64-windows
+                             -DVCPKG_TARGET_TRIPLET=x64-windows-release
                              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
                              -A x64 -T host=x64
                              -DBUILD_SHARED_LIBS=ON
@@ -257,6 +258,7 @@ jobs:
                              -DALICEVISION_BUILD_SEGMENTATION=OFF
                              -DALICEVISION_BUILD_SWIG_BINDING=ON
                              -DALICEVISION_INSTALL_MESHROOM_PLUGIN=OFF
+                             -DPython3_EXECUTABLE=${{ env.pythonLocation }}\python
                              -DBOOST_NO_CXX11=ON
 
           cmakeBuildType: Release
@@ -275,7 +277,7 @@ jobs:
 
       - name: Python Binding - Unit Tests
         run: |
-          ${{ env.VCPKG_ROOT }}\installed\x64-windows\tools\python3\python -m pytest ./pyTests
+          pytest ./pyTests
 
       - name: Unit Tests
         uses: lukka/run-cmake@v3
