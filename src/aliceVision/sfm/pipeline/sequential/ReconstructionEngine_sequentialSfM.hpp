@@ -47,6 +47,9 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
         bool useLocalBundleAdjustment = false;
         int localBundelAdjustementGraphDistanceLimit = 1;
 
+        //Number of views under which a dataset is considered small
+        size_t smallDatasetLimit = 5;
+
         /// Dump current status of the scene every 3 resections
         bool logIntermediateSteps = false;
 

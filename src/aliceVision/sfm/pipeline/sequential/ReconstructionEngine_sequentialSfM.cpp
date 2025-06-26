@@ -227,7 +227,16 @@ bool ReconstructionEngine_sequentialSfM::process()
 
     exportStatistics(elapsedTime);
 
-    return !_sfmData.getPoses().empty();
+    const size_t nbviews = _sfmData.getViews().size();
+    const size_t nbposes = _sfmData.getPoses().size();
+
+    size_t minPoses = 1;
+    if (nbviews > _params.smallDatasetLimit)
+    {
+        minPoses = 3;
+    }
+
+    return (nbposes >= minPoses);
 }
 
 void ReconstructionEngine_sequentialSfM::initializePyramidScoring()
