@@ -57,3 +57,18 @@ alicevision_add_test(geometricFilterUtils_test.cpp
     NAME "matchingImageCollection_geometricFilterUtils"
     LINKS aliceVision_matchingImageCollection
 )
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(matchingImageCollection
+        SOURCES matchingImageCollection.i
+        PUBLIC_LINKS
+            aliceVision_matchingImageCollection
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
+    )
+endif()
