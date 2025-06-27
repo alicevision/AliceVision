@@ -225,11 +225,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
         }
     }
 
-    if (cameraBrand == "Custom")
-    {
-        intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
-    }
-    else if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN))
+    if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN))
     {
         intrinsicType = lcpIntrinsicType;
     }
