@@ -149,7 +149,46 @@ int NumPyType<image::RGBColor>()
     }
 }
 
+%{
+class oiioParams
+{
+    public:
 
+    oiioParams() {}
+    oiioParams(int orientation, float pixelAspectRatio, std::string compression = "")
+    {
+        _myParamList["Orientation"] = orientation;
+        _myParamList["pixelAspectRatio"] = pixelAspectRatio;
+        if (compression != "")
+        {
+            _myParamList["compression"] = compression;
+        }
+    }
+
+    const oiio::ParamValueList & get()
+    {
+        return _myParamList;
+    }
+
+    private:
+
+    oiio::ParamValueList _myParamList;
+};
+
+%}
+class oiioParams
+{
+    public:
+
+    oiioParams();
+    oiioParams(int orientation, float pixelAspectRatio, std::string compression = "");
+
+    const oiio::ParamValueList & get();
+
+    private:
+
+    oiio::ParamValueList _myParamList;
+};
 
 %template(Image_float) aliceVision::image::Image<float>; 
 %template(Image_uchar) aliceVision::image::Image<unsigned char>; 
