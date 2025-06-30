@@ -10,7 +10,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 

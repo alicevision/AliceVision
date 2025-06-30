@@ -8,7 +8,7 @@
 #include "aliceVision/track/TracksBuilder.hpp"
 #include "aliceVision/track/TracksMerger.hpp"
 #include "aliceVision/track/tracksUtils.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 
 #include <vector>
 #include <utility>

@@ -12,7 +12,7 @@
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/global/reindexGlobalSfM.hpp>
 #include <aliceVision/sfm/pipeline/global/MutexSet.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/multiview/translationAveraging/solver.hpp>
 #include <aliceVision/graph/graph.hpp>

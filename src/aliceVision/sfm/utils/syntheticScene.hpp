@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 

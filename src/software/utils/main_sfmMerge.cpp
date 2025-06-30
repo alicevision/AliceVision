@@ -9,7 +9,7 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/stl/hash.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <boost/program_options.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>

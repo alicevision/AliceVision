@@ -9,7 +9,7 @@
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/stl/FlatMap.hpp>
 
 #include <algorithm>

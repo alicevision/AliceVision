@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/IndMatchDecorator.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>

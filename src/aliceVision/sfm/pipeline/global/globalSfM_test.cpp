@@ -8,7 +8,7 @@
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfm/utils/syntheticScene.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 
 #include <cmath>

@@ -9,7 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>

@@ -11,7 +11,7 @@
 #include <aliceVision/voctree/databaseIO.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/descriptorLoader.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>

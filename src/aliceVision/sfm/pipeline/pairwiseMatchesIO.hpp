@@ -10,7 +10,7 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/io.hpp>
 
 #include <vector>

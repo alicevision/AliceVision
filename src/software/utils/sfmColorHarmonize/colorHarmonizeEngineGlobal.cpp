@@ -21,7 +21,7 @@
 // load features per view
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 // feature matches
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/stl/stl.hpp>
 // selection Methods

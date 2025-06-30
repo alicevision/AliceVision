@@ -11,7 +11,7 @@
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>

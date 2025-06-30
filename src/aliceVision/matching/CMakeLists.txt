@@ -5,6 +5,7 @@ set(matching_files_headers
     ArrayMatcher_cascadeHashing.hpp
     ArrayMatcher_kdtreeFlann.hpp
     IndMatch.hpp
+    MatchesCollections.hpp
     IndMatchDecorator.hpp
     filters.hpp
     guidedMatching.hpp
@@ -49,3 +50,18 @@ alicevision_add_test(filters_test.cpp  NAME "matching_filters"  LINKS aliceVisio
 alicevision_add_test(indMatch_test.cpp NAME "matching_indMatch" LINKS aliceVision_matching)
 
 add_subdirectory(kvld)
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(matching
+        SOURCES matching.i
+        PUBLIC_LINKS
+            aliceVision_matching
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
+    )
+endif()

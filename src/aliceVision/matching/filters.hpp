@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iterator>

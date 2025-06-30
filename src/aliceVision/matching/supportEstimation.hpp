@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/feature/imageDescriberCommon.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 
 #include <vector>
 

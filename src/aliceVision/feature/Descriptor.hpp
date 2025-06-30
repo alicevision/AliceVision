@@ -53,6 +53,8 @@ class Descriptor
     inline bin_type& operator[](std::size_t i) { return data[i]; }
     inline bin_type operator[](std::size_t i) const { return data[i]; }
 
+    bin_type & at(std::size_t i) { return data[i]; }
+
     // Atomic addition between two descriptors
     inline This& operator+=(const This other)
     {

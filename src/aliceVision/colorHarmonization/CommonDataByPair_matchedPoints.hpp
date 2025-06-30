@@ -8,7 +8,7 @@
 #pragma once
 
 #include "aliceVision/colorHarmonization/CommonDataByPair.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 

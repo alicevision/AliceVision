@@ -9,7 +9,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/feature/metric.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/stl/DynamicBitset.hpp>
 
 #include <iostream>

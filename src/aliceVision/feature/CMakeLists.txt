@@ -105,3 +105,18 @@ endif()
 # Unit tests
 alicevision_add_test(features_test.cpp NAME "features" LINKS aliceVision_feature)
 alicevision_add_test(metric_test.cpp   NAME "descriptor_metric"   LINKS aliceVision_feature)
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(feature
+        SOURCES feature.i
+        PUBLIC_LINKS
+            aliceVision_feature
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
+    )
+endif()
