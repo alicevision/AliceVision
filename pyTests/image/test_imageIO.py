@@ -8,7 +8,7 @@ import os
 from pyalicevision import image as img
 import numpy as np
 
-def loop(image):
+def loop(image, orientation=1, pixelAspectRatio=1.0, compression="zips"):
 
     array1 = image.getNumpyArray()
 
@@ -17,8 +17,9 @@ def loop(image):
     optRead = img.ImageReadOptions(img.EImageColorSpace_NO_CONVERSION)
     optWrite = img.ImageWriteOptions()
     optWrite.toColorSpace(img.EImageColorSpace_NO_CONVERSION)
-    img.writeImage(new_path, image, optWrite)
-    
+    oiio_params = img.oiioParams(orientation, pixelAspectRatio, compression)
+    img.writeImage(new_path, image, optWrite, oiio_params.get())
+
     #read it back from file
     other_image = image.__class__()
     img.readImage(new_path, other_image, optRead)
@@ -35,22 +36,23 @@ def test_default_constructor():
 
     image = img.Image_float()
     image.fromNumpyArray(np.float32(src))
-    loop(image)
+    loop(image, 2, 1.33)
 
     src = np.random.randint(0, 255, size=(256, 256, 3), dtype='uint8')
     image = img.Image_RGBColor()
     image.fromNumpyArray(src)
-    loop(image)
+    loop(image, 3, 2.0, "")
 
     image = img.Image_RGBfColor()
     image.fromNumpyArray(np.float32(src))
-    loop(image)
+    loop(image, 4, 1.0)
 
     src = np.random.randint(0, 255, size=(256, 256, 4), dtype='uint8')
     image = img.Image_RGBAColor()
     image.fromNumpyArray(src)
-    loop(image)
+    loop(image, 5, 1.66)
     
     image = img.Image_RGBAfColor()
     image.fromNumpyArray(np.float32(src))
-    loop(image)
+    loop(image, 6)
+
