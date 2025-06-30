@@ -7,7 +7,7 @@
 
 #include "StructureEstimationFromKnownPoses.hpp"
 #include <aliceVision/feature/metric.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>

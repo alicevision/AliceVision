@@ -9,7 +9,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 
 namespace aliceVision {
 namespace sfm {

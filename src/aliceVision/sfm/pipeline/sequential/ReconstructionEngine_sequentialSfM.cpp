@@ -17,7 +17,7 @@
 
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/graph/connectedComponent.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>

@@ -11,7 +11,7 @@
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/feature/feature.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/tracksUtils.hpp>

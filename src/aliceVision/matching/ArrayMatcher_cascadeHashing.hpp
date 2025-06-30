@@ -10,7 +10,7 @@
 #include <aliceVision/feature/metric.hpp>
 #include <aliceVision/matching/ArrayMatcher.hpp>
 #include <aliceVision/matching/CascadeHasher.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 
 #include <aliceVision/system/Logger.hpp>
 

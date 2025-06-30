@@ -8,7 +8,7 @@
 #pragma once
 
 #include "aliceVision/matching/matcherType.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 #include "aliceVision/matching/IndMatchDecorator.hpp"
 #include "aliceVision/matching/filters.hpp"
 

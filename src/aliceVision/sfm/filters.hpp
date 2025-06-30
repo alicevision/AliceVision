@@ -9,7 +9,7 @@
 
 #include <aliceVision/multiview/rotationAveraging/common.hpp>
 #include <aliceVision/multiview/translationAveraging/common.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {

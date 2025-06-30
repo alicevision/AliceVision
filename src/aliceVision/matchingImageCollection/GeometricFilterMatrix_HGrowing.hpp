@@ -7,7 +7,7 @@
 #pragma once
 
 #include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 #include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
 #include "aliceVision/sfmData/SfMData.hpp"

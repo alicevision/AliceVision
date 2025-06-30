@@ -14,7 +14,7 @@
 #endif
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 
 #include <vector>
 

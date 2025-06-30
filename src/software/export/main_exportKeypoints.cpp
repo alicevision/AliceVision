@@ -7,7 +7,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/matching/svgVisualization.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
