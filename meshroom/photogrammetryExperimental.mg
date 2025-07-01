@@ -157,7 +157,8 @@
             "inputs": {
                 "input": "{TracksBuilding_1.input}",
                 "tracksFilename": "{TracksBuilding_1.output}",
-                "minInliers": 100
+                "minInliers": 100,
+                "imagePairsList": "{FeatureMatching_1.imagePairsList}"
             }
         },
         "SfMBootStrapping_1": {
