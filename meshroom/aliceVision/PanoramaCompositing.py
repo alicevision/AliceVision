@@ -8,20 +8,20 @@ from meshroom.core.utils import EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
 
 
 class PanoramaCompositing(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_panoramaCompositing {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_panoramaCompositing {allParams}"
+    size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=5)
-    commandLineRange = '--rangeIteration {rangeIteration} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeIteration {rangeIteration} --rangeSize {rangeBlockSize}"
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 
-    category = 'Panorama HDR'
-    documentation = '''
+    category = "Panorama HDR"
+    documentation = """
 Once the images have been transformed geometrically (in PanoramaWarping),
 they have to be fused together in a single panorama image which looks like a single photography.
 The Multi-band Blending method provides the best quality. It averages the pixel values using multiple bands in the frequency domain.
 Multiple cameras are contributing to the low frequencies and only the best one contributes to the high frequencies.
-'''
+"""
 
     inputs = [
         desc.File(

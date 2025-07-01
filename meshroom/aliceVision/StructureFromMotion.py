@@ -5,14 +5,14 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class StructureFromMotion(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_incrementalSfM {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_incrementalSfM {allParams}"
+    size = desc.DynamicNodeSize("input")
 
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
+    category = "Sparse Reconstruction"
+    documentation = """
 This node will analyze feature matches to understand the geometric relationship behind all the 2D observations,
 and infer the rigid scene structure (3D points) with the pose (position and orientation) and internal calibration of all cameras.
 The pipeline is a growing reconstruction process (called incremental SfM): it first computes an initial two-view reconstruction that is iteratively extended by adding new views.
@@ -63,7 +63,7 @@ It iterates like that, adding cameras and triangulating new 2D features into 3D 
 
 ## Online
 [https://alicevision.org/#photogrammetry/sfm](https://alicevision.org/#photogrammetry/sfm)
-'''
+"""
 
     inputs = [
         desc.File(

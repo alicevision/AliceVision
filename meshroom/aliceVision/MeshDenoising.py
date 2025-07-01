@@ -5,13 +5,13 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class MeshDenoising(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_meshDenoising {allParams}'
+    commandLine = "aliceVision_meshDenoising {allParams}"
 
-    category = 'Mesh Post-Processing'
-    documentation = '''
+    category = "Mesh Post-Processing"
+    documentation = """
 This experimental node allows to reduce noise from a Mesh.
 for now, the parameters are difficult to control and vary a lot from one dataset to another.
-'''
+"""
 
     inputs = [
         desc.File(

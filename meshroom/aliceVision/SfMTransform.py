@@ -7,11 +7,11 @@ import os.path
 
 
 class SfMTransform(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmTransform {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_sfmTransform {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Utils'
-    documentation = '''
+    category = "Utils"
+    documentation = """
 This node allows to change the coordinate system of one SfM scene.
 
 The transformation can be based on:
@@ -23,7 +23,7 @@ The transformation can be based on:
  * from_gps: Align with the gps positions from the image metadata
  * align_ground: Detect ground level and align to it
  * from_lineup: Align using a camera pose (json line up file), tracks and a mesh
-'''
+"""
 
     inputs = [
         desc.File(

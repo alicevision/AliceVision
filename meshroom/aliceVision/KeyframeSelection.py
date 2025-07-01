@@ -54,16 +54,16 @@ class KeyframeSelectionNodeSize(desc.DynamicNodeSize):
 
 
 class KeyframeSelection(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_keyframeSelection {allParams}'
-    size = KeyframeSelectionNodeSize('inputPaths')
+    commandLine = "aliceVision_keyframeSelection {allParams}"
+    size = KeyframeSelectionNodeSize("inputPaths")
 
-    category = 'Utils'
-    documentation = '''
+    category = "Utils"
+    documentation = """
 Allows to extract keyframes from a video and insert metadata.
 It can extract frames from a synchronized multi-cameras rig.
 
 You can extract frames at regular interval by configuring only the min/maxFrameStep.
-'''
+"""
 
     inputs = [
         desc.ListAttribute(

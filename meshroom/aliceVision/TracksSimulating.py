@@ -5,13 +5,11 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class TracksSimulating(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_tracksSimulating {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_tracksSimulating {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Utils'
-    documentation = '''
-    Generate tracks from an SfmData input.
-    '''
+    category = "Utils"
+    documentation = """Generate tracks from an SfmData input."""
 
     inputs = [
         desc.File(

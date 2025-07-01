@@ -5,17 +5,16 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ExportImages(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_exportImages {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_exportImages {allParams}"
+    size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=40)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Export'
-    documentation = '''
-    Export images referenced in the input sfmData by transforming 
-    them to adapt to the required target intrinsics. For example, the target
-    intrinsics may be the same without the distortion.
-    '''
+    category = "Export"
+    documentation = """
+Export images referenced in the input sfmData by transforming them to adapt to the required target intrinsics.
+For example, the target intrinsics may be the same without the distortion.
+"""
 
     inputs = [
         desc.File(

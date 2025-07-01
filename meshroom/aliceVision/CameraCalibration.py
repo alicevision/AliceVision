@@ -5,11 +5,11 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class CameraCalibration(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_cameraCalibration {allParams}'
+    commandLine = "aliceVision_cameraCalibration {allParams}"
 
-    category = 'Utils'
-    documentation = '''
-    '''
+    category = "Utils"
+    documentation = """
+    """
 
     inputs = [
         desc.File(

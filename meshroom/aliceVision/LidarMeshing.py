@@ -4,19 +4,17 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 class LidarMeshing(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_lidarMeshing {allParams}'
+    commandLine = "aliceVision_lidarMeshing {allParams}"
 
     size = desc.StaticNodeSize(10)
     parallelization = desc.Parallelization(blockSize=1)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeFullSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeFullSize}"
 
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 
-    category = 'Dense Reconstruction'
-    documentation = '''
-    This node creates a dense geometric surface representation of the Lidar measurements.
-    '''
+    category = "Dense Reconstruction"
+    documentation = """This node creates a dense geometric surface representation of the Lidar measurements."""
 
     inputs = [
         desc.File(

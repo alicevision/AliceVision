@@ -5,16 +5,14 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ImageSegmentation(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_imageSegmentation {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_imageSegmentation {allParams}"
+    size = desc.DynamicNodeSize("input")
     gpu = desc.Level.INTENSIVE
     parallelization = desc.Parallelization(blockSize=50)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Utils'
-    documentation = '''
-Generate a mask with segmented labels for each pixel.
-'''
+    category = "Utils"
+    documentation = """Generate a mask with segmented labels for each pixel."""
 
     inputs = [
         desc.File(

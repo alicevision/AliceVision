@@ -11,9 +11,7 @@ class SfMPoseInjecting(desc.AVCommandLineNode):
     size = desc.DynamicNodeSize("input")
     
     category = "Utils"
-    documentation = """
-Use a JSON file to inject poses inside the SfMData.
-"""
+    documentation = """Use a JSON file to inject poses inside the SfMData."""
 
     inputs = [
         desc.File(

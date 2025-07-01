@@ -6,18 +6,18 @@ import os.path
 currentDir = os.path.dirname(os.path.abspath(__file__))
 
 class ScenePreview(desc.CommandLineNode):
-    commandLine = '{blenderCmdValue} -b --python {scriptValue} -- {allParams}'
-    size = desc.DynamicNodeSize('cameras')
+    commandLine = "{blenderCmdValue} -b --python {scriptValue} -- {allParams}"
+    size = desc.DynamicNodeSize("cameras")
     parallelization = desc.Parallelization(blockSize=40)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Utils'
-    documentation = '''
+    category = "Utils"
+    documentation = """
 This node uses Blender to visualize a 3D model from a given set of cameras.
 The cameras must be a SfMData file in JSON format.
 For the 3D model it supports both point clouds in Alembic format and meshes in OBJ format.
 One frame per viewpoint will be rendered, and the undistorted views can optionally be used as background.
-'''
+"""
 
     inputs = [
         desc.File(

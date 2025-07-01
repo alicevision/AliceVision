@@ -8,9 +8,9 @@ class SfMChecking(desc.Node):
 
     category = "Utils"
     documentation = """
-    Check an input SfM for validity.
-    Throw an error if the SfM does not satisfy constraints.
-    """
+Check an input SfM for validity.
+Throw an error if the SfM does not satisfy constraints.
+"""
 
     inputs = [
         desc.File(

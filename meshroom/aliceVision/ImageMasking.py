@@ -5,13 +5,12 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ImageMasking(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_imageMasking {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_imageMasking {allParams}"
+    size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=40)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    documentaiton = '''
-    '''
+    documentation = """ """
 
     inputs = [
         desc.File(

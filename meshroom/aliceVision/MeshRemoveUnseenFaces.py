@@ -5,15 +5,13 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class MeshRemoveUnseenFaces(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_meshRemoveUnseenFaces {allParams}'
+    commandLine = "aliceVision_meshRemoveUnseenFaces {allParams}"
 
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.NORMAL
 
-    category = 'Dense Reconstruction'
-    documentation = '''
-Remove triangles from the mesh when the vertices are not visible by any camera.
-'''
+    category = "Dense Reconstruction"
+    documentation = """Remove triangles from the mesh when the vertices are not visible by any camera."""
 
     inputs = [
         desc.File(

@@ -14,10 +14,10 @@ import subprocess
 class ExtractMetadata(desc.Node):
     size = desc.DynamicNodeSize("input")
 
-    category = 'Utils'
-    documentation = '''
-Using exifTool, this node extracts metadata of all images referenced in a sfmData and store them in appropriate files.
-'''
+    category = "Utils"
+    documentation = """
+Using exifTool, this node extracts the metadata of all images referenced in a SfMData and store them in appropriate files.
+"""
 
     inputs = [
         desc.File(

@@ -5,10 +5,10 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ConvertMesh(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_convertMesh {allParams}'
+    commandLine = "aliceVision_convertMesh {allParams}"
 
-    category = 'Utils'
-    documentation = '''This node allows to convert a mesh to another format.'''
+    category = "Utils"
+    documentation = """This node allows to convert a mesh to another format."""
 
     inputs = [
         desc.File(

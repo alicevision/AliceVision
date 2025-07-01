@@ -5,15 +5,15 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMSplitReconstructed(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmSplitReconstructed {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_sfmSplitReconstructed {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Utils'
-    documentation = '''
-    This nodes takes a SfMData file as an input and splits it in two output SfMData files:
-    - One SfMData containing the reconstructed views
-    - One SfMData containing the non-reconstructed views
-'''
+    category = "Utils"
+    documentation = """
+This nodes takes a SfMData file as an input and splits it in two output SfMData files:
+ - One SfMData containing the reconstructed views
+ - One SfMData containing the non-reconstructed views
+"""
 
     inputs = [
         desc.File(

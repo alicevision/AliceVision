@@ -25,15 +25,13 @@ def findMetadata(d, keys, defaultValue):
 
 
 class LdrToHdrCalibration(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_LdrToHdrCalibration {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_LdrToHdrCalibration {allParams}"
+    size = desc.DynamicNodeSize("input")
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.NORMAL
 
-    category = 'Panorama HDR'
-    documentation = '''
-Calibrate LDR to HDR response curve from samples.
-'''
+    category = "Panorama HDR"
+    documentation = """Calibrate LDR to HDR response curve from samples."""
 
     inputs = [
         desc.File(

@@ -7,12 +7,12 @@ import os.path
 
 
 class ColorCheckerCorrection(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_colorCheckerCorrection {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_colorCheckerCorrection {allParams}"
+    size = desc.DynamicNodeSize("input")
     # parallelization = desc.Parallelization(blockSize=40)
     # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
 
-    documentation = '''
+    documentation = """
 (BETA) \\
 Performs color calibration from Macbeth color checker chart.
 
@@ -20,7 +20,7 @@ The node assumes all the images to process are sharing the same colorimetric pro
 All the input images will get the same correction.
 
 If multiple color charts are submitted, only the first one will be taken in account.
-'''
+"""
 
     inputs = [
         desc.File(

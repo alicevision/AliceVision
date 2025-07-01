@@ -5,12 +5,11 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class ExportMatches(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_exportMatches {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_exportMatches {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Export'
-    documentation = '''
-    '''
+    category = "Export"
+    documentation = """ """
 
     inputs = [
         desc.File(

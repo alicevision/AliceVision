@@ -26,13 +26,11 @@ class MergeNodeSize(desc.DynamicNodeSize):
 
 
 class SfMMerge(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmMerge {allParams}'
+    commandLine = "aliceVision_sfmMerge {allParams}"
     size = MergeNodeSize("inputs")
 
-    category = 'Utils'
-    documentation = '''
-Merges two SfMData files into a single one. Fails if some UID is shared among them.
-'''
+    category = "Utils"
+    documentation = """Merges two SfMData files into a single one. Fails if some UID is shared among them."""
 
     inputs = [
         desc.ListAttribute(

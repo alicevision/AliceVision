@@ -5,11 +5,11 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class CameraRigLocalization(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_rigLocalization {allParams}'
+    commandLine = "aliceVision_rigLocalization {allParams}"
 
-    category = 'Utils'
-    documentation = '''
-    '''
+    category = "Utils"
+    documentation = """
+    """
 
     inputs = [
         desc.File(
