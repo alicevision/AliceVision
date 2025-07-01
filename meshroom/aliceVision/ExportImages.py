@@ -20,14 +20,14 @@ class ExportImages(desc.AVCommandLineNode):
     inputs = [
         desc.File(
             name="input",
-            label="Source SfmData",
+            label="Source SfMData",
             description="Input SfMData file. Contains the original intrinsics of the images.",
             value="",
         ),
         desc.File(
             name="target",
-            label="Target SfmData",
-            description="This sfmData file contains the required intrinsics for the output images.",
+            label="Target SfMData",
+            description="This SfMData file contains the required intrinsics for the output images.",
             value="",
         ),
         desc.ChoiceParam(
@@ -47,7 +47,7 @@ class ExportImages(desc.AVCommandLineNode):
         ),
         desc.ChoiceParam(
             name="namingMode",
-            label="Naming mode",
+            label="Naming Mode",
             description="image naming mode :\n"
                         " - viewid: viewid.ext.\n"
                         " - frameid: Frameid.ext.\n"

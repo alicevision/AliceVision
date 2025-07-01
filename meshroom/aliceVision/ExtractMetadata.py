@@ -48,8 +48,8 @@ Using exifTool, this node extracts metadata of all images referenced in a sfmDat
         ),
         desc.BoolParam(
             name="insertInSfm",
-            label="Update sfmData",
-            description="Insert the extracted metadata in the sfmData file.",
+            label="Update SfMData",
+            description="Insert the extracted metadata in the SfMData file.",
             value=False,
         ),
         desc.ChoiceParam(

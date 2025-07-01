@@ -144,7 +144,7 @@ This node allows to setup the Panorama:
     outputs = [
         desc.File(
             name="contactSheet",
-            label="Contact sheet",
+            label="Contact Sheet",
             semantic="image",
             description="Contact sheet path.",
             value="{nodeCacheFolder}/contactSheetImage.jpg",

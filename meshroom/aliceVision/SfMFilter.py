@@ -14,7 +14,7 @@ This node allows select views from sfmData file using a regular expresion.
     inputs = [
         desc.File(
             name="inputFile",
-            label="inputFile",
+            label="Input File",
             description="SfMData file.",
             value="",
         ),
@@ -44,13 +44,13 @@ This node allows select views from sfmData file using a regular expresion.
     outputs = [
         desc.File(
             name="outputSfMData_selected",
-            label="SfMData_selected",
+            label="Selected SfMData",
             description="Output SfMData file containing selected views.",
             value="{nodeCacheFolder}/selectedSfmData.sfm",
         ),
         desc.File(
             name="outputSfMData_unselected",
-            label="SfMData_unselected",
+            label="Unselected SfMData",
             description="Output SfMData file containing remaining views.",
             value="{nodeCacheFolder}/unselectedSfmData.sfm",
         ),
