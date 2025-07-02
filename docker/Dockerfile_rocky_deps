@@ -26,13 +26,8 @@ RUN dnf install -y gcc-toolset-12-gcc-c++
 RUN update-alternatives --install /usr/bin/gcc gcc /opt/rh/gcc-toolset-12/root/usr/bin/gcc 60
 RUN update-alternatives --install /usr/bin/g++ g++ /opt/rh/gcc-toolset-12/root/usr/bin/g++ 60
 RUN update-alternatives --install /usr/bin/cpp cpp /opt/rh/gcc-toolset-12/root/usr/bin/cpp 60
-RUN dnf install -y ca-certificates wget cmake git unzip
-RUN dnf install -y python3.11-devel python3.11-pip
-RUN dnf install -y pcre2-devel
-RUN dnf install -y xerces-c-devel
-RUN dnf install -y bison
-RUN dnf install -y diffutils which file
-RUN dnf install -y yasm
+RUN dnf install -y ca-certificates wget cmake git unzip pcre2-devel xerces-c-devel
+RUN dnf install -y python3.11-devel python3.11-pip python3.11-pybind11-devel bison diffutils which file yasm
 RUN dnf install -y gcc-toolset-12-gcc-gfortran libasan libubsan
 RUN dnf update -y
 
@@ -75,6 +70,9 @@ COPY src/cmake/Dependencies.cmake ${AV_DEV}/src/cmake/
 
 COPY dl/deps ${AV_BUILD}/external/download/
 
+# Symlink to Python3 executable in case a call to "python" instead of "python3" is ever made
+RUN ln -s /usr/bin/python3.11 /usr/bin/python
+
 WORKDIR "${AV_BUILD}"
 RUN cmake "${AV_DEV}" \
      -DCMAKE_BUILD_TYPE=Release \
@@ -87,9 +85,6 @@ RUN cmake "${AV_DEV}" \
 # Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
 RUN mkdir -p "${AV_INSTALL}/lib" && \
     ln -s lib "${AV_INSTALL}/lib64"
-
-# Symlink to Python3 executable in case a call to "python" instead of "python3" is ever made
-RUN ln -s /usr/bin/python3.11 /usr/bin/python
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
@@ -110,9 +105,8 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} lapack
 # RUN make -j ${CPU_CORES} suitesparse
 # RUN make -j ${CPU_CORES} ceres
-# RUN make -j ${CPU_CORES} tiff
-# RUN make -j ${CPU_CORES} png
 # RUN make -j ${CPU_CORES} libraw
+# RUN make -j ${CPU_CORES} ffmpeg
 # RUN make -j ${CPU_CORES} openimageio
 # RUN make -j ${CPU_CORES} alembic
 # RUN make -j ${CPU_CORES} ffmpeg
