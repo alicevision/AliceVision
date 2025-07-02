@@ -154,8 +154,9 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // set maxThreads
+    // set maxThreads (Limit to 100 threads on large machines)
     HardwareContext hwc = cmdline.getHardwareContext();
+    hwc.setUserCoresLimit(100);
     omp_set_num_threads(hwc.getMaxThreads());
     
     // load input SfMData scene
