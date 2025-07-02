@@ -5,13 +5,13 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class CheckerboardCalibration(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_checkerboardCalibration {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_checkerboardCalibration {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Other'
-    documentation = '''
+    category = "Other"
+    documentation = """
 Estimate the camera intrinsics and extrinsincs on a set of checkerboard images.
-'''
+"""
 
     inputs = [
         desc.File(

@@ -5,15 +5,14 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMExpanding(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmExpanding {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_sfmExpanding {allParams}"
+    size = desc.DynamicNodeSize("input")
 
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
-'''
+    category = "Sparse Reconstruction"
+    documentation = """ """
 
     inputs = [
         desc.File(

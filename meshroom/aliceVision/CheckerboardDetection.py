@@ -5,16 +5,16 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class CheckerboardDetection(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_checkerboardDetection {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_checkerboardDetection {allParams}"
+    size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=5)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Other'
-    documentation = '''
+    category = "Other"
+    documentation = """
 Detect checkerboard structures in a set of images.
 The detection method also supports nested calibration grids.
-'''
+"""
 
     inputs = [
         desc.File(

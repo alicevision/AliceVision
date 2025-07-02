@@ -4,12 +4,13 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 class PhotometricStereo(desc.CommandLineNode):
-    commandLine = 'aliceVision_photometricStereo {allParams}'
-    category = 'Photometric Stereo'
-    documentation = '''
-Reconstruction using Photometric Stereo. A normal map is evaluated from several photographs taken from the same point of view, but under different lighting conditions.
+    commandLine = "aliceVision_photometricStereo {allParams}"
+    category = "Photometric Stereo"
+    documentation = """
+Reconstruction using Photometric Stereo.
+A normal map is evaluated from several photographs taken from the same point of view, but under different lighting conditions.
 The lighting conditions are assumed to be known.
-'''
+"""
 
     inputs = [
         desc.File(

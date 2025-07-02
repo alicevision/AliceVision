@@ -5,13 +5,13 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class FeatureMatching(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_featureMatching {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_featureMatching {allParams}"
+    size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=20)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
+    category = "Sparse Reconstruction"
+    documentation = """
 This node performs the matching of all features between the candidate image pairs.
 
 It is performed in 2 steps:
@@ -31,7 +31,7 @@ then it checks the number of features that validates this model and iterate thro
 
 ## Online
 [https://alicevision.org/#photogrammetry/feature_matching](https://alicevision.org/#photogrammetry/feature_matching)
-'''
+"""
 
     inputs = [
         desc.File(

@@ -5,12 +5,10 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ImportKnownPoses(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_importKnownPoses {allParams}'
-    size = desc.DynamicNodeSize('sfmData')
+    commandLine = "aliceVision_importKnownPoses {allParams}"
+    size = desc.DynamicNodeSize("sfmData")
 
-    documentation = '''
-    Import known poses from various file formats like xmp or json.
-    '''
+    documentation = """Import known poses from various file formats like xmp or json."""
 
     inputs = [
         desc.File(

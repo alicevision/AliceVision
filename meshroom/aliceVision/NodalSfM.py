@@ -5,13 +5,11 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class NodalSfM(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_nodalSfM {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_nodalSfM {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
-A Structure-From-Motion node specifically designed to handle pure rotation camera movements.
-'''
+    category = "Sparse Reconstruction"
+    documentation = """A Structure-From-Motion node specifically designed to handle pure rotation camera movements."""
 
     inputs = [
         desc.File(

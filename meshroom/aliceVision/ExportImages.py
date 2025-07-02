@@ -5,29 +5,28 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ExportImages(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_exportImages {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_exportImages {allParams}"
+    size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=40)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Export'
-    documentation = '''
-    Export images referenced in the input sfmData by transforming 
-    them to adapt to the required target intrinsics. For example, the target
-    intrinsics may be the same without the distortion.
-    '''
+    category = "Export"
+    documentation = """
+Export images referenced in the input sfmData by transforming them to adapt to the required target intrinsics.
+For example, the target intrinsics may be the same without the distortion.
+"""
 
     inputs = [
         desc.File(
             name="input",
-            label="Source SfmData",
+            label="Source SfMData",
             description="Input SfMData file. Contains the original intrinsics of the images.",
             value="",
         ),
         desc.File(
             name="target",
-            label="Target SfmData",
-            description="This sfmData file contains the required intrinsics for the output images.",
+            label="Target SfMData",
+            description="This SfMData file contains the required intrinsics for the output images.",
             value="",
         ),
         desc.ChoiceParam(
@@ -47,7 +46,7 @@ class ExportImages(desc.AVCommandLineNode):
         ),
         desc.ChoiceParam(
             name="namingMode",
-            label="Naming mode",
+            label="Naming Mode",
             description="image naming mode :\n"
                         " - viewid: viewid.ext.\n"
                         " - frameid: Frameid.ext.\n"

@@ -51,12 +51,10 @@ def progressUpdate(size=None, progress=None, logManager=None):
     logManager.updateProgressBar(progress)
 
 class SketchfabUpload(desc.Node):
-    size = desc.DynamicNodeSize('inputFiles')
+    size = desc.DynamicNodeSize("inputFiles")
 
-    category = 'Export'
-    documentation = '''
-Upload a textured mesh on Sketchfab.
-'''
+    category = "Export"
+    documentation = """Upload a textured mesh on Sketchfab."""
 
     inputs = [
         desc.ListAttribute(

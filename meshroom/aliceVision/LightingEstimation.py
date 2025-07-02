@@ -5,11 +5,10 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class LightingEstimation(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_lightingEstimation {allParams}'
+    commandLine = "aliceVision_lightingEstimation {allParams}"
 
-    category = 'Utils'
-    documentation = '''
-    '''
+    category = "Utils"
+    documentation = """ """
 
     inputs = [
         desc.File(

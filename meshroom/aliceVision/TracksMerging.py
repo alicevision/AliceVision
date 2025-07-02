@@ -7,12 +7,10 @@ import os.path
 
 
 class TracksMerging(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_tracksMerging {allParams}'
+    commandLine = "aliceVision_tracksMerging {allParams}"
 
-    category = 'Utils'
-    documentation = '''
-Merges multiple track files into one
-'''
+    category = "Utils"
+    documentation = """Merge multiple track files into a single one."""
 
     inputs = [
         desc.ListAttribute(
@@ -39,7 +37,7 @@ Merges multiple track files into one
     outputs = [
         desc.File(
             name="output",
-            label="Output tracks file", 
+            label="Output Track File",
             description="Path to the output track file",
             value="{nodeCacheFolder}/tracks.json",
         )

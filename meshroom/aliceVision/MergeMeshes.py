@@ -5,18 +5,17 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class MergeMeshes(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_mergeMeshes {allParams}'
+    commandLine = "aliceVision_mergeMeshes {allParams}"
 
-    category = 'Utils'
-    documentation = '''
-This node allows to merge two meshes in one.
+    category = "Utils"
+    documentation = """This node allows to merge two meshes in one.
 
 Operation types used to merge two meshes:
 
 - boolean_union: Create a new mesh with the combined volume of the two input meshes.
 - boolean_intersection: Create a new mesh from the intersected volumes of the two input meshes.
 - boolean_difference: Create a new mesh from the volume of the first input mesh subtracted by the second input mesh.
-'''
+"""
 
     inputs = [
         desc.File(

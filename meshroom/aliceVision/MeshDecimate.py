@@ -5,14 +5,12 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class MeshDecimate(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_meshDecimate {allParams}'
+    commandLine = "aliceVision_meshDecimate {allParams}"
     cpu = desc.Level.NORMAL
     ram = desc.Level.NORMAL
 
-    category = 'Mesh Post-Processing'
-    documentation = '''
-This node allows to reduce the density of the Mesh.
-'''
+    category = "Mesh Post-Processing"
+    documentation = """This node allows to reduce the density of the Mesh."""
 
     inputs = [
         desc.File(

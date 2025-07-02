@@ -5,12 +5,11 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMBootStrapping(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmBootstrapping {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_sfmBootstrapping {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
-'''
+    category = "Sparse Reconstruction"
+    documentation = """ """
 
     inputs = [
         desc.File(

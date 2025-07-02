@@ -5,13 +5,11 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class DistortionCalibration(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_distortionCalibration {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_distortionCalibration {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Other'
-    documentation = '''
-Calibration of a camera/lens couple distortion using a full screen checkerboard.
-'''
+    category = "Other"
+    documentation = """Calibration of a camera/lens couple distortion using a full screen checkerboard."""
 
     inputs = [
         desc.File(

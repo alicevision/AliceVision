@@ -5,11 +5,11 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ImageMatching(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_imageMatching {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_imageMatching {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
+    category = "Sparse Reconstruction"
+    documentation = """
 The goal of this node is to select the image pairs to match. The ambition is to find the images that are looking to the same areas of the scene.
 Thanks to this node, the FeatureMatching node will only compute the matches between the selected image pairs.
 
@@ -31,7 +31,7 @@ If images have known poses, use frustum intersection else use VocabularuTree.
 
 ## Online
 [https://alicevision.org/#photogrammetry/image_matching](https://alicevision.org/#photogrammetry/image_matching)
-'''
+"""
 
     inputs = [
         desc.File(

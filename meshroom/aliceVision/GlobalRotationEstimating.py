@@ -8,9 +8,7 @@ class GlobalRotationEstimating(desc.AVCommandLineNode):
     commandLine = "aliceVision_globalRotationEstimating {allParams}"
 
     category = "Sparse Reconstruction"
-    documentation = '''
-Estimate the global rotation given tracks.
-'''
+    documentation = """Estimate the global rotation given tracks."""
 
     inputs = [
         desc.File(

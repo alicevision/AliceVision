@@ -25,10 +25,10 @@ def findMetadata(d, keys, defaultValue):
 
 
 class DividedInputNodeSize(desc.DynamicNodeSize):
-    '''
+    """
     The LDR2HDR will reduce the amount of views in the SfMData.
     This class converts the number of LDR input views into the number of HDR output views.
-    '''
+    """
     def __init__(self, param, divParam):
         super(DividedInputNodeSize, self).__init__(param)
         self._divParam = divParam
@@ -44,15 +44,13 @@ class DividedInputNodeSize(desc.DynamicNodeSize):
 
 
 class LdrToHdrSampling(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_LdrToHdrSampling {allParams}'
-    size = DividedInputNodeSize('input', 'nbBrackets')
+    commandLine = "aliceVision_LdrToHdrSampling {allParams}"
+    size = DividedInputNodeSize("input", "nbBrackets")
     parallelization = desc.Parallelization(blockSize=2)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Panorama HDR'
-    documentation = '''
-Sample pixels from Low range images for HDR creation.
-'''
+    category = "Panorama HDR"
+    documentation = """Sample pixels from Low range images for HDR creation."""
 
     outliersNb = 0  # Number of detected outliers among the input images
 

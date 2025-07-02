@@ -5,11 +5,11 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class CameraRigCalibration(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_rigCalibration {allParams}'
+    commandLine = "aliceVision_rigCalibration {allParams}"
 
-    category = 'Utils'
-    documentation = '''
-    '''
+    category = "Utils"
+    documentation = """
+    """
 
     inputs = [
         desc.File(

@@ -4,13 +4,11 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 class IntrinsicsTransforming(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_intrinsicsTransforming {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_intrinsicsTransforming {allParams}"
+    size = desc.DynamicNodeSize("input")
     
-    category = 'Utils'
-    documentation = '''
-    Transforms all intrinsics in the sfmData to a new type.
-    '''
+    category = "Utils"
+    documentation = """Transforms all intrinsics in the sfmData to a new type."""
 
     inputs = [
         desc.File(

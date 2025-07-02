@@ -5,11 +5,10 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class SfMDistances(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmDistances {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_sfmDistances {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    documentation = '''
-    '''
+    documentation = """ """
 
     inputs = [
         desc.File(

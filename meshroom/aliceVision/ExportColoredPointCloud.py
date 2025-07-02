@@ -5,11 +5,10 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ExportColoredPointCloud(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_exportColoredPointCloud {allParams}'
+    commandLine = "aliceVision_exportColoredPointCloud {allParams}"
 
-    category = 'Export'
-    documentation = '''
-    '''
+    category = "Export"
+    documentation = """ """
 
     inputs = [
         desc.File(

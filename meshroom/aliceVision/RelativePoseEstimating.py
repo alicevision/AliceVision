@@ -4,16 +4,14 @@ from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 class RelativePoseEstimating(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_relativePoseEstimating {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_relativePoseEstimating {allParams}"
+    size = desc.DynamicNodeSize("input")
     
     parallelization = desc.Parallelization(blockSize=25)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
-Estimate relative pose between each pair of views that share tracks.
-'''
+    category = "Sparse Reconstruction"
+    documentation = """Estimate relative pose between each pair of views that share tracks."""
 
     inputs = [
         desc.File(
