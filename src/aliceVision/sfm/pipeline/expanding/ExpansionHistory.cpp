@@ -21,10 +21,22 @@ bool ExpansionHistory::initialize(const sfmData::SfMData & sfmData)
     // Update epoch id 
     // We want to have a starting epoch larger than the one found in the existing views
     _epoch = 0;
-    for (const auto & pv : sfmData.getViews())
+    for (const auto & [viewId, view] : sfmData.getViews())
     {
-        _epoch = std::max(_epoch, static_cast<size_t>(pv.second->getResectionId()));
+        IndexT rid = view->getResectionId();
+        if (rid == UndefinedIndexT)
+        {
+            continue;
+        }
+
+        if (!sfmData.isPoseAndIntrinsicDefined(viewId))
+        {
+            continue;
+        }
+        
+        _epoch = std::max(_epoch, static_cast<size_t>(view->getResectionId()));
     }
+
 
     _epoch++;
 
