@@ -29,6 +29,7 @@ echo "--== BUILD DEPENDENCIES ==--"
 ## DEPENDENCIES
 docker build \
 	--rm \
+	--progress=plain \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \
 	--build-arg UBUNTU_VERSION=${UBUNTU_VERSION} \
 	--tag ${DEPS_DOCKER_TAG} \
@@ -47,6 +48,7 @@ echo "--== BUILD ALICEVISION ==--"
 ## ALICEVISION
 docker build \
 	--rm \
+	--progress=plain \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \
 	--build-arg UBUNTU_VERSION=${UBUNTU_VERSION} \
 	--build-arg AV_DEPS_VERSION=${AV_DEPS_VERSION} \
