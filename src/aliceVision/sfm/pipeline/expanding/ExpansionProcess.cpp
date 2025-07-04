@@ -67,6 +67,8 @@ bool ExpansionProcess::process(sfmData::SfMData & sfmData, track::TracksHandler 
 
     ALICEVISION_LOG_INFO("ExpansionProcess end");
 
+    _historyHandler->debrief(sfmData);
+
     return true;
 }
 

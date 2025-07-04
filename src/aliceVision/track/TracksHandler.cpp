@@ -8,6 +8,7 @@
 
 #include <aliceVision/track/trackIO.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 #include <fstream>
 

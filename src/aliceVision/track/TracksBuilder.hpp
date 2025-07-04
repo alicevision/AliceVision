@@ -85,8 +85,11 @@ class TracksBuilder
      */
     std::size_t nbTracks() const;
 
+    void displayStats(const TracksMap & allTracks) const;
+
   private:
     std::unique_ptr<TracksBuilderData> _d;
+    size_t _filteredCounter;
 };
 
 }  // namespace track

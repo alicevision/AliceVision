@@ -87,5 +87,7 @@ bool Save(const PairwiseMatches& matches,
           bool matchFilePerImage,
           const std::string& prefix = "");
 
+void displayStats(const PairwiseMatches& matches);
+
 }  // namespace matching
 }  // namespace aliceVision
