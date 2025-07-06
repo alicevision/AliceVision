@@ -45,6 +45,7 @@ bool ExpansionHistory::initialize(const sfmData::SfMData & sfmData)
 
 bool ExpansionHistory::beginEpoch(const sfmData::SfMData & sfmData)
 {
+    debrief(sfmData);
     return true;
 }
 
@@ -96,8 +97,15 @@ void ExpansionHistory::saveState(const sfmData::SfMData & sfmData)
         //Store usage counter
         _focalHistory[pIntrinsic.first].push_back(std::make_pair(usage, iso->getScale().x()));
     }
+}
 
-    
+void ExpansionHistory::debrief(const sfmData::SfMData & sfmData) const
+{
+    ALICEVISION_LOG_INFO("---- Current statistics ----");
+    ALICEVISION_LOG_INFO("Views : " << sfmData.getViews().size());
+    ALICEVISION_LOG_INFO("Valid views : " << sfmData.getValidViews().size());
+    ALICEVISION_LOG_INFO("Landmarks : " << sfmData.getLandmarks().size());
+    ALICEVISION_LOG_INFO("----------------------------");
 }
 
 } // namespace sfm

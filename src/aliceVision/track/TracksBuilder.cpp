@@ -7,8 +7,12 @@
 
 #include "TracksBuilder.hpp"
 
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/Histogram.hpp>
+
 #include <lemon/list_graph.h>
 #include <lemon/unionfind.h>
+
 
 namespace aliceVision {
 namespace track {
@@ -144,6 +148,8 @@ void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool mul
         }
     }
 
+    _filteredCounter = set_classToErase.size();
+
     std::for_each(set_classToErase.begin(), set_classToErase.end(), [&](int toErase) { _d->tracksUF->eraseClass(toErase); });
 }
 
@@ -219,6 +225,21 @@ std::size_t TracksBuilder::nbTracks() const
     for (lemon::UnionFindEnum<IndexMap>::ClassIt cit(*_d->tracksUF); cit != lemon::INVALID; ++cit)
         ++cpt;
     return cpt;
+}
+
+void TracksBuilder::displayStats(const TracksMap & allTracks) const
+{
+    const size_t maxLength = 25;
+    utils::Histogram<double> histo(0, maxLength, maxLength);
+
+    ALICEVISION_LOG_INFO("Tracks lengths histogram (Clamped to 25) : ");
+    for (const auto & [id, track] : allTracks)
+    {
+        histo.Add(std::min(maxLength, track.featPerView.size()));
+    }
+
+    ALICEVISION_LOG_INFO(histo.ToString("", 5, true));
+    ALICEVISION_LOG_INFO("Filtered out tracks : " << _filteredCounter);
 }
 
 }  // namespace track

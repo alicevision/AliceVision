@@ -15,6 +15,8 @@
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 
+#include <aliceVision/utils/Histogram.hpp>
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -31,6 +33,7 @@
 #include <aliceVision/dataio/json.hpp>
 #include <aliceVision/sfm/pipeline/bootstrapping/PairsScoring.hpp>
 #include <aliceVision/sfm/pipeline/bootstrapping/Bootstrap.hpp>
+#include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 #include <cstdlib>
 #include <random>
 #include <regex>
@@ -105,6 +108,20 @@ bool landmarksFromMesh(
     }
 
     return true;
+}
+
+void showStatsAngles(const sfmData::SfMData & sfmData)
+{
+    //Computing angle
+    utils::Histogram<double> histo(0, 90, 45);
+    for (const auto & [_, landmark] : sfmData.getLandmarks())
+    {
+        double angle = sfm::SfmTriangulation::getMaximalAngle(sfmData, landmark);
+        histo.Add(angle);
+    }
+
+    ALICEVISION_LOG_INFO("Landmarks maximal angle histogram");
+    ALICEVISION_LOG_INFO(histo.ToString());
 }
 
 int aliceVision_main(int argc, char** argv)
@@ -360,6 +377,10 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO("Best selected pair is : ");
     ALICEVISION_LOG_INFO(" - " << sfmData.getView(bestPair.reference).getImage().getImagePath());
     ALICEVISION_LOG_INFO(" - " << sfmData.getView(bestPair.next).getImage().getImagePath());
+    ALICEVISION_LOG_INFO("Landmarks count : " << sfmData.getLandmarks().size());
+
+    showStatsAngles(sfmData);
+    
 
     sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
 
