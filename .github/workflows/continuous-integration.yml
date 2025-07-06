@@ -21,11 +21,8 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        container: ["alicevision/alicevision-deps:2025.06.23-ubuntu22.04-cuda12.1.1", "alicevision/alicevision-deps:2025.06.23-rocky9-cuda12.1.1"]
     container:
-      image: ${{ matrix.container }}
+      image: "alicevision/alicevision-deps:2025.07.04-rocky9-cuda12.1.1"
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
@@ -33,7 +30,6 @@ jobs:
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
       ALICEVISION_SENSOR_DB: ${{ github.workspace }}/../AV_install/share/aliceVision/cameraSensors.db
       ALICEVISION_LENS_PROFILE_INFO: ""
-      BUILD_CCTAG: "${{ matrix.container == 'alicevision/alicevision-deps:2025.06.23-ubuntu22.04-cuda12.1.1' && 'ON' || 'OFF' }}"
     steps:
       - uses: actions/checkout@v1
 
@@ -57,7 +53,7 @@ jobs:
            -DALICEVISION_BUILD_SWIG_BINDING=ON \
            -DALICEVISION_USE_OPENCV=ON \
            -DALICEVISION_USE_CUDA=ON \
-           -DALICEVISION_USE_CCTAG="${BUILD_CCTAG}" \
+           -DALICEVISION_USE_CCTAG=ON \
            -DALICEVISION_USE_POPSIFT=ON \
            -DALICEVISION_USE_ALEMBIC=ON \
            -DOpenCV_DIR="${DEPS_INSTALL_DIR}/share/OpenCV" \

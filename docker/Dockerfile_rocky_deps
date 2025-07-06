@@ -11,7 +11,7 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 # ROCKY_VERSION=20.04
 # docker build \
 #    --build-arg CUDA_VERSION=${CUDA_VERSION} \
-#    --build-arg ROCKY_VERSION${ROCKY_VERSION} \
+#    --build-arg ROCKY_VERSION=${ROCKY_VERSION} \
 #    --tag alicevision/alicevision-deps:${AV_VERSION}-rocky${ROCKY_VERSION}-cuda${CUDA_TAG} \
 #     -f Dockerfile_rocky_deps .
 
@@ -21,11 +21,11 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 RUN dnf install -y 'dnf-command(config-manager)'
 RUN dnf config-manager --set-enabled devel
 RUN dnf install -y epel-release
-# RUN dnf install -y gcc-toolset-13-gcc-c++
+RUN dnf install -y gcc-toolset-12-gcc-c++
 # RUN dnf remove -y gcc-g++ gcc
-# RUN update-alternatives --install /usr/bin/gcc gcc /opt/rh/gcc-toolset-13/root/usr/bin/gcc 60
-# RUN update-alternatives --install /usr/bin/g++ g++ /opt/rh/gcc-toolset-13/root/usr/bin/g++ 60
-# RUN update-alternatives --install /usr/bin/cpp cpp /opt/rh/gcc-toolset-13/root/usr/bin/cpp 60
+RUN update-alternatives --install /usr/bin/gcc gcc /opt/rh/gcc-toolset-12/root/usr/bin/gcc 60
+RUN update-alternatives --install /usr/bin/g++ g++ /opt/rh/gcc-toolset-12/root/usr/bin/g++ 60
+RUN update-alternatives --install /usr/bin/cpp cpp /opt/rh/gcc-toolset-12/root/usr/bin/cpp 60
 RUN dnf install -y ca-certificates wget cmake git unzip
 RUN dnf install -y python3.11-devel python3.11-pip
 RUN dnf install -y pcre2-devel
@@ -33,9 +33,20 @@ RUN dnf install -y xerces-c-devel
 RUN dnf install -y bison
 RUN dnf install -y diffutils which file
 RUN dnf install -y yasm
-RUN dnf install -y gfortran libasan libubsan
+RUN dnf install -y gcc-toolset-12-gcc-gfortran libasan libubsan
 RUN dnf update -y
-# RUN scl enable gcc-toolset-13 bash
+
+# RUN scl enable gcc-toolset-12 bash
+
+# Set it permanently
+ENV PATH="/opt/rh/gcc-toolset-12/root/usr/bin:$PATH"
+ENV CC="/opt/rh/gcc-toolset-12/root/usr/bin/gcc"
+ENV CXX="/opt/rh/gcc-toolset-12/root/usr/bin/g++"
+ENV FC="/opt/rh/gcc-toolset-12/root/usr/bin/gfortran"
+
+RUN gcc --version
+RUN g++ --version
+RUN gfortran --version
 
 RUN python3.11 -m pip install numpy==1.*
 
@@ -70,7 +81,7 @@ RUN cmake "${AV_DEV}" \
      -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
      -DAV_BUILD_ZLIB:BOOL=ON \
      -DAV_BUILD_ALICEVISION:BOOL=OFF \
-     -DAV_BUILD_CCTAG:BOOL=OFF \
+     -DAV_BUILD_CCTAG:BOOL=ON \
      -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"
 
 # Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
@@ -82,14 +93,19 @@ RUN ln -s /usr/bin/python3.11 /usr/bin/python
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
-# RUN make -j ${CPU_CORES} onnxruntime
-# RUN make -j ${CPU_CORES} turbojpeg
+
+# # RUN make -j ${CPU_CORES} cuda
 # RUN make -j ${CPU_CORES} boost
 # RUN make -j ${CPU_CORES} openexr
+# RUN make -j ${CPU_CORES} opencv
+# RUN make -j ${CPU_CORES} eigen
 # RUN make -j ${CPU_CORES} tbb
+# RUN make -j ${CPU_CORES} cctag
+# RUN make -j ${CPU_CORES} popsift
+# RUN make -j ${CPU_CORES} onnxruntime
+# RUN make -j ${CPU_CORES} turbojpeg
 # RUN make -j ${CPU_CORES} assimp
 # RUN make -j ${CPU_CORES} geogram
-# RUN make -j ${CPU_CORES} eigen
 # RUN make -j ${CPU_CORES} opengv
 # RUN make -j ${CPU_CORES} lapack
 # RUN make -j ${CPU_CORES} suitesparse
@@ -100,13 +116,10 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} openimageio
 # RUN make -j ${CPU_CORES} alembic
 # RUN make -j ${CPU_CORES} ffmpeg
-# RUN make -j ${CPU_CORES} opencv
 # RUN make -j ${CPU_CORES} expat
 # RUN make -j ${CPU_CORES} SWIG
 # RUN make -j ${CPU_CORES} E57Format
 
-# RUN make -j ${CPU_CORES} popsift
-# RUN make -j ${CPU_CORES} cctag
 
 RUN cmake --build . -j ${CPU_CORES} && \
    mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
