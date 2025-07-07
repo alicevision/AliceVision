@@ -249,7 +249,6 @@ def setupWireframeShading(mesh, color):
     nodeMix1 = material.node_tree.nodes.new(type='ShaderNodeMixShader')
     # Transparent Shader node
     nodeTransparent = material.node_tree.nodes.new(type='ShaderNodeBsdfTransparent')
-    nodeTransparent.color = (1, 1, 1, 1)
     # 2nd Mix Shader node
     nodeMix2 = material.node_tree.nodes.new(type='ShaderNodeMixShader')
     # Retrieve ouput node
