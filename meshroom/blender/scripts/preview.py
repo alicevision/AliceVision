@@ -233,6 +233,9 @@ def setupWireframeShading(mesh, color):
     material.use_nodes = True
     material.blend_method = 'BLEND'
     material.node_tree.links.clear()
+    # == Create shader nodes
+    # Geometry node
+    nodeGeometry = material.node_tree.nodes.new(type='ShaderNodeNewGeometry')
     # Wireframe node
     nodeWireframe = material.node_tree.nodes.new(type='ShaderNodeWireframe')
     nodeWireframe.use_pixel_size = True
@@ -242,15 +245,27 @@ def setupWireframeShading(mesh, color):
     nodeEmission.inputs['Color'].default_value = color
     # Holdout node
     nodeHoldout = material.node_tree.nodes.new(type='ShaderNodeHoldout')
-    # Max Shader node
-    nodeMix = material.node_tree.nodes.new(type='ShaderNodeMixShader')
+    # Mix Shader node
+    nodeMix1 = material.node_tree.nodes.new(type='ShaderNodeMixShader')
+    # Transparent Shader node
+    nodeTransparent = material.node_tree.nodes.new(type='ShaderNodeBsdfTransparent')
+    nodeTransparent.color = (1, 1, 1, 1)
+    # 2nd Mix Shader node
+    nodeMix2 = material.node_tree.nodes.new(type='ShaderNodeMixShader')
     # Retrieve ouput node
     nodeOutput = material.node_tree.nodes['Material Output']
-    # Connect nodes
-    material.node_tree.links.new(nodeWireframe.outputs['Fac'], nodeMix.inputs['Fac'])
-    material.node_tree.links.new(nodeHoldout.outputs['Holdout'], nodeMix.inputs[1])
-    material.node_tree.links.new(nodeEmission.outputs['Emission'], nodeMix.inputs[2])
-    material.node_tree.links.new(nodeMix.outputs['Shader'], nodeOutput.inputs['Surface'])
+    
+    # == Connect nodes
+    # Mix1
+    material.node_tree.links.new(nodeWireframe.outputs['Fac']    , nodeMix1.inputs['Fac'])
+    material.node_tree.links.new(nodeHoldout.outputs['Holdout']  , nodeMix1.inputs[1])
+    material.node_tree.links.new(nodeEmission.outputs['Emission'], nodeMix1.inputs[2])
+    # Mix2
+    material.node_tree.links.new(nodeGeometry.outputs['Backfacing'], nodeMix2.inputs['Fac'])
+    material.node_tree.links.new(nodeMix1.outputs['Shader']        , nodeMix2.inputs[1])
+    material.node_tree.links.new(nodeTransparent.outputs['BSDF']   , nodeMix2.inputs[2])
+    # Shader output
+    material.node_tree.links.new(nodeMix2.outputs['Shader'], nodeOutput.inputs['Surface'])
     # Apply material to mesh
     mesh.materials.clear()
     mesh.materials.append(material)
