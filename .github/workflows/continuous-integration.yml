@@ -203,7 +203,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.3.0
         id: vcpkgDownload
         with:
-          url: "https://github.com/alicevision/vcpkg/releases/download/2025.06.18/aliceVisionDeps-2025.06.18.zip"
+          url: "https://github.com/alicevision/vcpkg/releases/download/2025.07.08/aliceVisionDeps-2025.07.08.zip"
           target: "${{ env.vcpkgDir }}"
           filename: installed.zip
 
