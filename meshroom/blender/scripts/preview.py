@@ -215,7 +215,7 @@ def setupMask(view, folderMasks, nodeMask):
 def loadModel(filename):
     '''Load model in Alembic of OBJ format. Make sure orientation matches camera orientation.'''
     if filename.lower().endswith('.obj'):
-        bpy.ops.import_scene.obj(filepath=filename, axis_forward='Y', axis_up='Z')
+        bpy.ops.wm.obj_import(filepath=filename, forward_axis='Y', up_axis='Z')
         meshName = os.path.splitext(os.path.basename(filename))[0]
         return bpy.data.objects[meshName], bpy.data.meshes[meshName]
     elif filename.lower().endswith('.abc'):
