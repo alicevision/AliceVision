@@ -290,6 +290,58 @@ inline std::istream& operator>>(std::istream& in, EImageFormat& e)
     return in;
 }
 
+enum class EImageOutputChannel
+{
+    All,
+    Red,
+    Green,
+    Blue,
+    Alpha
+};
+
+inline std::string EImageOutputChannel_enumToString(EImageOutputChannel outputChannel)
+{
+    switch (outputChannel)
+    {
+        case EImageOutputChannel::All:
+            return "all";
+        case EImageOutputChannel::Red:
+            return "red";
+        case EImageOutputChannel::Green:
+            return "green";
+        case EImageOutputChannel::Blue:
+            return "blue";
+        case EImageOutputChannel::Alpha:
+            return "alpha";
+    }
+    throw std::invalid_argument("Invalid EImageOutputChannel Enum");
+}
+
+inline EImageOutputChannel EImageOutputChannel_stringToEnum(std::string outputChannel)
+{
+    boost::to_lower(outputChannel);
+    if (outputChannel == "all")
+        return EImageOutputChannel::All;
+    if (outputChannel == "red")
+        return EImageOutputChannel::Red;
+    if (outputChannel == "green")
+        return EImageOutputChannel::Green;
+    if (outputChannel == "blue")
+        return EImageOutputChannel::Blue;
+    if (outputChannel == "alpha")
+        return EImageOutputChannel::Alpha;
+
+    throw std::invalid_argument("Unrecognized output channel '" + outputChannel + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, EImageOutputChannel e) { return os << EImageOutputChannel_enumToString(e); }
+
+inline std::istream& operator>>(std::istream& in, EImageOutputChannel& e)
+{
+    std::string token(std::istreambuf_iterator<char>(in), {});
+    e = EImageOutputChannel_stringToEnum(token);
+    return in;
+}
 struct NLMeansFilterParams
 {
     bool enabled;
@@ -916,6 +968,7 @@ void saveImage(image::Image<image::RGBAfColor>& image,
                std::map<std::string, std::string> inputMetadata,
                const std::vector<std::string>& metadataFolders,
                const EImageFormat outputFormat,
+               const EImageOutputChannel outputChannel,
                const image::ImageWriteOptions options)
 {
     // Read metadata path
@@ -976,6 +1029,37 @@ void saveImage(image::Image<image::RGBAfColor>& image,
     // Save image
     ALICEVISION_LOG_TRACE("Export image: '" << outputPath << "'.");
 
+    if (outputChannel == EImageOutputChannel::Red)
+        for (int j = 0; j < image.height(); ++j)
+            for (int i = 0; i < image.width(); ++i)
+            {
+                image(j, i).g() = image(j, i).r();
+                image(j, i).b() = image(j, i).r();
+            }
+    else if (outputChannel == EImageOutputChannel::Green)
+        for (int j = 0; j < image.height(); ++j)
+            for (int i = 0; i < image.width(); ++i)
+            {
+                image(j, i).r() = image(j, i).g();
+                image(j, i).b() = image(j, i).g();
+            }
+    else if (outputChannel == EImageOutputChannel::Blue)
+        for (int j = 0; j < image.height(); ++j)
+            for (int i = 0; i < image.width(); ++i)
+            {
+                image(j, i).r() = image(j, i).b();
+                image(j, i).g() = image(j, i).b();
+            }
+    else if (outputChannel == EImageOutputChannel::Alpha)
+        for (int j = 0; j < image.height(); ++j)
+            for (int i = 0; i < image.width(); ++i)
+            {
+                image(j, i).r() = image(j, i).a();
+                image(j, i).g() = image(j, i).a();
+                image(j, i).b() = image(j, i).a();
+                image(j, i).a() = 1.0;
+            }
+
     if (outputFormat == EImageFormat::Grayscale)
     {
         image::Image<float> outputImage;
@@ -1002,6 +1086,7 @@ int aliceVision_main(int argc, char* argv[])
     std::vector<std::string> metadataFolders;
     std::string outputPath;
     EImageFormat outputFormat = EImageFormat::RGBA;
+    EImageOutputChannel outputChannel = EImageOutputChannel::All;
     image::EImageColorSpace inputColorSpace = image::EImageColorSpace::AUTO;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::LINEAR;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::LINEAR;
@@ -1142,6 +1227,9 @@ int aliceVision_main(int argc, char* argv[])
 
         ("outputFormat", po::value<EImageFormat>(&outputFormat)->default_value(outputFormat),
          "Output image format (rgba, rgb, grayscale).")
+
+        ("outputChannel", po::value<EImageOutputChannel>(&outputChannel)->default_value(outputChannel),
+         "Output image channel(s) (all, red, green, blue, alpha). Default: all")
 
         ("outputColorSpace", po::value<image::EImageColorSpace>(&outputColorSpace)->default_value(outputColorSpace),
          ("Output color space: " + image::EImageColorSpace_informations()).c_str())
@@ -1465,7 +1553,7 @@ int aliceVision_main(int argc, char* argv[])
             }
 
             // Save the image
-            saveImage(image, viewPath, outputfilePath, viewMetadata, metadataFolders, outputFormat, writeOptions);
+            saveImage(image, viewPath, outputfilePath, viewMetadata, metadataFolders, outputFormat, outputChannel, writeOptions);
 
             // Update view for this modification
             view.getImage().setImagePath(outputfilePath);
@@ -1869,7 +1957,7 @@ int aliceVision_main(int argc, char* argv[])
             }
 
             // Save the image
-            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, outputFormat, writeOptions);
+            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, outputFormat, outputChannel, writeOptions);
         }
     }
 

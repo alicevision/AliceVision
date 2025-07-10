@@ -447,6 +447,13 @@ class ImageProcessing(desc.AVCommandLineNode):
             values=["rgba", "rgb", "grayscale"],
         ),
         desc.ChoiceParam(
+            name="outputChannel",
+            label="Output Color Channel(s)",
+            description="Allows you to choose the the output color channel(s).",
+            value="all",
+            values=["all", "red", "green", "blue", "alpha"],
+        ),
+        desc.ChoiceParam(
             name="inputColorSpace",
             label="Input Color Space",
             description="Allows you to force the color space of the input image.",
