@@ -42,6 +42,8 @@
 #include <map>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -1107,6 +1109,8 @@ int aliceVision_main(int argc, char* argv[])
     std::string lensCorrectionProfileInfo;
     bool lensCorrectionProfileSearchIgnoreCameraModel = true;
     std::string sensorDatabasePath;
+    int rangeBlocksCount = 1;
+    int rangeIteration = 0;
 
     ProcessingParams pParams;
 
@@ -1300,7 +1304,13 @@ int aliceVision_main(int argc, char* argv[])
          "JPEG quality after compression (between 0 and 100).")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
-         "Output image extension (like exr, or empty to keep the source file format.");
+         "Output image extension (like exr, or empty to keep the source file format.")
+
+        ("rangeBlocksCount", po::value<int>(&rangeBlocksCount)->default_value(rangeBlocksCount),
+         "Number of blocks in which the computation is splited.")
+
+        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration),
+         "Computation block index.");
     // clang-format on
 
     CmdLine cmdline("AliceVision imageProcessing");
@@ -1389,214 +1399,313 @@ int aliceVision_main(int argc, char* argv[])
             }
         }
 
-        const int size = ViewPaths.size();
-        int i = 0;
+        std::vector<IndexT> updatedViews;
+
+        const int d = ViewPaths.size() / rangeBlocksCount;
+        const int m = ViewPaths.size() % rangeBlocksCount;
+        int rangeSize = d + (rangeIteration < m ? 1 : 0);
+        int rangeStart = rangeIteration * d + std::min(rangeIteration, m);
+
+        int rangeEnd = ViewPaths.size();
+        // set range
+        if (rangeStart != -1)
+        {
+            if (rangeStart < 0 || rangeSize < 0)
+            {
+                ALICEVISION_LOG_ERROR("Range is incorrect");
+                return EXIT_FAILURE;
+            }
+
+            if (rangeStart + rangeSize > ViewPaths.size())
+            {
+                rangeSize = ViewPaths.size() - rangeStart;
+            }
+
+            rangeEnd = rangeStart + rangeSize;
+
+            if (rangeSize <= 0)
+            {
+                ALICEVISION_LOG_WARNING("Nothing to compute.");
+                return EXIT_SUCCESS;
+            }
+        }
+        else
+        {
+            rangeStart = 0;
+        }
+
+        ALICEVISION_LOG_INFO("Launch views processing from " << rangeStart << " to " << rangeEnd - 1 << " (" << rangeSize << ").");
+        
+        int idx = 0;
 
         for (auto& viewIt : ViewPaths)
         {
-            const IndexT viewId = viewIt.first;
-            const std::string viewPath = viewIt.second;
-            sfmData::View& view = sfmData.getView(viewId);
-
-            const bool isRAW = image::isRawFormat(viewPath);
-
-            const fs::path fsPath = viewPath;
-            const std::string fileName = fsPath.stem().string();
-            const std::string fileExt = fsPath.extension().string();
-            const std::string outputExt = extension.empty() ? (isRAW ? ".exr" : fileExt) : (std::string(".") + extension);
-            const std::string outputfilePath =
-              (fs::path(outputPath) / ((pParams.keepImageFilename ? fileName : std::to_string(viewId)) + outputExt)).generic_string();
-
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
-
-            auto metadata = view.getImage().getMetadata();
-
-            if (pParams.applyDcpMetadata && metadata["AliceVision:ColorSpace"] != "no_conversion")
+            if (idx >= rangeEnd) break;
+            if (idx >= rangeStart)
             {
-                ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
-            }
+                const IndexT viewId = viewIt.first;
+                const std::string viewPath = viewIt.second;
+                sfmData::View& view = sfmData.getView(viewId);
 
-            image::ImageReadOptions options;
-            options.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
+                const bool isRAW = image::isRawFormat(viewPath);
 
-            if (isRAW)
-            {
-                if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
+                const fs::path fsPath = viewPath;
+                const std::string fileName = fsPath.stem().string();
+                const std::string fileExt = fsPath.extension().string();
+                const std::string outputExt = extension.empty() ? (isRAW ? ".exr" : fileExt) : (std::string(".") + extension);
+                const std::string outputfilePath =
+                (fs::path(outputPath) / ((pParams.keepImageFilename ? fileName : std::to_string(viewId)) + outputExt)).generic_string();
+
+                ALICEVISION_LOG_INFO(idx + 1 - rangeStart << "/" << rangeSize << " - Process view '" << viewId << "'.");
+
+                auto metadata = view.getImage().getMetadata();
+
+                if (pParams.applyDcpMetadata && metadata["AliceVision:ColorSpace"] != "no_conversion")
                 {
-                    options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
-                    if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+                    ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+                }
+
+                image::ImageReadOptions options;
+                options.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
+
+                if (isRAW)
+                {
+                    if (rawColorInterpretation == image::ERawColorInterpretation::Auto)
                     {
-                        options.useDCPColorMatrixOnly = false;
-                        options.doWBAfterDemosaicing = true;
+                        options.rawColorInterpretation = image::ERawColorInterpretation_stringToEnum(view.getImage().getRawColorInterpretation());
+                        if (options.rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)
+                        {
+                            options.useDCPColorMatrixOnly = false;
+                            options.doWBAfterDemosaicing = true;
+                        }
+                        else
+                        {
+                            options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                            options.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                        }
                     }
                     else
                     {
+                        options.rawColorInterpretation = rawColorInterpretation;
                         options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
                         options.doWBAfterDemosaicing = doWBAfterDemosaicing;
                     }
+                    options.colorProfileFileName = view.getImage().getColorProfileFileName();
+                    options.demosaicingAlgo = demosaicingAlgo;
+                    options.highlightMode = highlightMode;
+                    options.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
+                    options.rawAutoBright = pParams.rawAutoBright;
+                    options.correlatedColorTemperature = correlatedColorTemperature;
+                    pParams.correlatedColorTemperature = correlatedColorTemperature;
+                    pParams.enableColorTempProcessing = options.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
                 }
                 else
                 {
-                    options.rawColorInterpretation = rawColorInterpretation;
-                    options.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-                    options.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                    options.inputColorSpace = inputColorSpace;
                 }
-                options.colorProfileFileName = view.getImage().getColorProfileFileName();
-                options.demosaicingAlgo = demosaicingAlgo;
-                options.highlightMode = highlightMode;
-                options.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
-                options.rawAutoBright = pParams.rawAutoBright;
-                options.correlatedColorTemperature = correlatedColorTemperature;
-                pParams.correlatedColorTemperature = correlatedColorTemperature;
-                pParams.enableColorTempProcessing = options.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
-            }
-            else
-            {
-                options.inputColorSpace = inputColorSpace;
-            }
 
-            if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
-            {
-                if (!view.getImage().getVignettingParams(pParams.lensCorrection.vParams))
+                if (pParams.lensCorrection.enabled && pParams.lensCorrection.vignetting)
                 {
-                    pParams.lensCorrection.vParams.clear();
+                    if (!view.getImage().getVignettingParams(pParams.lensCorrection.vParams))
+                    {
+                        pParams.lensCorrection.vParams.clear();
+                    }
                 }
-            }
 
-            if (pParams.lensCorrection.enabled && pParams.lensCorrection.chromaticAberration)
-            {
-                std::vector<float> caGParams, caBGParams, caRGParams;
-                view.getImage().getChromaticAberrationParams(caGParams, caBGParams, caRGParams);
-
-                pParams.lensCorrection.caGModel.init3(caGParams);
-                pParams.lensCorrection.caBGModel.init3(caBGParams);
-                pParams.lensCorrection.caRGModel.init3(caRGParams);
-
-                if (pParams.lensCorrection.caGModel.FocalLengthX == 0.0)
+                if (pParams.lensCorrection.enabled && pParams.lensCorrection.chromaticAberration)
                 {
-                    float sensorWidth = view.getImage().getSensorWidth();
-                    pParams.lensCorrection.caGModel.FocalLengthX = view.getImage().getWidth() * view.getImage().getMetadataFocalLength() /
-                                                                   sensorWidth / std::max(view.getImage().getWidth(), view.getImage().getHeight());
+                    std::vector<float> caGParams, caBGParams, caRGParams;
+                    view.getImage().getChromaticAberrationParams(caGParams, caBGParams, caRGParams);
+
+                    pParams.lensCorrection.caGModel.init3(caGParams);
+                    pParams.lensCorrection.caBGModel.init3(caBGParams);
+                    pParams.lensCorrection.caRGModel.init3(caRGParams);
+
+                    if (pParams.lensCorrection.caGModel.FocalLengthX == 0.0)
+                    {
+                        float sensorWidth = view.getImage().getSensorWidth();
+                        pParams.lensCorrection.caGModel.FocalLengthX = view.getImage().getWidth() * view.getImage().getMetadataFocalLength() /
+                                                                    sensorWidth / std::max(view.getImage().getWidth(), view.getImage().getHeight());
+                    }
+                    if (pParams.lensCorrection.caGModel.FocalLengthY == 0.0)
+                    {
+                        float sensorHeight = view.getImage().getSensorHeight();
+                        pParams.lensCorrection.caGModel.FocalLengthY = view.getImage().getHeight() * view.getImage().getMetadataFocalLength() /
+                                                                    sensorHeight / std::max(view.getImage().getWidth(), view.getImage().getHeight());
+                    }
+
+                    if ((pParams.lensCorrection.caGModel.FocalLengthX <= 0.0) || (pParams.lensCorrection.caGModel.FocalLengthY <= 0.0))
+                    {
+                        pParams.lensCorrection.caGModel.reset();
+                        pParams.lensCorrection.caBGModel.reset();
+                        pParams.lensCorrection.caRGModel.reset();
+                    }
                 }
-                if (pParams.lensCorrection.caGModel.FocalLengthY == 0.0)
+
+                // Read original image
+                image::Image<image::RGBAfColor> image;
+                image::readImage(viewPath, image, options);
+
+                // If exposureCompensation is needed for sfmData files
+                if (pParams.exposureCompensation)
                 {
-                    float sensorHeight = view.getImage().getSensorHeight();
-                    pParams.lensCorrection.caGModel.FocalLengthY = view.getImage().getHeight() * view.getImage().getMetadataFocalLength() /
-                                                                   sensorHeight / std::max(view.getImage().getWidth(), view.getImage().getHeight());
+                    const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
+                    const double cameraExposure = view.getImage().getCameraExposureSetting().getExposure();
+                    const double ev = std::log2(1.0 / cameraExposure);
+                    const float compensationFactor = static_cast<float>(medianCameraExposure / cameraExposure);
+
+                    ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << compensationFactor);
+
+                    for (int i = 0; i < image.width() * image.height(); ++i)
+                    {
+                        image(i)[0] *= compensationFactor;
+                        image(i)[1] *= compensationFactor;
+                        image(i)[2] *= compensationFactor;
+                    }
                 }
 
-                if ((pParams.lensCorrection.caGModel.FocalLengthX <= 0.0) || (pParams.lensCorrection.caGModel.FocalLengthY <= 0.0))
+                sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
+                std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+
+                std::map<std::string, std::string> viewMetadata = view.getImage().getMetadata();
+
+                if (pParams.par.enabled)
                 {
-                    pParams.lensCorrection.caGModel.reset();
-                    pParams.lensCorrection.caBGModel.reset();
-                    pParams.lensCorrection.caRGModel.reset();
+                    auto iso = camera::IntrinsicScaleOffset::cast(cam);
+                    if (iso)
+                    {
+                        pParams.par.value = iso->getScale().y() / iso->getScale().x();
+                    }
                 }
-            }
 
-            // Read original image
-            image::Image<image::RGBAfColor> image;
-            image::readImage(viewPath, image, options);
+                // Image processing
+                processImage(image, pParams, viewMetadata, cam);
 
-            // If exposureCompensation is needed for sfmData files
-            if (pParams.exposureCompensation)
-            {
-                const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
-                const double cameraExposure = view.getImage().getCameraExposureSetting().getExposure();
-                const double ev = std::log2(1.0 / cameraExposure);
-                const float compensationFactor = static_cast<float>(medianCameraExposure / cameraExposure);
-
-                ALICEVISION_LOG_INFO("View: " << viewId << ", Ev: " << ev << ", Ev compensation: " << compensationFactor);
-
-                for (int i = 0; i < image.width() * image.height(); ++i)
+                if (pParams.applyDcpMetadata)
                 {
-                    image(i)[0] *= compensationFactor;
-                    image(i)[1] *= compensationFactor;
-                    image(i)[2] *= compensationFactor;
+                    workingColorSpace = image::EImageColorSpace::ACES2065_1;
                 }
-            }
 
-            sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
-            std::shared_ptr<camera::IntrinsicBase> cam = iterIntrinsic->second;
+                image::ImageWriteOptions writeOptions;
 
-            std::map<std::string, std::string> viewMetadata = view.getImage().getMetadata();
+                writeOptions.fromColorSpace(workingColorSpace);
+                writeOptions.toColorSpace(outputColorSpace);
+                writeOptions.exrCompressionMethod(exrCompressionMethod);
+                writeOptions.exrCompressionLevel(exrCompressionLevel);
+                writeOptions.jpegCompress(jpegCompress);
+                writeOptions.jpegQuality(jpegQuality);
 
-            if (pParams.par.enabled)
-            {
-                auto iso = camera::IntrinsicScaleOffset::cast(cam);
-                if (iso)
+                if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
                 {
-                    pParams.par.value = iso->getScale().y() / iso->getScale().x();
+                    // Select storage data type
+                    writeOptions.storageDataType(storageDataType);
                 }
+
+                // Save the image
+                saveImage(image, viewPath, outputfilePath, viewMetadata, metadataFolders, outputFormat, outputChannel, writeOptions);
+
+                // Update view for this modification
+                view.getImage().setImagePath(outputfilePath);
+                view.getImage().setWidth(image.width());
+                view.getImage().setHeight(image.height());
+                view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
+                if (viewMetadata.find("Orientation") != viewMetadata.end())
+                    view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
+
+                if (pParams.reorient && image.width() != cam->w() && image.width() == cam->h())  // The image has been rotated by automatic reorientation
+                {
+                    camera::IntrinsicBase* cam2 = cam->clone();
+
+                    cam2->setWidth(image.width());
+                    cam2->setHeight(image.height());
+                    double sensorWidth = cam->sensorWidth();
+                    cam2->setSensorWidth(cam->sensorHeight());
+                    cam2->setSensorHeight(sensorWidth);
+
+                    IndexT intrinsicId = cam2->hashValue();
+                    view.setIntrinsicId(intrinsicId);
+                    sfmData.getIntrinsics().emplace(intrinsicId, cam2);
+                }
+
+                updatedViews.push_back(viewId);
             }
-
-            // Image processing
-            processImage(image, pParams, viewMetadata, cam);
-
-            if (pParams.applyDcpMetadata)
-            {
-                workingColorSpace = image::EImageColorSpace::ACES2065_1;
-            }
-
-            image::ImageWriteOptions writeOptions;
-
-            writeOptions.fromColorSpace(workingColorSpace);
-            writeOptions.toColorSpace(outputColorSpace);
-            writeOptions.exrCompressionMethod(exrCompressionMethod);
-            writeOptions.exrCompressionLevel(exrCompressionLevel);
-            writeOptions.jpegCompress(jpegCompress);
-            writeOptions.jpegQuality(jpegQuality);
-
-            if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
-            {
-                // Select storage data type
-                writeOptions.storageDataType(storageDataType);
-            }
-
-            // Save the image
-            saveImage(image, viewPath, outputfilePath, viewMetadata, metadataFolders, outputFormat, outputChannel, writeOptions);
-
-            // Update view for this modification
-            view.getImage().setImagePath(outputfilePath);
-            view.getImage().setWidth(image.width());
-            view.getImage().setHeight(image.height());
-            view.getImage().addMetadata("AliceVision:ColorSpace", image::EImageColorSpace_enumToString(outputColorSpace));
-            if (viewMetadata.find("Orientation") != viewMetadata.end())
-                view.getImage().addMetadata("Orientation", viewMetadata.at("Orientation"));
-
-            if (pParams.reorient && image.width() != cam->w() && image.width() == cam->h())  // The image has been rotated by automatic reorientation
-            {
-                camera::IntrinsicBase* cam2 = cam->clone();
-
-                cam2->setWidth(image.width());
-                cam2->setHeight(image.height());
-                double sensorWidth = cam->sensorWidth();
-                cam2->setSensorWidth(cam->sensorHeight());
-                cam2->setSensorHeight(sensorWidth);
-
-                IndexT intrinsicId = cam2->hashValue();
-                view.setIntrinsicId(intrinsicId);
-                sfmData.getIntrinsics().emplace(intrinsicId, cam2);
-            }
+            idx++;
         }
 
-        if ((pParams.scaleFactor != 1.0f) || (pParams.par.enabled && pParams.par.value != 1.0))
+        if (rangeIteration == 0)
         {
-            const bool parRowDecimation = pParams.par.enabled && pParams.par.rowDecimation;
-
-            const float scaleFactorW = pParams.scaleFactor * ((!pParams.par.enabled || parRowDecimation) ? 1.0 : pParams.par.value);
-            const float scaleFactorH = pParams.scaleFactor * (parRowDecimation ? (1.0 / pParams.par.value) : 1.0);
-            for (auto& i : sfmData.getIntrinsics())
+            if ((pParams.scaleFactor != 1.0f) || (pParams.par.enabled && pParams.par.value != 1.0))
             {
-                i.second->rescale(scaleFactorW, scaleFactorH);
+                const bool parRowDecimation = pParams.par.enabled && pParams.par.rowDecimation;
+
+                const float scaleFactorW = pParams.scaleFactor * ((!pParams.par.enabled || parRowDecimation) ? 1.0 : pParams.par.value);
+                const float scaleFactorH = pParams.scaleFactor * (parRowDecimation ? (1.0 / pParams.par.value) : 1.0);
+                for (auto& i : sfmData.getIntrinsics())
+                {
+                    i.second->rescale(scaleFactorW, scaleFactorH);
+                }
+            }
+
+            // Save sfmData with modified path to images
+            std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).stem()).generic_string();
+            if (rangeBlocksCount > 1)
+            {
+                sfmfilePath += "_0";
+            }
+            sfmfilePath += (fs::path(inputExpression).extension()).generic_string();
+            if (!sfmDataIO::save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+            {
+                ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
+                return EXIT_FAILURE;
             }
         }
-
-        // Save sfmData with modified path to images
-        const std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).filename()).generic_string();
-        if (!sfmDataIO::save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        else
         {
-            ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
-            return EXIT_FAILURE;
+            std::string sfmfilePath_in = (fs::path(outputPath) / fs::path(inputExpression).stem()).generic_string();
+            sfmfilePath_in += "_" + std::to_string(rangeIteration - 1);
+            sfmfilePath_in += (fs::path(inputExpression).extension()).generic_string();
+
+            std::string timeoutFilePath = (fs::path(outputPath) / fs::path("timeout.txt")).generic_string();
+
+            sfmData::SfMData sfmDataNew;
+            std::chrono::seconds interval = std::chrono::seconds(1);
+            std::chrono::seconds timeout = std::chrono::seconds(rangeIteration*60);
+            auto start_time = std::chrono::steady_clock::now();
+            while (!sfmDataIO::load(sfmDataNew, sfmfilePath_in, sfmDataIO::ALL))
+            {
+                auto elapsed = std::chrono::steady_clock::now() - start_time;
+                if (elapsed > timeout || fs::is_exist(timeoutFilePath))
+                {
+                    if (!fs::is_exist(timeoutFilePath))
+                    {
+                        std::ofstream timeoutFile(timeoutFilePath);
+                        timeoutFile.close()
+                    }
+                    auto durationSeconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
+                    ALICEVISION_LOG_ERROR("Timeout reached waiting the SfMData file '" << sfmfilePath_in << "' after " << durationSeconds.count() << "s.");
+                    return EXIT_FAILURE;
+                }
+                std::this_thread::sleep_for(interval);
+            }
+
+            for (auto& viewId : updatedViews)
+            {
+                sfmDataNew.getViews().emplace(viewId, sfmData.getViews()[viewId]);
+            }
+
+            std::string sfmfilePath = (fs::path(outputPath) / fs::path(inputExpression).stem()).generic_string();
+            if (rangeIteration < rangeBlocksCount - 1)
+            {
+                sfmfilePath += "_" + std::to_string(rangeIteration);
+            }
+            sfmfilePath += (fs::path(inputExpression).extension()).generic_string();
+            if (!sfmDataIO::save(sfmDataNew, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+            {
+                ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
+                return EXIT_FAILURE;
+            }
+
+            fs::remove(sfmfilePath_in);
         }
     }
     else
