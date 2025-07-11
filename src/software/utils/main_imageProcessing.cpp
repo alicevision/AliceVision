@@ -1782,18 +1782,49 @@ int aliceVision_main(int argc, char* argv[])
             }
         }
 
-        const int size = filesStrPaths.size();
+        const int d = filesStrPaths.size() / rangeBlocksCount;
+        const int m = filesStrPaths.size() % rangeBlocksCount;
+        int rangeSize = d + (rangeIteration < m ? 1 : 0);
+        int rangeStart = rangeIteration * d + std::min(rangeIteration, m);
 
-        if (!size)
+        int rangeEnd = filesStrPaths.size();
+        // set range
+        if (rangeStart != -1)
         {
-            ALICEVISION_LOG_ERROR("Any images was found.");
-            ALICEVISION_LOG_ERROR("Input folders or input expression '" << inputExpression << "' may be incorrect ?");
-            return EXIT_FAILURE;
+            if (rangeStart < 0 || rangeSize < 0)
+            {
+                ALICEVISION_LOG_ERROR("Range is incorrect");
+                return EXIT_FAILURE;
+            }
+
+            if (rangeStart + rangeSize > filesStrPaths.size())
+            {
+                rangeSize = filesStrPaths.size() - rangeStart;
+            }
+
+            rangeEnd = rangeStart + rangeSize;
+
+            if (rangeSize <= 0)
+            {
+                if (rangeIteration > 0)
+                {
+                    ALICEVISION_LOG_WARNING("Nothing to compute.");
+                    return EXIT_SUCCESS;
+                }
+                else
+                {
+                    ALICEVISION_LOG_ERROR("Any images was found.");
+                    ALICEVISION_LOG_ERROR("Input folders or input expression '" << inputExpression << "' may be incorrect ?");
+                    return EXIT_FAILURE;
+                }
+            }
         }
         else
         {
-            ALICEVISION_LOG_INFO(size << " images found.");
+            rangeStart = 0;
         }
+
+        ALICEVISION_LOG_INFO("Launch images processing from " << rangeStart << " to " << rangeEnd - 1 << " (" << rangeSize << ").");
 
         image::DCPDatabase dcpDatabase;
         LCPdatabase lcpStore(lensCorrectionProfileInfo, lensCorrectionProfileSearchIgnoreCameraModel);
@@ -1821,295 +1852,300 @@ int aliceVision_main(int argc, char* argv[])
             }
         }
 
-        int i = 0;
+        int idx = 0;
         for (const std::string& inputFilePath : filesStrPaths)
         {
-            const bool isRAW = image::isRawFormat(inputFilePath);
-
-            const fs::path path = fs::path(inputFilePath);
-            const std::string filename = path.stem().string();
-            const std::string fileExt = path.extension().string();
-            const std::string outputExt = extension.empty() ? (isRAW ? ".exr" : fileExt) : (std::string(".") + extension);
-
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "'.");
-
-            const std::string userExt = fs::path(outputPath).extension().string();
-            std::string outputFilePath;
-
-            if ((size == 1) && !userExt.empty())
+            if (idx >= rangeEnd) break;
+            if (idx >= rangeStart)
             {
-                if (image::isSupported(userExt))
-                {
-                    outputFilePath = fs::path(outputPath).generic_string();
-                }
-                else
-                {
-                    outputFilePath = (fs::path(outputPath).parent_path() / (filename + outputExt)).generic_string();
-                    ALICEVISION_LOG_WARNING("Extension " << userExt << " is not supported! Output image saved in " << outputFilePath);
-                }
-                // Create output directory if it does not exist
-                if (!fs::exists(fs::path(outputPath).parent_path()))
-                {
-                    if (!fs::create_directory(fs::path(outputPath).parent_path()))
-                    {
-                        ALICEVISION_LOG_ERROR("Unexisting directory " << fs::path(outputPath).parent_path().generic_string() << " cannot be created");
-                        return EXIT_FAILURE;
-                    }
-                }
-            }
-            else
-            {
-                outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
-                // Create output directory if it does not exist
-                if (!fs::exists(fs::path(outputPath)))
-                {
-                    if (!fs::create_directory(fs::path(outputPath)))
-                    {
-                        ALICEVISION_LOG_ERROR("Unexisting directory " << outputPath << " cannot be created");
-                        return EXIT_FAILURE;
-                    }
-                }
-            }
+                const bool isRAW = image::isRawFormat(inputFilePath);
 
-            image::DCPProfile dcpProf;
-            sfmData::View view;  // used to extract and complete metadata
-            view.getImage().setImagePath(inputFilePath);
-            int width, height;
-            const auto metadata = image::readImageMetadata(inputFilePath, width, height);
-            view.getImage().setMetadata(image::getMapFromMetadata(metadata));
-            view.getImage().setWidth(width);
-            view.getImage().setHeight(height);
-            std::shared_ptr<camera::IntrinsicBase> intrinsicBase;
-            // Get DSLR maker and model in view metadata.
-            const std::string& make = view.getImage().getMetadataMake();
-            const std::string& model = view.getImage().getMetadataModel();
+                const fs::path path = fs::path(inputFilePath);
+                const std::string filename = path.stem().string();
+                const std::string fileExt = path.extension().string();
+                const std::string outputExt = extension.empty() ? (isRAW ? ".exr" : fileExt) : (std::string(".") + extension);
 
-            if (isRAW && (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
-                          rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
-            {
-                // Load DCP color profiles database if not already loaded
-                dcpDatabase.load(colorProfileDatabaseDirPath.empty() ? getColorProfileDatabaseFolder() : colorProfileDatabaseDirPath, false);
+                ALICEVISION_LOG_INFO(idx + 1 - rangeStart << "/" << rangeSize << " - Process image '" << filename << fileExt << "'.");
 
-                // Get DCP profile
-                if (!dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
+                const std::string userExt = fs::path(outputPath).extension().string();
+                std::string outputFilePath;
+
+                if ((rangeSize == 1) && (rangeBlocksCount == 1) && !userExt.empty())
                 {
-                    if (errorOnMissingColorProfile)
+                    if (image::isSupported(userExt))
                     {
-                        ALICEVISION_LOG_ERROR("The specified DCP database does not contain an appropriate profil for DSLR " << make << " " << model);
-                        return EXIT_FAILURE;
+                        outputFilePath = fs::path(outputPath).generic_string();
                     }
                     else
                     {
-                        ALICEVISION_LOG_WARNING("Can't find color profile for input image " << inputFilePath);
+                        outputFilePath = (fs::path(outputPath).parent_path() / (filename + outputExt)).generic_string();
+                        ALICEVISION_LOG_WARNING("Extension " << userExt << " is not supported! Output image saved in " << outputFilePath);
                     }
-                }
-
-                // Add color profile info in metadata
-                view.getImage().addDCPMetadata(dcpProf);
-            }
-
-            if (isRAW && pParams.lensCorrection.enabled &&
-                (pParams.lensCorrection.geometry || pParams.lensCorrection.vignetting || pParams.lensCorrection.chromaticAberration))
-            {
-                // try to find an appropriate Lens Correction Profile
-                LCPinfo* lcpData = nullptr;
-                if (lcpStore.size() == 1)
-                {
-                    lcpData = lcpStore.retrieveLCP();
-                }
-                else if (!lcpStore.empty())
-                {
-                    // Find an LCP file that matches the camera model and the lens model.
-                    const std::string& lensModel = view.getImage().getMetadataLensModel();
-                    const int lensID = view.getImage().getMetadataLensID();
-
-                    if (!make.empty() && !lensModel.empty())
+                    // Create output directory if it does not exist
+                    if (!fs::exists(fs::path(outputPath).parent_path()))
                     {
-#pragma omp critical(lcp)
-                        lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
-                    }
-                }
-
-                if ((lcpData != nullptr) && !(lcpData->isEmpty()))
-                {
-                    double focalLengthmm = view.getImage().getMetadataFocalLength();
-                    const float apertureValue = 2.f * std::log(view.getImage().getMetadataFNumber()) / std::log(2.0);
-                    const float focusDistance = 0.f;
-
-                    LensParam lensParam;
-                    lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
-                    lcpData->getVignettingParams(focalLengthmm, apertureValue, lensParam);
-                    lcpData->getChromaticParams(focalLengthmm, focusDistance, lensParam);
-
-                    // Get sensor size by combining information from sensor database and view's metadata
-                    double sensorWidth = -1.0;
-                    double sensorHeight = -1.0;
-                    camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
-                    view.getImage().getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, true);
-
-                    if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty && pParams.lensCorrection.vignetting)
-                    {
-                        float FocX = lensParam.vignParams.FocalLengthX != 0.0 ? lensParam.vignParams.FocalLengthX
-                                                                              : width * focalLengthmm / sensorWidth / std::max(width, height);
-                        float FocY = lensParam.vignParams.FocalLengthY != 0.0 ? lensParam.vignParams.FocalLengthY
-                                                                              : height * focalLengthmm / sensorHeight / std::max(width, height);
-
-                        pParams.lensCorrection.vParams.clear();
-
-                        if (FocX == 0.0 || FocY == 0.0)
+                        if (!fs::create_directory(fs::path(outputPath).parent_path()))
                         {
-                            ALICEVISION_LOG_WARNING("Vignetting correction is requested but cannot be applied due to missing info.");
+                            ALICEVISION_LOG_ERROR("Unexisting directory " << fs::path(outputPath).parent_path().generic_string() << " cannot be created");
+                            return EXIT_FAILURE;
                         }
-                        else
-                        {
-                            pParams.lensCorrection.vParams.push_back(FocX);
-                            pParams.lensCorrection.vParams.push_back(FocY);
-                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageXCenter);
-                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageYCenter);
-                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam1);
-                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam2);
-                            pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam3);
-                        }
-                    }
-
-                    if (pParams.lensCorrection.chromaticAberration && lensParam.hasChromaticParams() && !lensParam.ChromaticGreenParams.isEmpty)
-                    {
-                        if (lensParam.ChromaticGreenParams.FocalLengthX == 0.0)
-                        {
-                            lensParam.ChromaticGreenParams.FocalLengthX = width * focalLengthmm / sensorWidth / std::max(width, height);
-                        }
-                        if (lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
-                        {
-                            lensParam.ChromaticGreenParams.FocalLengthY = height * focalLengthmm / sensorHeight / std::max(width, height);
-                        }
-
-                        if (lensParam.ChromaticGreenParams.FocalLengthX == 0.0 || lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
-                        {
-                            pParams.lensCorrection.caGModel.reset();
-                            pParams.lensCorrection.caBGModel.reset();
-                            pParams.lensCorrection.caRGModel.reset();
-
-                            ALICEVISION_LOG_WARNING("Chromatic Aberration correction is requested but cannot be applied due to missing info.");
-                        }
-                        else
-                        {
-                            pParams.lensCorrection.caGModel = lensParam.ChromaticGreenParams;
-                            pParams.lensCorrection.caBGModel = lensParam.ChromaticBlueGreenParams;
-                            pParams.lensCorrection.caRGModel = lensParam.ChromaticRedGreenParams;
-                        }
-                    }
-
-                    if (pParams.lensCorrection.geometry)
-                    {
-                        // build intrinsic
-                        const camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA;
-                        const camera::EDISTORTION defaultDistortionModel = camera::EDISTORTION::DISTORTION_RADIALK3;
-                        const double defaultFocalLength = -1.0;
-                        const double defaultFieldOfView = -1.0;
-                        const double defaultFocalRatio = 1.0;
-                        const double defaultOffsetX = 0.0;
-                        const double defaultOffsetY = 0.0;
-                        intrinsicBase = sfmDataIO::getViewIntrinsic(view,
-                                                                    intrinsicInitMode,
-                                                                    focalLengthmm,
-                                                                    sensorWidth,
-                                                                    defaultFocalLength,
-                                                                    defaultFieldOfView,
-                                                                    defaultFocalRatio,
-                                                                    defaultOffsetX,
-                                                                    defaultOffsetY,
-                                                                    &lensParam,
-                                                                    defaultCameraModel,
-                                                                    defaultDistortionModel);
-
-                        pParams.lensCorrection.geometryModel = lensParam.perspParams;
                     }
                 }
                 else
                 {
-                    ALICEVISION_LOG_WARNING("No LCP file found for image " << inputFilePath);
-                    ALICEVISION_LOG_WARNING("Requested lens correction(s) won't be applied");
+                    outputFilePath = (fs::path(outputPath) / (filename + outputExt)).generic_string();
+                    // Create output directory if it does not exist
+                    if (!fs::exists(fs::path(outputPath)))
+                    {
+                        if (!fs::create_directory(fs::path(outputPath)))
+                        {
+                            ALICEVISION_LOG_ERROR("Unexisting directory " << outputPath << " cannot be created");
+                            return EXIT_FAILURE;
+                        }
+                    }
                 }
-            }
 
-            std::map<std::string, std::string> md = view.getImage().getMetadata();
+                image::DCPProfile dcpProf;
+                sfmData::View view;  // used to extract and complete metadata
+                view.getImage().setImagePath(inputFilePath);
+                int width, height;
+                const auto metadata = image::readImageMetadata(inputFilePath, width, height);
+                view.getImage().setMetadata(image::getMapFromMetadata(metadata));
+                view.getImage().setWidth(width);
+                view.getImage().setHeight(height);
+                std::shared_ptr<camera::IntrinsicBase> intrinsicBase;
+                // Get DSLR maker and model in view metadata.
+                const std::string& make = view.getImage().getMetadataMake();
+                const std::string& model = view.getImage().getMetadataModel();
 
-            pParams.par.value = 1.0;
-            if (pParams.par.enabled)
-            {
-                double pixelAspectRatio = 1.0;
-                view.getImage().getDoubleMetadata({"PixelAspectRatio"}, pixelAspectRatio);
-                pParams.par.value = pixelAspectRatio;
-                md["PixelAspectRatio"] = "1.0";
-            }
-
-            // set readOptions
-            image::ImageReadOptions readOptions;
-
-            if (isRAW)
-            {
-                readOptions.colorProfileFileName = dcpProf.info.filename;
-                if (dcpProf.info.filename.empty() && ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
-                                                      (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
+                if (isRAW && (rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing ||
+                            rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata))
                 {
-                    // Fallback case of missing profile but no error requested
-                    readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
+                    // Load DCP color profiles database if not already loaded
+                    dcpDatabase.load(colorProfileDatabaseDirPath.empty() ? getColorProfileDatabaseFolder() : colorProfileDatabaseDirPath, false);
+
+                    // Get DCP profile
+                    if (!dcpDatabase.retrieveDcpForCamera(make, model, dcpProf))
+                    {
+                        if (errorOnMissingColorProfile)
+                        {
+                            ALICEVISION_LOG_ERROR("The specified DCP database does not contain an appropriate profil for DSLR " << make << " " << model);
+                            return EXIT_FAILURE;
+                        }
+                        else
+                        {
+                            ALICEVISION_LOG_WARNING("Can't find color profile for input image " << inputFilePath);
+                        }
+                    }
+
+                    // Add color profile info in metadata
+                    view.getImage().addDCPMetadata(dcpProf);
+                }
+
+                if (isRAW && pParams.lensCorrection.enabled &&
+                    (pParams.lensCorrection.geometry || pParams.lensCorrection.vignetting || pParams.lensCorrection.chromaticAberration))
+                {
+                    // try to find an appropriate Lens Correction Profile
+                    LCPinfo* lcpData = nullptr;
+                    if (lcpStore.size() == 1)
+                    {
+                        lcpData = lcpStore.retrieveLCP();
+                    }
+                    else if (!lcpStore.empty())
+                    {
+                        // Find an LCP file that matches the camera model and the lens model.
+                        const std::string& lensModel = view.getImage().getMetadataLensModel();
+                        const int lensID = view.getImage().getMetadataLensID();
+
+                        if (!make.empty() && !lensModel.empty())
+                        {
+    #pragma omp critical(lcp)
+                            lcpData = lcpStore.findLCP(make, model, lensModel, lensID, 1);
+                        }
+                    }
+
+                    if ((lcpData != nullptr) && !(lcpData->isEmpty()))
+                    {
+                        double focalLengthmm = view.getImage().getMetadataFocalLength();
+                        const float apertureValue = 2.f * std::log(view.getImage().getMetadataFNumber()) / std::log(2.0);
+                        const float focusDistance = 0.f;
+
+                        LensParam lensParam;
+                        lcpData->getDistortionParams(focalLengthmm, focusDistance, lensParam);
+                        lcpData->getVignettingParams(focalLengthmm, apertureValue, lensParam);
+                        lcpData->getChromaticParams(focalLengthmm, focusDistance, lensParam);
+
+                        // Get sensor size by combining information from sensor database and view's metadata
+                        double sensorWidth = -1.0;
+                        double sensorHeight = -1.0;
+                        camera::EInitMode intrinsicInitMode = camera::EInitMode::UNKNOWN;
+                        view.getImage().getSensorSize(sensorDatabase, sensorWidth, sensorHeight, focalLengthmm, intrinsicInitMode, true);
+
+                        if (lensParam.hasVignetteParams() && !lensParam.vignParams.isEmpty && pParams.lensCorrection.vignetting)
+                        {
+                            float FocX = lensParam.vignParams.FocalLengthX != 0.0 ? lensParam.vignParams.FocalLengthX
+                                                                                : width * focalLengthmm / sensorWidth / std::max(width, height);
+                            float FocY = lensParam.vignParams.FocalLengthY != 0.0 ? lensParam.vignParams.FocalLengthY
+                                                                                : height * focalLengthmm / sensorHeight / std::max(width, height);
+
+                            pParams.lensCorrection.vParams.clear();
+
+                            if (FocX == 0.0 || FocY == 0.0)
+                            {
+                                ALICEVISION_LOG_WARNING("Vignetting correction is requested but cannot be applied due to missing info.");
+                            }
+                            else
+                            {
+                                pParams.lensCorrection.vParams.push_back(FocX);
+                                pParams.lensCorrection.vParams.push_back(FocY);
+                                pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageXCenter);
+                                pParams.lensCorrection.vParams.push_back(lensParam.vignParams.ImageYCenter);
+                                pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam1);
+                                pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam2);
+                                pParams.lensCorrection.vParams.push_back(lensParam.vignParams.VignetteModelParam3);
+                            }
+                        }
+
+                        if (pParams.lensCorrection.chromaticAberration && lensParam.hasChromaticParams() && !lensParam.ChromaticGreenParams.isEmpty)
+                        {
+                            if (lensParam.ChromaticGreenParams.FocalLengthX == 0.0)
+                            {
+                                lensParam.ChromaticGreenParams.FocalLengthX = width * focalLengthmm / sensorWidth / std::max(width, height);
+                            }
+                            if (lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
+                            {
+                                lensParam.ChromaticGreenParams.FocalLengthY = height * focalLengthmm / sensorHeight / std::max(width, height);
+                            }
+
+                            if (lensParam.ChromaticGreenParams.FocalLengthX == 0.0 || lensParam.ChromaticGreenParams.FocalLengthY == 0.0)
+                            {
+                                pParams.lensCorrection.caGModel.reset();
+                                pParams.lensCorrection.caBGModel.reset();
+                                pParams.lensCorrection.caRGModel.reset();
+
+                                ALICEVISION_LOG_WARNING("Chromatic Aberration correction is requested but cannot be applied due to missing info.");
+                            }
+                            else
+                            {
+                                pParams.lensCorrection.caGModel = lensParam.ChromaticGreenParams;
+                                pParams.lensCorrection.caBGModel = lensParam.ChromaticBlueGreenParams;
+                                pParams.lensCorrection.caRGModel = lensParam.ChromaticRedGreenParams;
+                            }
+                        }
+
+                        if (pParams.lensCorrection.geometry)
+                        {
+                            // build intrinsic
+                            const camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA;
+                            const camera::EDISTORTION defaultDistortionModel = camera::EDISTORTION::DISTORTION_RADIALK3;
+                            const double defaultFocalLength = -1.0;
+                            const double defaultFieldOfView = -1.0;
+                            const double defaultFocalRatio = 1.0;
+                            const double defaultOffsetX = 0.0;
+                            const double defaultOffsetY = 0.0;
+                            intrinsicBase = sfmDataIO::getViewIntrinsic(view,
+                                                                        intrinsicInitMode,
+                                                                        focalLengthmm,
+                                                                        sensorWidth,
+                                                                        defaultFocalLength,
+                                                                        defaultFieldOfView,
+                                                                        defaultFocalRatio,
+                                                                        defaultOffsetX,
+                                                                        defaultOffsetY,
+                                                                        &lensParam,
+                                                                        defaultCameraModel,
+                                                                        defaultDistortionModel);
+
+                            pParams.lensCorrection.geometryModel = lensParam.perspParams;
+                        }
+                    }
+                    else
+                    {
+                        ALICEVISION_LOG_WARNING("No LCP file found for image " << inputFilePath);
+                        ALICEVISION_LOG_WARNING("Requested lens correction(s) won't be applied");
+                    }
+                }
+
+                std::map<std::string, std::string> md = view.getImage().getMetadata();
+
+                pParams.par.value = 1.0;
+                if (pParams.par.enabled)
+                {
+                    double pixelAspectRatio = 1.0;
+                    view.getImage().getDoubleMetadata({"PixelAspectRatio"}, pixelAspectRatio);
+                    pParams.par.value = pixelAspectRatio;
+                    md["PixelAspectRatio"] = "1.0";
+                }
+
+                // set readOptions
+                image::ImageReadOptions readOptions;
+
+                if (isRAW)
+                {
+                    readOptions.colorProfileFileName = dcpProf.info.filename;
+                    if (dcpProf.info.filename.empty() && ((rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing) ||
+                                                        (rawColorInterpretation == image::ERawColorInterpretation::DcpMetadata)))
+                    {
+                        // Fallback case of missing profile but no error requested
+                        readOptions.rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
+                    }
+                    else
+                    {
+                        readOptions.rawColorInterpretation = rawColorInterpretation;
+                    }
+
+                    if (pParams.applyDcpMetadata && md["AliceVision::ColorSpace"] != "no_conversion")
+                    {
+                        ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+                    }
+
+                    readOptions.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                    readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
+                    readOptions.demosaicingAlgo = demosaicingAlgo;
+                    readOptions.highlightMode = highlightMode;
+                    readOptions.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
+                    readOptions.rawAutoBright = pParams.rawAutoBright;
+                    readOptions.correlatedColorTemperature = correlatedColorTemperature;
+                    pParams.correlatedColorTemperature = correlatedColorTemperature;
+                    pParams.enableColorTempProcessing = readOptions.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
+
+                    pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
+                    if (pParams.applyDcpMetadata)
+                    {
+                        workingColorSpace = image::EImageColorSpace::ACES2065_1;
+                    }
                 }
                 else
                 {
-                    readOptions.rawColorInterpretation = rawColorInterpretation;
+                    readOptions.inputColorSpace = inputColorSpace;
                 }
 
-                if (pParams.applyDcpMetadata && md["AliceVision::ColorSpace"] != "no_conversion")
+                readOptions.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
+
+                // Read original image
+                image::Image<image::RGBAfColor> image;
+                image::readImage(inputFilePath, image, readOptions);
+
+                // Image processing
+                processImage(image, pParams, md, intrinsicBase);
+
+                image::ImageWriteOptions writeOptions;
+
+                writeOptions.fromColorSpace(workingColorSpace);
+                writeOptions.toColorSpace(outputColorSpace);
+                writeOptions.exrCompressionMethod(exrCompressionMethod);
+                writeOptions.exrCompressionLevel(exrCompressionLevel);
+
+                if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
                 {
-                    ALICEVISION_LOG_WARNING("A dcp profile will be applied on an image containing non raw data!");
+                    // Select storage data type
+                    writeOptions.storageDataType(storageDataType);
                 }
 
-                readOptions.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-                readOptions.doWBAfterDemosaicing = doWBAfterDemosaicing;
-                readOptions.demosaicingAlgo = demosaicingAlgo;
-                readOptions.highlightMode = highlightMode;
-                readOptions.rawExposureAdjustment = std::pow(2.f, pParams.rawExposureAdjust);
-                readOptions.rawAutoBright = pParams.rawAutoBright;
-                readOptions.correlatedColorTemperature = correlatedColorTemperature;
-                pParams.correlatedColorTemperature = correlatedColorTemperature;
-                pParams.enableColorTempProcessing = readOptions.rawColorInterpretation == image::ERawColorInterpretation::DcpLinearProcessing;
-
-                pParams.useDCPColorMatrixOnly = useDCPColorMatrixOnly;
-                if (pParams.applyDcpMetadata)
-                {
-                    workingColorSpace = image::EImageColorSpace::ACES2065_1;
-                }
+                // Save the image
+                saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, outputFormat, outputChannel, writeOptions);
             }
-            else
-            {
-                readOptions.inputColorSpace = inputColorSpace;
-            }
-
-            readOptions.workingColorSpace = pParams.applyDcpMetadata ? image::EImageColorSpace::NO_CONVERSION : workingColorSpace;
-
-            // Read original image
-            image::Image<image::RGBAfColor> image;
-            image::readImage(inputFilePath, image, readOptions);
-
-            // Image processing
-            processImage(image, pParams, md, intrinsicBase);
-
-            image::ImageWriteOptions writeOptions;
-
-            writeOptions.fromColorSpace(workingColorSpace);
-            writeOptions.toColorSpace(outputColorSpace);
-            writeOptions.exrCompressionMethod(exrCompressionMethod);
-            writeOptions.exrCompressionLevel(exrCompressionLevel);
-
-            if (boost::to_lower_copy(fs::path(outputPath).extension().string()) == ".exr")
-            {
-                // Select storage data type
-                writeOptions.storageDataType(storageDataType);
-            }
-
-            // Save the image
-            saveImage(image, inputFilePath, outputFilePath, md, metadataFolders, outputFormat, outputChannel, writeOptions);
+            idx++;
         }
     }
 
