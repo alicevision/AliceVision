@@ -97,4 +97,10 @@ For example, the target intrinsics may be the same without the distortion.
             group="",
             advanced=True,
         ),
+         desc.File(
+            name="outputSfMData",
+            label="Output SfMData",
+            description="Path to the target SfMData file updated with transformed images.",
+            value="{nodeCacheFolder}/sfm.abc",
+        ),
     ]

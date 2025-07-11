@@ -238,7 +238,7 @@ bool processImage(const std::string& dstFileName,
  * @param rangeEnd the last view index to process (range selection)
 */
 bool process(const sfmData::SfMData & input, 
-             const sfmData::SfMData & target, 
+             sfmData::SfMData & target, 
              const NameFunction & namingFunction,
              bool evCorrection,
              const std::vector<std::string> & masksFolders,
@@ -246,12 +246,13 @@ bool process(const sfmData::SfMData & input,
              size_t rangeStart,
              size_t rangeEnd)
 {
-    rangeEnd = std::min(input.getViews().size(), rangeEnd);
+    size_t countElements = input.getViews().size();
+    rangeEnd = std::min(countElements, rangeEnd);
 
     // for exposure correction
     const double medianCameraExposure = input.getMedianCameraExposureSetting().getExposure(); 
 
-    for (int posImage = rangeStart; posImage < rangeEnd; posImage++)
+    for (int posImage = 0; posImage < countElements; posImage++)
     {
         auto viewsIt = input.getViews().begin();
         std::advance(viewsIt, posImage);
@@ -259,6 +260,7 @@ bool process(const sfmData::SfMData & input,
         //Retrieve view
         IndexT viewId = viewsIt->first;
         sfmData::View & view = *viewsIt->second;
+        sfmData::View & outputView = target.getView(viewsIt->first);
 
         //Retrieve intrinsic
         IndexT intrinsicId = view.getIntrinsicId();
@@ -276,9 +278,16 @@ bool process(const sfmData::SfMData & input,
         //Retrieve image name
         std::string srcFileName = view.getImage().getImagePath();
 
-        //Process Image
+        //Update filename in sfmData
         std::string outFileName = namingFunction(view);
+        outputView.getImage().setImagePath(outFileName);
 
+        if (posImage < rangeStart && posImage >= rangeEnd)
+        {
+            continue;
+        }
+
+        //Process Image
         ALICEVISION_LOG_INFO("Process image " << srcFileName);
         processImage(outFileName,
                     targetIntrinsic,
@@ -301,6 +310,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputSfmDataFilename;
     std::string targetSfmDataFilename;
+    std::string outputSfMDataFilename = "";
     std::string outFolder;
     std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
     std::string namingMode = "frameid";
@@ -318,7 +328,8 @@ int aliceVision_main(int argc, char* argv[])
         ("target,t", po::value<std::string>(&targetSfmDataFilename)->required(),
          "Target SfMData file.")
         ("output,o", po::value<std::string>(&outFolder)->required(),
-         "Output folder.");
+         "Output folder.")
+        ("outputSfMData,o", po::value<std::string>(&outputSfMDataFilename)->default_value(outputSfMDataFilename), "Destination sfmData.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -449,6 +460,14 @@ int aliceVision_main(int argc, char* argv[])
     {
         ALICEVISION_LOG_ERROR("Process failed");
         return EXIT_FAILURE;
+    }
+
+    if (rangeStart == 0)
+    {
+        if (!outputSfMDataFilename.empty())
+        {
+            sfmDataIO::save(targetSfmData, outputSfMDataFilename, sfmDataIO::ESfMData::ALL);
+        }
     }
 
     return EXIT_SUCCESS;
