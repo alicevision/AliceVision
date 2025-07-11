@@ -1081,6 +1081,24 @@ void saveImage(image::Image<image::RGBAfColor>& image,
     }
 }
 
+bool isFileReadable(const std::string& filename)
+{
+    if (!fs::exists(filename))
+    {
+        return false;
+    }
+    if (!fs::is_regular_file(filename))
+    {
+        return false;
+    }
+    std::ifstream file(filename, std::ios::binary);
+    if (!file.is_open())
+    {
+        return false;
+    }
+    return true;
+}
+
 int aliceVision_main(int argc, char* argv[])
 {
     std::string inputExpression;
@@ -1653,11 +1671,18 @@ int aliceVision_main(int argc, char* argv[])
                 sfmfilePath += "_0";
             }
             sfmfilePath += (fs::path(inputExpression).extension()).generic_string();
-            if (!sfmDataIO::save(sfmData, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+            std::string sfmTempfilePath = (fs::path(outputPath) / fs::path(inputExpression).stem()).generic_string();
+            if (rangeBlocksCount > 1)
+            {
+                sfmTempfilePath += "_0_tmp";
+            }
+            sfmTempfilePath += (fs::path(inputExpression).extension()).generic_string();
+            if (!sfmDataIO::save(sfmData, sfmTempfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
             {
                 ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
                 return EXIT_FAILURE;
             }
+            fs::rename(sfmTempfilePath, sfmfilePath);
         }
         else
         {
@@ -1671,21 +1696,28 @@ int aliceVision_main(int argc, char* argv[])
             std::chrono::seconds interval = std::chrono::seconds(1);
             std::chrono::seconds timeout = std::chrono::seconds(rangeIteration*60);
             auto start_time = std::chrono::steady_clock::now();
-            while (!sfmDataIO::load(sfmDataNew, sfmfilePath_in, sfmDataIO::ALL))
+            std::chrono::seconds durationSeconds; // = std::chrono::duration_cast<std::chrono::seconds>(start_time);
+            while (!isFileReadable(sfmfilePath_in))
             {
                 auto elapsed = std::chrono::steady_clock::now() - start_time;
-                if (elapsed > timeout || fs::is_exist(timeoutFilePath))
+                durationSeconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
+                if (elapsed > timeout || fs::exists(timeoutFilePath))
                 {
-                    if (!fs::is_exist(timeoutFilePath))
+                    if (!fs::exists(timeoutFilePath))
                     {
                         std::ofstream timeoutFile(timeoutFilePath);
-                        timeoutFile.close()
+                        timeoutFile.close();
                     }
-                    auto durationSeconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
                     ALICEVISION_LOG_ERROR("Timeout reached waiting the SfMData file '" << sfmfilePath_in << "' after " << durationSeconds.count() << "s.");
                     return EXIT_FAILURE;
                 }
                 std::this_thread::sleep_for(interval);
+            }
+            ALICEVISION_LOG_INFO("Temporary SfMData file '" << sfmfilePath_in << "' available after " << durationSeconds.count() << "s.");
+            if (!sfmDataIO::load(sfmDataNew, sfmfilePath_in, sfmDataIO::ALL))
+            {
+                ALICEVISION_LOG_ERROR("Temporary SfMData file '" << sfmfilePath_in << "' cannot be opened");
+                return EXIT_FAILURE;
             }
 
             for (auto& viewId : updatedViews)
@@ -1699,11 +1731,22 @@ int aliceVision_main(int argc, char* argv[])
                 sfmfilePath += "_" + std::to_string(rangeIteration);
             }
             sfmfilePath += (fs::path(inputExpression).extension()).generic_string();
-            if (!sfmDataIO::save(sfmDataNew, sfmfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+
+            std::string sfmTempfilePath = (fs::path(outputPath) / fs::path(inputExpression).stem()).generic_string();
+            if (rangeIteration < rangeBlocksCount - 1)
+            {
+                sfmTempfilePath += "_" + std::to_string(rangeIteration) + "tmp";
+            }
+            sfmTempfilePath += (fs::path(inputExpression).extension()).generic_string();
+
+
+            if (!sfmDataIO::save(sfmDataNew, sfmTempfilePath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
             {
                 ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmfilePath << "' cannot be written.");
                 return EXIT_FAILURE;
             }
+
+            fs::rename(sfmTempfilePath, sfmfilePath);
 
             fs::remove(sfmfilePath_in);
         }
