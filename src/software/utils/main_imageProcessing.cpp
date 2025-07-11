@@ -1696,7 +1696,7 @@ int aliceVision_main(int argc, char* argv[])
             std::chrono::seconds interval = std::chrono::seconds(1);
             std::chrono::seconds timeout = std::chrono::seconds(rangeIteration*60);
             auto start_time = std::chrono::steady_clock::now();
-            std::chrono::seconds durationSeconds; // = std::chrono::duration_cast<std::chrono::seconds>(start_time);
+            std::chrono::seconds durationSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
             while (!isFileReadable(sfmfilePath_in))
             {
                 auto elapsed = std::chrono::steady_clock::now() - start_time;
