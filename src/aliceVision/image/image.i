@@ -22,9 +22,11 @@
 %{    
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
  
 using namespace aliceVision;
 using namespace aliceVision::image;
+using namespace aliceVision::imageAlgo;
 
 template <typename T> 
 int NumPyType() 
@@ -74,6 +76,7 @@ int NumPyType<image::RGBColor>()
 %include <aliceVision/image/colorspace.hpp> 
 %include <aliceVision/image/Image.hpp>
 %include <aliceVision/image/io.hpp> 
+%include <aliceVision/image/imageAlgo.hpp>
 
 
 %fragment("NumPy_Fragments");
