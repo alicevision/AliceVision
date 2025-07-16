@@ -523,6 +523,12 @@ void resampleImage(int outWidth, int outHeight, const image::Image<IndexT>& inIm
     resampleImage(oiio::TypeDesc::UINT32, inImage.width(), inImage.height(), outWidth, outHeight, 1, inImage.data(), outImage.data(), interpolate);
 }
 
+void resampleImage(int outWidth, int outHeight, const image::Image<unsigned char>& inImage, image::Image<unsigned char>& outImage, bool interpolate)
+{
+    outImage.resize(outWidth, outHeight);
+    resampleImage(oiio::TypeDesc::UINT8, inImage.width(), inImage.height(), outWidth, outHeight, 1, inImage.data(), outImage.data(), interpolate);
+}
+
 template<typename T>
 void convolveImage(oiio::TypeDesc typeDesc,
                    int inWidth,
