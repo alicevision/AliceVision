@@ -54,8 +54,8 @@ class Material
     /// Get textures by type
     const StaticVector<std::string>& getTextures(TextureType type) const;
 
-    /// Get all textures used in the material
-    StaticVector<std::string> getAllTextures() const;
+    /// Get all texture paths used in the material
+    void getAllTexturePaths(std::vector<std::string>& texturePaths) const;
 
     /// Check if material has textures of a given type
     bool hasTextures(TextureType type) const;
