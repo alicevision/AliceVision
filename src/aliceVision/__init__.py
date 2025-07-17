@@ -18,3 +18,8 @@ if hasattr(os, "add_dll_directory"):
         if not os.path.isdir(p):
             continue
         os.add_dll_directory(p)
+
+#Enforce loading order
+from . import geometry
+from . import sfmData
+from . import sfmDataIO
