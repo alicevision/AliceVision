@@ -15,11 +15,10 @@
 %include <aliceVision/sfmData/Constraint2D.i>
 %include <aliceVision/sfmData/ConstraintPoint.i>
 %include <aliceVision/sfmData/SurveyPoint.i>
-%include <aliceVision/sfmData/Landmark.i>
-%include <aliceVision/sfmData/Observation.i>
 %include <aliceVision/sfmData/Rig.i>
 %include <aliceVision/sfmData/RotationPrior.i>
 %include <aliceVision/sfmData/View.i>
+%include <aliceVision/sfmData/Landmark.i>
 
 %include <aliceVision/sfmData/SfMData.hpp>
 
@@ -36,6 +35,7 @@ using namespace aliceVision::camera;
 %template(PinholeIntrinsics) std::map<IndexT, std::shared_ptr<aliceVision::camera::Pinhole>>;
 %template(EquidistantIntrinsics) std::map<IndexT, std::shared_ptr<aliceVision::camera::Equidistant>>;
 %template(Landmarks) std::map<IndexT, aliceVision::sfmData::Landmark>;
+%template(Observations) std::map<IndexT, aliceVision::sfmData::Observation>;
 %template(Poses) std::map<IndexT, aliceVision::sfmData::CameraPose>;
 %template(Rigs) std::map<IndexT, aliceVision::sfmData::Rig>;
 %template(RotationPriors) std::vector<aliceVision::sfmData::RotationPrior>;
@@ -43,8 +43,3 @@ using namespace aliceVision::camera;
 
 %template(ViewsVector) std::vector<std::shared_ptr<aliceVision::sfmData::View>>;
 %template(ViewsVectorVector) std::vector<std::vector<std::shared_ptr<aliceVision::sfmData::View>>>;
-
-
-// TODO:
-// %template(PosesUncertainty) std::map<IndexT, Vec6>;
-// %template(LandmarksUncertainty) std::map<IndexT, Vec3>;
