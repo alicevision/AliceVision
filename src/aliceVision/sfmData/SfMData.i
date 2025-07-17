@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-%module (module="pyalicevision") sfmData
+%module (package="pyalicevision") sfmData
 
 %include <aliceVision/global.i>
 %include <aliceVision/camera/IntrinsicBase.i>
