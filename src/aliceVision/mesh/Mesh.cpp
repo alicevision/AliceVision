@@ -2617,8 +2617,8 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
     const std::unordered_set<int> materialIds = std::unordered_set<int>(_trisMtlIds.begin(), _trisMtlIds.end());
     nmtls = static_cast<int>(materialIds.size());
 
-    // store textures per atlas
-    if (material != nullptr)
+    // get material related properties
+    if (material != nullptr && scene->mNumMaterials > 1)
     {
         // get material properties from the first material as they are shared across all others
         scene->mMaterials[1]->Get(AI_MATKEY_COLOR_AMBIENT, material->ambient);
@@ -2626,6 +2626,7 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
         scene->mMaterials[1]->Get(AI_MATKEY_COLOR_SPECULAR, material->specular);
         scene->mMaterials[1]->Get(AI_MATKEY_SHININESS, material->shininess);
 
+        // get textures from the next materials
         for (int id : materialIds)
         {
             aiString diffuse;
@@ -2654,10 +2655,13 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
         }
     }
 
-    ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
-    ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
-    ALICEVISION_LOG_DEBUG("UVs: " << uvCoords.size());
-    ALICEVISION_LOG_DEBUG("Num Materials: " + std::to_string(nmtls));
+    // log mesh information
+    ALICEVISION_LOG_DEBUG("Mesh information:" << std::endl
+                           << "\t- # vertices: " << pts.size() << std::endl
+                           << "\t- # triangles: " << tris.size() << std::endl
+                           << "\t- # UVs: " << uvCoords.size() << std::endl
+                           << "\t- # normals: " << normals.size() << std::endl
+                           << "\t- # materials: " << nmtls);
 }
 
 bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat, StaticVector<Voxel>& edgesXYStat)
