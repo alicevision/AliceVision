@@ -9,7 +9,7 @@
             "ConvertSfMFormat": "2.0",
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
-            "DistortionCalibration": "5.0",
+            "DistortionCalibration": "6.0",
             "ExportAnimatedCamera": "2.0",
             "ExportDistortion": "2.0",
             "FeatureExtraction": "1.3",
