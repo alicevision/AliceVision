@@ -39,8 +39,8 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 6
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
 using namespace aliceVision;
@@ -262,6 +262,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmOutputDataFilepath;
     bool handleSqueeze = true;
     bool isDesqueezed = false;
+    double forcedPixelAspectRatio = 0.0;
 
     std::string undistortionModelName = "3deanamorphic4";
 
@@ -282,7 +283,9 @@ int aliceVision_main(int argc, char* argv[])
         ("handleSqueeze", po::value<bool>(&handleSqueeze)->default_value(handleSqueeze),
          "Estimate squeeze after estimating distortion")
         ("isDesqueezed", po::value<bool>(&isDesqueezed)->default_value(isDesqueezed),
-         "Is the image already desqueezed");
+         "Is the image already desqueezed")
+        ("forcedPixelAspectRatio", po::value<double>(&forcedPixelAspectRatio)->default_value(forcedPixelAspectRatio),
+         "Force pixel aspect ratio value, overriding metadatas. Ignored if less than or equal 0.0.");
     // clang-format on
 
     CmdLine cmdline("This program calibrates camera distortion.\n"
@@ -348,6 +351,12 @@ int aliceVision_main(int argc, char* argv[])
         }
 
         double pixelAspectRatio = *pa.begin();
+
+        if (forcedPixelAspectRatio > 0.0)
+        {
+            pixelAspectRatio = forcedPixelAspectRatio;
+            ALICEVISION_LOG_INFO("A parameters has overriden the pixel aspect ratio to " << forcedPixelAspectRatio);
+        }
 
         // Convert to pinhole
         std::shared_ptr<camera::Pinhole> cameraIn = std::dynamic_pointer_cast<camera::Pinhole>(intrinsicPtr);

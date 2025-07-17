@@ -8,7 +8,7 @@
             "CameraInit": "12.0",
             "CheckerboardDetection": "1.0",
             "ConvertSfMFormat": "2.0",
-            "DistortionCalibration": "5.0",
+            "DistortionCalibration": "6.0",
             "ExportAnimatedCamera": "2.0",
             "ExportDistortion": "2.0",
             "FeatureExtraction": "1.3",
