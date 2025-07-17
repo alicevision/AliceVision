@@ -11,11 +11,13 @@
 
 %{    
 #include <aliceVision/feature/Regions.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::feature;
 %} 
 
+%include <aliceVision/feature/imageDescriberCommon.hpp>
 %include <aliceVision/feature/Descriptor.hpp>
 %include <aliceVision/feature/PointFeature.hpp>
 %include <aliceVision/feature/Regions.hpp>
