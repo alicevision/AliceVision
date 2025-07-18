@@ -12,6 +12,8 @@
 #include <aliceVision/stl/FlatMap.hpp>
 #include <aliceVision/types.hpp>
 
+#include <map>
+
 namespace aliceVision {
 namespace sfmData {
 
@@ -63,6 +65,7 @@ class Observation
 
 /// Observations are indexed by their View_id
 typedef stl::flat_map<IndexT, Observation> Observations;
+typedef std::map<IndexT, Observation> MapObservations;
 
 }  // namespace sfmData
 }  // namespace aliceVision

@@ -54,6 +54,11 @@ class Landmark
 
     Observations& getObservations() { return _observations; }
 
+    MapObservations getMapObservations() const 
+    { 
+        return MapObservations(_observations.begin(), _observations.end());;
+    }
+
   private:
     Observations _observations;
 };
