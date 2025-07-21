@@ -2,7 +2,6 @@
     "header": {
         "releaseVersion": "2025.1.0-develop",
         "fileVersion": "2.0",
-        "template": true,
         "nodesVersions": {
             "ApplyCalibration": "1.0",
             "CameraInit": "12.0",
@@ -15,13 +14,14 @@
             "FeatureMatching": "2.0",
             "ImageDetectionPrompt": "0.1",
             "ImageMatching": "2.0",
-            "ImageSegmentationBox": "0.1",
+            "ImageSegmentationBox": "0.2",
             "NodalSfM": "2.0",
             "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
             "ScenePreview": "2.0",
             "TracksBuilding": "1.0"
-        }
+        },
+        "template": true
     },
     "graph": {
         "ApplyCalibration_1": {
@@ -246,7 +246,8 @@
             "inputs": {
                 "input": "{TracksBuilding_1.input}",
                 "tracksFilename": "{TracksBuilding_1.output}",
-                "enforcePureRotation": true
+                "enforcePureRotation": true,
+                "imagePairsList": "{FeatureMatching_1.imagePairsList}"
             },
             "internalInputs": {
                 "color": "#80766f"
