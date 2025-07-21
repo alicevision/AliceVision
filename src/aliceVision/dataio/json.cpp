@@ -12,10 +12,10 @@ std::vector<boost::json::value> readJsons(std::istream& is, boost::system::error
     {   
         content += line;
         
-        totalRead = 0;
+        //Try to read all available items in the buffer
         while (true)
         {
-            totalRead += p.write(content, ec);
+            totalRead = p.write_some(content, ec);
 
             // If the parser did not find a value, then it won't
             // find anything more.
