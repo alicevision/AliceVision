@@ -460,9 +460,9 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
 
     //Create a fake distortion block which is always constant
     //This is to trick ceres limitations
-    _fakeDistortionBlock = {0.0};
-    problem.AddParameterBlock(_fakeDistortionBlock.data(), 1);
-    problem.SetParameterBlockConstant(_fakeDistortionBlock.data());
+    _fakeDistortionBlock = 0.0;
+    problem.AddParameterBlock(&_fakeDistortionBlock, 1);
+    problem.SetParameterBlockConstant(&_fakeDistortionBlock);
 
     // count the number of reconstructed views per intrinsic
     for (const auto& viewPair : sfmData.getViews())
@@ -669,7 +669,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
         double* landmarkBlockPtr = landmarkBlock.data();
         problem.AddParameterBlock(landmarkBlockPtr, 3);
 
-        double* fakeDistortionBlockPtr = _fakeDistortionBlock.data();
+        double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
 
         // add landmark parameter to the all parameters blocks pointers list
         _allParametersBlocks.push_back(landmarkBlockPtr);
@@ -754,7 +754,7 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
     // build the residual blocks corresponding to the track observations
     for (const auto& [idView, vspoints] : sfmData.getSurveyPoints())
     {
-        double* fakeDistortionBlockPtr = _fakeDistortionBlock.data();
+        double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
 
         const sfmData::View& view = sfmData.getView(idView);
         const IndexT intrinsicId = view.getIntrinsicId();
@@ -805,7 +805,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
     // set a LossFunction to be less penalized by false measurements.
     // note: set it to NULL if you don't want use a lossFunction.
     ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
-    double* fakeDistortionBlockPtr = _fakeDistortionBlock.data();
+    double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
     
     for (const auto& constraint : sfmData.getConstraints2D())
     {
