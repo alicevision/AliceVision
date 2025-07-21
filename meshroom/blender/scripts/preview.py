@@ -222,7 +222,13 @@ def loadModel(filename):
         bpy.ops.wm.alembic_import(filepath=filename)
         root = bpy.data.objects['mvgRoot']
         root.rotation_euler.rotate_axis('X', math.radians(-90.0))
-        return bpy.data.objects['mvgPointCloud'], bpy.data.meshes['particleShape1']
+
+        obj = bpy.data.objects['mvgPointCloud']
+    
+        mesh=None
+        if "particleShape1" in [c.name for c in bpy.data.meshes]:
+            mesh = bpy.data.meshes['particleShape1']
+        return obj, mesh
 
 
 def setupWireframeShading(mesh, color):
@@ -290,21 +296,27 @@ def setupPointCloudShading(obj, color, size):
     # Setup nodes
     nodeInput = geo.nodes.new(type='NodeGroupInput')
     nodeOutput = geo.nodes.new(type='NodeGroupOutput')
-    nodeM2P = geo.nodes.new(type='GeometryNodeMeshToPoints')
     nodeIoP = geo.nodes.new(type='GeometryNodeInstanceOnPoints')
     nodeCube = geo.nodes.new(type='GeometryNodeMeshCube')
     nodeSize = geo.nodes.new(type='ShaderNodeValue')
     nodeSize.outputs['Value'].default_value = size
     nodeMat = geo.nodes.new(type='GeometryNodeSetMaterial')
     nodeMat.inputs[2].default_value = material
+
+    # Create sockets
+    if hasattr(geo, 'interface'):
+        geo.interface.new_socket('Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
+        geo.interface.new_socket('Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
+    else:
+        geo.inputs.new('NodeSocketGeometry', 'Geometry')
+        geo.outputs.new('NodeSocketGeometry', 'Geometry')
+        
     # Connect nodes
-    geo.links.new(nodeInput.outputs[0], nodeM2P.inputs['Mesh'])
-    geo.links.new(nodeM2P.outputs['Points'], nodeIoP.inputs['Points'])
+    geo.links.new(nodeInput.outputs['Geometry'], nodeIoP.inputs['Points'])
     geo.links.new(nodeCube.outputs['Mesh'], nodeIoP.inputs['Instance'])
     geo.links.new(nodeSize.outputs['Value'], nodeIoP.inputs['Scale'])
     geo.links.new(nodeIoP.outputs['Instances'], nodeMat.inputs['Geometry'])
-    geo.links.new(nodeMat.outputs[0], nodeOutput.inputs[0])
-
+    geo.links.new(nodeMat.outputs[0], nodeOutput.inputs['Geometry'])
 
 
 def main():
