@@ -84,7 +84,9 @@ RUN cmake "${AV_DEV}" \
      -DCMAKE_BUILD_TYPE=Release \
      -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
      -DAV_BUILD_ZLIB:BOOL=ON \
+     -DAV_BUILD_PYBIND11:BOOL=ON \
      -DAV_BUILD_ALICEVISION:BOOL=OFF \
+     -DPython_EXECUTABLE=/usr/bin/python3.11 \
      -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"
 
 # Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64

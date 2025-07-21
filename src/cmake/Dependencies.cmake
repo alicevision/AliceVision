@@ -42,6 +42,7 @@ option(AV_BUILD_OPENIMAGEIO "Enable building an embedded OpenImageIO library" ON
 option(AV_BUILD_BOOST "Enable building an embedded Boost library" ON)
 option(AV_BUILD_CERES "Enable building an embedded Ceres library" ON)
 option(AV_BUILD_SWIG "Enable building an embedded SWIG library" ON)
+option(AV_BUILD_PYBIND11 "Enable building of pybind11 library" OFF)
 option(AV_BUILD_OPENMESH "Enable building an embedded OpenMesh library" ON)
 
 if(AV_BUILD_DEPENDENCIES_PARALLEL EQUAL 0)
@@ -159,6 +160,27 @@ else()
     if(CUDA_TOOLKIT_ROOT_DIR)
         set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR})
     endif()
+endif()
+
+if(AV_BUILD_PYBIND11)
+    set(PYBIND11_TARGET pybind11)
+
+    ExternalProject_Add(${PYBIND11_TARGET}
+        GIT_REPOSITORY https://github.com/pybind/pybind11.git
+        GIT_TAG v2.13.6
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/pybind11
+        BINARY_DIR ${BUILD_DIR}/pybind11_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
+            -DPython_EXECUTABLE=${Python_EXECUTABLE}
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+            <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+    )
 endif()
 
 if(AV_BUILD_GEOGRAM)
@@ -1142,10 +1164,11 @@ if(AV_BUILD_OPENIMAGEIO)
             -DUSE_OPENEXR=${AV_BUILD_OPENEXR}
             -DUSE_TIFF=${AV_BUILD_TIFF}
             -DUSE_PNG=${AV_BUILD_PNG}
+            -DPython_EXECUTABLE=${Python_EXECUTABLE}
             -DUSE_PYTHON=ON -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF -DUSE_NUKE=OFF -DUSE_PTEX=OFF -DBUILD_DOCS=OFF -DBUILD_TESTING=OFF
             # TODO: build with libheif
         BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-        DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET}
+        DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET} ${PYBIND11_TARGET}
     )
 
     set(OPENIMAGEIO_CMAKE_FLAGS -DOpenImageIO_DIR=${CMAKE_INSTALL_PREFIX})
