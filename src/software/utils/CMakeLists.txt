@@ -76,6 +76,21 @@ if (ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
+
+    # Track from depthmap
+    alicevision_add_software(aliceVision_depthmapTracksInjecting
+        SOURCE main_depthmapTracksInjecting.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              aliceVision_track
+              aliceVision_image
+              Boost::program_options
+              Boost::json
+    )
+
     if (ALICEVISION_HAVE_OPENCV)
         target_link_libraries(aliceVision_imageProcessing_exe PRIVATE ${OpenCV_LIBS})
     endif()
