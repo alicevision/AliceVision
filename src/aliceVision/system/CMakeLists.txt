@@ -36,3 +36,18 @@ alicevision_add_library(aliceVision_system
 )
 
 alicevision_add_test(Logger_test.cpp NAME "system_Logger" LINKS aliceVision_system)
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(system
+        SOURCES System.i
+        PUBLIC_LINKS
+            aliceVision_system
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
+    )
+endif()
