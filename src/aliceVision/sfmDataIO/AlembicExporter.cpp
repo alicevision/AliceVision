@@ -623,6 +623,25 @@ void AlembicExporter::addSurveys(const sfmData::SurveyPoints & points)
 {
     OPoints outPoints(_dataImpl->_mvgSurveys, "surveys");
     OPointsSchema& pSchema = outPoints.getSchema();
+
+    //Build positions for abc visualisation
+    std::vector<V3f> positions;
+    for (const auto & [viewId, vsp] : points)
+    {
+        for (const auto & sp : vsp)
+        {
+            positions.emplace_back(sp.point3d[0], -sp.point3d[1], -sp.point3d[2]);
+        }
+    }
+
+    //Fake indices
+    std::vector<Alembic::Util::uint64_t> ids(positions.size());
+    std::iota(begin(ids), end(ids), 0);
+    
+    OPointsSchema::Sample psamp(std::move(V3fArraySample(positions)), std::move(UInt64ArraySample(ids)));
+    pSchema.set(psamp);
+
+    //Now, store information useful for AliceVision
     OCompoundProperty userProps = pSchema.getUserProperties();
 
     std::vector<IndexT> indices;
