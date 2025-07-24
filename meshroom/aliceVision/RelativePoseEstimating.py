@@ -8,7 +8,7 @@ class RelativePoseEstimating(desc.AVCommandLineNode):
     size = desc.DynamicNodeSize("input")
     
     parallelization = desc.Parallelization(blockSize=25)
-    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
+    commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
 
     category = "Sparse Reconstruction"
     documentation = """Estimate relative pose between each pair of views that share tracks."""

@@ -10,6 +10,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/system/Parallelization.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -140,8 +141,8 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmDataFilename;
     std::string tracksFilename;
     std::string outputDirectory;
-    int rangeStart = -1;
-    int rangeSize = 1;
+    int rangeIteration = 0;
+    int rangeBlocksCount = 1;
     size_t minInliers = 35;
     bool enforcePureRotation = false;
     size_t countIterations = 1024;
@@ -166,8 +167,8 @@ int aliceVision_main(int argc, char** argv)
         ("minInliers", po::value<size_t>(&minInliers)->default_value(minInliers), "Minimal number of inliers for a valid ransac.")
         ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
          "Path(s) to one or more files which contain the list of image pairs to match.")
-        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart), "Range image index start.")
-        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize), "Range size.");
+        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Chunk id.")
+        ("rangeBlocksCount", po::value<int>(&rangeBlocksCount)->default_value(rangeBlocksCount), "Chunk count.");
     // clang-format on
 
     CmdLine cmdline("AliceVision relativePoseEstimating");
@@ -193,33 +194,6 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Define range to compute
-    if(rangeStart != -1)
-    {
-        if(rangeStart < 0 || rangeSize < 0)
-        {
-            ALICEVISION_LOG_ERROR("Range is incorrect");
-            return EXIT_FAILURE;
-        }
-
-        if (rangeStart > sfmData.getViews().size())
-        {
-            ALICEVISION_LOG_INFO("Empty range to compute");
-            return EXIT_SUCCESS;
-        }
-
-        if(rangeStart + rangeSize > sfmData.getViews().size())
-        {
-            rangeSize = sfmData.getViews().size() - rangeStart;
-        }
-    }
-    else
-    {
-        rangeStart = 0;
-        rangeSize = sfmData.getViews().size();
-    }
-    ALICEVISION_LOG_DEBUG("Range to compute: rangeStart=" << rangeStart << ", rangeSize=" << rangeSize);
-
 
     // Load tracks
     ALICEVISION_LOG_INFO("Load tracks from " << tracksFilename << ".");
@@ -233,8 +207,7 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO("Compute co-visibility");
     std::map<Pair, unsigned int> covisibility;
 
-    int chunkStart = 0;
-    int chunkEnd = 0;
+    
         
     if (predefinedPairList.empty())
     {
@@ -242,11 +215,6 @@ int aliceVision_main(int argc, char** argv)
         //This will get the list of pair of views which observe common features
         ALICEVISION_LOG_INFO("Automatically select pairs.");
         track::computeCovisibility(covisibility, tracksHandler.getAllTracks());
-        
-        //Divide the work among chunks
-        double ratioChunk = double(covisibility.size()) / double(sfmData.getViews().size());
-        chunkStart = int(double(rangeStart) * ratioChunk);
-        chunkEnd = int(double(rangeStart + rangeSize) * ratioChunk);
     }
     else
     {
@@ -256,7 +224,7 @@ int aliceVision_main(int argc, char** argv)
             PairSet pairs;
                 
             ALICEVISION_LOG_INFO("Load pair list from file: " << imagePairsFile);
-            if (!matchingImageCollection::loadPairsFromFile(imagePairsFile, pairs, rangeStart, rangeSize))
+            if (!matchingImageCollection::loadPairsFromFile(imagePairsFile, pairs, 0, -1))
             {
                 return EXIT_FAILURE;
             }
@@ -273,10 +241,12 @@ int aliceVision_main(int argc, char** argv)
                 covisibility[other] = 1;
             }
         }
+    }
 
-        //Just process everything as it was already filtered during file loading
-        chunkStart = 0;
-        chunkEnd = covisibility.size();
+    int chunkStart, chunkEnd;
+    if (!rangeComputation(chunkStart, chunkEnd, rangeIteration, rangeBlocksCount, covisibility.size()))
+    {
+        ALICEVISION_LOG_INFO("Nothing to compute in this chunk");
     }
 
     ALICEVISION_LOG_INFO("A total of " << covisibility.size() << " pairs has to be processed.");
@@ -287,11 +257,11 @@ int aliceVision_main(int argc, char** argv)
 
     ALICEVISION_LOG_INFO("Process co-visibility");
     std::stringstream ss;
-    ss << outputDirectory << "/pairs_" << rangeStart << ".json";
+    ss << outputDirectory << "/pairs_" << rangeIteration << ".json";
     std::ofstream of(ss.str());
 
     // For each covisible pair
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
     for (int posPairs = chunkStart; posPairs < chunkEnd; posPairs++)
     {
         auto iterPairs = covisibility.begin();
@@ -310,6 +280,11 @@ int aliceVision_main(int argc, char** argv)
 
         aliceVision::track::TracksMap mapTracksCommon;
         track::getCommonTracksInImagesFast({refImage, nextImage}, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), mapTracksCommon);
+
+        if (mapTracksCommon.size() == 0)
+        {
+            continue;
+        }
 
         // Build features coordinates matrices
         const std::size_t n = mapTracksCommon.size();
