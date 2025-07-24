@@ -9,6 +9,7 @@ set(system_files_headers
     ProgressDisplay.hpp
     nvtx.hpp
     hardwareContext.hpp
+    Parallelization.hpp
 )
 
 # Sources
@@ -20,6 +21,7 @@ set(system_files_sources
     ProgressDisplay.cpp
     nvtx.cpp
     hardwareContext.cpp
+    Parallelization.cpp
 )
 
 alicevision_add_library(aliceVision_system
