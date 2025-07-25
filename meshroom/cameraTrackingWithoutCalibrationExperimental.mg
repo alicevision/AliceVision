@@ -561,6 +561,7 @@
             ],
             "inputs": {
                 "input": "{Meshing_1.output}",
+                "imagesFolder": "{ExportImages_1.output}",
                 "inputMesh": "{MeshDecimate_1.output}"
             },
             "internalInputs": {
