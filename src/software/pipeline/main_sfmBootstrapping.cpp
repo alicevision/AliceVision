@@ -42,7 +42,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -136,7 +136,8 @@ int aliceVision_main(int argc, char** argv)
 
     // user optional parameters
     const double maxEpipolarDistance = 4.0;
-    double minAngle = 5.0;
+    double minAngleHard = 1.0;
+    double minAngleSoft = 5.0;
     double maxAngle = 40.0;
     std::pair<std::string, std::string> initialPairString("", "");
     
@@ -155,7 +156,8 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Required parameters");
     optionalParams.add_options()
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
-    ("minAngleInitialPair", po::value<double>(&minAngle)->default_value(minAngle), "Minimum angle for the initial pair.")
+    ("minAngleSoftInitialPair", po::value<double>(&minAngleSoft)->default_value(minAngleSoft), "Minimum angle for the initial pair (Score is downgraded heavily if angle is under this value).")
+    ("minAngleHardInitialPair", po::value<double>(&minAngleHard)->default_value(minAngleHard), "Minimum angle for the initial pair validation.")
     ("maxAngleInitialPair", po::value<double>(&maxAngle)->default_value(maxAngle), "Maximum angle for the initial pair.")
     ("meshFilename,t", po::value<std::string>(&meshFilename)->required(), "Mesh object file.")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first), "UID or filepath or filename of the first image.")
@@ -342,7 +344,7 @@ int aliceVision_main(int argc, char** argv)
     IndexT bestPairId = findBestPair(sfmData, reconstructedPairs,  
                             tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                             filterIn, filterOut,
-                            minAngle, maxAngle);
+                            minAngleHard, minAngleSoft, maxAngle);
 
     if (bestPairId == UndefinedIndexT)
     {

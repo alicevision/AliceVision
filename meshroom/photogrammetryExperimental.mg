@@ -15,9 +15,9 @@
             "Meshing": "7.0",
             "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
-            "SfMBootStrapping": "4.0",
+            "SfMBootStrapping": "4.1",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.0",
+            "SfMExpanding": "2.1",
             "SfMTransform": "3.1",
             "Texturing": "6.0",
             "TracksBuilding": "1.0"

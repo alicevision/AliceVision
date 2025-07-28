@@ -1,4 +1,4 @@
-__version__ = "2.0"
+__version__ = "2.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -131,8 +131,16 @@ class SfMExpanding(desc.AVCommandLineNode):
         desc.FloatParam(
             name="maxReprojectionError",
             label="Max Reprojection Error",
-            description="Maximum reprojection error.",
+            description="Maximum reprojection error in the bundle verification step.",
             value=4.0,
+            range=(0.1, 10.0, 0.1),
+            advanced=True,
+        ),
+        desc.FloatParam(
+            name="maxTriangulationError",
+            label="Max Triangulation Error",
+            description="Maximum reprojection error in the triangulation process.",
+            value=8.0,
             range=(0.1, 10.0, 0.1),
             advanced=True,
         ),
