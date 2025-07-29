@@ -30,6 +30,12 @@ class SfMFilter(desc.CommandLineNode):
                         r'".*\/(.*?)_.*\.\w{3}"',
             value=r'.*\/(.*?)\.\w{3}',
         ),
+        desc.BoolParam(
+            name="prunePoses",
+            label="Remove unselected poses",
+            description="Set to True to prune poses related to views that are not selected.",
+            value=False,
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",

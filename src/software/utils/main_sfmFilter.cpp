@@ -37,6 +37,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputSfMFilenameSelected;
     std::string outputSfMFilenameUnselected;
     std::string fileMatchingPattern;
+    bool prunePoses;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -45,6 +46,7 @@ int aliceVision_main(int argc, char** argv)
          "Path to the input SfMData file.\n")
         ("fileMatchingPattern,m", po::value<std::string>(&fileMatchingPattern)->required(),
          "Matching pattern for the from_filepath method.\n")
+        ("prunePoses,p", po::value<bool>(&prunePoses)->required(), "Prune unselected poses.\n")
         ("outputSfMData_selected,o", po::value<std::string>(&outputSfMFilenameSelected)->required(),
          "Path to the output SfMData file.\n")
          ("outputSfMData_unselected,o", po::value<std::string>(&outputSfMFilenameUnselected)->required(),
@@ -69,6 +71,7 @@ int aliceVision_main(int argc, char** argv)
 
     std::regex re(fileMatchingPattern);
     std::vector<IndexT> selectedViews;
+    std::vector<IndexT> selectedPoses;
 
     for (auto& viewIt : sfmData.getViews())
     {
@@ -77,8 +80,12 @@ int aliceVision_main(int argc, char** argv)
         if (std::regex_search(imagePath, matches, re))
         {
             selectedViews.push_back(viewIt.first);
+            if (prunePoses)
+                selectedPoses.push_back(viewIt.second->getPoseId());
         }
     }
+
+    // Split views into the selected and unselected SfmData
 
     sfmData::SfMData outputSfMData_selected = sfmData;
     sfmData::SfMData outputSfMData_unselected = sfmData;
@@ -107,6 +114,38 @@ int aliceVision_main(int argc, char** argv)
     for (auto r : viewIdsToKeep)
     {
         outputSfMData_unselected.getViews().erase(r);
+    }
+
+    // Split poses into the selected and unselected SfmData
+
+    if (prunePoses)
+    {
+        std::set<IndexT> poseIdsToRemove;
+        std::set<IndexT> poseIdsToKeep;
+
+        for (auto& viewIt : outputSfMData_selected.getPoses())
+        {
+            const IndexT viewId = viewIt.first;
+            auto it = std::find(selectedPoses.begin(), selectedPoses.end(), viewId);
+            if (it == selectedPoses.end())
+            {
+                poseIdsToRemove.insert(viewId);
+            }
+            else
+            {
+                poseIdsToKeep.insert(viewId);
+            }
+        }
+
+        for (auto r : poseIdsToRemove)
+        {
+            outputSfMData_selected.getPoses().erase(r);
+        }
+
+        for (auto r : poseIdsToKeep)
+        {
+            outputSfMData_unselected.getPoses().erase(r);
+        }
     }
 
 
