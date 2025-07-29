@@ -7,7 +7,7 @@ Build instructions
 Required tools:
 * CMake >= 3.11
 * Git
-* C/C++ compiler (gcc or visual studio or clang) with C++17 support (i.e. gcc >= 7, clang >= 5, msvc >= 19.15, cuda >= 11.0).
+* C/C++ compiler (gcc or Visual Studio or clang) with C++17 support (i.e. gcc >= 7, clang >= 5, msvc >= 19.15, cuda >= 11.0).
 
 ### Compile the project
 
@@ -25,17 +25,17 @@ AliceVision depends on external libraries:
 * [Assimp >= 5.0.0](https://github.com/assimp/assimp)
 * [Boost >= 1.74.0](https://www.boost.org)
 * [Ceres >= 1.10.0](https://github.com/ceres-solver/ceres-solver)
-* CoinUtils >= 2.9.3 use [our fork](https://github.com/alicevision/CoinUtils) with a CMake build system so that it can be easily found
-* Coin-or linear programming (Clp) use [our fork](https://github.com/alicevision/Clp) with a CMake build system
+* CoinUtils >= 2.9.3; use [our fork](https://github.com/alicevision/CoinUtils) with a CMake build system
+* Coin-or linear programming (Clp); use [our fork](https://github.com/alicevision/Clp) with a CMake build system
 * [Eigen >= 3.3.4](https://gitlab.com/libeigen/eigen)
 * [Expat >= 2.4.8](https://libexpat.github.io/)
-* Flann >= 1.8.4, use [our fork](https://github.com/alicevision/flann) with a CMake build system
+* Flann >= 1.8.4; use [our fork](https://github.com/alicevision/flann) with a CMake build system
 * [Geogram >= 1.7.5 (recommended >= 1.8.8)](https://github.com/BrunoLevy/geogram)
 * [nanoflann >= 1.5.4](https://github.com/jlblancoc/nanoflann)
 * [OpenEXR >= 2.5](https://github.com/AcademySoftwareFoundation/openexr)
 * [OpenImageIO >= 2.1.0 (recommended >= 2.4.13)](https://github.com/OpenImageIO/oiio)
 * [OpenMesh >= 9.0](https://www.graphics.rwth-aachen.de/software/openmesh/)
-* Open Solver Interface (Osi) >= 0.106.10 use [our fork](https://github.com/alicevision/Osi)) with a CMake build system
+* Open Solver Interface (Osi) >= 0.106.10; use [our fork](https://github.com/alicevision/Osi) with a CMake build system
 * [zlib](https://www.zlib.net)
 
 Other optional libraries can enable specific features (check "CMake Options" for enabling them):
@@ -63,15 +63,15 @@ AliceVision also depends on some embedded libraries:
 
 Building the project using vcpkg (recommended on Windows)
 --------------------------------
-[Vcpkg](https://github.com/alicevision/vcpkg) is a package manager that helps in acquiring, building, and managing C/C++ libraries.
+[vcpkg](https://github.com/alicevision/vcpkg) is a package manager that helps in acquiring, building, and managing C/C++ libraries.
 AliceVision's required dependencies can be built with it.
-Vcpkg evolved from being a Windows-only project to becoming cross-platform.
+vcpkg evolved from being a Windows-only project to becoming cross-platform.
 In the scope of AliceVision, vcpkg has only been tested on Windows.
 
 1. Install vcpkg
 
 See the reference [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
-We recommend to use our vcpkg fork, where dependencies have been validated by the AliceVision development team and where some ports may have some custom changes.
+We recommend to use our vcpkg fork, where dependencies have been validated by the AliceVision development team and where some ports may have custom changes.
 ```bash
 git clone https://github.com/alicevision/vcpkg --branch alicevision_master
 cd vcpkg
@@ -133,7 +133,7 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -D
 This generates a "aliceVision.sln" solution inside the build folder that you can open in Visual Studio to launch the build. Do not forget to switch the build type to "Release".
 
 
-Building the project with embedded dependencies (recommended on linux)
+Building the project with embedded dependencies (recommended on Linux)
 -----------------------------------------------
 
 ```bash
@@ -155,7 +155,7 @@ Else if you have png already install on your OS, you can disable the PNG build w
 Building the project using external dependencies
 ------------------------------------------------
 
-In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
+In order to build the library with existing versions of the dependencies (e.g. system-installed libraries or user-built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
 
 * For Ceres solver library, `Ceres_DIR` can be passed pointing to where CeresConfig.cmake can be found.
   e.g. `-DCeres_DIR:PATH=/path/to/ceres/install/share/Ceres/`
@@ -250,7 +250,7 @@ CMake Options
   By default, aliceVision requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
 * `BUILD_SHARED_LIBS` (default `ON`)
-  Build AliceVision as shared libs (instead of static libs)
+  Build AliceVision as shared libraries (instead of static libraries)
 
 * `ALICEVISION_BUILD_TESTS` (default `OFF`)
   Build AliceVision tests
@@ -290,7 +290,7 @@ cmake -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_TESTS=ON ../AliceVision
 
 In order to use the MOSEK 6 back-end for the linear programming aliceVision module:
 
-- Check that you have an up-to-date MOSEK licence, else aliceVision MOSEK unit test will fail.
+- Check that you have an up-to-date MOSEK licence, otherwise the aliceVision MOSEK unit test will fail.
 
 - Then:
 
@@ -358,7 +358,7 @@ xcodebuild -configuration Release
 --------------------
 
 
-Using AliceVision as a third party library dependency in cmake
+Using AliceVision as a third party library dependency in CMake
 --------------------------------------------------------------
 
 AliceVision can be used as a third party once it have been installed.
@@ -392,22 +392,26 @@ Check the sample in [samples](src/samples/aliceVisionAs3rdParty) for an example 
 ### Docker image
 
 A docker image can be built using the Ubuntu or Rocky Linux Dockerfiles.
-The Dockerfiles are based on `nvidia/cuda` images (https://hub.docker.com/r/nvidia/cuda/)
+The Dockerfiles are based on `nvidia/cuda` images (https://hub.docker.com/r/nvidia/cuda/).
 
-To generate the docker image, just run:
+To generate the Docker image, just run:
 ```
 ./docker/build-rocky.sh
 ```
+or
+```
+./docker/build-ubuntu.sh
+```
 
 To do it manually, parameters `ROCKY_VERSION`/`UBUNTU_VERSION` and `CUDA_TAG` should be passed to choose the OS and CUDA versions.
-For example, the first line of the commands below shows the example to create docker for a Rocky 9 with Cuda 12.1.0 and the second line for Ubuntu 16.04 with Cuda 11.0:
+For example, the first line of the commands below shows the example to build a Docker for a Rocky 9 with Cuda 12.1.0, while the second line is for Ubuntu 22.04 with Cuda 12.1.0:
 
 ```
 docker build --build-arg ROCKY_VERSION=9 --build-arg CUDA_TAG=12.1.0 --tag alicevision:rocky9-cuda12.1.0 -f Dockerfile_rocky .
 docker build --build-arg UBUNTU_VERSION=22.04 --build-arg CUDA_TAG=12.1.0 --build-arg NPROC=8 --tag alicevision:ubuntu22.04-cuda12.1.0 -f Dockerfile_ubuntu .
 ```
 
-In order to run the image [nvidia docker](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) is needed.
+In order to run the image, [nvidia docker](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) is needed.
 
 ```
 docker run -it --runtime=nvidia alicevision:rocky9-cuda12.1.0
@@ -423,5 +427,5 @@ CID=$(docker create alicevision:rocky9-cuda12.1.0) && docker cp ${CID}:/opt/Alic
 Environment variable
 --------------------
 
-Whatever the way AliceVision has been installed, before using it, an environment variable named ALICEVISION_ROOT must be created and set with the local installation directory. 
+No matter the way AliceVision has been installed, before using it, an environment variable named `ALICEVISION_ROOT` must be created and set with the local installation directory. 
 
