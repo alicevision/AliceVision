@@ -65,69 +65,76 @@ AliceVision's required dependencies can be built with it.
 vcpkg evolved from being a Windows-only project to becoming cross-platform.
 In the scope of AliceVision, vcpkg has only been tested on Windows.
 
-1. Install vcpkg
+1. **Install vcpkg**
 
-See the reference [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
-We recommend to use our vcpkg fork, where dependencies have been validated by the AliceVision development team and where some ports may have custom changes.
-```bash
-git clone https://github.com/alicevision/vcpkg --branch alicevision_master
-cd vcpkg
-.\bootstrap-vcpkg.bat
-```
+    See the reference [installation guide](https://github.com/alicevision/vcpkg/blob/alicevision_master/README.md#quick-start-windows) to setup vcpkg.
+    We recommend to use our vcpkg fork, where dependencies have been validated by the AliceVision development team and where some ports may have custom changes.
+    ```bash
+    git clone https://github.com/alicevision/vcpkg --branch alicevision_master
+    cd vcpkg
+    .\bootstrap-vcpkg.bat
+    ```
 
-2. Build the required dependencies
-```bash
-cd <VCPKG_INSTALL_DIR>
-set VCPKG_ROOT=%cd%
+2. **Build/install the required dependencies**
 
-vcpkg install ^
-          boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception ^
-          boost-geometry boost-graph boost-json boost-log boost-program-options boost-property-tree ^
-          boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
-          boost-format ^
-          lz4 ^
-          liblemon ^
-          openexr ^
-          alembic ^
-          geogram ^
-          eigen3 ^
-          expat ^
-          flann nanoflann ^
-          onnxruntime-gpu ^
-          opencv[eigen,ffmpeg,webp,contrib,nonfree,cuda] ^
-          openimageio[opencolorio,pybind11,libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
-          openmesh ^
-          ceres[suitesparse,cxsparse] ^
-          cuda ^
-          tbb ^
-          assimp ^
-          pcl ^
-          clp ^
-          libe57format ^
-          vcpkg-tool-swig ^
-          --triplet x64-windows
+    There are two options for the dependencies:
 
-%VCPKG_ROOT%/installed/x64-windows/tools/python3/python -m ensurepip --upgrade
-%VCPKG_ROOT%/installed/x64-windows/tools/python3/python -m pip install numpy
-```
+    - Build them from scratch on your system.
+        ```bash
+        cd <VCPKG_INSTALL_DIR>
+        set VCPKG_ROOT=%cd%
 
-3. Build AliceVision
-```bash
-# With VCPKG_ROOT being the path to the root of vcpkg installation
-cd /path/to/aliceVision/
-mkdir build && cd build
+        vcpkg install ^
+                  boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-format ^
+                  boost-geometry boost-graph boost-json boost-log boost-program-options boost-property-tree ^
+                  boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
+                  lz4 ^
+                  liblemon ^
+                  openexr ^
+                  alembic ^
+                  geogram ^
+                  eigen3 ^
+                  expat ^
+                  flann nanoflann ^
+                  onnxruntime-gpu ^
+                  opencv[eigen,ffmpeg,webp,contrib,nonfree,cuda,python] ^
+                  openimageio[opencolorio,pybind11,libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
+                  openmesh ^
+                  ceres[suitesparse] ^
+                  cuda ^
+                  tbb ^
+                  assimp ^
+                  pcl ^
+                  clp ^
+                  libe57format ^
+                  vcpkg-tool-swig ^
+                  cctag ^
+                  popsift ^
+                  --triplet x64-windows-release
+        ```
 
-# Windows: Visual 2022 + Powershell
-cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT"\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 -T host=x64
+     - Install them from a ready-to-use precompiled archive.
 
-# Windows: Visual 2022
-cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 17 2022" -A x64 -T host=x64
+         This will save all the compilation time as well as some disk space as there will not be any build artifact, but this requires to use the same CUDA version as the one that was used to generate the archive to be able to build AliceVision later on.
 
-# Windows: Visual 2017
-cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 15 2017" -A x64 -T host=x64
-```
+         The archive can be downloaded from [our vcpkg fork's release page](https://github.com/alicevision/vcpkg/releases), with the [latest released archive](https://github.com/alicevision/vcpkg/releases/download/2025.07.08/aliceVisionDeps-2025.07.08.zip) built with CUDA 12.5.0.
 
-This generates a "aliceVision.sln" solution inside the build folder that you can open in Visual Studio to launch the build. Do not forget to switch the build type to "Release".
+         It should be unzipped in `<VCPKG_INSTALL_DIRECTORY>`.
+
+3. **Build AliceVision**
+    ```bash
+    # With VCPKG_ROOT being the path to the root of vcpkg installation
+    cd /path/to/aliceVision/
+    mkdir build && cd build
+
+    # Windows: Visual 2022 + Powershell
+    cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT"\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-release -G "Visual Studio 17 2022" -A x64 -T host=x64
+
+    # Windows: Visual 2022
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-release -G "Visual Studio 17 2022" -A x64 -T host=x64
+    ```
+
+    This generates a "aliceVision.sln" solution inside the build folder that you can open in Visual Studio to launch the build. Do not forget to switch the build type to "Release".
 
 
 ## Building the project with embedded dependencies (recommended on Linux)
