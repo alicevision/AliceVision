@@ -123,17 +123,17 @@ int aliceVision_main(int argc, char** argv)
         std::set<IndexT> poseIdsToRemove;
         std::set<IndexT> poseIdsToKeep;
 
-        for (auto& viewIt : outputSfMData_selected.getPoses())
+        for (auto& poseIt : outputSfMData_selected.getPoses())
         {
-            const IndexT viewId = viewIt.first;
-            auto it = std::find(selectedPoses.begin(), selectedPoses.end(), viewId);
+            const IndexT poseId = poseIt.first;
+            auto it = std::find(selectedPoses.begin(), selectedPoses.end(), poseId);
             if (it == selectedPoses.end())
             {
-                poseIdsToRemove.insert(viewId);
+                poseIdsToRemove.insert(poseId);
             }
             else
             {
-                poseIdsToKeep.insert(viewId);
+                poseIdsToKeep.insert(poseId);
             }
         }
 
