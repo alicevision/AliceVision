@@ -1,8 +1,6 @@
-AliceVision
-===========
+# AliceVision
 
-Build instructions
-------------------
+## Build instructions
 
 Required tools:
 * CMake >= 3.11
@@ -17,8 +15,7 @@ Getting the sources:
 git clone https://github.com/alicevision/AliceVision.git --recursive
 ```
 
-Dependencies
-------------
+## Dependencies
 
 AliceVision depends on external libraries:
 
@@ -61,8 +58,8 @@ AliceVision also depends on some embedded libraries:
 
 
 
-Building the project using vcpkg (recommended on Windows)
---------------------------------
+## Building the project using vcpkg (recommended on Windows)
+
 [vcpkg](https://github.com/alicevision/vcpkg) is a package manager that helps in acquiring, building, and managing C/C++ libraries.
 AliceVision's required dependencies can be built with it.
 vcpkg evolved from being a Windows-only project to becoming cross-platform.
@@ -133,8 +130,7 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -D
 This generates a "aliceVision.sln" solution inside the build folder that you can open in Visual Studio to launch the build. Do not forget to switch the build type to "Release".
 
 
-Building the project with embedded dependencies (recommended on Linux)
------------------------------------------------
+## Building the project with embedded dependencies (recommended on Linux)
 
 ```bash
 git clone https://github.com/alicevision/AliceVision.git --recursive
@@ -152,8 +148,7 @@ You need `automake` to compile `libpng`.
 Else if you have png already install on your OS, you can disable the PNG build with `-DAV_BUILD_PNG=OFF`.
 
 
-Building the project using external dependencies
-------------------------------------------------
+## Building the project using external dependencies
 
 In order to build the library with existing versions of the dependencies (e.g. system-installed libraries or user-built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
 
@@ -192,8 +187,7 @@ At the end of the cmake process, a report shows for each library which version (
 ```
 
 
-CMake Options
--------------
+## CMake Options
 
 * GEOGRAM
   `-DGEOGRAM_INSTALL_PREFIX:PATH=path/to/geogram/install`
@@ -265,8 +259,7 @@ CMake Options
   Build AliceVision's Python binding with SWIG
 
 
-Linux compilation
------------------
+## Linux compilation
 
 ### Setup the required external library.
 
@@ -324,8 +317,7 @@ make test
 ```
 
 
-Windows compilation
--------------------
+## Windows compilation
 
 * Checkout the project
   `git clone --recursive https://github.com/alicevision/aliceVision.git`
@@ -340,8 +332,8 @@ Windows compilation
 -------------------
 
 
-Mac OSX compilation
--------------------
+## Mac OSX compilation
+
 ```bash
 git clone --recursive https://github.com/alicevision/AliceVision.git
 mkdir build && cd build
@@ -358,8 +350,7 @@ xcodebuild -configuration Release
 --------------------
 
 
-Using AliceVision as a third party library dependency in CMake
---------------------------------------------------------------
+## Using AliceVision as a third party library dependency in CMake
 
 AliceVision can be used as a third party once it have been installed.
 Consider using the `CMAKE_INSTALL_PREFIX` cmake variable to specify a local installation directory.
@@ -389,7 +380,7 @@ Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` c
 or by simply adding the installation path to your `CMAKE_PREFIX_PATH`, i.e. `-DCMAKE_PREFIX_PATH:PATH="YourInstallPath"`.
 Check the sample in [samples](src/samples/aliceVisionAs3rdParty) for an example of use.
 
-### Docker image
+### Docker images
 
 A docker image can be built using the Ubuntu or Rocky Linux Dockerfiles.
 The Dockerfiles are based on `nvidia/cuda` images (https://hub.docker.com/r/nvidia/cuda/).
@@ -424,8 +415,7 @@ To retrieve the generated files:
 CID=$(docker create alicevision:rocky9-cuda12.1.0) && docker cp ${CID}:/opt/AliceVision_install . && docker cp ${CID}:/opt/AliceVision_bundle . && docker rm ${CID}
 ```
 
-Environment variable
---------------------
+## Environment variable
 
 No matter the way AliceVision has been installed, before using it, an environment variable named `ALICEVISION_ROOT` must be created and set with the local installation directory. 
 
