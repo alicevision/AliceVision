@@ -426,3 +426,26 @@ CID=$(docker create alicevision:rocky9-cuda12.1.0) && docker cp ${CID}:/opt/Alic
 
 No matter the way AliceVision has been installed, before using it, an environment variable named `ALICEVISION_ROOT` must be created and set with the local installation directory. 
 
+
+## Using AliceVision with Meshroom
+
+AliceVision provides nodes and templates meant to be used with [Meshroom](https://github.com/alicevision/Meshroom).
+
+To install the plugin, AliceVision needs to be built with `ALICEVISION_INSTALL_MESHROOM_PLUGIN=ON`, and the following environment variables then need to be set for Meshroom to detect it:
+- On Windows:
+    ```
+    set MESHROOM_NODES_PATH=%ALICEVISION_ROOT%/share/meshroom;%MESHROOM_NODES_PATH%
+    set MESHROOM_PIPELINE_TEMPLATES_PATH=%ALICEVISION_ROOT%/share/meshroom;%MESHROOM_PIPELINE_TEMPLATES_PATH%
+    ```
+- On Linux:
+    ```
+    export MESHROOM_NODES_PATH=$ALICEVISION_ROOT/share/meshroom:$MESHROOM_NODES_PATH
+    export MESHROOM_PIPELINE_TEMPLATES_PATH=$ALICEVISION_ROOT/share/meshroom:$MESHROOM_PIPELINE_TEMPLATES_PATH
+    ```
+
+To use AliceVision in Meshroom to the best of its abilities, we recommend building with the following flags:
+* `ALICEVISION_USE_OPENCV=ON`
+* `ALICEVISION_BUILD_SWIG_BINDING=ON`
+* `ALICEVISION_USE_POPSIFT=ON`
+* `ALICEVISION_USE_CCTAG=ON`
+* `ALICEVISION_INSTALL_MESHROOM_PLUGIN=ON`
