@@ -58,7 +58,7 @@ AliceVision also depends on some embedded libraries:
 
 
 
-## Building the project using vcpkg (recommended on Windows)
+### Building the project using vcpkg (recommended on Windows)
 
 [vcpkg](https://github.com/alicevision/vcpkg) is a package manager that helps in acquiring, building, and managing C/C++ libraries.
 AliceVision's required dependencies can be built with it.
@@ -137,7 +137,7 @@ In the scope of AliceVision, vcpkg has only been tested on Windows.
     This generates a "aliceVision.sln" solution inside the build folder that you can open in Visual Studio to launch the build. Do not forget to switch the build type to "Release".
 
 
-## Building the project with embedded dependencies (recommended on Linux)
+### Building the project with embedded dependencies (recommended on Linux)
 
 ```bash
 git clone https://github.com/alicevision/AliceVision.git --recursive
@@ -155,7 +155,7 @@ You need `automake` to compile `libpng`.
 Else if you have png already install on your OS, you can disable the PNG build with `-DAV_BUILD_PNG=OFF`.
 
 
-## Building the project using external dependencies
+### Building the project using external dependencies
 
 In order to build the library with existing versions of the dependencies (e.g. system-installed libraries or user-built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
 
@@ -266,16 +266,18 @@ At the end of the cmake process, a report shows for each library which version (
   Build AliceVision's Python binding with SWIG
 
 
-## Linux compilation
+## Compilation
 
-### Setup the required external library.
+### Linux compilation
+
+#### Setup the required external library.
 
 * `sudo apt-get install libpng-dev libjpeg-dev libtiff-dev libxxf86vm1 libxxf86vm-dev libxi-dev libxrandr-dev`
 
-* If you want see the view graph svg logs
+* If you want to be able to see the view graph SVG logs:
   `sudo apt-get install graphviz`
 
-### Clone and configure the project:
+#### Clone and configure the project:
 
 ```bash
  git clone --recursive https://github.com/alicevision/AliceVision.git
@@ -283,7 +285,7 @@ At the end of the cmake process, a report shows for each library which version (
  cmake -DCMAKE_BUILD_TYPE=Release . ../AliceVision
 ```
 
-If you want enable unit tests to the build:
+If you want to enable the build of the unit tests:
 ```bash
 cmake -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_TESTS=ON ../AliceVision
 ```
@@ -307,46 +309,45 @@ If you want to have an IDE openable project with codeblocks:
 cmake -G "CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ../AliceVision
 ```
 
-### Compile the project
+#### Compile the project
 
 ```bash
 make
 ```
 
-For a multi-core compilation (Replace NBcore with the number of threads)
+For a multi-core compilation (replace `NBcore` with the number of threads):
 ```bash
 make -j NBcore
 ```
 
-Launch unity tests (if asked at cmake step)
+Launch the unit tests (if built during the compilation step):
 ```bash
 make test
 ```
 
 
-## Windows compilation
+### Windows compilation
 
 * Checkout the project
-  `git clone --recursive https://github.com/alicevision/aliceVision.git`
-* Open cmake-gui
+  `git clone --recursive https://github.com/alicevision/aliceVision.git`.
+* Open cmake-gui.
   * Fill the source path with the AliceVision path.
-  * Fill the build path with a new directory
-  * Select your Visual Studio IDE and click configure and then generate
+  * Fill the build path with a new directory.
+  * Select your Visual Studio IDE and click configure and then generate.
 * Open the .sln solution created in your build directory.
   * Change the target to Release.
   * Compile the libraries and binaries samples.
 
--------------------
 
-
-## Mac OSX compilation
+### Mac OSX compilation
 
 ```bash
 git clone --recursive https://github.com/alicevision/AliceVision.git
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -G "Xcode" ../AliceVision
 ```
-If you want enable unit tests to the build:
+
+If you want to enable the build of the unit tests:
 ```bash
 cmake -DCMAKE_BUILD_TYPE=Release \
       -DALICEVISION_BUILD_TESTS=ON \
@@ -354,12 +355,11 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       ../AliceVision
 xcodebuild -configuration Release
 ```
---------------------
 
 
 ## Using AliceVision as a third party library dependency in CMake
 
-AliceVision can be used as a third party once it have been installed.
+AliceVision can be used as a third party library once it has been installed.
 Consider using the `CMAKE_INSTALL_PREFIX` cmake variable to specify a local installation directory.
 Here the syntax to add the variable to the cmake command line (use absolute path), e.g.:
 ```bash
