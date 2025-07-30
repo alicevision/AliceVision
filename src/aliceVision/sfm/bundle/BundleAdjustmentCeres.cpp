@@ -326,6 +326,7 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
     solverOptions.logging_type = ceres::SILENT;
     solverOptions.num_threads = _ceresOptions.nbThreads;
     solverOptions.max_num_iterations = _ceresOptions.maxNumIterations;
+    solverOptions.max_num_consecutive_invalid_steps = 10;
     /*solverOptions.function_tolerance = 1e-12;
     solverOptions.gradient_tolerance = 1e-12;
     solverOptions.parameter_tolerance = 1e-12;*/
