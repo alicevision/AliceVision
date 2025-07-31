@@ -50,6 +50,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * UncertaintyTE (Uncertainty computation)
 * Lemon >= 1.3
 * libe57format (support reading .e57 files)
+* SWIG, Python 3 and NumPy 1.26 (Python binding for AliceVision modules)
 
 
 AliceVision also depends on some embedded libraries:
@@ -183,7 +184,6 @@ In order to build the library with existing versions of the dependencies (e.g. s
 and `-DOPENIMAGEIO_INCLUDE_DIR:PATH=/path/to/oiio/install/include/`
 
 
-
 At the end of the cmake process, a report shows for each library which version (internal/external) will be used in the building process, e.g.:
 
 ```
@@ -196,74 +196,111 @@ At the end of the cmake process, a report shows for each library which version (
 
 ## CMake Options
 
-* GEOGRAM
+* GEOGRAM  
   `-DGEOGRAM_INSTALL_PREFIX:PATH=path/to/geogram/install`
 
-* OPENIMAGEIO
+* OPENIMAGEIO  
   `-DOPENIMAGEIO_LIBRARY_DIR_HINTS:PATH=/path/to/oiio/install/lib/`
   `-DOPENIMAGEIO_INCLUDE_DIR:PATH=/path/to/oiio/install/include/`
 
-* `BOOST_NO_CXX11` (default `OFF`)
+* `BOOST_NO_CXX11` (default `OFF`)  
   If your Boost binaries are compiled without C++11 support, you need to set this option to avoid compilation errors.
   This is most likely to be the case if you use the system packages to install boost.
 
-* `ALICEVISION_USE_OPENMP` (default `ON`)
-  Use OpenMP parallelization (huge impact on performances)
+* `ALICEVISION_USE_OPENMP` (default `ON`)  
+  Use OpenMP parallelization (huge impact on performances).  
   **OSX**: if you are compiling with clang shipped with XCode, please note that OpenMP is not supported and you need to
   disable OpenMP passing `-DALICEVISION_USE_OPENMP:BOOL=OFF`.
 
-* `ALICEVISION_USE_CCTAG` (default: `AUTO`)
-  Build with CCTag markers support.
+* `ALICEVISION_USE_CCTAG` (default: `AUTO`)  
+  Build with CCTag markers support.  
   `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
-* `ALICEVISION_USE_APRILTAG` (default: `AUTO`)
-  Build with AprilTag markers support.
+* `ALICEVISION_USE_APRILTAG` (default: `AUTO`)  
+  Build with AprilTag markers support.  
   `-Dapriltag_DIR:PATH=/path/to/apriltag/install/share/apriltag/cmake` (where apriltagConfig.cmake can be found)
 
-* `ALICEVISION_USE_OPENGV` (default `AUTO`)
-  Enable use of OpenGV algorithms. Build with openGV for multi-cameras localization.
-  `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
+* `ALICEVISION_USE_OPENGV` (default `AUTO`)  
+  Enable use of OpenGV algorithms. Build with openGV for multi-cameras localization.  
+  `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where the `include` and `lib` folders can be found)  
   We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
-* `ALICEVISION_USE_ALEMBIC` (default `AUTO`)
-  Build with Alembic file format support (required version >= 1.7).
-  `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
+* `ALICEVISION_USE_ALEMBIC` (default `AUTO`)  
+  Build with Alembic file format support (required version >= 1.7).  
+  `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)  
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
 
-* `ALICEVISION_USE_CUDA` (default: `ON`)
-  Enable build with CUDA (for feature extraction and depth map computation)
-  `-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.1` (adjust the path to your cuda installation)
+* `ALICEVISION_USE_CUDA` (default: `ON`)  
+  Enable build with CUDA (for feature extraction and depth map computation).  
+  `-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.1` (adjust the path to your CUDA installation)
 
-* `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
-  Enable GPU SIFT implementation.
+* `ALICEVISION_USE_POPSIFT` (default: `AUTO`)  
+  Enable GPU SIFT implementation.  
   `-DPopSift_DIR:PATH=/path/to/popsift/install/lib/cmake/PopSift` (where PopSiftConfig.cmake can be found)
 
-* `ALICEVISION_USE_UNCERTAINTYTE` (default: `AUTO`)
-  Enable Uncertainty computation.
-  `-DUNCERTAINTYTE_DIR:PATH=/path/to/uncertaintyTE/install/` (where `include` and `lib` can be found)
-  `-DMAGMA_ROOT:PATH=/path/to/magma/install/` (where `include` and `lib` can be found)
+* `ALICEVISION_USE_UNCERTAINTYTE` (default: `AUTO`)  
+  Enable Uncertainty computation.  
+  `-DUNCERTAINTYTE_DIR:PATH=/path/to/uncertaintyTE/install/` (where the `include` and `lib` folders can be found)
+  `-DMAGMA_ROOT:PATH=/path/to/magma/install/` (where the `include` and `lib` folders can be found)
 
-* `ALICEVISION_USE_OPENCV` (default: `OFF`)
-  Build with openCV
+* `ALICEVISION_USE_OPENCV` (default: `OFF`)  
+  Build with OpenCV.  
   `-DOpenCV_DIR:PATH=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
 
-* `ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
+* `ALICEVISION_USE_ONNX_GPU` (default: `ON`)  
+  Enable the use of CUDA for ONNX. On some Windows systems, this may cause errors and this flag should be set to `OFF`.
+
+* `ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)  
   By default, aliceVision requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
-* `BUILD_SHARED_LIBS` (default `ON`)
-  Build AliceVision as shared libraries (instead of static libraries)
+* `BUILD_SHARED_LIBS` (default `ON`)  
+  Build AliceVision as shared libraries (instead of static libraries).
 
-* `ALICEVISION_BUILD_TESTS` (default `OFF`)
-  Build AliceVision tests
+* `ALICEVISION_BUILD_SOFTWARE` (default `ON`)  
+  Build AliceVision command line tools.
 
-* `ALICEVISION_BUILD_DOC` (default `AUTO`)
-  Build AliceVision documentation
+* `ALICEVISION_BUILD_TESTS` (default `OFF`)  
+  Build AliceVision unit tests.
 
-* `ALICEVISION_BUILD_COVERAGE` (default `OFF`)
-  Enable code coverage generation (gcc only)
+* `ALICEVISION_BUILD_DOC` (default `AUTO`)  
+  Build AliceVision documentation.
 
-* `ALICEVISION_BUILD_SWIG_BINDING` (default `OFF`)
-  Build AliceVision's Python binding with SWIG
+* `ALICEVISION_BUILD_COVERAGE` (default `OFF`)  
+  Enable code coverage generation (gcc only).
+
+* `ALICEVISION_BUILD_SWIG_BINDING` (default `OFF`)  
+  Build AliceVision's Python binding with SWIG.  
+  AliceVision's Python binding requires Python to be installed on the system, as well as NumPy.
+  For a better compatibility with Meshroom, we advise to use the same Python version as the one used to run Meshroom as well as NumPy 1.26.
+
+* `ALICEVISION_INSTALL_MESHROOM_PLUGIN` (default `ON`)  
+  Copy Meshroom nodes and templates in the installation directory.
+
+
+### CMake options to build specific parts of AliceVision
+
+* `ALICEVISION_BUILD_SFM` (default `ON`)  
+  Build the SfM part of AliceVision. If set to `OFF`, all the following options will be disabled: 
+  `ALICEVISION_BUILD_MVS`, `ALICEVISION_BUILD_HDR`, `ALICEVISION_BUILD_SEGMENTATION`, `ALICEVISION_BUILD_PHOTOMETRICSTEREO`, 
+  `ALICEVISION_BUILD_PANORAMA`, `ALICEVISION_BUILD_LIDAR`.
+
+* `ALICEVISION_BUILD_MVS` (default `ON`)  
+  Build the MVS part of AliceVision.
+
+* `ALICEVISION_BUILD_HDR` (default `ON`)  
+  Build the HDR part of AliceVision.
+
+* `ALICEVISION_BUILD_SEGMENTATION` (default `ON`)  
+  Build the ONNX-based segmentation part of AliceVision.
+
+* `ALICEVISION_BUILD_PHOTOMETRICSTEREO` (default `ON`)  
+  Build the Photometric Stereo part of AliceVision.
+
+* `ALICEVISION_BUILD_PANORAMA` (default `ON`)  
+  Build the Panorama part of AliceVision.
+
+* `ALICEVISION_BUILD_LIDAR` (default `AUTO`)  
+  Build the LiDAR part of AliceVision.
 
 
 ## Compilation
