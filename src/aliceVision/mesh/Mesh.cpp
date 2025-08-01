@@ -2612,14 +2612,30 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
             f.v[2] = oldToNewMap[f.v[2]];
         }
     }
-
-    // set number of materials used
-    const std::unordered_set<int> materialIds = std::unordered_set<int>(_trisMtlIds.begin(), _trisMtlIds.end());
-    nmtls = static_cast<int>(materialIds.size());
-
-    // get material related properties
-    if (material != nullptr && scene->mNumMaterials > 1)
+    
+    // get number of materials used and materials properties
+    if (material== nullptr || scene->mNumMaterials <= 1) 
     {
+        std::unordered_set<int> materialIds = std::unordered_set<int>(_trisMtlIds.begin(), _trisMtlIds.end());
+
+        // set number of materials used
+        nmtls = static_cast<int>(materialIds.size());
+    }
+    else
+    {
+        std::unordered_set<int> materialIds; // does not preserve insertion order 
+        std::vector<int> materialIdsWithTriangleOrder;
+
+        // build materialIds and materialIdsWithTriangleOrder
+        for(int id : _trisMtlIds)
+        {
+            if(materialIds.insert(id).second)
+                materialIdsWithTriangleOrder.push_back(id);
+        }
+
+        // set number of materials used
+        nmtls = static_cast<int>(materialIds.size());
+
         // get material properties from the first material as they are shared across all others
         scene->mMaterials[1]->Get(AI_MATKEY_COLOR_AMBIENT, material->ambient);
         scene->mMaterials[1]->Get(AI_MATKEY_COLOR_DIFFUSE, material->diffuse);
@@ -2627,7 +2643,7 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
         scene->mMaterials[1]->Get(AI_MATKEY_SHININESS, material->shininess);
 
         // get textures from the next materials
-        for (int id : materialIds)
+        for (int id : materialIdsWithTriangleOrder)
         {
             aiString diffuse;
             if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), diffuse) == aiReturn_SUCCESS)
