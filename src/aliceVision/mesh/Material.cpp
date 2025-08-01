@@ -93,14 +93,17 @@ const StaticVector<std::string>& Material::getTextures(TextureType type) const
     }
 }
 
-void Material::getAllTexturePaths(std::vector<std::string>& texturePaths) const
+std::vector<std::string> Material::getAllTextures() const
 {
+    std::vector<std::string> texturePaths;
     texturePaths.resize(_bumpTextures.size() + _diffuseTextures.size() + _displacementTextures.size() + _normalTextures.size());
 
     auto last = std::copy(_bumpTextures.begin(), _bumpTextures.end(), texturePaths.begin());
     last = std::copy(_diffuseTextures.begin(), _diffuseTextures.end(), last);
     last = std::copy(_displacementTextures.begin(), _displacementTextures.end(), last);
     std::copy(_normalTextures.begin(), _normalTextures.end(), last);
+
+    return texturePaths;
 }
 
 bool Material::hasTextures(TextureType type) const

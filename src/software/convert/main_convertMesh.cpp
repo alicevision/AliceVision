@@ -135,10 +135,7 @@ int aliceVision_main(int argc, char** argv)
             outType == mesh::EFileType::GLTF || 
             outType == mesh::EFileType::GLB)
         {
-            std::vector<std::string> texturePaths;
-            texturing.material.getAllTexturePaths(texturePaths);
-
-            for (const auto& texturePath : texturePaths)
+            for (const auto& texturePath : texturing.material.getAllTextures())
             {
                 ALICEVISION_LOG_DEBUG("Copying texture file: " << texturePath);
 
