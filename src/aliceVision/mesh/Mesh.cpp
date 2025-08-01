@@ -2630,25 +2630,25 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
         for (int id : materialIds)
         {
             aiString diffuse;
-            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), diffuse) == aiReturn_SUCCESS)
+            if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), diffuse) == aiReturn_SUCCESS)
             {
                 material->addTexture(Material::TextureType::DIFFUSE, std::string(diffuse.C_Str()));
             }
 
             aiString displacement;
-            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_DISPLACEMENT(0), displacement) == aiReturn_SUCCESS)
+            if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_DISPLACEMENT(0), displacement) == aiReturn_SUCCESS)
             {
                 material->addTexture(Material::TextureType::DISPLACEMENT, std::string(displacement.C_Str()));
             }
 
             aiString normal;
-            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_NORMALS(0), normal) == aiReturn_SUCCESS)
+            if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_NORMALS(0), normal) == aiReturn_SUCCESS)
             {
                 material->addTexture(Material::TextureType::NORMAL, std::string(normal.C_Str()));
             }
 
             aiString height;
-            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_HEIGHT(0), height) == aiReturn_SUCCESS)
+            if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_HEIGHT(0), height) == aiReturn_SUCCESS)
             {
                 material->addTexture(Material::TextureType::BUMP, std::string(height.C_Str()));
             }
