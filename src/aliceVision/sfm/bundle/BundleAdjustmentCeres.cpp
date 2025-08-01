@@ -407,11 +407,8 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
     };
 
     // setup poses data
-    for (const auto& posePair : sfmData.getPoses())
+    for (const auto& [poseId, pose] : sfmData.getPoses().valueRange())
     {
-        const IndexT poseId = posePair.first;
-        const sfmData::CameraPose& pose = posePair.second;
-
         // skip camera pose set as Ignored in the Local strategy
         if (pose.getState() == EEstimatorParameterState::IGNORED)
         {
@@ -962,13 +959,13 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
     if (refinePoses)
     {
         // absolute poses
-        for (auto& posePair : sfmData.getPoses())
+        for (auto & [poseId, pose] : sfmData.getPoses().valueRange())
         {
-            const IndexT poseId = posePair.first;
-
             // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (posePair.second.getState() != EEstimatorParameterState::REFINED)
+            if (pose.getState() != EEstimatorParameterState::REFINED)
+            {
                 continue;
+            }
 
             const std::array<double, 6>& poseBlock = _posesBlocks.at(poseId);
 
@@ -977,7 +974,7 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
             const Vec3 t_refined(poseBlock.at(3), poseBlock.at(4), poseBlock.at(5));
 
             // update the pose
-            posePair.second.setTransform(poseFromRT(R_refined, t_refined));
+            pose.setTransform(poseFromRT(R_refined, t_refined));
         }
 
         // rig sub-poses

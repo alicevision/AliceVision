@@ -233,7 +233,7 @@ void RigSequence::setupRelativePoses()
         SubPoseInfo& subPoseInfo = _rigInfoPerSubPose.at(subPoseId);
 
         const View& bestIndependantView = _sfmData.getView(_rigInfoPerFrame.at(subPoseInfo.maxFrameId).at(subPoseId).viewId);
-        const geometry::Pose3& bestIndependantPose = _sfmData.getPoses().at(bestIndependantView.getPoseId()).getTransform();
+        const geometry::Pose3& bestIndependantPose = _sfmData.getAbsolutePose(bestIndependantView.getPoseId()).getTransform();
 
         RigSubPose& newSubPose = _rig.getSubPose(subPoseId);
         newSubPose.status = ERigSubPoseStatus::ESTIMATED;
@@ -242,7 +242,7 @@ void RigSequence::setupRelativePoses()
 
         if (rigInitialized)
         {
-            const geometry::Pose3& rigPose = _sfmData.getPoses().at(getRigPoseId(_rigId, subPoseInfo.maxFrameId)).getTransform();
+            const geometry::Pose3& rigPose = _sfmData.getAbsolutePose(getRigPoseId(_rigId, subPoseInfo.maxFrameId)).getTransform();
             newSubPose.pose = bestIndependantPose * rigPose.inverse();
         }  // else pose is Identity
     }
@@ -287,13 +287,13 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
             const RigSubPose& subPose = _rig.getSubPose(bestSubPoseId);
             const View& view = _sfmData.getView(rigFrame.at(bestSubPoseId).viewId);
             const IndexT independantPoseId = view.getPoseId();
-            const CameraPose independantPose = _sfmData.getPoses().at(independantPoseId);
+            const CameraPose independantPose = _sfmData.getAbsolutePose(independantPoseId);
             const CameraPose rigPose(independantPose.getTransform() * subPose.pose.inverse());
 
             ALICEVISION_LOG_DEBUG("Add rig pose:"
                                   << "\n\t- rig pose id: " << rigPoseId << "\n\t- frame id: " << frameId << "\n\t- sub-pose id: " << bestSubPoseId);
 
-            _sfmData.getPoses()[rigPoseId] = rigPose;
+            _sfmData.getPoses().assign(rigPoseId, rigPose);
         }
 
         // remove independent poses and replace with rig pose

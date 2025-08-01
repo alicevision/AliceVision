@@ -60,8 +60,10 @@ void LocalBundleAdjustmentGraph::setAllParametersToRefine(const sfmData::SfMData
     _statePerLandmarkId.clear();
 
     // poses
-    for (sfmData::Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
-        _statePerPoseId[itPose->first] = EEstimatorParameterState::REFINED;
+    for (const auto & [poseId, _] : sfmData.getPoses())
+    {
+        _statePerPoseId[poseId] = EEstimatorParameterState::REFINED;
+    }
 
     // intrinsics
     for (const auto& itIntrinsic : sfmData.getIntrinsics())
@@ -383,13 +385,12 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
     //    - Refined <=> its connected to a refined camera
 
     // poses
-    for (auto& posePair : sfmData.getPoses())
+    for (auto& [poseId, pose] : sfmData.getPoses().valueRange())
     {
-        const IndexT poseId = posePair.first;
         const int distance = getPoseDistance(poseId);
         const EEstimatorParameterState state = getStateFromDistance(distance);
 
-        posePair.second.setState(state);
+        pose.setState(state);
 
         _statePerPoseId[poseId] = state;
     }

@@ -35,18 +35,8 @@ SfMData::SfMData(const SfMData & other, bool unused)
     _rigs = other._rigs;
     _posesUncertainty = other._posesUncertainty;
     _landmarksUncertainty = other._landmarksUncertainty;
-
-    for (const auto & [idView, pView]: other._views)
-    {
-        sfmData::View::sptr pOutView(pView->clone());
-        _views[idView] = pOutView;
-    }
-
-    for (const auto & [idIntrinsic, pIntrinsic]: other._intrinsics)
-    {
-        camera::IntrinsicBase::sptr pOutIntrinsic(pIntrinsic->clone());
-        _intrinsics[idIntrinsic] = pOutIntrinsic;
-    }
+    _views = other._views;
+    _intrinsics = other._intrinsics;
 }
 
 SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
@@ -62,18 +52,8 @@ SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eig
     _rigs = other._rigs;
     _posesUncertainty = other._posesUncertainty;
     _landmarksUncertainty = other._landmarksUncertainty;
-
-    for (const auto & [idView, pView]: other._views)
-    {
-        sfmData::View::sptr pOutView(pView->clone());
-        _views[idView] = pOutView;
-    }
-
-    for (const auto & [idIntrinsic, pIntrinsic]: other._intrinsics)
-    {
-        camera::IntrinsicBase::sptr pOutIntrinsic(pIntrinsic->clone());
-        _intrinsics[idIntrinsic] = pOutIntrinsic;
-    }
+    _views = other._views;
+    _intrinsics = other._intrinsics;
 
     for (const auto & pl : other._landmarks)
     {
@@ -93,42 +73,15 @@ SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eig
 bool SfMData::operator==(const SfMData& other) const
 {
     // Views
-    if (_views.size() != other._views.size())
+    if (_views != other._views)
     {
         return false;
-    }
-
-    for (Views::const_iterator it = _views.begin(); it != _views.end(); ++it)
-    {
-        const View& view1 = *(it->second.get());
-        const View& view2 = *(other._views.at(it->first).get());
-        if (view1 != view2)
-        {
-            return false;
-        }
-
-        // Image paths
-        if (view1.getImage().getImagePath() != view2.getImage().getImagePath())
-        {
-            return false;
-        }
     }
 
     // Ancestors
-    if (_ancestors.size() != other._ancestors.size())
+    if (_ancestors != other._ancestors)
     {
         return false;
-    }
-
-    for (ImageInfos::const_iterator it = _ancestors.begin(); it != _ancestors.end(); ++it)
-    {
-        const ImageInfo& ancestor1 = *(it->second);
-        const ImageInfo& ancestor2 = *(other._ancestors.at(it->first));
-
-        if (ancestor1 != ancestor2)
-        {
-            return false;
-        }
     }
 
     // Poses
@@ -144,28 +97,9 @@ bool SfMData::operator==(const SfMData& other) const
     }
 
     // Intrinsics
-    if (_intrinsics.size() != other._intrinsics.size())
+    if (_intrinsics != other._intrinsics)
     {
         return false;
-    }
-
-    Intrinsics::const_iterator it = _intrinsics.begin();
-    Intrinsics::const_iterator otherIt = other._intrinsics.begin();
-    for (; it != _intrinsics.end() && otherIt != other._intrinsics.end(); ++it, ++otherIt)
-    {
-        // Index
-        if (it->first != otherIt->first)
-        {
-            return false;
-        }
-
-        // Intrinsic
-        camera::IntrinsicBase& intrinsic1 = *(it->second.get());
-        camera::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
-        if (intrinsic1 != intrinsic2)
-        {
-            return false;
-        }
     }
 
     // Points IDs are not preserved
@@ -332,13 +266,11 @@ std::set<IndexT> SfMData::getReconstructedIntrinsics() const
 
 void SfMData::setPose(const View& view, const CameraPose& absolutePose)
 {
-    // const bool knownPose = existsPose(view);
-    CameraPose& viewPose = _poses[view.getPoseId()];
 
     // Pose dedicated for this view (independent from rig, even if it is potentially part of a rig)
     if (view.isPoseIndependant())
     {
-        viewPose = absolutePose;
+        _poses.assign(view.getPoseId(), absolutePose);
         return;
     }
 
@@ -348,12 +280,15 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
         const Rig& rig = _rigs.at(view.getRigId());
         RigSubPose& subPose = getRigSubPose(view);
 
+        CameraPose viewPose;
         viewPose.setTransform(subPose.pose.inverse() * absolutePose.getTransform());
 
         if (absolutePose.isLocked())
         {
             viewPose.lock();
         }
+
+        _poses.assign(view.getPoseId(), viewPose);
 
         return;
     }
@@ -413,9 +348,10 @@ void SfMData::clear()
 
 void SfMData::resetParameterStates()
 {
-    for (auto& pp : _poses)
+
+    for (auto & [_, pose]: _poses.valueRange())
     {
-        pp.second.initializeState();
+        pose.initializeState();
     }
 
     for (auto& pl : _landmarks)

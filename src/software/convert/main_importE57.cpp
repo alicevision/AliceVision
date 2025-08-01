@@ -201,7 +201,7 @@ int aliceVision_main(int argc, char** argv)
         correctedSensorPosition.z() = sensorPosition.y();
 
         geometry::Pose3 pose(Eigen::Matrix3d::Identity(), correctedSensorPosition);
-        sfmData.getPoses().emplace(idMesh, pose);
+        sfmData.getPoses().assign(idMesh, sfmData::CameraPose(pose));
 
         // Create view for sfmData
         sfmData::View::sptr view = std::make_shared<sfmData::View>("nopath", idMesh, 0, idMesh, 1, 1);

@@ -209,7 +209,7 @@ double SfmTriangulation::getMaximalAngle(const sfmData::SfMData & sfmData, const
         IndexT refViewId = pRefObs.first;
 
         const sfmData::View & refView = sfmData.getView(refViewId);
-        const sfmData::CameraPose & refCameraPose = sfmData.getPoses().at(refView.getPoseId());
+        const sfmData::CameraPose & refCameraPose = sfmData.getAbsolutePose(refView.getPoseId());
         const geometry::Pose3 & refPose = refCameraPose.getTransform();
 
         for (const auto & pNextObs : landmark.getObservations())
@@ -221,7 +221,7 @@ double SfmTriangulation::getMaximalAngle(const sfmData::SfMData & sfmData, const
             }
 
             const sfmData::View & nextView = sfmData.getView(nextViewId);
-            const sfmData::CameraPose & nextCameraPose = sfmData.getPoses().at(nextView.getPoseId());
+            const sfmData::CameraPose & nextCameraPose = sfmData.getAbsolutePose(nextView.getPoseId());
             const geometry::Pose3 & nextPose = nextCameraPose.getTransform();
             double angle_deg = camera::angleBetweenRays(refPose, nextPose, landmark.X);
 

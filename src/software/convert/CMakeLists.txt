@@ -18,19 +18,6 @@ if (ALICEVISION_BUILD_SFM)
               Boost::system
     )
 
-    alicevision_add_software(aliceVision_importKnownPoses
-        SOURCE main_importKnownPoses.cpp
-        FOLDER ${FOLDER_SOFTWARE_CONVERT}
-        LINKS aliceVision_localization
-              aliceVision_feature
-              aliceVision_sfmData
-              aliceVision_sfmDataIO
-              aliceVision_cmdline
-              Boost::program_options
-              Boost::boost
-              Boost::timer
-    )
-
     if (TARGET E57Format AND ALICEVISION_BUILD_MVS)
         alicevision_add_software(aliceVision_importE57
             SOURCE main_importE57.cpp

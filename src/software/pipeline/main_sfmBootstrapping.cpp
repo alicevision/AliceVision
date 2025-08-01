@@ -39,6 +39,8 @@
 #include <regex>
 #include <fstream>
 
+#include <aliceVision/sfmData/SharedPtrMap.hpp>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
@@ -382,6 +384,7 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO("Landmarks count : " << sfmData.getLandmarks().size());
 
     showStatsAngles(sfmData);
+    
     
 
     sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);

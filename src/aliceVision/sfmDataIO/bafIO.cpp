@@ -51,9 +51,9 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
             else
             {
                 // [Rotation col major 3x3; camera center 3x1]
-                const double* rotation = poses.at(view->getPoseId()).getTransform().rotation().data();
+                const double* rotation = sfmData.getAbsolutePose(view->getPoseId()).getTransform().rotation().data();
                 std::copy(rotation, rotation + 9, std::ostream_iterator<double>(stream, " "));
-                const double* center = poses.at(view->getPoseId()).getTransform().center().data();
+                const double* center = sfmData.getAbsolutePose(view->getPoseId()).getTransform().center().data();
                 std::copy(center, center + 3, std::ostream_iterator<double>(stream, " "));
                 stream << '\n';
             }

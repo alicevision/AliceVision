@@ -179,9 +179,9 @@ int aliceVision_main(int argc, char** argv)
     if (lockScenePreviouslyReconstructed)
     {
         // lock all reconstructed camera poses
-        for (auto& cameraPosePair : sfmData.getPoses())
+        for (auto& [_, pose] : sfmData.getPoses().valueRange())
         {
-            cameraPosePair.second.lock();
+            pose.lock();
         }
 
         for (const auto& viewPair : sfmData.getViews())

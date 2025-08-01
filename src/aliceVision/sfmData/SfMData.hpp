@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <aliceVision/sfmData/SharedPtrMap.hpp>
 #include <aliceVision/sfmData/CameraPose.hpp>
 #include <aliceVision/sfmData/Landmark.hpp>
 #include <aliceVision/sfmData/Constraint2D.hpp>
@@ -26,16 +27,16 @@ namespace aliceVision {
 namespace sfmData {
 
 /// Define a collection of View
-using Views = std::map<IndexT, std::shared_ptr<View>>;
+using Views = SharedPtrMap<View>;
 
 /// Define a collection of Image Info
-using ImageInfos = std::map<IndexT, std::shared_ptr<ImageInfo>>;
+using ImageInfos = SharedPtrMap<ImageInfo>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
-using Poses = std::map<IndexT, CameraPose>;
+using Poses = SharedPtrMap<CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
-using Intrinsics = std::map<IndexT, std::shared_ptr<aliceVision::camera::IntrinsicBase>>;
+using Intrinsics = SharedPtrMap<camera::IntrinsicBase>;
 
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = std::map<IndexT, Landmark>;
@@ -351,11 +352,6 @@ class SfMData
             return false;
         }
 
-        if (it->second.isRotationOnly())
-        {
-            return false;
-        }
-
         bool rigValid = ((!view.isPartOfRig() || view.isPoseIndependant() || getRigSubPose(view).status != ERigSubPoseStatus::UNINITIALIZED));
         if (!rigValid)
         {
@@ -436,7 +432,7 @@ class SfMData
         // check the view has valid pose / rig etc
         if (!view.isPartOfRig() || view.isPoseIndependant())
         {
-            return _poses.at(view.getPoseId());
+            return *_poses.at(view.getPoseId());
         }
 
         // get the pose of the rig
@@ -452,7 +448,7 @@ class SfMData
      * @brief  Gives the pose with the given pose id.
      * @param[in] poseId The given pose id
      */
-    const CameraPose& getAbsolutePose(IndexT poseId) const { return _poses.at(poseId); }
+    const CameraPose& getAbsolutePose(IndexT poseId) const { return *_poses.at(poseId); }
 
     /**
      * @brief Get the rig of the given view
@@ -595,7 +591,10 @@ class SfMData
      * @param[in] poseId The given poseId
      * @param[in] pose The given pose
      */
-    void setAbsolutePose(IndexT poseId, const CameraPose& pose) { _poses[poseId] = pose; }
+    void setAbsolutePose(IndexT poseId, const CameraPose& pose) 
+    { 
+        _poses.assign(poseId, pose); 
+    }
 
     /**
      * @brief Erase the pose for the given poseId
@@ -606,9 +605,13 @@ class SfMData
     {
         auto it = _poses.find(poseId);
         if (it != _poses.end())
+        {
             _poses.erase(it);
+        }
         else if (!noThrow)
+        {
             throw std::out_of_range(std::string("Can't erase unfind pose ") + std::to_string(poseId));
+        }
     }
 
     /**
@@ -617,7 +620,9 @@ class SfMData
     void resetRigs()
     {
         for (auto rigIt : _rigs)
+        {
             rigIt.second.reset();
+        }
     }
 
     /**
@@ -682,7 +687,10 @@ class SfMData
      * @param[in] view The given view
      * @return Rig pose of the given camera view
      */
-    const CameraPose& getRigPose(const View& view) const { return _poses.at(view.getPoseId()); }
+    const CameraPose& getRigPose(const View& view) const 
+    { 
+        return *_poses.at(view.getPoseId()); 
+    }
 
     /**
      * @brief Get Rig subPose of a given camera view
@@ -701,7 +709,10 @@ class SfMData
      * @param[in] view The given view
      * @return Rig pose of the given camera view
      */
-    CameraPose& getRigPose(const View& view) { return _poses.at(view.getPoseId()); }
+    CameraPose& getRigPose(const View& view) 
+    { 
+        return *_poses.at(view.getPoseId()); 
+    }
 
     /**
      * @brief Get Rig subPose of a given camera view

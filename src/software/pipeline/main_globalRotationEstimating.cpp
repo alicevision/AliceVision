@@ -148,7 +148,7 @@ int aliceVision_main(int argc, char** argv)
         p.rotation() = item.second;
         cp.setRotationOnly(true);
 
-        sfmData.getPoses()[item.first] = cp;
+        sfmData.getPoses().assign(item.first, cp);
     }
 
     sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
