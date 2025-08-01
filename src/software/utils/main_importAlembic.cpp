@@ -37,10 +37,14 @@ int aliceVision_main(int argc, char** argv)
     // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&abcFilename)->required(), "Input Alembic file.")
-        ("imagesDir", po::value<std::string>(&imagesDir)->required(), "directory with images")
-        ("extension", po::value<std::string>(&extension)->required(), "images extension")
-        ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(), "SfMData output file.");
+        ("input,i", po::value<std::string>(&abcFilename)->required(),
+         "The external Alembic file to import.")
+        ("imagesDir", po::value<std::string>(&imagesDir)->required(),
+         "Directory with images.")
+        ("extension", po::value<std::string>(&extension)->required(),
+         "File extension for the images in the directory to be taken into account (should include the period, e.g. '.jpg').")
+        ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(),
+         "SfMData file populated with the camera poses from the external Alembic file.");
     // clang-format on
 
     CmdLine cmdline("AliceVision Alembic importer");
