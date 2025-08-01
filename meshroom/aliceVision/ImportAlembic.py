@@ -29,8 +29,8 @@ Import an external Alembic file that does not follow the SfMData convention, and
             name="extension",
             label="Images Extension",
             description="File extension for the images in the directory to be taken into account.",
-            value="exr",
-            values=["exr", "jpg", "png"],
+            value=".exr",
+            values=[".exr", ".jpg", ".png"],
         ),
         desc.ChoiceParam(
             name="verboseLevel",
