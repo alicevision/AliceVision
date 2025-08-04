@@ -1,0 +1,45 @@
+{
+    "header": {
+        "releaseVersion": "2025.1.0-develop",
+        "fileVersion": "2.0",
+        "nodesVersions": {
+            "CameraInit": "12.0",
+            "ColorCheckerCorrection": "2.0",
+            "ColorCheckerDetection": "2.0"
+        },
+        "template": true
+    },
+    "graph": {
+        "CameraInit_1": {
+            "nodeType": "CameraInit",
+            "position": [
+                -309,
+                -26
+            ],
+            "inputs": {}
+        },
+        "ColorCheckerCorrection_1": {
+            "nodeType": "ColorCheckerCorrection",
+            "position": [
+                194,
+                -22
+            ],
+            "inputs": {
+                "inputData": "{ColorCheckerDetection_1.outputData}",
+                "input": "{ColorCheckerDetection_1.input}",
+                "correctionMethod": "full",
+                "keepImageName": false
+            }
+        },
+        "ColorCheckerDetection_1": {
+            "nodeType": "ColorCheckerDetection",
+            "position": [
+                -64,
+                -18
+            ],
+            "inputs": {
+                "input": "{CameraInit_1.output}"
+            }
+        }
+    }
+}
