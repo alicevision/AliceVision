@@ -8,6 +8,7 @@ Learn more details about the pipeline and tools based on it on [AliceVision webs
 
 See [results of the pipeline on sketchfab](http://sketchfab.com/AliceVision).
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alicevision/AliceVision)
 
 ## Photogrammetry
 
