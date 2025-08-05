@@ -239,6 +239,9 @@ def setupWireframeShading(mesh, color):
     material.use_nodes = True
     material.blend_method = 'BLEND'
     material.node_tree.links.clear()
+    # == Create shader nodes
+    # Geometry node
+    nodeGeometry = material.node_tree.nodes.new(type='ShaderNodeNewGeometry')
     # Wireframe node
     nodeWireframe = material.node_tree.nodes.new(type='ShaderNodeWireframe')
     nodeWireframe.use_pixel_size = True
@@ -248,15 +251,26 @@ def setupWireframeShading(mesh, color):
     nodeEmission.inputs['Color'].default_value = color
     # Holdout node
     nodeHoldout = material.node_tree.nodes.new(type='ShaderNodeHoldout')
-    # Max Shader node
-    nodeMix = material.node_tree.nodes.new(type='ShaderNodeMixShader')
+    # Mix Shader node
+    nodeMix1 = material.node_tree.nodes.new(type='ShaderNodeMixShader')
+    # Transparent Shader node
+    nodeTransparent = material.node_tree.nodes.new(type='ShaderNodeBsdfTransparent')
+    # 2nd Mix Shader node
+    nodeMix2 = material.node_tree.nodes.new(type='ShaderNodeMixShader')
     # Retrieve ouput node
     nodeOutput = material.node_tree.nodes['Material Output']
-    # Connect nodes
-    material.node_tree.links.new(nodeWireframe.outputs['Fac'], nodeMix.inputs['Fac'])
-    material.node_tree.links.new(nodeHoldout.outputs['Holdout'], nodeMix.inputs[1])
-    material.node_tree.links.new(nodeEmission.outputs['Emission'], nodeMix.inputs[2])
-    material.node_tree.links.new(nodeMix.outputs['Shader'], nodeOutput.inputs['Surface'])
+    
+    # == Connect nodes
+    # Mix1
+    material.node_tree.links.new(nodeWireframe.outputs['Fac']    , nodeMix1.inputs['Fac'])
+    material.node_tree.links.new(nodeHoldout.outputs['Holdout']  , nodeMix1.inputs[1])
+    material.node_tree.links.new(nodeEmission.outputs['Emission'], nodeMix1.inputs[2])
+    # Mix2
+    material.node_tree.links.new(nodeGeometry.outputs['Backfacing'], nodeMix2.inputs['Fac'])
+    material.node_tree.links.new(nodeMix1.outputs['Shader']        , nodeMix2.inputs[1])
+    material.node_tree.links.new(nodeTransparent.outputs['BSDF']   , nodeMix2.inputs[2])
+
+    material.node_tree.links.new(nodeMix1.outputs['Shader'], nodeOutput.inputs['Surface'])
     # Apply material to mesh
     mesh.materials.clear()
     mesh.materials.append(material)
@@ -267,12 +281,22 @@ def setupLineArtShading(obj, mesh, color):
     # Freestyle
     bpy.context.scene.render.use_freestyle = True
     bpy.data.linestyles["LineStyle"].color = (color[0], color[1], color[2])
+    # Try to see through object :
+    # https://docs.blender.org/manual/id/3.3/render/freestyle/view_layer/line_set.html
+    freestyle_settings = bpy.context.window.view_layer.freestyle_settings
+    lineset = freestyle_settings.linesets["LineSet"]
+    lineset.visibility="RANGE"
+    lineset.qi_start = 0
+    lineset.qi_end = 1  # See through only one surface
     # Holdout material
     material = bpy.data.materials.new('Holdout')
     material.use_nodes = True
     material.node_tree.links.clear()
+    # == Shader nodes
+    # Node holdout
     nodeHoldout = material.node_tree.nodes.new(type='ShaderNodeHoldout')
     nodeOutput = material.node_tree.nodes['Material Output']
+    # == Connect nodes
     material.node_tree.links.new(nodeHoldout.outputs['Holdout'], nodeOutput.inputs['Surface'])
     # Apply material to mesh
     mesh.materials.clear()
@@ -384,7 +408,7 @@ def main():
     else:
         rangeStart = 0
         rangeSize = len(views)
-
+    
     print("Render viewpoints")
     for view in views[rangeStart:rangeStart+rangeSize]:
         intrinsic = getFromId(intrinsics, 'intrinsicId', view['intrinsicId'])
