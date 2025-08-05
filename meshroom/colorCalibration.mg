@@ -5,7 +5,8 @@
         "nodesVersions": {
             "CameraInit": "12.0",
             "ColorCheckerCorrection": "2.0",
-            "ColorCheckerDetection": "2.0"
+            "ColorCheckerDetection": "2.0",
+            "Publish": "1.3"
         },
         "template": true
     },
@@ -21,8 +22,8 @@
         "ColorCheckerCorrection_1": {
             "nodeType": "ColorCheckerCorrection",
             "position": [
-                194,
-                -22
+                87,
+                -24
             ],
             "inputs": {
                 "inputData": "{ColorCheckerDetection_1.outputData}",
@@ -34,11 +35,23 @@
         "ColorCheckerDetection_1": {
             "nodeType": "ColorCheckerDetection",
             "position": [
-                -64,
-                -18
+                -108,
+                -19
             ],
             "inputs": {
                 "input": "{CameraInit_1.output}"
+            }
+        },
+        "Publish_1": {
+            "nodeType": "Publish",
+            "position": [
+                279,
+                -10
+            ],
+            "inputs": {
+                "inputFiles": [
+                    "{ColorCheckerCorrection_1.output}"
+                ]
             }
         }
     }
