@@ -23,7 +23,8 @@ test -f dl/sphereDetection_Mask-RCNN.onnx || \
 test -f dl/fcn_resnet50.onnx || \
         wget https://gitlab.com/alicevision/semanticSegmentationModel/-/raw/main/fcn_resnet50.onnx -O dl/fcn_resnet50.onnx
 test -d dl/ColorchartDetectionModel || \
-        git clone https://gitlab.com/alicevision/ColorchartDetectionModel.git dl/ColorchartDetectionModel
+        git clone --depth=1 --branch=main https://gitlab.com/alicevision/ColorchartDetectionModel.git dl/ColorChartDetectionModel && \
+        rm dl/ColorChartDetectionModel/README.md && rm -rf dl/ColorChartDetectionModel/.git
 export CMAKE_VERSION=3.26.0
 export CMAKE_VERSION_MM=3.26
 test -f dl/cmake-${CMAKE_VERSION}.tar.gz || \
