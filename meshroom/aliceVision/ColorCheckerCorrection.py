@@ -5,6 +5,29 @@ from meshroom.core.utils import EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
 
 import os.path
 
+def outputImagesValueFunct(attr):
+    basename = os.path.basename(attr.node.input.value)
+    fileStem = os.path.splitext(basename)[0]
+    inputExt = os.path.splitext(basename)[1]
+    outputExt = ('.' + attr.node.extension.value) if attr.node.extension.value else None
+
+    if inputExt in ['.abc', '.sfm']:
+        fileStem = '<FILESTEM>' if attr.node.keepImageName.value else '<VIEW_ID>'
+        # If we have an SfM in input
+        return "{nodeCacheFolder}/" + fileStem + (outputExt or '.*')
+
+    if inputExt:
+        # If we have one or multiple files in input
+        return "{nodeCacheFolder}/" + fileStem + (outputExt or inputExt)
+
+    if '*' in fileStem:
+        # The fileStem of the input param is a regular expression,
+        # so even if there is no file extension,
+        # we consider that the expression represents files.
+        return "{nodeCacheFolder}/" + fileStem + (outputExt or '.*')
+
+    # No extension and no expression means that the input param is a folder path
+    return "{nodeCacheFolder}/" + '*' + (outputExt or '.*')
 
 class ColorCheckerCorrection(desc.AVCommandLineNode):
     commandLine = "aliceVision_colorCheckerCorrection {allParams}"
@@ -102,5 +125,13 @@ If multiple color charts are submitted, only the first one will be taken in acco
             label="Folder",
             description="Output images folder.",
             value="{nodeCacheFolder}",
+        ),
+        desc.File(
+            name="outputImages",
+            label="Images",
+            description="Output images.",
+            semantic="image",
+            value=outputImagesValueFunct,
+            group="",  # do not export on the command line
         ),
     ]
