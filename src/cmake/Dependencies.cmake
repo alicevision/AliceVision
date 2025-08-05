@@ -1002,8 +1002,8 @@ if(AV_BUILD_OPENCV)
     set(OPENCV_TARGET opencv)
 
     ExternalProject_Add(opencv_contrib
-        URL https://github.com/opencv/opencv_contrib/archive/refs/tags/4.11.0.tar.gz
-        URL_HASH MD5=7dd4bc67eb67faff96ce71745a5e3abe
+        URL https://github.com/opencv/opencv_contrib/archive/refs/tags/4.12.0.tar.gz
+        URL_HASH MD5=55603c033cc5f3d5e307b699ad72e25a
         DOWNLOAD_DIR ${BUILD_DIR}/download/opencv_contrib
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
         BUILD_ALWAYS 0
@@ -1014,8 +1014,8 @@ if(AV_BUILD_OPENCV)
     )
 
     ExternalProject_Add(${OPENCV_TARGET}
-        URL https://github.com/opencv/opencv/archive/refs/tags/4.11.0.tar.gz
-        URL_HASH MD5=f35fbd46350cc677af13e198805b58f7
+        URL https://github.com/opencv/opencv/archive/refs/tags/4.12.0.tar.gz
+        URL_HASH MD5=eb6f8ff4f4cd16ef1b97bc21edc74de9
         DOWNLOAD_DIR ${BUILD_DIR}/download/opencv
         UPDATE_COMMAND ""
         BUILD_IN_SOURCE 0
