@@ -1,9 +1,7 @@
 {
     "header": {
-        "pipelineVersion": "2.2",
         "releaseVersion": "2025.1.0-develop",
         "fileVersion": "2.0",
-        "template": true,
         "nodesVersions": {
             "CameraInit": "12.0",
             "DepthMap": "5.0",
@@ -16,12 +14,14 @@
             "Meshing": "7.0",
             "PhotometricStereo": "1.0",
             "PrepareDenseScene": "3.1",
+            "Publish": "1.3",
             "SfMFilter": "1.0",
             "SfMTransfer": "2.1",
             "SphereDetection": "1.0",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"
-        }
+        },
+        "template": true
     },
     "graph": {
         "CameraInit_1": {
@@ -30,9 +30,7 @@
                 -400,
                 200
             ],
-            "inputs": {
-                "rawColorInterpretation": "LibRawWhiteBalancing"
-            }
+            "inputs": {}
         },
         "DepthMapFilter_1": {
             "nodeType": "DepthMapFilter",
@@ -174,6 +172,18 @@
             ],
             "inputs": {
                 "input": "{PhotometricStereo_1.outputSfmDataNormalPNG}"
+            }
+        },
+        "Publish_1": {
+            "nodeType": "Publish",
+            "position": [
+                2400,
+                0
+            ],
+            "inputs": {
+                "inputFiles": [
+                    "{PhotometricStereo_1.outputPath}"
+                ]
             }
         },
         "SfMFilter_1": {
