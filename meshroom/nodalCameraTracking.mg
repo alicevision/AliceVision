@@ -1,6 +1,6 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0-develop",
+        "releaseVersion": "2025.1.0",
         "fileVersion": "2.0",
         "nodesVersions": {
             "ApplyCalibration": "1.0",

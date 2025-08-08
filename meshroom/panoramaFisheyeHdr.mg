@@ -1,5 +1,7 @@
 {
     "header": {
+        "releaseVersion": "2025.1.0",
+        "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
             "FeatureExtraction": "1.3",
@@ -19,8 +21,6 @@
             "Publish": "1.3",
             "SfMTransform": "3.1"
         },
-        "releaseVersion": "2025.1.0-develop",
-        "fileVersion": "2.0",
         "template": true
     },
     "graph": {
