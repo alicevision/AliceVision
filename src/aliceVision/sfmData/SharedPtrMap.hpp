@@ -270,12 +270,12 @@ public:
         return *this;
     }
 
-    bool operator!=(const SharedPtrMap<T> & other)
+    bool operator!=(const SharedPtrMap<T> & other) const
     {
         return !(*this == other);
     }
 
-    bool operator==(const SharedPtrMap<T> & other)
+    bool operator==(const SharedPtrMap<T> & other) const
     {
         //Check same size
         if (this->size() != other.size())
