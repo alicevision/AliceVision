@@ -194,7 +194,7 @@
             ],
             "inputs": {
                 "inputFile": "{CameraInit_1.output}",
-                "fileMatchingPattern": ".*/.*ambiant.*"
+                "fileMatchingPattern": ".*/.*ambient.*"
             }
         },
         "SfMTransfer_1": {
