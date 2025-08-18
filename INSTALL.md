@@ -486,3 +486,29 @@ To use AliceVision in Meshroom to the best of its abilities, we recommend buildi
 * `ALICEVISION_USE_POPSIFT=ON`
 * `ALICEVISION_USE_CCTAG=ON`
 * `ALICEVISION_INSTALL_MESHROOM_PLUGIN=ON`
+
+### Environment variables to set for Meshroom
+
+Meshroom relies on specific files provided by AliceVision:
+
+* Sensor database: a text database of sensor width per camera model.
+Provided in AliceVision source tree: {ALICEVISION_REPOSITORY}/src/aliceVision/sensorDB/cameraSensors.db
+* Voctree (optional): for larger datasets (>200 images), greatly improves image matching performances.
+It can be downloaded [here](https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree).
+* Sphere detection model (optional): for the automated sphere detection in stereo photometry.
+It can be downloaded [here](https://gitlab.com/alicevision/SphereDetectionModel/-/raw/main/sphereDetection_Mask-RCNN.onnx).
+* Semantic segmentation model (optional): for the semantic segmentation of objects.
+It can be downloaded [here](https://gitlab.com/alicevision/semanticSegmentationModel/-/raw/main/fcn_resnet50.onnx).
+* Color chart detection models (optional): for the detection of color charts.
+It can be downloaded [here](https://gitlab.com/alicevision/ColorchartDetectionModel).
+
+Environment variables need to be set for Meshroom to find those files:
+```
+ALICEVISION_SENSOR_DB=/path/to/database
+ALICEVISION_VOCTREE=/path/to/voctree
+ALICEVISION_SPHERE_DETECTION_MODEL=/path/to/detection/model
+ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=/path/to/segmentation/model
+ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=/path/to/ColorChartDetectionModel
+```
+
+If these variables are not set, Meshroom will expect those files to be located in `{ALICEVISION_ROOT}/share/aliceVision`.
