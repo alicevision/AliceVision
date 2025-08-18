@@ -235,9 +235,6 @@
             ],
             "inputs": {
                 "input": "{CameraInit_1.output}",
-                "recognitionModelPath": "/s/apps/packages/mikrosVfx/multiview/imagePrompt_nnModels/1.0/models/ram_plus_swin_large_14m.pth",
-                "detectionModelPath": "/s/apps/packages/mikrosVfx/multiview/imagePrompt_nnModels/1.0/models/groundingdino_swint_ogc.pth",
-                "detectionConfigPath": "/s/apps/packages/mikrosVfx/multiview/imagePrompt_nnModels/1.0/models/GroundingDINO_SwinT_OGC.py",
                 "prompt": "main",
                 "synonyms": "",
                 "forceDetection": true,
@@ -252,9 +249,6 @@
             ],
             "inputs": {
                 "input": "{CameraInit_2.output}",
-                "recognitionModelPath": "/s/apps/packages/mikrosVfx/multiview/imagePrompt_nnModels/1.0/models/ram_plus_swin_large_14m.pth",
-                "detectionModelPath": "/s/apps/packages/mikrosVfx/multiview/imagePrompt_nnModels/1.0/models/groundingdino_swint_ogc.pth",
-                "detectionConfigPath": "/s/apps/packages/mikrosVfx/multiview/imagePrompt_nnModels/1.0/models/GroundingDINO_SwinT_OGC.py",
                 "prompt": "main",
                 "synonyms": "",
                 "forceDetection": true,
