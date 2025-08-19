@@ -136,13 +136,22 @@ jobs:
       - name: Meshroom Plugin - Templates validity
         working-directory: ./functional_tests
         run: |
+          # Clone and checkout mrSegmentation, align the branch if necessary
           git clone https://github.com/meshroomHub/mrSegmentation.git
           cd mrSegmentation
           mrSegmentation_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrSegmentation.git $GITHUB_HEAD_REF | cut -f 1)
           if [ $mrSegmentation_avBranch != "" ]; then git checkout $mrSegmentation_avBranch; echo "Use mrSegmentation/$GITHUB_HEAD_REF"; fi
+          cd ..
+
+          # Clone and checkout mrBlenderSfmRenderer, align the branch if necessary
+          git clone https://github.com/meshroomHub/mrBlenderSfmRenderer.git
+          cd mrBlenderSfmRenderer
+          mrBlenderSfmRenderer_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrBlenderSfmRenderer.git $GITHUB_HEAD_REF | cut -f 1)
+          if [ $mrBlenderSfmRenderer_avBranch != "" ]; then git checkout $mrBlenderSfmRenderer_avBranch; echo "Use mrBlenderSfmRenderer/$GITHUB_HEAD_REF"; fi
           cd ../Meshroom/
+
           export MESHROOM_INSTALL_DIR=$PWD
-          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom:$PWD/../mrSegmentation/meshroom
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom:$PWD/../mrSegmentation/meshroom:$PWD/../mrBlenderSfmRenderer/meshroom
           export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
           export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python:${PYTHONPATH}
           export PATH=$PATH:${ALICEVISION_ROOT}/bin
