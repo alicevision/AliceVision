@@ -1,8 +1,7 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0-develop",
+        "releaseVersion": "2025.1.0",
         "fileVersion": "2.0",
-        "template": true,
         "nodesVersions": {
             "ApplyCalibration": "1.0",
             "CameraInit": "12.0",
@@ -28,7 +27,8 @@
             "ScenePreview": "2.0",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"
-        }
+        },
+        "template": true
     },
     "graph": {
         "ApplyCalibration_1": {

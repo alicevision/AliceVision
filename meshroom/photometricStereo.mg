@@ -1,15 +1,15 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0-develop",
+        "releaseVersion": "2025.1.0",
         "fileVersion": "2.0",
-        "template": true,
         "nodesVersions": {
             "CameraInit": "12.0",
             "LightingCalibration": "1.0",
             "PhotometricStereo": "1.0",
             "Publish": "1.3",
             "SphereDetection": "1.0"
-        }
+        },
+        "template": true
     },
     "graph": {
         "CameraInit_1": {

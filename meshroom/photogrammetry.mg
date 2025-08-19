@@ -1,8 +1,7 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0-develop",
+        "releaseVersion": "2025.1.0",
         "fileVersion": "2.0",
-        "template": true,
         "nodesVersions": {
             "CameraInit": "12.0",
             "DepthMap": "5.0",
@@ -16,7 +15,8 @@
             "Publish": "1.3",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"
-        }
+        },
+        "template": true
     },
     "graph": {
         "CameraInit_1": {
