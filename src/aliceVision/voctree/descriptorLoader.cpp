@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "descriptorLoader.hpp"
-#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 

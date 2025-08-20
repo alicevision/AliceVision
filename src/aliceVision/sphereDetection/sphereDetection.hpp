@@ -14,7 +14,6 @@
 
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
 #include <filesystem>
 
