@@ -1,0 +1,9 @@
+{
+  "versions": [
+    {
+      "version": "4.3.0",
+      "port-version": 0,
+      "path": "$/ports/vcpkg-tool-swig"
+    }
+  ]
+}
