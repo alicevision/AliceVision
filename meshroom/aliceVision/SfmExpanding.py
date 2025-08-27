@@ -173,6 +173,21 @@ class SfMExpanding(desc.AVCommandLineNode):
             range=(0, 20, 1),
             advanced=True,
         ),
+        desc.BoolParam(
+            name="useRigConstraint",
+            label="Use Rig Constraint",
+            description="Enable/Disable rig constraint.",
+            value=True,
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="rigMinNbCamerasForCalibration",
+            label="Min Nb Cameras For Rig Calibration",
+            description="Minimum number of cameras to start the calibration of the rig.",
+            value=20,
+            range=(1, 50, 1),
+            advanced=True,
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",

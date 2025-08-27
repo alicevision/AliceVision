@@ -268,19 +268,19 @@ int aliceVision_main(int argc, char** argv)
     expansionIteration->setExpansionPolicyHandler(expansionPolicy);
     expansionIteration->setExpansionChunkHandler(expansionChunk);
 
-    /*sfm::ExpansionPostProcess::uptr expansionPostProcess;
+    sfm::ExpansionPostProcess::uptr expansionPostProcess;
     if (useRigConstraint)
     {
         sfm::ExpansionPostProcessRig::uptr expansionPostProcessTyped = std::make_unique<sfm::ExpansionPostProcessRig>();
         expansionPostProcessTyped->setMinimalNumberCameras(minNbCamerasForRigCalibration);
         expansionPostProcess = std::move(expansionPostProcessTyped);
-    }*/
+    }
 
 
     sfm::ExpansionProcess::uptr expansionProcess = std::make_unique<sfm::ExpansionProcess>();
     expansionProcess->setExpansionHistoryHandler(expansionHistory);
     expansionProcess->setExpansionIterationHandler(expansionIteration);
-    /*expansionProcess->setExpansionIterationPostProcessHandler(expansionPostProcess);*/
+    expansionProcess->setExpansionIterationPostProcessHandler(expansionPostProcess);
 
     if (!expansionProcess->process(sfmData, tracksHandler))
     {
