@@ -74,6 +74,7 @@ In the scope of AliceVision, vcpkg has only been tested on Windows.
     git clone https://github.com/alicevision/vcpkg --branch alicevision_master
     cd vcpkg
     .\bootstrap-vcpkg.bat
+    set VCPKG_ROOT=%cd%
     ```
 
 2. **Build/install the required dependencies**
@@ -82,60 +83,47 @@ In the scope of AliceVision, vcpkg has only been tested on Windows.
 
     - Build them from scratch on your system.
         ```bash
-        cd <VCPKG_INSTALL_DIR>
-        set VCPKG_ROOT=%cd%
-
-        vcpkg install ^
-                  boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-format ^
-                  boost-geometry boost-graph boost-json boost-log boost-program-options boost-property-tree ^
-                  boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
-                  lz4 ^
-                  liblemon ^
-                  openexr ^
-                  alembic ^
-                  geogram ^
-                  eigen3 ^
-                  expat ^
-                  flann nanoflann ^
-                  onnxruntime-gpu ^
-                  opencv[eigen,ffmpeg,webp,contrib,nonfree,cuda,python] ^
-                  openimageio[opencolorio,pybind11,libraw,ffmpeg,freetype,opencv,gif,openjpeg,webp] ^
-                  openmesh ^
-                  ceres[suitesparse] ^
-                  cuda ^
-                  tbb ^
-                  assimp ^
-                  pcl ^
-                  clp ^
-                  libe57format ^
-                  vcpkg-tool-swig ^
-                  cctag ^
-                  popsift ^
-                  --triplet x64-windows-release
+        cd <ALICEVISION_REPOSITORY>
+        %VCPKG_ROOT%\vcpkg.exe install --triplet=x64-windows-release ^
+                                       --host-triplet=x64-windows-release
+        %VCPKG_ROOT%\vcpkg.exe export --raw ^
+                                      --output-dir=\path\to\dependencies ^
+                                      --output=x64-windows-release ^
+                                      --host-triplet=x64-windows-release ^
+                                      --triplet=x64-windows-release
         ```
 
      - Install them from a ready-to-use precompiled archive.
 
          This will save all the compilation time as well as some disk space as there will not be any build artifact, but this requires to use the same CUDA version as the one that was used to generate the archive to be able to build AliceVision later on.
 
-         The archive can be downloaded from [our vcpkg fork's release page](https://github.com/alicevision/vcpkg/releases), with the [latest released archive](https://github.com/alicevision/vcpkg/releases/download/2025.07.08/aliceVisionDeps-2025.07.08.zip) built with CUDA 12.5.0.
+         The archive can be downloaded from [our vcpkg fork's release page](https://github.com/alicevision/vcpkg/releases), with the [latest released archive](https://github.com/alicevision/vcpkg/releases/download/2025.08.22/x64-windows-release.zip) built with CUDA 12.5.0.
 
          It should be unzipped in `<VCPKG_INSTALL_DIRECTORY>`.
 
 3. **Build AliceVision**
     ```bash
-    # With VCPKG_ROOT being the path to the root of vcpkg installation
-    cd /path/to/aliceVision/
+    cd <ALICEVISION_DIRECTORY>
     mkdir build && cd build
 
-    # Windows: Visual 2022 + Powershell
-    cmake .. -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT"\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-release -G "Visual Studio 17 2022" -A x64 -T host=x64
-
-    # Windows: Visual 2022
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-release -G "Visual Studio 17 2022" -A x64 -T host=x64
+    cmake -B . -S .. -DCMAKE_TOOLCHAIN_FILE=\path\to\dependencies\x64-windows-release\scripts\buildsystems\vcpkg.cmake ^
+                     -DVCPKG_TARGET_TRIPLET=x64-windows-release ^
+                     -DCMAKE_BUILD_TYPE=Release -A x64 -T host=x64 ^
+                     -DBUILD_SHARED_LIBS=ON ^
+                     -DTARGET_ARCHITECTURE=core ^
+                     -DCMAKE_INSTALL_PREFIX=\path\to\install ^
+                     -DALICEVISION_BUILD_SWIG_BINDING=ON ^
+                     -DVCPKG_MANIFEST_MODE=OFF ^
+                     -DPython3_EXECUTABLE=\path\to\python\python.exe
     ```
 
-    This generates a "aliceVision.sln" solution inside the build folder that you can open in Visual Studio to launch the build. Do not forget to switch the build type to "Release".
+    This generates an "aliceVision.sln" solution inside the `build` folder that you can open in Visual Studio to launch the build.
+    Do not forget to switch the build type to "Release". If you want to continue without an IDE, then use:
+
+    ```bash
+    cmake --build build --config Release -t INSTALL
+    cmake --build build --config Release -t BUNDLE
+    ```
 
 
 ### Building the project with embedded dependencies (recommended on Linux)

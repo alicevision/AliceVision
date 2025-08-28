@@ -1,0 +1,22 @@
+{
+  "default-registry": {
+    "kind": "git",
+    "baseline": "d5182f703b51d7b258f83f94d936ac03488dcdbe",
+    "repository": "https://github.com/microsoft/vcpkg"
+  },
+  "registries": [
+    {
+      "kind": "artifact",
+      "location": "https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip",
+      "name": "microsoft"
+    },
+    {
+      "kind": "filesystem",
+      "path": "./vcpkg",
+      "packages": ["vcpkg-tool-swig"]
+    }
+  ],
+  "overlay-ports": [
+    "vcpkg/overlay_ports"
+  ]
+}
