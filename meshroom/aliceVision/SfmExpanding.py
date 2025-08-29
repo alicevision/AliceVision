@@ -102,6 +102,16 @@ class SfMExpanding(desc.AVCommandLineNode):
             advanced=True,
         ),
         desc.IntParam(
+            name="weakResectionSize",
+            label="Weak resection inliers count",
+            description="When adding a view during the expansion process, we compute the pose. If the inliers count\n"
+                        "Is less than this value, the resection is considered weak. If not all views in the batch \n"
+                        "are weak, then the weak views are put back in the list of views to estimate again",
+            value=100,
+            range=(1, 1000, 1),
+            advanced=True,
+        ),
+        desc.IntParam(
             name="minNumberOfObservationsForTriangulation",
             label="Min Observations For Triangulation",
             description="Minimum number of observations to triangulate a point.\n"

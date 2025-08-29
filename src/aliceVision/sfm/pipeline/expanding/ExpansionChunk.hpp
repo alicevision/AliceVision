@@ -106,6 +106,15 @@ public:
         _minTriangulationAngleDegrees = angle;
     }
 
+    /**
+     * @brief set the minimal number of inliers under which a resection is considered weak
+     * @param size the inliers count required
+    */
+    void setWeakResectionSize(size_t size)
+    {
+        _weakResectionSize = size;
+    }
+
     const std::set<IndexT> & getIgnoredViews()
     {
         return _ignoredViews;
@@ -149,6 +158,7 @@ private:
     double _minTriangulationAngleDegrees = 3.0;
     double _maxTriangulationError = 8.0;
     double _resectionMaxError = std::numeric_limits<double>::infinity();
+    size_t _weakResectionSize = 100;
 };
 
 } // namespace sfm
