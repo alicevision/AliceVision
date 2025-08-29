@@ -75,11 +75,10 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
     }
 
     //Check that at least one view has rich info
-    const int poorInliersCount = 100;
     int richViews = 0;
     for (const auto & item : intermediateInfos)
     {
-        if (item.inliersCount > poorInliersCount)
+        if (item.inliersCount > _weakResectionSize)
         {
             richViews++;
         }
@@ -91,7 +90,7 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
     {
         if (richViews > 0)
         {
-            if (item.inliersCount < poorInliersCount)
+            if (item.inliersCount < _weakResectionSize)
             {
                 _ignoredViews.insert(item.viewId);
                 continue;

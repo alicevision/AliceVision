@@ -102,6 +102,7 @@ int aliceVision_main(int argc, char** argv)
     int minNbCamerasToRefinePrincipalPoint = 3;
     bool useRigConstraint = true;
     int minNbCamerasForRigCalibration = 20;
+    int weakResectionSize = 100;
 
     int randomSeed = std::mt19937::default_seed;
 
@@ -130,6 +131,10 @@ int aliceVision_main(int argc, char** argv)
     ("bundleAdjustmentMaxOutliers", po::value<int>(&bundleAdjustmentMaxOutliers)->default_value(bundleAdjustmentMaxOutliers),
          "Threshold for the maximum number of outliers allowed at the end of a bundle adjustment iteration."
          "Using a negative value for this threshold will disable BA iterations.")
+    ("weakResectionSize", po::value<int>(&weakResectionSize)->default_value(weakResectionSize), 
+        "When adding a view during the expansion process, we compute the pose. If the inliers count"
+        "Is less than this value, the resection is considered weak. If not all views in the batch"
+        "are weak, then the weak views are put back in the list of views to estimate again.")
     ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),"Minimum number of observations to triangulate a point")
     ("minAngleForTriangulation", po::value<double>(&minAngleForTriangulation)->default_value(minAngleForTriangulation),"Minimum angle for triangulation.")
     ("minAngleForLandmark", po::value<double>(&minAngleForLandmark)->default_value(minAngleForLandmark), "Minimum angle for landmark.")
@@ -248,6 +253,7 @@ int aliceVision_main(int argc, char** argv)
     expansionChunk->setTriangulationMinPoints(minNbObservationsForTriangulation);
     expansionChunk->setMinAngleTriangulation(minAngleForTriangulation);
     expansionChunk->setPointFetcherHandler(pointFetcherHandler);
+    expansionChunk->setWeakResectionSize(weakResectionSize);
     
     sfm::ExpansionPolicy::uptr expansionPolicy;
     {
