@@ -45,7 +45,7 @@
     },
     {
       "name":"openimageio",
-      "features": ["opencolorio","libraw","gif","openjpeg", "pybind11"],
+      "features": ["opencolorio", "libraw", "gif", "openjpeg", "pybind11"],
       "default-features": false
     },
     {
