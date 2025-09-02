@@ -65,6 +65,9 @@ class View
         _image(new ImageInfo(imagePath, width, height, metadata))
     {}
 
+    View(const View& v) = default;
+
+
     /**
      * @brief Shallow View Copy
      * return a pointer to a new View
@@ -233,9 +236,6 @@ class View
      * @param[in] resectionId The given resection id
      */
     void setResectionId(IndexT resectionId) { _resectionId = resectionId; }
-
-  private:
-    View(const View& v) = default;
 
   private:
     /// view id

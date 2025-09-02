@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <aliceVision/sfmData/SharedPtrMap.hpp>
 #include <aliceVision/sfmData/CameraPose.hpp>
 #include <aliceVision/sfmData/Landmark.hpp>
 #include <aliceVision/sfmData/Constraint2D.hpp>
@@ -26,16 +27,16 @@ namespace aliceVision {
 namespace sfmData {
 
 /// Define a collection of View
-using Views = std::map<IndexT, std::shared_ptr<View>>;
+using Views = SharedPtrMap<View>;
 
 /// Define a collection of Image Info
-using ImageInfos = std::map<IndexT, std::shared_ptr<ImageInfo>>;
+using ImageInfos = SharedPtrMap<ImageInfo>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
 using Poses = std::map<IndexT, CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
-using Intrinsics = std::map<IndexT, std::shared_ptr<aliceVision::camera::IntrinsicBase>>;
+using Intrinsics = SharedPtrMap<camera::IntrinsicBase>;
 
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = std::map<IndexT, Landmark>;
@@ -351,11 +352,6 @@ class SfMData
             return false;
         }
 
-        if (it->second.isRotationOnly())
-        {
-            return false;
-        }
-
         bool rigValid = ((!view.isPartOfRig() || view.isPoseIndependant() || getRigSubPose(view).status != ERigSubPoseStatus::UNINITIALIZED));
         if (!rigValid)
         {
@@ -606,9 +602,13 @@ class SfMData
     {
         auto it = _poses.find(poseId);
         if (it != _poses.end())
+        {
             _poses.erase(it);
+        }
         else if (!noThrow)
+        {
             throw std::out_of_range(std::string("Can't erase unfind pose ") + std::to_string(poseId));
+        }
     }
 
     /**
@@ -617,7 +617,9 @@ class SfMData
     void resetRigs()
     {
         for (auto rigIt : _rigs)
+        {
             rigIt.second.reset();
+        }
     }
 
     /**

@@ -115,9 +115,9 @@ void ExternalAlembicImporter::visitObject(Alembic::Abc::IObject iObj, const Alem
             cam->setSensorHeight(vapp / (dh * 0.1 / sensorWidthPix));
             cam->setFocalLength(camSample.getFocalLength(), 1.0, false);
 
-            sfmdata.getIntrinsics()[frame] = cam;
+            sfmdata.getIntrinsics().emplace(frame, cam);
             sfmdata.getPoses()[frame] = sfmData::CameraPose(pose);
-            sfmdata.getViews()[frame] = std::make_shared<sfmData::View>(files[frame], frame, frame, frame, w, h);
+            sfmdata.getViews().emplace(frame, std::make_shared<sfmData::View>(files[frame], frame, frame, frame, w, h));
         }
     }
 

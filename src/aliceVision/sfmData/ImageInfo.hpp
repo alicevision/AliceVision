@@ -40,6 +40,11 @@ class ImageInfo
         _metadata(metadata)
     {}
 
+    ImageInfo * clone()
+    {
+        return new ImageInfo(*this);
+    }
+
     bool operator==(const ImageInfo& other) const
     {
         // image paths can be different
