@@ -265,7 +265,7 @@ else() # ON OR AUTO
     if (MSVC)
         set(OpenMP_RUNTIME_MSVC "llvm")
     endif()
-    find_package(OpenMP)
+    find_package(OpenMP COMPONENTS C CXX)
 
     if (OPENMP_FOUND)
         set(ALICEVISION_HAVE_OPENMP 1)
@@ -279,16 +279,9 @@ else() # ON OR AUTO
 endif()
 
 if (ALICEVISION_HAVE_OPENMP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    if (NOT MSVC)
-        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-            # for those using the clang with OpenMP support
-            list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES omp)
-        else()
-            list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES gomp)
-        endif()
-    endif()
+    set(ALICEVISION_OPENMP_CXX_TARGETS OpenMP::OpenMP_CXX)
+    set(ALICEVISION_OPENMP_C_TARGETS OpenMP::OpenMP_C)
+    list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES OpenMP::OpenMP_CXX)
 endif()
 
 # ==============================================================================

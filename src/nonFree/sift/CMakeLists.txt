@@ -55,6 +55,8 @@ endif()
 alicevision_add_library(vlsift
     SOURCES
         ${FEATS} ${FEATS_H}
+    PRIVATE_LINKS
+        ${ALICEVISION_OPENMP_C_TARGETS}
     PUBLIC_DEFINITIONS
         ${SIMD_DEFINITIONS}
     PRIVATE_DEFINITIONS

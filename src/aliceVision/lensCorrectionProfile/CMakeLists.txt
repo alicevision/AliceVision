@@ -13,4 +13,5 @@ alicevision_add_library(aliceVision_lensCorrectionProfile
     PRIVATE_LINKS
         Boost::log
         expat::expat
+        ${ALICEVISION_OPENMP_CXX_TARGETS}
 )
