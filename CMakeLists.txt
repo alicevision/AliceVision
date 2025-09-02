@@ -8,6 +8,9 @@ option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 option(AV_USE_CUDA "Enable CUDA" ON)
 option(AV_USE_OPENMP "Enable OpenMP" ON) # AppleClang now supports OpenMP, if installed as an external dependency (Homebrew, MacPorts, ...)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+if(APPLE AND BUILD_SHARED_LIBS)
+    option(BUILD_APPLE_FRAMEWORKS "Create Frameworks instead of plain dynamic libraries on macOS" ON)
+endif()
 option(ALICEVISION_INSTALL_MESHROOM_PLUGIN "Install AliceVision's plugin for Meshroom" ON)
 
 # Global policy section
@@ -15,6 +18,12 @@ cmake_policy(SET CMP0135 NEW)    # Improve timestamp handling in ExternalProject
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
+endif()
+
+# Currently no universal binaries are supported. Fail early.
+# FIXME: Enable universal builds by adapting dependency building accordingly.
+if(APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64" AND CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+    message(FATAL_ERROR "Building universal binaries is currently not supported. Please set 'CMAKE_OSX_ARCHITECTURES' to either arm64 (Apple Silicon) or x86_64 (Intel)!")
 endif()
 
 # set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type for AliceVision")

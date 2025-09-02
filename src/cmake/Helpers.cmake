@@ -5,7 +5,7 @@
 function(alicevision_add_library library_name)
     set(options USE_CUDA)
     set(singleValues "")
-    set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_LINKS PUBLIC_INCLUDE_DIRS PRIVATE_INCLUDE_DIRS PUBLIC_DEFINITIONS PRIVATE_DEFINITIONS)
+    set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_LINKS PUBLIC_INCLUDE_DIRS PRIVATE_INCLUDE_DIRS PUBLIC_DEFINITIONS PRIVATE_DEFINITIONS RESOURCES)
 
     cmake_parse_arguments(LIBRARY "${options}" "${singleValues}" "${multipleValues}" ${ARGN})
 
@@ -93,6 +93,23 @@ function(alicevision_add_library library_name)
         target_compile_options(${library_name} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>)
     endif()
 
+    # If building Apple Frameworks, set metadata
+    if(APPLE AND BUILD_APPLE_FRAMEWORKS)
+        target_sources(${library_name} PUBLIC ${LIBRARY_RESOURCES})
+        set_target_properties(${library_name} PROPERTIES
+            INSTALL_NAME_DIR "@rpath"
+            FRAMEWORK TRUE
+            FRAMEWORK_VERSION A
+            MACOSX_FRAMEWORK_NAME "${library_name}"
+            MACOSX_FRAMEWORK_IDENTIFIER org.aliceVision.${library_name}
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.aliceVision.${library_name}"
+            MACOSX_FRAMEWORK_BUNDLE_VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}.${ALICEVISION_VERSION_REVISION}"
+            MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
+            RESOURCE "${LIBRARY_RESOURCES}"
+            MACOSX_FRAMEWORK_INFO_PLIST "${ALICEVISION_ROOT}/../src/cmake/FrameworkInfo.plist.in"
+        )
+    endif()
+
     install(TARGETS ${library_name}
         EXPORT aliceVision-targets
         ARCHIVE
@@ -101,6 +118,10 @@ function(alicevision_add_library library_name)
             DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME
             DESTINATION ${CMAKE_INSTALL_BINDIR}
+        FRAMEWORK
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RESOURCE
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
     )
 endfunction()
 
