@@ -58,6 +58,37 @@ struct ProjectionSimpleErrorFunctor
         return _intrinsicFunctor(innerParameters, residuals);
     }
 
+    /**
+     * @brief Create the appropriate cost functor according the provided input camera intrinsic model
+     * @param[in] intrinsicPtr The intrinsic pointer
+     * @param[in] observation The corresponding observation
+     * @return cost functor
+     */
+    inline static ceres::CostFunction* createCostFunction(
+        const std::shared_ptr<camera::IntrinsicBase> intrinsic, const sfmData::Observation& observation)
+    {
+        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionSimpleErrorFunctor>(new ProjectionSimpleErrorFunctor(observation, intrinsic));
+
+        int distortionSize = 1;
+        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+        if (isod)
+        {
+            auto distortion = isod->getDistortion();
+            if (distortion)
+            {
+                distortionSize = distortion->getParameters().size();
+            }
+        }
+
+        costFunction->AddParameterBlock(intrinsic->getParameters().size());
+        costFunction->AddParameterBlock(distortionSize);
+        costFunction->AddParameterBlock(6);
+        costFunction->AddParameterBlock(3);
+        costFunction->SetNumResiduals(2);
+
+        return costFunction;
+    }
+
     ceres::DynamicCostFunctionToFunctorTmp _intrinsicFunctor;
 };
 
@@ -126,6 +157,39 @@ struct ProjectionSurveyErrorFunctor
         return true;
     }
 
+    /**
+     * @brief Create the appropriate cost functor according the provided input camera intrinsic model
+     * @param[in] intrinsicPtr The intrinsic pointer
+     * @param[in] point the  reference point to compare to
+     * @param[in] observation The corresponding observation
+     * @return cost functor
+     */
+    inline static ceres::CostFunction* createCostFunction(
+                                            const std::shared_ptr<camera::IntrinsicBase> intrinsic, 
+                                            const Vec3 & point,
+                                            const sfmData::Observation& observation)
+    {
+        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionSurveyErrorFunctor>(new ProjectionSurveyErrorFunctor(point, observation, intrinsic));
+
+        int distortionSize = 1;
+        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+        if (isod)
+        {
+            auto distortion = isod->getDistortion();
+            if (distortion)
+            {
+                distortionSize = distortion->getParameters().size();
+            }
+        }
+
+        costFunction->AddParameterBlock(intrinsic->getParameters().size());
+        costFunction->AddParameterBlock(distortionSize);
+        costFunction->AddParameterBlock(6);
+        costFunction->SetNumResiduals(2);
+
+        return costFunction;
+    }
+
     ceres::DynamicCostFunctionToFunctorTmp _intrinsicFunctor;
     Vec3 _point;
 };
@@ -180,6 +244,38 @@ struct ProjectionErrorFunctor
         innerParameters[2] = transformedPoint;
 
         return _intrinsicFunctor(innerParameters, residuals);
+    }
+
+    /**
+     * @brief Create the appropriate cost functor according the provided input rig camera intrinsic model
+     * @param[in] intrinsicPtr The intrinsic pointer
+     * @param[in] observation The corresponding observation
+     * @return cost functor
+     */
+    inline static ceres::CostFunction* createCostFunction(std::shared_ptr<camera::IntrinsicBase> intrinsic, 
+                                                        const sfmData::Observation& observation)
+    {
+        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionErrorFunctor>(new ProjectionErrorFunctor(observation, intrinsic));
+
+        int distortionSize = 1;
+        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+        if (isod)
+        {
+            auto distortion = isod->getDistortion();
+            if (distortion)
+            {
+                distortionSize = distortion->getParameters().size();
+            }
+        }
+
+        costFunction->AddParameterBlock(intrinsic->getParameters().size());
+        costFunction->AddParameterBlock(distortionSize);
+        costFunction->AddParameterBlock(6);
+        costFunction->AddParameterBlock(6);
+        costFunction->AddParameterBlock(3);
+        costFunction->SetNumResiduals(2);
+
+        return costFunction;
     }
 
     ceres::DynamicCostFunctionToFunctorTmp _intrinsicFunctor;

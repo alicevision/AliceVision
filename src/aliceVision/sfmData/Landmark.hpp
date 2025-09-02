@@ -58,6 +58,20 @@ class Landmark
     { 
         return MapObservations(_observations.begin(), _observations.end());;
     }
+    
+    inline void updateFromEstimator(const std::array<double, 3> & data)
+    {
+        // do not update a landmark set as Ignored or Constant in the Local strategy
+        if (state != EEstimatorParameterState::REFINED)
+        {
+            return;
+        }
+
+        for (std::size_t i = 0; i < 3; ++i)
+        {
+            X(Eigen::Index(i)) = data.at(i);
+        }
+    }
 
   private:
     Observations _observations;
