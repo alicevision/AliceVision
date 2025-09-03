@@ -10,21 +10,19 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 
-#include <aliceVision/sfm/pipeline/relativePoses.hpp>
-#include <aliceVision/sfm/pipeline/global/GlobalSfMRotationAveragingSolver.hpp>
-
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/geometry/lie.hpp>
 
 #include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/track/trackIO.hpp>
 #include <aliceVision/track/TracksHandler.hpp>
-#include <aliceVision/dataio/json.hpp>
+
+#include <aliceVision/sfm/pipeline/positioning/GlobalPositioning.hpp>
 
 #include <boost/program_options.hpp>
 #include <filesystem>
 #include <fstream>
+#include <random>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -42,11 +40,8 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmDataFilename;
     std::string sfmDataOutputFilename;
     std::string tracksFilename;
-    std::string pairsDirectory;
-    sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
 
     int randomSeed = std::mt19937::default_seed;
-    double angularTolerance = 5.0;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -56,18 +51,9 @@ int aliceVision_main(int argc, char** argv)
         ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(),
          "SfMData output file.")
         ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(),
-         "Tracks file.")
-        ("pairs,p", po::value<std::string>(&pairsDirectory)->required(),
-         "Path to the pairs directory.");
+         "Tracks file.");
 
     po::options_description optionalParams("Optional parameters");
-    optionalParams.add_options()
-        ("rotationAveragingMethod", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
-         "Method for rotation averaging: \n"
-         "- L1_minimization: Use L1 minimization\n"
-         "- L2_minimization: Use L2 minimization")
-        ("angularTolerance", po::value<double>(&angularTolerance)->default_value(angularTolerance),
-         "Angular (in degrees) tolerance for a given triplet.");
     // clang-format on
 
     CmdLine cmdline("AliceVision Global Rotation Estimating");
@@ -84,6 +70,7 @@ int aliceVision_main(int argc, char** argv)
     omp_set_num_threads(hwc.getMaxThreads());
     
     // Load input SfMData scene
+    ALICEVISION_LOG_INFO("Load sfmData");
     sfmData::SfMData sfmData;
     if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
     {
@@ -100,57 +87,47 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Result of pair estimations are stored in multiple files
-    std::vector<sfm::ReconstructedPair> reconstructedPairs;
-    const std::regex regex("pairs\\_[0-9]+\\.json");
-    for(const fs::directory_entry & file : boost::make_iterator_range(fs::directory_iterator(pairsDirectory), {}))
+    
+    // Create landmarks from tracks
+    ALICEVISION_LOG_INFO("Creating landmarks");
+    const track::TracksPerView & tracksPerView = tracksHandler.getTracksPerView();
+    const track::TracksMap & tracks = tracksHandler.getAllTracks();
+    sfmData::Landmarks & landmarks = sfmData.getLandmarks();
+
+    for (const auto & [idView, sview] : sfmData.getViews())
     {
-        if (!std::regex_search(file.path().string(), regex))
+        if (!sfmData.isPoseAndIntrinsicDefined(idView))
         {
             continue;
         }
 
-        std::ifstream inputfile(file.path().string());
+        sfmData::CameraPose & pose = sfmData.getPoses().at(sview->getPoseId());        
+        pose.setRotationOnly(false);
 
-        boost::system::error_code ec;
-        std::vector<boost::json::value> values = readJsons(inputfile, ec);
-        for (const boost::json::value& value : values)
+        const track::TrackIdSet & setTracks = tracksPerView.at(idView);
+        for (const auto & idTrack : setTracks)
         {
-            std::vector<sfm::ReconstructedPair> localVector = boost::json::value_to<std::vector<sfm::ReconstructedPair>>(value);
-            reconstructedPairs.insert(reconstructedPairs.end(), localVector.begin(), localVector.end());
+            const track::Track & track = tracks.at(idTrack);
+            const track::TrackItem & trackItem = track.featPerView.at(idView);
+            
+            sfmData::Landmark & landmark = landmarks[idTrack];
+            landmark.descType = track.descType;
+            
+            sfmData::Observation & obs = landmark.getObservations()[idView];
+            obs.setCoordinates(trackItem.coords);
+            obs.setScale(trackItem.scale);
+            obs.setFeatureId(trackItem.featureId);
         }
-    }
+    }    
 
-    rotationAveraging::RelativeRotations rotations;
-    for (const auto & pair : reconstructedPairs)
+
+    ALICEVISION_LOG_INFO("Processing positioning");
+    std::mt19937 gen(randomSeed);
+    sfm::GlobalPositioning positionning;
+    if (!positionning.process(sfmData, gen))
     {
-        rotationAveraging::RelativeRotation rot(pair.reference, pair.next, pair.pose.rotation(), pair.score);
-        rotations.push_back(rot);
-    }
-
-    const sfm::ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod = sfm::ERelativeRotationInferenceMethod::TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR;
-
-    sfm::GlobalSfMRotationAveragingSolver rotationAveragingSolver;
-    std::map<IndexT, Mat3> globalRotations;
-
-    const bool bRotationAveraging = rotationAveragingSolver.run(rotationAveragingMethod, eRelativeRotationInferenceMethod, rotations, angularTolerance, globalRotations);
-    if (!bRotationAveraging)
-    {
-        ALICEVISION_LOG_ERROR("Global rotation failed");
+        ALICEVISION_LOG_ERROR("Positionning failed");
         return EXIT_FAILURE;
-    }
-
-    // Store the results in the sfmData
-    for (auto & [index, R] : globalRotations)
-    {        
-        sfmData::CameraPose cp;
-        geometry::Pose3 p;
-        p.setRotation(R);
-        
-        cp.setTransform(p);
-        cp.setRotationOnly(true);
-
-        sfmData.getPoses()[index] = cp;
     }
 
     ALICEVISION_LOG_INFO("Saving sfmData to " << sfmDataOutputFilename);

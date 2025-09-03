@@ -168,6 +168,19 @@ if (ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
+    # Global Position Estimating
+    alicevision_add_software(aliceVision_globalPositionEstimating
+        SOURCE main_globalPositionEstimating.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfm
+              aliceVision_sfmData
+              aliceVision_track
+              Boost::program_options
+              Boost::json
+    )
+
     # Incremental / Sequential SfM
     alicevision_add_software(aliceVision_incrementalSfM
         SOURCE main_incrementalSfM.cpp
