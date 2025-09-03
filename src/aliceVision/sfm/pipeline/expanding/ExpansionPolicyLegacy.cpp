@@ -51,9 +51,16 @@ bool ExpansionPolicyLegacy::process(const sfmData::SfMData & sfmData, const trac
 
     std::vector<ViewScoring> vscoring;
 
+    //Local copy to vector for openmp, which doesn't like std::set
+    std::vector<IndexT> vectorAvailableViewsIds;
+    std::copy(_availableViewsIds.begin(), _availableViewsIds.end(), std::back_inserter(vectorAvailableViewsIds));
+
     //Loop over possible views
-    for (IndexT cViewId : _availableViewsIds)
-    {
+    #pragma omp parallel for schedule(dynamic)
+    for (int pos = 0; pos < vectorAvailableViewsIds.size(); pos++)
+    {   
+        IndexT cViewId = vectorAvailableViewsIds[pos];
+
         const sfmData::View & v = sfmData.getView(cViewId);
 
         //If this view has no intrinsic,
@@ -95,7 +102,11 @@ bool ExpansionPolicyLegacy::process(const sfmData::SfMData & sfmData, const trac
         scoring.id = cViewId;
         scoring.score = ExpansionPolicyLegacy::computeScore(tracksHandler.getAllTracks(), viewReconstructedTracksIds, cViewId, maxDim, _countPyramidLevels);
         scoring.count = viewReconstructedTracksIds.size();
-        vscoring.push_back(scoring);
+
+        #pragma omp critical
+        {
+            vscoring.push_back(scoring);
+        }
     }
 
     if (vscoring.size() == 0)
