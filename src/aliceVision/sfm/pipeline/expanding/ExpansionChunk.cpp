@@ -32,6 +32,16 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
         return false;
     }
 
+    //How many views to resect ?
+    size_t countToProcess = 0;
+    for (const IndexT viewId : viewsChunk)
+    {
+        if (!sfmData.isPoseAndIntrinsicDefined(viewId))
+        {
+            countToProcess++;
+        }
+    }
+
 
     struct IntermediateResectionInfo
     {
@@ -71,6 +81,17 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
             {
                 intermediateInfos.push_back(iri);
             }
+        }
+    }
+
+    //Early exit if no valid resections
+    if (intermediateInfos.size() == 0)
+    {
+        //If no resection to do, then maybe we want to force recomputation
+        if (countToProcess > 0)
+        {
+            ALICEVISION_LOG_INFO("ExpansionChunk::process early end");
+            return false;
         }
     }
 

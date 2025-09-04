@@ -127,9 +127,9 @@ bool SfmTriangulation::processTrack(
         observations.push_back(coords);
         intrinsics.push_back(intrinsic);
         poses.push_back(pose);
-
-        //Weight is dependent on the feature scale
-        weights.push_back(1.0 / trackItem.scale);
+        weights.push_back(1.0);
+        //TODO, check how to use scale correctly
+        //weights.push_back(1.0 / trackItem.scale);
         
         indexedViewIds.push_back(viewId);
     }
