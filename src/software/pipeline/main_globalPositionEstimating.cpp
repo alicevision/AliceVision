@@ -101,7 +101,7 @@ int aliceVision_main(int argc, char** argv)
             continue;
         }
 
-        sfmData::CameraPose & pose = sfmData.getPoses().at(sview->getPoseId());        
+        sfmData::CameraPose & pose = sfmData.getAbsolutePose(sview->getPoseId());        
         pose.setRotationOnly(false);
 
         const track::TrackIdSet & setTracks = tracksPerView.at(idView);

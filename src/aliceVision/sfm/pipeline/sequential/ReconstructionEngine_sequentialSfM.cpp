@@ -183,7 +183,9 @@ bool ReconstructionEngine_sequentialSfM::process()
     if (!_sfmData.getLandmarks().empty())
     {
         if (_sfmData.getPoses().empty())
+        {
             throw std::runtime_error("You cannot have landmarks without valid poses.");
+        }
 
         // If we have already reconstructed landmarks, we need to recognize the corresponding tracks
         // and update the landmarkIds accordingly.

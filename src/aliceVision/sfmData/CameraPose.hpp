@@ -15,6 +15,9 @@ namespace sfmData {
 class CameraPose
 {
   public:
+    using ptr = CameraPose*;
+    using sptr = std::shared_ptr<CameraPose>;
+  public:
     /**
      * @brief CameraPose default constructor
      */
@@ -29,6 +32,11 @@ class CameraPose
       : _transform(transform),
         _locked(locked)
     {}
+
+    CameraPose::ptr clone() const
+    {
+        return new CameraPose(*this);
+    }
 
     /**
      * @brief Get the 3d transformation of the camera

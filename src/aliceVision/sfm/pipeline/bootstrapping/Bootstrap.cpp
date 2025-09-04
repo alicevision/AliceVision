@@ -28,8 +28,8 @@ bool bootstrapBase(sfmData::SfMData & sfmData,
     std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
 
     sfmData::CameraPose cposeNext(otherTreference, false);
-    sfmData.getPoses()[refView.getPoseId()] = sfmData::CameraPose();
-    sfmData.getPoses()[nextView.getPoseId()] = cposeNext;
+    sfmData.getPoses().assign(refView.getPoseId(), sfmData::CameraPose());
+    sfmData.getPoses().assign(nextView.getPoseId(), cposeNext);
 
     const Mat4 T1 = Eigen::Matrix4d::Identity();
     Mat4 T2 = otherTreference.getHomogeneous();
@@ -122,7 +122,7 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
 
     geometry::Pose3 pose3(pose);
     sfmData::CameraPose cpose(pose3, false);
-    sfmData.getPoses()[viewId] = cpose;
+    sfmData.getPoses().assign(viewId, cpose);
     
     // Cleanup output
     sfmData::Landmarks & outLandmarks = sfmData.getLandmarks();

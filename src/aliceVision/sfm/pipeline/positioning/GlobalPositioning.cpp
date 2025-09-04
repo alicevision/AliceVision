@@ -114,7 +114,7 @@ bool GlobalPositioning::createStructure(const sfmData::SfMData & sfmData, std::m
             IndexT intrinsicId = view.getIntrinsicId();
 
             //Retrieve view information
-            const sfmData::CameraPose & cp = sfmData.getPoses().at(poseId);
+            const sfmData::CameraPose & cp = sfmData.getAbsolutePose(poseId);
             const geometry::Pose3 & pose = cp.getTransform();
             const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(intrinsicId);
 
@@ -222,7 +222,7 @@ void GlobalPositioning::updateSfmData(sfmData::SfMData & sfmData)
         }
 
         const IndexT poseId = sview->getPoseId();
-        sfmData::CameraPose & pose = sfmData.getPoses().at(poseId);
+        sfmData::CameraPose & pose = sfmData.getAbsolutePose(poseId);
         geometry::Pose3 p = pose.getTransform();
         
         if (_centers.find(poseId) != _centers.end())

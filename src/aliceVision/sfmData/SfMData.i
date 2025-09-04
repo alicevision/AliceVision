@@ -29,6 +29,7 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::camera;
 %}
 
+%template(SPPoses) std::map<IndexT, std::shared_ptr<aliceVision::sfmData::CameraPose>>;
 %template(SPViews) std::map<IndexT, std::shared_ptr<aliceVision::sfmData::View>>;
 %template(SPImageInfos) std::map<IndexT, std::shared_ptr<aliceVision::sfmData::ImageInfo>>;
 %template(SPIntrinsics) std::map<IndexT, std::shared_ptr<aliceVision::camera::IntrinsicBase>>;
@@ -92,7 +93,9 @@ using namespace aliceVision::camera;
 SPMAP_EXTENSIONS(aliceVision::sfmData::View)
 SPMAP_EXTENSIONS(aliceVision::sfmData::ImageInfo)
 SPMAP_EXTENSIONS(aliceVision::sfmData::IntrinsicBase)
+SPMAP_EXTENSIONS(aliceVision::sfmData::CameraPose)
 
+%template(Poses) aliceVision::sfmData::SharedPtrMap<aliceVision::sfmData::CameraPose>;
 %template(Views) aliceVision::sfmData::SharedPtrMap<aliceVision::sfmData::View>;
 %template(ImageInfos) aliceVision::sfmData::SharedPtrMap<aliceVision::sfmData::ImageInfo>;
 %template(Intrinsics) aliceVision::sfmData::SharedPtrMap<aliceVision::camera::IntrinsicBase>;
@@ -102,7 +105,6 @@ SPMAP_EXTENSIONS(aliceVision::sfmData::IntrinsicBase)
 %template(Constraints2D) std::vector<aliceVision::sfmData::Constraint2D>;
 %template(Landmarks) std::map<IndexT, aliceVision::sfmData::Landmark>;
 %template(Observations) std::map<IndexT, aliceVision::sfmData::Observation>;
-%template(Poses) std::map<IndexT, aliceVision::sfmData::CameraPose>;
 %template(Rigs) std::map<IndexT, aliceVision::sfmData::Rig>;
 %template(RotationPriors) std::vector<aliceVision::sfmData::RotationPrior>;
 

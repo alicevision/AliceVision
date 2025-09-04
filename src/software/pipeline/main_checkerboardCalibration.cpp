@@ -296,8 +296,8 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData, std::map<IndexT, calibra
             sfmData::CameraPose cp;
             cp.setTransform(pose);
 
-            auto view = sfmData.getViews().at(pH.first);
-            sfmData.getPoses()[view->getPoseId()] = cp;
+            const auto & view = sfmData.getView(pH.first);
+            sfmData.setPose(view, cp);
         }
 
         // Get residuals
@@ -378,8 +378,8 @@ bool estimateRigs(sfmData::SfMData& sfmData)
                     {
                         continue;
                     }
-                    sfmData::CameraPose absPose = sfmData.getPoses().at(view->getPoseId());
-                    rigPoses[rigId] = absPose;
+                    sfmData::CameraPose absPose = sfmData.getAbsolutePose(view->getPoseId());
+                    rigPoses.assign(rigId, absPose);
                     subPose.pose = geometry::Pose3();  // identity
                     subPose.status = sfmData::ERigSubPoseStatus::CONSTANT;
                 }
@@ -402,9 +402,9 @@ bool estimateRigs(sfmData::SfMData& sfmData)
                     {
                         continue;
                     }
-                    sfmData::CameraPose absPose = sfmData.getPoses().at(view->getPoseId());
-                    sfmData::CameraPose rigPose = rigPoses[rigId];
-                    sfmData.getPoses()[view->getPoseId()] = rigPose;
+                    sfmData::CameraPose absPose = sfmData.getAbsolutePose(view->getPoseId());
+                    sfmData::CameraPose rigPose = *rigPoses.at(rigId);
+                    sfmData.getPoses().assign(view->getPoseId(), rigPose);
                     subPose.pose = absPose.getTransform() * rigPose.getTransform().inverse();
                     subPose.status = sfmData::ERigSubPoseStatus::ESTIMATED;
                 }

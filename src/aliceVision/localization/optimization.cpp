@@ -281,10 +281,9 @@ bool refineSequence(std::vector<LocalizationResult>& vec_localizationResult,
     if (b_BA_Status)
     {
         // get back the results and update the localization result with the refined pose
-        for (const auto& pose : tinyScene.getPoses())
+        for (const auto& [poseId, pose] : tinyScene.getPoses().valueRange())
         {
-            const IndexT idPose = pose.first;
-            vec_localizationResult[idPose].setPose(pose.second.getTransform());
+            vec_localizationResult[poseId].setPose(pose.getTransform());
         }
 
         if (!outputFilename.empty())

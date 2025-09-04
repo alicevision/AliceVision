@@ -1303,7 +1303,7 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
             _selectedFrames[i] = '1';
 
             //Make sure to keep the pose
-            keyframesPoses.emplace(poseId, inputSfm.getPoses().at(poseId));
+            keyframesPoses.assign(poseId, inputSfm.getAbsolutePose(poseId));
         }
 
         if (_selectedFrames[i] == '1')

@@ -150,7 +150,7 @@ int aliceVision_main(int argc, char** argv)
         cp.setTransform(p);
         cp.setRotationOnly(true);
 
-        sfmData.getPoses()[index] = cp;
+        sfmData.getPoses().assign(index, cp);
     }
 
     ALICEVISION_LOG_INFO("Saving sfmData to " << sfmDataOutputFilename);

@@ -404,7 +404,7 @@ void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const 
 {
     const std::string name = fs::path(view.getImage().getImagePath()).stem().string();
     const sfmData::CameraPose* pose =
-      ((flagsPart & ESfMData::EXTRINSICS) && sfmData.existsPose(view)) ? &(sfmData.getPoses().at(view.getPoseId())) : nullptr;
+      ((flagsPart & ESfMData::EXTRINSICS) && sfmData.existsPose(view)) ? sfmData.getPoses().at(view.getPoseId()).get() : nullptr;
     const std::shared_ptr<camera::IntrinsicBase> intrinsic =
       (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicSharedPtr(view.getIntrinsicId()) : nullptr;
 

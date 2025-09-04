@@ -97,9 +97,9 @@ int aliceVision_main(int argc, char** argv)
     exporter.initAnimatedCamera("camera");
 
     std::size_t idx = 0;
-    for (auto& p : sfmData.getPoses())
+    for (const auto& [_, pose] : sfmData.getPoses().valueRange())
     {
-        const geometry::Pose3 rigPose = extrinsics[0].inverse() * p.second.getTransform();
+        const geometry::Pose3 rigPose = extrinsics[0].inverse() * pose.getTransform();
         exporter.addCameraKeyframe(rigPose, &intrinsics, "", idx, idx);
         ++idx;
     }

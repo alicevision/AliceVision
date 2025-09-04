@@ -32,27 +32,27 @@ void LbaPolicyConnexity::upgradeSfmData(sfmData::SfMData & sfmData, const Connex
     /**
      * Propagate states to views in sfmData
     */
-    for (auto & pp : sfmData.getPoses())
+    for (auto & [poseId, pose] : sfmData.getPoses().valueRange())
     {
-        int d = graph.getDistance(pp.first);
+        int d = graph.getDistance(poseId);
         if (d <= _distanceLimit)
         {
-            if (pp.second.isLocked())
+            if (pose.isLocked())
             {
-                pp.second.setState(EEstimatorParameterState::CONSTANT);
+                pose.setState(EEstimatorParameterState::CONSTANT);
             }
             else
             {
-                pp.second.setState(EEstimatorParameterState::REFINED);
+                pose.setState(EEstimatorParameterState::REFINED);
             }
         }
         else if (d == (_distanceLimit + 1))
         {
-            pp.second.setState(EEstimatorParameterState::CONSTANT);
+            pose.setState(EEstimatorParameterState::CONSTANT);
         }
         else 
         {
-            pp.second.setState(EEstimatorParameterState::IGNORED);
+            pose.setState(EEstimatorParameterState::IGNORED);
         }
     }
 

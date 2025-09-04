@@ -49,7 +49,9 @@ void generateSampleScene(sfmData::SfMData& output)
                 const Eigen::Vector3d thetau(x, y, z);
                 const Eigen::AngleAxis<double> aa(thetau.norm(), thetau.normalized());
 
-                output.getPoses().emplace(idpose, geometry::Pose3(aa.toRotationMatrix(), Vec3(x, y, z)));
+                geometry::Pose3 pose(aa.toRotationMatrix(), Vec3(x, y, z));
+
+                output.getPoses().assign(idpose, sfmData::CameraPose(pose));
 
                 for (const auto itIntrinsic : output.getIntrinsics())
                 {

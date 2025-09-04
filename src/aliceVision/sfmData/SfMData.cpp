@@ -266,13 +266,11 @@ std::set<IndexT> SfMData::getReconstructedIntrinsics() const
 
 void SfMData::setPose(const View& view, const CameraPose& absolutePose)
 {
-    // const bool knownPose = existsPose(view);
-    CameraPose& viewPose = _poses[view.getPoseId()];
 
     // Pose dedicated for this view (independent from rig, even if it is potentially part of a rig)
     if (view.isPoseIndependant())
     {
-        viewPose = absolutePose;
+        _poses.assign(view.getPoseId(), absolutePose);
         return;
     }
 
@@ -282,12 +280,15 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
         const Rig& rig = _rigs.at(view.getRigId());
         RigSubPose& subPose = getRigSubPose(view);
 
+        CameraPose viewPose;
         viewPose.setTransform(subPose.pose.inverse() * absolutePose.getTransform());
 
         if (absolutePose.isLocked())
         {
             viewPose.lock();
         }
+
+        _poses.assign(view.getPoseId(), viewPose);
 
         return;
     }
@@ -347,9 +348,10 @@ void SfMData::clear()
 
 void SfMData::resetParameterStates()
 {
-    for (auto& pp : _poses)
+
+    for (auto & [_, pose]: _poses.valueRange())
     {
-        pp.second.initializeState();
+        pose.initializeState();
     }
 
     for (auto& pl : _landmarks)

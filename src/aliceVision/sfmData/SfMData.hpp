@@ -33,7 +33,7 @@ using Views = SharedPtrMap<View>;
 using ImageInfos = SharedPtrMap<ImageInfo>;
 
 /// Define a collection of Pose (indexed by view.getPoseId())
-using Poses = std::map<IndexT, CameraPose>;
+using Poses = SharedPtrMap<CameraPose>;
 
 /// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
 using Intrinsics = SharedPtrMap<camera::IntrinsicBase>;
@@ -432,7 +432,7 @@ class SfMData
         // check the view has valid pose / rig etc
         if (!view.isPartOfRig() || view.isPoseIndependant())
         {
-            return _poses.at(view.getPoseId());
+            return *_poses.at(view.getPoseId());
         }
 
         // get the pose of the rig
@@ -448,7 +448,13 @@ class SfMData
      * @brief  Gives the pose with the given pose id.
      * @param[in] poseId The given pose id
      */
-    const CameraPose& getAbsolutePose(IndexT poseId) const { return _poses.at(poseId); }
+    const CameraPose& getAbsolutePose(IndexT poseId) const { return *_poses.at(poseId); }
+
+    /**
+     * @brief  Gives the pose with the given pose id.
+     * @param[in] poseId The given pose id
+     */
+    CameraPose & getAbsolutePose(IndexT poseId) { return *_poses.at(poseId); }
 
     /**
      * @brief Get the rig of the given view
@@ -591,7 +597,10 @@ class SfMData
      * @param[in] poseId The given poseId
      * @param[in] pose The given pose
      */
-    void setAbsolutePose(IndexT poseId, const CameraPose& pose) { _poses[poseId] = pose; }
+    void setAbsolutePose(IndexT poseId, const CameraPose& pose) 
+    { 
+        _poses.assign(poseId, pose); 
+    }
 
     /**
      * @brief Erase the pose for the given poseId
@@ -684,7 +693,10 @@ class SfMData
      * @param[in] view The given view
      * @return Rig pose of the given camera view
      */
-    const CameraPose& getRigPose(const View& view) const { return _poses.at(view.getPoseId()); }
+    const CameraPose& getRigPose(const View& view) const 
+    { 
+        return *_poses.at(view.getPoseId()); 
+    }
 
     /**
      * @brief Get Rig subPose of a given camera view
@@ -703,7 +715,10 @@ class SfMData
      * @param[in] view The given view
      * @return Rig pose of the given camera view
      */
-    CameraPose& getRigPose(const View& view) { return _poses.at(view.getPoseId()); }
+    CameraPose& getRigPose(const View& view) 
+    { 
+        return *_poses.at(view.getPoseId()); 
+    }
 
     /**
      * @brief Get Rig subPose of a given camera view

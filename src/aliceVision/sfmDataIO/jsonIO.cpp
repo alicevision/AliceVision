@@ -702,12 +702,12 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
         {
             bpt::ptree posesTree;
 
-            for (const auto& posePair : sfmData.getPoses())
+            for (const auto& [poseId, pose] : sfmData.getPoses().valueRange())
             {
                 bpt::ptree poseTree;
 
-                poseTree.put("poseId", posePair.first);
-                saveCameraPose("pose", posePair.second, poseTree);
+                poseTree.put("poseId", poseId);
+                saveCameraPose("pose", pose, poseTree);
                 posesTree.push_back(std::make_pair("", poseTree));
             }
 
@@ -905,7 +905,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
 
                 loadCameraPose("pose", pose, poseTree);
 
-                poses.emplace(poseTree.get<IndexT>("poseId"), pose);
+                poses.assign(poseTree.get<IndexT>("poseId"), pose);
             }
         }
 
