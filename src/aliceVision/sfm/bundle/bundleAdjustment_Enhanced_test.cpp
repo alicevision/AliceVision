@@ -98,7 +98,7 @@ void createScene(sfmData::SfMData& sfmData, const camera::IntrinsicBase& intrins
 
         geometry::Pose3 pose(T);
 
-        sfmData.getPoses().emplace(idview, sfmData::CameraPose(pose));
+        sfmData.getPoses().assign(idview, sfmData::CameraPose(pose));
         sfmData.getViews().emplace(idview, std::make_shared<sfmData::View>("", idview, 0, idview, intrinsic.w(), intrinsic.h()));
 
         Vec3 origin = pose(Vec3(0, 0, 0));
@@ -244,9 +244,9 @@ BOOST_AUTO_TEST_CASE(test_poses)
         createScene(sfmData, *pairIntrinsics.first);
 
         srand(0);
-        for (auto& lps : sfmData.getPoses())
+        for (auto& [_, pose] : sfmData.getPoses().valueRange())
         {
-            geometry::Pose3 pose3 = lps.second.getTransform();
+            geometry::Pose3 pose3 = pose.getTransform();
             Eigen::Matrix4d T = pose3.getHomogeneous();
 
             Eigen::Vector3d nt = Eigen::Vector3d::Random() * 0.1 + Eigen::Vector3d::UnitZ() * 0.1;
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(test_poses)
             U.block<3, 3>(0, 0) = nR;
             U.block<3, 1>(0, 3) = nt;
 
-            lps.second.setTransform(geometry::Pose3(U * T));
+            pose.setTransform(geometry::Pose3(U * T));
         }
 
         sfm::BundleAdjustmentCeres::CeresOptions options;

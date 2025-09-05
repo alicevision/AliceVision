@@ -128,7 +128,7 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename,
         {
             // add the pose entry
             const auto pose = geometry::poseFromRT(rotation, translation);
-            scene.getPoses().insert({poseId, sfmData::CameraPose(pose, lockPoses)});
+            scene.getPoses().assign(poseId, sfmData::CameraPose(pose, lockPoses));
         }
 
         // add view

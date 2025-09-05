@@ -883,9 +883,9 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData, doub
     Vec3 meanCameraCenter = Vec3::Zero();
 
     Vec3::Index ncol = 0;
-    for (const auto& pose : sfmData.getPoses())
+    for (const auto& [_, pose] : sfmData.getPoses().valueRange())
     {
-        const Vec3 center = pose.second.getTransform().center();
+        const Vec3 center = pose.getTransform().center();
         vCamCenter.col(ncol) = center;
         meanCameraCenter += center;
         ++ncol;
@@ -996,9 +996,9 @@ IndexT getCenterCameraView(const sfmData::SfMData& sfmData)
     using namespace boost::accumulators;
     accumulator_set<double, stats<tag::mean>> accX, accY, accZ;
 
-    for (auto& pose : sfmData.getPoses())
+    for (auto& [_, pose] : sfmData.getPoses().valueRange())
     {
-        const auto& c = pose.second.getTransform().center();
+        const auto& c = pose.getTransform().center();
         accX(c(0));
         accY(c(1));
         accZ(c(2));
@@ -1232,7 +1232,6 @@ Vec3 computeCameraCentersMean(const sfmData::SfMData& sfmData)
     // Compute the mean of the point cloud
     Vec3 center = Vec3::Zero();
     size_t count = 0;
-    const auto& poses = sfmData.getPoses();
 
     for (auto v : sfmData.getViews())
     {
@@ -1242,7 +1241,7 @@ Vec3 computeCameraCentersMean(const sfmData::SfMData& sfmData)
         }
 
         const IndexT poseId = v.second->getPoseId();
-        const auto& pose = poses.at(poseId);
+        const auto& pose = sfmData.getAbsolutePose(poseId);
 
         center += pose.getTransform().center();
         count++;
@@ -1267,7 +1266,7 @@ void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3& mean, Eig
         }
 
         const IndexT poseId = v.second->getPoseId();
-        const auto& pose = poses.at(poseId);
+        const auto& pose = sfmData.getAbsolutePose(poseId);
 
         Vec3 centered = pose.getTransform().center() - mean;
         varCov += centered * centered.transpose();
@@ -1368,7 +1367,6 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
     const double gpsVariance = 4.0;
     const double distVariance = gpsVariance * 2.0;
 
-    const auto& poses = sfmData.getPoses();
     std::list<std::pair<Vec3, Vec3>> list_pairs;
     for (const auto v : sfmData.getViews())
     {
@@ -1383,7 +1381,7 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
         }
 
         const IndexT poseId = v.second->getPoseId();
-        const auto& pose = poses.at(poseId);
+        const auto& pose = sfmData.getAbsolutePose(poseId);
 
         const Vec3 camCoordinates = pose.getTransform().center();
         const Vec3 gpsCoordinates = v.second->getImage().getGpsPositionFromMetadata();

@@ -1033,7 +1033,7 @@ bool readXform(const Version& abcVersion, IXform& xform, M44d& mat, sfmData::SfM
 
         if (sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
         {
-            sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
+            sfmData.getPoses().assign(poseId, sfmData::CameraPose(pose, rigPoseLocked));
         }
     }
 

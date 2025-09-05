@@ -278,11 +278,8 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
     };
 
     // setup poses data
-    for (const auto& posePair : sfmData.getPoses())
+    for (const auto& [poseId, pose] : sfmData.getPoses().valueRange())
     {
-        const IndexT poseId = posePair.first;
-        const sfmData::CameraPose& pose = posePair.second;
-
         // skip camera pose set as Ignored in the Local strategy
         if (pose.getState() == EEstimatorParameterState::IGNORED)
         {
@@ -834,8 +831,9 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
     if (refinePoses)
     {
         // absolute poses
-        for (auto& [poseId, pose] : sfmData.getPoses())
+        for (auto & [poseId, pose] : sfmData.getPoses().valueRange())
         {
+            // do not update a camera pose set as Ignored or Constant in the Local strategy
             if (pose.getState() != EEstimatorParameterState::REFINED)
             {
                 continue;

@@ -96,9 +96,9 @@ BOOST_AUTO_TEST_CASE(ALIGMENT_CamerasXAxis_checkRotation)
         applyTransform(sfmDataCorrected, 1.0, bR, bt);
         ALICEVISION_LOG_INFO("aR: " << aR);
         ALICEVISION_LOG_INFO("bR: " << bR);
-        for (const auto& pose : sfmDataCorrected.getPoses())
+        for (const auto& [_, pose] : sfmDataCorrected.getPoses().valueRange())
         {
-            Vec3 camY(pose.second.getTransform().rotation() * Vec3::UnitY());
+            Vec3 camY(pose.getTransform().rotation() * Vec3::UnitY());
             // EXPECT_MATRIX_NEAR(camY, -Vec3::UnitY(), 1e-3);
             ALICEVISION_LOG_INFO("camY: " << camY);
         }

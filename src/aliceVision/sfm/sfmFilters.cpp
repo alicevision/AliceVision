@@ -161,7 +161,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
     std::map<IndexT, IndexT> posesCount;
 
     // Loop over all poses
-    for (auto & [poseId, pose] : sfmData.getPoses())
+    for (auto & [poseId, pose] : sfmData.getPoses().valueRange())
     {
         if (!pose.isRemovable())
         {
