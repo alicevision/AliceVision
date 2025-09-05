@@ -1,6 +1,6 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0",
+        "releaseVersion": "2026.1.0-develop",
         "fileVersion": "2.0",
         "nodesVersions": {
             "ApplyCalibration": "1.0",
@@ -17,7 +17,7 @@
             "ImageDetectionPrompt": "0.1",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.0",
-            "ImageSegmentationBox": "0.1",
+            "ImageSegmentationBox": "0.2",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",
             "MeshFiltering": "3.0",
@@ -550,7 +550,7 @@
             ],
             "inputs": {
                 "input": "{FeatureMatching_5.input}",
-                "featuresFolders": "{FeatureMatching_1.featuresFolders}",
+                "featuresFolders": "{ImageMatchingMultiSfM_2.featuresFolders}",
                 "matchesFolders": [
                     "{FeatureMatching_1.output}",
                     "{FeatureMatching_5.output}"
