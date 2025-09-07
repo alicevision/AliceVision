@@ -125,7 +125,17 @@ endif()
 if (ALICEVISION_USE_RPATH)
     if (APPLE)
         set(CMAKE_MACOSX_RPATH 1)
-        set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path")
+        set(CMAKE_INSTALL_RPATH
+            "@loader_path/../${CMAKE_INSTALL_LIBDIR}"
+            "@loader_path"
+            "@loader_path/../lib"
+            "@loader_path/../Libraries"
+            "@loader_path/../Frameworks"
+            "@executable_path/../${CMAKE_INSTALL_LIBDIR}"
+            "@executable_path/../lib"
+            "@executable_path/../Libraries"
+            "@executable_path/../Frameworks"
+        )
     elseif (UNIX)
         set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR};\\$ORIGIN")
     endif()
