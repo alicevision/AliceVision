@@ -13,6 +13,7 @@
 #   DEP_<LIB>_GIT_TAG   — git tag / commit
 # =============================================================================
 
+include(CMakeDependentOption)
 include(ExternalProject)
 
 # ── Build options ─────────────────────────────────────────────────────────────
@@ -37,8 +38,7 @@ option(AV_BUILD_PYBIND11    "Build pybind11" ON)
 option(AV_BUILD_SWIG        "Build SWIG"     ON)
 
 # CUDA
-option(AV_USE_CUDA          "Enable CUDA support"        ON)
-option(AV_BUILD_CUDA        "Build/install CUDA toolkit" OFF)
+cmake_dependent_option(AV_BUILD_CUDA  "Build/install CUDA toolkit"  OFF  "NOT APPLE"  OFF)
 
 # Image codecs
 option(AV_BUILD_TIFF        "Build libtiff"        ON)
@@ -88,7 +88,7 @@ option(AV_BUILD_APRILTAG    "Build AprilTag"  ON)
 set(_all_av_options
     AV_BUILD_ZLIB AV_BUILD_TBB AV_BUILD_EIGEN AV_BUILD_EXPAT
     AV_BUILD_BOOST AV_BUILD_PYBIND11 AV_BUILD_SWIG
-    AV_USE_CUDA AV_BUILD_CUDA
+    AV_BUILD_CUDA
     AV_BUILD_TIFF AV_BUILD_PNG AV_BUILD_JPEG AV_BUILD_LIBRAW AV_BUILD_OPENEXR
     AV_BUILD_VPX AV_BUILD_FFMPEG
     AV_BUILD_ONNXRUNTIME AV_BUILD_OPENCOLORIO AV_BUILD_OPENIMAGEIO AV_BUILD_OPENCV
