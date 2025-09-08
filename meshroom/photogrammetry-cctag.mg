@@ -823,7 +823,7 @@
             },
             "internalInputs": {
                 "invalidation": "",
-                "comment": "",
+                "comment": "Apply orientation based on CCTAG markers",
                 "label": "SfMTransform from CCTAG",
                 "color": "#7272be"
             },
@@ -1046,4 +1046,5 @@
             }
         }
     }
+
 }
