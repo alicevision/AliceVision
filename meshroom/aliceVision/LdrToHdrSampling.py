@@ -202,7 +202,7 @@ class LdrToHdrSampling(desc.AVCommandLineNode):
         node.outliersNb = 0  # Reset the number of detected outliers
         node.userNbBrackets.validValue = True  # Reset the status of "userNbBrackets"
 
-        cameraInitOutput = node.input.getLinkParam(recursive=True)
+        cameraInitOutput = node.input.inputRootLink
         if not cameraInitOutput:
             node.nbBrackets.value = 0
             return
@@ -220,7 +220,7 @@ class LdrToHdrSampling(desc.AVCommandLineNode):
 
         if not cameraInitOutput.node.hasAttribute("viewpoints"):
             if cameraInitOutput.node.hasAttribute("input"):
-                cameraInitOutput = cameraInitOutput.node.input.getLinkParam(recursive=True)
+                cameraInitOutput = cameraInitOutput.node.input.inputRootLink
         if cameraInitOutput and cameraInitOutput.node and cameraInitOutput.node.hasAttribute("viewpoints"):
             viewpoints = cameraInitOutput.node.viewpoints.value
         else:
