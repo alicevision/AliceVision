@@ -15,7 +15,7 @@ class KeyframeSelectionNodeSize(desc.DynamicNodeSize):
 
         # Compute the size for each entry in the list of input paths
         for input in node.attribute("inputPaths").value:
-            self._param = input.getFullName()
+            self._param = input.fullName
             s = s + super(KeyframeSelectionNodeSize, self).computeSize(node)
 
         # Retrieve the maximum number of keyframes for the smart selection (which is high by default)
