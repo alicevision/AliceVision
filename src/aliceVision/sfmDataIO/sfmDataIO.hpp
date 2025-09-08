@@ -10,6 +10,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/version.hpp>
 
+
 #define ALICEVISION_SFMDATAIO_VERSION_MAJOR 1
 #define ALICEVISION_SFMDATAIO_VERSION_MINOR 2
 #define ALICEVISION_SFMDATAIO_VERSION_REVISION 12
@@ -52,3 +53,5 @@ bool save(const aliceVision::sfmData::SfMData& sfmData, const std::string& filen
 
 }  // namespace sfmDataIO
 }  // namespace aliceVision
+
+#include <aliceVision/sfmDataIO/cerealIO.hpp>

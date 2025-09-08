@@ -30,7 +30,7 @@ class CameraPose
         _locked(locked)
     {}
 
-    /**
+    /** 
      * @brief Get the 3d transformation of the camera
      * @return 3d transformation
      */

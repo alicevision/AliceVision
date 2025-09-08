@@ -80,6 +80,7 @@ class Pose3
     }
 
     const SE3::Matrix& getHomogeneous() const { return _homogeneous; }
+    SE3::Matrix& getHomogeneousMutable() { return _homogeneous; }
 };
 
 /**

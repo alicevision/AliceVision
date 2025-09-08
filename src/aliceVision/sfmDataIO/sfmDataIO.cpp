@@ -14,6 +14,7 @@
 #include <aliceVision/sfmDataIO/gtIO.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
     #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
     #include <aliceVision/sfmDataIO/AlembicImporter.hpp>
@@ -113,16 +114,13 @@ bool load(aliceVision::sfmData::SfMData& sfmData, const std::string& filename, E
 
     if (extension == ".sfm" || extension == ".json")  // JSON File
     {
-        status = loadJSON(sfmData, filename, partFlag);
+        //status = loadJSON(sfmData, filename, partFlag);
+        status = loadCerealJSON(sfmData, filename, partFlag);
     }
     else if (extension == ".abc")  // Alembic
     {
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-        AlembicImporter(filename).populateSfM(sfmData, partFlag);
-        status = true;
-#else
-        ALICEVISION_THROW_ERROR("Cannot load the ABC file: \"" << filename << "\", AliceVision is built without Alembic support.");
-#endif
+        status = loadCerealBinary(sfmData, filename, partFlag);
+
     }
     else if (extension == ".ply")
     {
@@ -157,7 +155,8 @@ bool save(const aliceVision::sfmData::SfMData& sfmData, const std::string& filen
 
     if (extension == ".sfm" || extension == ".json")  // JSON File
     {
-        status = saveJSON(sfmData, tmpPath, partFlag);
+        
+        status = saveCerealJSON(sfmData, tmpPath, partFlag);
     }
     else if (extension == ".ply")  // Polygon File
     {
@@ -169,12 +168,7 @@ bool save(const aliceVision::sfmData::SfMData& sfmData, const std::string& filen
     }
     else if (extension == ".abc")  // Alembic
     {
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-        AlembicExporter(tmpPath).addSfM(sfmData, partFlag);
-        status = true;
-#else
-        ALICEVISION_THROW_ERROR("Cannot save the ABC file: \"" << filename << "\", AliceVision is built without Alembic support.");
-#endif
+        status = saveCerealBinary(sfmData, tmpPath, partFlag);
     }
     else
     {

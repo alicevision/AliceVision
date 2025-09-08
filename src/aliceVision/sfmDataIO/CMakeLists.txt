@@ -9,6 +9,7 @@ set(sfmDataIO_files_headers
     plyIO.hpp
     viewIO.hpp
     sceneSample.hpp
+    
 )
 
 # Sources
@@ -22,6 +23,7 @@ set(sfmDataIO_files_sources
     plyIO.cpp
     viewIO.cpp
     sceneSample.cpp
+    cerealIO.cpp
 )
 
 if (ALICEVISION_HAVE_ALEMBIC)
@@ -29,6 +31,7 @@ if (ALICEVISION_HAVE_ALEMBIC)
         AlembicExporter.hpp
         AlembicImporter.hpp
         ExternalAlembicImporter.hpp
+        
     )
     list(APPEND sfmDataIO_files_sources
         AlembicExporter.cpp
@@ -42,6 +45,7 @@ alicevision_add_library(aliceVision_sfmDataIO
     PUBLIC_LINKS
         aliceVision_sfmData
         aliceVision_camera
+        cereal::cereal 
     PRIVATE_LINKS
         assimp::assimp
         aliceVision_image
