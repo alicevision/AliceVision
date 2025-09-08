@@ -14,15 +14,15 @@ class MaskProcessingNodeSize(desc.DynamicNodeSize):
         self._params = param
 
     def computeSize(self, node):
-        
+
         size = 0
 
         for input in node.attribute(self._params).value:
-            paramName = input.getFullName()
+            paramName = input.fullName
             param = node.attribute(paramName)
             if param.isLink:
-                size = max(size, param.getLinkParam().node.size)
-        
+                size = max(size, param.inputLink.node.size)
+
         return size
 
 

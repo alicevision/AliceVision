@@ -14,14 +14,14 @@ class MergeNodeSize(desc.DynamicNodeSize):
         self._params = param
 
     def computeSize(self, node):
-        
+
         size = 0
 
         for input in node.attribute(self._params).value:
-            paramName = input.getFullName()
+            paramName = input.fullName
             param = node.attribute(paramName)
-            size = size + param.getLinkParam().node.size
-        
+            size = size + param.inputLink.node.size
+
         return size
 
 
