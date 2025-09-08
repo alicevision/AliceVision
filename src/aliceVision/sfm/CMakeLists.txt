@@ -27,6 +27,7 @@ set(sfm_files_headers
     pipeline/bootstrapping/EstimateAngle.hpp
     pipeline/bootstrapping/PairsScoring.hpp
     pipeline/bootstrapping/Bootstrap.hpp
+    pipeline/bootstrapping/TracksDepths.hpp
     pipeline/expanding/SfmTriangulation.hpp
     pipeline/expanding/SfmResection.hpp
     pipeline/expanding/SfmBundle.hpp
@@ -74,6 +75,7 @@ set(sfm_files_sources
     pipeline/bootstrapping/EstimateAngle.cpp
     pipeline/bootstrapping/PairsScoring.cpp
     pipeline/bootstrapping/Bootstrap.cpp
+    pipeline/bootstrapping/TracksDepths.cpp
     pipeline/expanding/SfmTriangulation.cpp
     pipeline/expanding/SfmResection.cpp
     pipeline/expanding/SfmBundle.cpp

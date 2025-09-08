@@ -396,6 +396,12 @@ class SfMData
      * @return the corresponding view reference
      */
     const View& getView(IndexT viewId) const { return *(_views.at(viewId)); }
+
+    /**
+     * @brief Gives the view of the input view id.
+     * @param[in] viewId The given view ID
+     * @return the corresponding view reference
+     */
     View& getView(IndexT viewId) { return *(_views.at(viewId)); }
 
     /**
@@ -404,7 +410,20 @@ class SfMData
      * @return the corresponding view ptr
      */
     const View::ptr getViewPtr(IndexT viewId) const { return _views.at(viewId).get(); }
+
+    /**
+     * @brief Gives the view of the input view id.
+     * @param[in] viewId The given view ID
+     * @return the corresponding view ptr
+     */
     View::ptr getViewPtr(IndexT viewId) { return _views.at(viewId).get(); }
+
+    /**
+     * @brief Gives the view of the input view id.
+     * @param[in] viewId The given view ID
+     * @return the corresponding view ptr
+     */
+    const View::sptr getViewSharedPtr(IndexT viewId) const { return _views.at(viewId); }
 
     /**
      * @brief Gives the view of the input view id.

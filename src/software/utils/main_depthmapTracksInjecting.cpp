@@ -89,9 +89,10 @@ int aliceVision_main(int argc, char** argv)
 
         fs::path depthDir(depthSource);
         fs::path path(view->getImage().getImagePath());
-        fs::path depthPath = depthDir / path.stem() / "depth.exr";
+        fs::path depthPath = depthDir / "depth" / (path.stem().string() + "_depth.exr");
 
         image::Image<float> depthImg;
+        ALICEVISION_LOG_INFO("Processing depth " << depthPath.string());
 
         try
         {
@@ -113,8 +114,13 @@ int aliceVision_main(int argc, char** argv)
 
             if (ix < 0 || ix > depthImg.width()) continue;
             if (iy < 0 || iy > depthImg.height()) continue;
+            
 
-            feature.depth = depthImg(iy, ix);
+            feature.idepth = depthImg(iy, ix);
+            if (feature.idepth < 0.15)
+            {
+                feature.idepth = -1;
+            }
         }
     }
 

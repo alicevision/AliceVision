@@ -186,6 +186,19 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         }
     }
 
+    BoolArraySamplePtr sampleIsParallaxRobust;
+    if (userProps && userProps.getPropertyHeader("mvg_isParallaxRobust"))
+    {
+        IBoolArrayProperty propIsParallaxRobust(userProps, "mvg_isParallaxRobust");
+        propIsParallaxRobust.get(sampleIsParallaxRobust);
+
+        if (sampleIsParallaxRobust->size() != positions->size())
+        {
+            ALICEVISION_LOG_WARNING("[Alembic Importer] isParallaxRobust property will be ignored.");
+            sampleIsParallaxRobust->reset();
+        }
+    }
+
     // Number of points before adding the Alembic data
     const std::size_t nbPointsInit = sfmdata.getLandmarks().size();
     for (std::size_t point3d_i = 0; point3d_i < positions->size(); ++point3d_i)
@@ -216,6 +229,12 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         {
             const std::size_t descType_i = sampleDescs[point3d_i];
             landmark.descType = static_cast<feature::EImageDescriberType>(descType_i);
+        }
+
+        if (sampleIsParallaxRobust)
+        {
+            const bool isParallaxRobust = sampleIsParallaxRobust->get()[point3d_i];
+            landmark.setParallaxRobust(isParallaxRobust);
         }
     }
 

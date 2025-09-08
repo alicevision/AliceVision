@@ -85,6 +85,21 @@ int aliceVision_main(int argc, char** argv)
     std::set<IndexT> viewIdsToRemove;
     std::set<IndexT> viewIdsToKeep;
 
+    auto & landmarks = outputSfMData_selected.getLandmarks();
+    landmarks.clear();
+    
+    for (const auto & [id, landmark] : sfmData.getLandmarks())
+    {
+        for (const auto & [viewId, _] : landmark.getObservations())
+        {
+            auto it = std::find(selectedViews.begin(), selectedViews.end(), viewId);
+            if (it != selectedViews.end())
+            {
+                landmarks[id] = landmark;
+            }
+        }
+    }
+
     for (auto& viewIt : outputSfMData_selected.getViews())
     {
         const IndexT viewId = viewIt.first;

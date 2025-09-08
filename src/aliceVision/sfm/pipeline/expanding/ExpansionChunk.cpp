@@ -174,29 +174,32 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
 bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
 {
     ALICEVISION_LOG_INFO("ExpansionChunk::triangulate start");
+
+    auto & landmarks = sfmData.getLandmarks();
+    ALICEVISION_LOG_INFO("Existing landmarks before triangulation : " << landmarks.size());
+    
     SfmTriangulation triangulation(_triangulationMinPoints, _maxTriangulationError);
 
+    std::set<IndexT> replacedLandmarks;
     std::set<IndexT> evaluatedTracks;
     std::map<IndexT, sfmData::Landmark> outputLandmarks;
 
+    // Process all available views and try to triangulate as much views as possible 
+    // using normal parallax based triangulation
     std::mt19937 randomNumberGenerator;
     if (!triangulation.process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                 randomNumberGenerator, viewIds, 
-                                evaluatedTracks, outputLandmarks))
+                                evaluatedTracks, outputLandmarks, false))
     {
         return false;
     }
 
-    auto & landmarks = sfmData.getLandmarks();
-    ALICEVISION_LOG_INFO("Existing landmarks : " << landmarks.size());
-
-    for (const auto & pl : outputLandmarks)
+    // Perform checks
+    for (const auto & [landmarkId, landmark] : outputLandmarks)
     {
-        const auto & landmark = pl.second;
-
-        if (landmarks.find(pl.first) != landmarks.end())
+        if (landmarks.find(landmarkId) != landmarks.end())
         {
-            landmarks.erase(pl.first);
+            landmarks.erase(landmarkId);
         }
 
         if (landmark.getObservations().size() < _triangulationMinPoints)
@@ -215,10 +218,45 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
             continue;
         }
 
-        landmarks.insert(pl);
+        landmarks.insert(std::make_pair(landmarkId, landmark));
+        replacedLandmarks.insert(landmarkId);
     }
 
     ALICEVISION_LOG_INFO("New landmarks count : " << landmarks.size());
+
+    std::map<IndexT, sfmData::Landmark> outputLandmarksPriors;
+    if (!triangulation.process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
+                                randomNumberGenerator, viewIds, 
+                                evaluatedTracks, outputLandmarksPriors, true))
+    {
+        return false;
+    }
+
+
+    // Perform checks
+    for (const auto & [landmarkId, landmark] : outputLandmarksPriors)
+    {
+        if (replacedLandmarks.find(landmarkId) != replacedLandmarks.end())
+        {
+            //This has already been updated using parallax
+            continue;
+        }
+
+        if (landmark.getObservations().size() < _triangulationMinPoints)
+        {
+            continue;
+        }
+
+        if (!SfmTriangulation::checkChierality(sfmData, landmark))
+        {
+            continue;
+        }
+
+        landmarks.insert(std::make_pair(landmarkId, landmark));
+    }
+
+    ALICEVISION_LOG_INFO("New landmarks count after priors use: " << landmarks.size());
+
     ALICEVISION_LOG_INFO("ExpansionChunk::triangulate end");
 
     return true;

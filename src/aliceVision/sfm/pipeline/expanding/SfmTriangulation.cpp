@@ -32,7 +32,8 @@ bool SfmTriangulation::process(
             std::mt19937 &randomNumberGenerator,
             const std::set<IndexT> &viewIds,
             std::set<IndexT> & evaluatedTracks,
-            std::map<IndexT, sfmData::Landmark> & outputLandmarks
+            std::map<IndexT, sfmData::Landmark> & outputLandmarks,
+            bool useDepthPrior
         )
 {
     evaluatedTracks.clear();
@@ -53,7 +54,7 @@ bool SfmTriangulation::process(
     allInterestingViews.insert(validViews.begin(), validViews.end());
 
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(int pos = 0; pos < viewTracksVector.size(); pos++)
     {
         const std::size_t trackId = viewTracksVector[pos];
@@ -82,9 +83,21 @@ bool SfmTriangulation::process(
         }
 
         sfmData::Landmark result;
-        if (!processTrack(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+        
+
+        if (useDepthPrior)
         {
-            continue;
+            if (!processTrackWithPrior(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+            {
+                continue;
+            }
+        }
+        else 
+        {
+            if (!processTrack(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+            {
+                continue;
+            }
         }
 
         #pragma omp critical
@@ -172,6 +185,92 @@ bool SfmTriangulation::processTrack(
         o.setFeatureId(trackItem.featureId);
         o.setScale(trackItem.scale);
         o.setCoordinates(trackItem.coords);
+    }
+
+    return true;
+}
+
+bool SfmTriangulation::processTrackWithPrior(
+            const sfmData::SfMData & sfmData,
+            const track::Track & track,
+            std::mt19937 &randomNumberGenerator,
+            const std::set<IndexT> & viewIds,
+            sfmData::Landmark & result
+        )
+{
+    size_t bestInliersCount = 0;
+
+    for (auto referenceViewId : viewIds)
+    {   
+        if (track.featPerView.find(referenceViewId) == track.featPerView.end())
+        {
+            continue;
+        }
+
+        const auto & refTrackItem = track.featPerView.at(referenceViewId);
+        if (refTrackItem.idepth < 0.0)
+        {
+            continue;
+        }
+
+        //Retrieve pose and feature coordinates for this observation
+        const sfmData::View & rView = sfmData.getView(referenceViewId);
+        const camera::IntrinsicBase & rIntrinsic = sfmData.getIntrinsic(rView.getIntrinsicId());
+        const geometry::Pose3 rPose = sfmData.getPose(rView).getTransform();        
+
+        const double iZ = refTrackItem.idepth;
+        const double Z = 1.0 / iZ;
+        const Vec2 meters = rIntrinsic.removeDistortion(rIntrinsic.ima2cam(refTrackItem.coords.cast<double>()));
+        Vec3 cX;
+        cX.x() = meters.x() * Z;
+        cX.y() = meters.y() * Z;
+        cX.z() = Z;
+        const Vec3 oX = rPose.inverse()(cX);
+        
+        sfmData::Landmark landmark;
+        landmark.setParallaxRobust(true);
+        landmark.X = oX;
+        landmark.descType = track.descType;
+
+        for (auto viewId : viewIds)
+        {
+            if (track.featPerView.find(viewId) == track.featPerView.end())
+            {
+                continue;
+            }
+
+            const auto & trackItem = track.featPerView.at(viewId);
+
+            const sfmData::View & view = sfmData.getView(viewId);
+            const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
+            const geometry::Pose3 pose = sfmData.getPose(view).getTransform();    
+
+            const Vec2 est = intrinsic.transformProject(pose, oX.homogeneous(), true);
+            const Vec2 mes = trackItem.coords.cast<double>();
+            double err = (est - mes).norm() / trackItem.scale;
+
+            if (err > _maxError)
+            {
+                continue;
+            }
+
+            sfmData::Observation & o = landmark.getObservations()[viewId];
+            o.setFeatureId(trackItem.featureId);
+            o.setScale(trackItem.scale);
+            o.setCoordinates(trackItem.coords);
+        }
+
+        int count = landmark.getObservations().size();
+        if (count > bestInliersCount)
+        {
+            bestInliersCount = count;
+            result = landmark;
+        }
+    }
+
+    if (bestInliersCount < 2)
+    {
+        return false;
     }
 
     return true;

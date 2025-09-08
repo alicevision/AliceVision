@@ -49,7 +49,9 @@ IndexT removeOutliersWithPixelResidualError(sfmData::SfMData& sfmData,
                 itObs = observations.erase(itObs);
             }
             else
+            {
                 ++itObs;
+            }
         }
 
         if (observations.empty() || observations.size() < minTrackLength)
@@ -75,7 +77,13 @@ IndexT removeOutliersWithAngleError(sfmData::SfMData& sfmData, const double dMin
 #pragma omp parallel for
     for (int landmarkIndex = 0; landmarkIndex < vKeys.size(); ++landmarkIndex)
     {
-        const sfmData::Observations& observations = sfmData.getLandmarks().at(vKeys[landmarkIndex]).getObservations();
+        const sfmData::Landmark & landmark = sfmData.getLandmarks().at(vKeys[landmarkIndex]);
+        if (landmark.isParallaxRobust())
+        {
+            continue;
+        }
+
+        const sfmData::Observations& observations = landmark.getObservations();
 
         // create matrix for observation directions from camera to point
         Mat3X viewDirections(3, observations.size());

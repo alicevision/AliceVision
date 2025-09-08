@@ -46,5 +46,21 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
                     const track::TracksMap& tracksMap, 
                     const track::TracksPerView & tracksPerView);
 
+
+/**
+ * @brief Create a minimal SfmData with poses and landmarks for two views
+ * @param sfmData the input sfmData which contains camera information
+ * @param referenceViewId the reference view id
+ * @param otherViewId the other view id
+ * @param otherTreference the relative pose
+ * @param tracksMap the input map of tracks
+ * @param tracksPerView tracks grouped by views
+ * @return true
+*/
+bool bootstrapDepth(sfmData::SfMData & sfmData, 
+                    const IndexT referenceViewId,
+                    const IndexT otherViewId,
+                    const track::TracksMap& tracksMap, 
+                    const track::TracksPerView & tracksPerView);
 }
 }

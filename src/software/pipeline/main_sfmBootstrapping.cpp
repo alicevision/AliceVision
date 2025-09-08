@@ -34,6 +34,7 @@
 #include <aliceVision/sfm/pipeline/bootstrapping/PairsScoring.hpp>
 #include <aliceVision/sfm/pipeline/bootstrapping/Bootstrap.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
+#include <aliceVision/sfm/pipeline/bootstrapping/EstimateAngle.hpp>
 #include <cstdlib>
 #include <random>
 #include <regex>
@@ -125,6 +126,8 @@ void showStatsAngles(const sfmData::SfMData & sfmData)
     ALICEVISION_LOG_INFO("Landmarks maximal angle histogram");
     ALICEVISION_LOG_INFO(histo.ToString());
 }
+
+
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -347,16 +350,48 @@ int aliceVision_main(int argc, char** argv)
                             tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                             filterIn, filterOut,
                             minAngleHard, minAngleSoft, maxAngle);
-
+    
+    
     if (bestPairId == UndefinedIndexT)
     {
-        ALICEVISION_LOG_INFO("No valid pair");
+        ALICEVISION_LOG_INFO("No valid pair using normal algorithm.");
+        
+        bestPair = sfm::findBestPairFromTrackDepths(sfmData, 
+                                                reconstructedPairs,
+                                                tracksHandler.getAllTracks(), 
+                                                tracksHandler.getTracksPerView());
+
+        if (bestPair.reference == UndefinedIndexT)
+        {
+            ALICEVISION_LOG_INFO("No valid pair using depth prior based algorithm.");
+            return EXIT_FAILURE;
+        }
+    }
+    else 
+    {
+        bestPair = reconstructedPairs[bestPairId];
+    }
+
+    double angle = 0.0;
+    std::vector<size_t> usedTracks;
+    if (!sfm::estimatePairAngle(sfmData, 
+                            bestPair.reference, bestPair.next, bestPair.pose, 
+                            tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
+                            angle, usedTracks))
+    {
         return EXIT_FAILURE;
     }
-    
-    bestPair = reconstructedPairs[bestPairId];
 
-    if (useMesh)
+    if (radianToDegree(angle) < minAngleHard)
+    {
+        if (!sfm::bootstrapDepth(sfmData, 
+                        bestPair.reference, bestPair.next, 
+                        tracksHandler.getAllTracks(), tracksHandler.getTracksPerView()))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+    else if (useMesh)
     {
         if (!sfm::bootstrapMesh(sfmData, 
                         landmarks,

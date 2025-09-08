@@ -61,7 +61,7 @@ struct TrackItem
     std::size_t featureId;
     Vec2 coords;
     double scale;
-    double depth;
+    double idepth;
 };
 
 /**

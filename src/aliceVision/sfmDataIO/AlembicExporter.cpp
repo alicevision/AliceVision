@@ -508,6 +508,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
     std::vector<V3f> positions;
     std::vector<Imath::C3f> colors;
     std::vector<Alembic::Util::uint32_t> descTypes;
+    std::vector<Alembic::Util::bool_t> isParallaxRobust;
     positions.reserve(landmarks.size());
     descTypes.reserve(landmarks.size());
 
@@ -520,6 +521,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
         positions.emplace_back(pt[0], -pt[1], -pt[2]);
         colors.emplace_back(color.r() / 255.f, color.g() / 255.f, color.b() / 255.f);
         descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
+        isParallaxRobust.emplace_back(static_cast<Alembic::Util::bool_t>(landmark.second.isParallaxRobust()));
     }
 
     std::vector<Alembic::Util::uint64_t> ids(positions.size());
@@ -542,6 +544,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
     OCompoundProperty userProps = pSchema.getUserProperties();
 
     OUInt32ArrayProperty(userProps, "mvg_describerType").set(descTypes);
+    OBoolArrayProperty(userProps, "mvg_isParallaxRobust").set(isParallaxRobust);
 
     if (withVisibility)
     {
