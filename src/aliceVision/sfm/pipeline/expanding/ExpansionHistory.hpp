@@ -52,6 +52,10 @@ public:
         return _epoch;
     }
 
+    /**
+     * Save the state after a chunk
+     * @param sfmData the current sfmData
+    */
     void saveState(const sfmData::SfMData & sfmData);
 
     /**
@@ -73,6 +77,12 @@ public:
 private:
     // History of focals per intrinsics
     std::map<IndexT, std::vector<std::pair<size_t, double>>> _focalHistory;
+
+    // History of added views
+    std::vector<std::set<IndexT>> _addedViews;
+
+    // History of removed views
+    std::vector<std::set<IndexT>> _removedViews;
     
     // epoch ID
     std::size_t _epoch = 0;
