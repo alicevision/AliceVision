@@ -9,6 +9,8 @@ set(sfmDataIO_files_headers
     plyIO.hpp
     viewIO.hpp
     sceneSample.hpp
+    FlatBuffersIO.hpp
+    MappedFile.hpp
 )
 
 # Sources
@@ -22,6 +24,8 @@ set(sfmDataIO_files_sources
     plyIO.cpp
     viewIO.cpp
     sceneSample.cpp
+    FlatBuffersIO.cpp
+    MappedFile.cpp
 )
 
 if (ALICEVISION_HAVE_ALEMBIC)
@@ -37,6 +41,42 @@ if (ALICEVISION_HAVE_ALEMBIC)
     )
 endif()
 
+list (APPEND FLATBUFFERS_SCHEMA_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Vec.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Rig.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/CameraPose.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Observation.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Landmark.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Image.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/View.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Intrinsic.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Distortion.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Undistortion.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/SurveyPoint.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/SfmData.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas/Root.fbs
+)
+
+list (APPEND FLATBUFFERS_SCHEMA_INCLUDE_DIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/FlatBuffersIO/schemas
+)
+
+build_flatbuffers(
+    "${FLATBUFFERS_SCHEMA_FILES}"
+    "${FLATBUFFERS_SCHEMA_INCLUDE_DIRS}"
+    "fbschemas"
+    ""
+    "${generatedDir}"
+    "${generatedDir}"
+    "${generatedDir}"
+)
+
+set (FLATBUFFERS_FLATC_SCHEMA_EXTRA_ARGS "--gen-object-api")
+add_library(FlatBuffersTarget INTERFACE)
+target_include_directories(FlatBuffersTarget INTERFACE ${flatbuffers_SOURCE_DIR}/include)
+add_dependencies(FlatBuffersTarget fbschemas)
+
+
 alicevision_add_library(aliceVision_sfmDataIO
     SOURCES ${sfmDataIO_files_headers} ${sfmDataIO_files_sources}
     PUBLIC_LINKS
@@ -47,8 +87,8 @@ alicevision_add_library(aliceVision_sfmDataIO
         aliceVision_image
         Boost::regex
         Boost::boost
+        FlatBuffersTarget
 )
-
 
 if (ALICEVISION_HAVE_ALEMBIC)
     target_link_libraries(aliceVision_sfmDataIO

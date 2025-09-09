@@ -110,7 +110,19 @@ class View
      * @brief Get Image info pointer
      * @return a shared pointer
      */
+    const std::shared_ptr<ImageInfo> getImageInfo() const { return _image; }
+
+    /**
+     * @brief Get Image info pointer
+     * @return a shared pointer
+     */
     std::shared_ptr<ImageInfo> getImageInfo() { return _image; }
+
+    /**
+     * @brief Set Image info object
+     * @param image the new imageInfo to use
+    */
+    void setImageInfo(std::shared_ptr<ImageInfo> & image) { _image = image; }
 
     /**
      * @brief Get the view id

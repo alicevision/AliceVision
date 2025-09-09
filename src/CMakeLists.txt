@@ -371,6 +371,18 @@ if (ALICEVISION_BUILD_SFM)
 endif()
 
 # ==============================================================================
+# FlatBuffers
+# ==============================================================================
+include (FetchContent)
+FetchContent_Declare(
+    flatbuffers
+    GIT_REPOSITORY https://github.com/google/flatbuffers.git
+    GIT_TAG v25.2.10
+)
+FetchContent_MakeAvailable(flatbuffers)
+
+
+# ==============================================================================
 # Eigen
 # ==============================================================================
 find_package(Eigen3 3.3 REQUIRED)
@@ -549,6 +561,7 @@ if (ALICEVISION_BUILD_SFM)
         endif()
     endif()
 endif()
+
 
 # ==============================================================================
 # Alembic

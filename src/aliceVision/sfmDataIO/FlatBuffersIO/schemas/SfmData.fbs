@@ -1,0 +1,29 @@
+include "View.fbs";
+include "CameraPose.fbs";
+include "Landmark.fbs";
+include "Observation.fbs";
+include "Distortion.fbs";
+include "Undistortion.fbs";
+include "Intrinsic.fbs";
+include "Rig.fbs";
+include "Image.fbs";
+include "SurveyPoint.fbs";
+
+namespace AliceVisionIO.V1;
+
+table SfmData
+{    
+    features_folders: [string];
+    matches_folders: [string];
+
+    views: [View];
+    images: [Image];
+    poses: [CameraPose];
+    landmarks: [Landmark];
+    observations: [Observation];
+    distortions: [Distortion];
+    undistortions: [Undistortion];
+    intrinsics: [Intrinsic];
+    rigs: [Rig];
+    surveys: [SurveyPoint];
+} 

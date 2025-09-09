@@ -29,6 +29,9 @@ namespace camera {
 class Undistortion
 {
   public:
+    using sptr = std::shared_ptr<Undistortion>;
+  public:
+
     Undistortion(int width, int height)
     {
         _pixelAspectRatio = 1.0;
@@ -66,6 +69,11 @@ class Undistortion
     void setLocked(bool lock) { _isLocked = lock; }
 
     void setOffset(const Vec2& offset) { _offset = offset; }
+
+    void setSize(const Vec2& size)
+    {
+        setSize(size.x(), size.y());
+    }
 
     void setSize(int width, int height)
     {

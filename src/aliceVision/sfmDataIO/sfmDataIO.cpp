@@ -12,6 +12,7 @@
 #include <aliceVision/sfmDataIO/plyIO.hpp>
 #include <aliceVision/sfmDataIO/bafIO.hpp>
 #include <aliceVision/sfmDataIO/gtIO.hpp>
+#include <aliceVision/sfmDataIO/FlatBuffersIO.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
@@ -115,6 +116,10 @@ bool load(aliceVision::sfmData::SfMData& sfmData, const std::string& filename, E
     {
         status = loadJSON(sfmData, filename, partFlag);
     }
+    else if (extension == ".fbd")  // FlatBuffer File
+    {
+        status = loadFlatBuffers(sfmData, filename, partFlag);
+    }
     else if (extension == ".abc")  // Alembic
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
@@ -158,6 +163,10 @@ bool save(const aliceVision::sfmData::SfMData& sfmData, const std::string& filen
     if (extension == ".sfm" || extension == ".json")  // JSON File
     {
         status = saveJSON(sfmData, tmpPath, partFlag);
+    }
+    else if (extension == ".fbd")  // Flat buffers
+    {
+        status = saveFlatBuffers(sfmData, tmpPath, partFlag);
     }
     else if (extension == ".ply")  // Polygon File
     {

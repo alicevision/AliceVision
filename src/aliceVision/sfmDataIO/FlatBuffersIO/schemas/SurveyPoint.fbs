@@ -1,0 +1,10 @@
+include "Vec.fbs";
+
+namespace AliceVisionIO.V1;
+
+table SurveyPoint
+{
+    id_view: uint;
+    point3d: Vec3;
+    survey: Vec2;
+}

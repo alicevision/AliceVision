@@ -1,0 +1,12 @@
+include "Vec.fbs";
+
+namespace AliceVisionIO.V1;
+
+table CameraPose {
+    id: uint;
+    rotation: Vec3;
+    center: Vec3;
+    locked: bool;
+    rotation_only: bool;
+    removable: bool;
+}

@@ -1,0 +1,42 @@
+include "Vec.fbs";
+
+namespace AliceVisionIO.V1;
+
+enum INITMODE: byte
+{
+    NONE = 0, 
+    CALIBRATED = 1,
+    ESTIMATED = 2,
+    UNKNOWN = 3,
+}
+
+enum TYPEINTRINSIC: byte
+{
+    UNKNOWN = 0,
+    PINHOLE_CAMERA = 1,
+    EQUIDISTANT_CAMERA = 2, 
+    EQUIRECTANGULAR_CAMERA = 4
+}
+
+table Intrinsic
+{
+    id: uint;
+    type: TYPEINTRINSIC;
+    initialization_mode: INITMODE;
+    locked: bool;
+    width: uint;
+    height: uint;
+    sensor_width: float;
+    sensor_height: float;
+    serial_number: string;
+    focal_length: double;
+    pixel_ratio: double;
+    initial_focal_length: double;
+    offset: Vec2;
+    ratio_locked: bool;
+    offset_locked: bool;
+    scale_locked: bool;
+    distortion_initialization_mode: INITMODE;
+    circle_radius: double;
+    circle_center: Vec2;
+}

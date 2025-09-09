@@ -1,0 +1,19 @@
+include "SfmData.fbs";
+
+namespace AliceVisionIO.V1;
+
+struct Version
+{
+    major: uint;
+    minor: uint;
+    revision: uint;
+}
+
+table Root
+{
+    version: Version;
+    sfm_data: SfmData;
+}
+
+root_type Root;
+file_identifier "ASFM";

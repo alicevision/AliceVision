@@ -1,0 +1,21 @@
+namespace AliceVisionIO;
+
+struct Vec3 
+{
+    x: float;
+    y: float;
+    z: float;
+}
+
+struct Vec2
+{
+    x: float;
+    y: float;
+}
+
+struct Rgb
+{
+    r: ubyte;
+    g: ubyte;
+    b: ubyte;
+}

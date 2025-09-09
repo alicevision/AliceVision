@@ -10,9 +10,9 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/version.hpp>
 
-#define ALICEVISION_SFMDATAIO_VERSION_MAJOR 1
-#define ALICEVISION_SFMDATAIO_VERSION_MINOR 2
-#define ALICEVISION_SFMDATAIO_VERSION_REVISION 12
+#define ALICEVISION_SFMDATAIO_VERSION_MAJOR 1 //1 char max
+#define ALICEVISION_SFMDATAIO_VERSION_MINOR 2 //1 char max
+#define ALICEVISION_SFMDATAIO_VERSION_REVISION 12 //2 chars max
 
 // AliceVision version as a string; for example "0.9.0".
 #define ALICEVISION_SFMDATAIO_VERSION_STRING                                                                                                         \
