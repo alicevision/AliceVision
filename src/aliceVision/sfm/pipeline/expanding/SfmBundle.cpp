@@ -23,17 +23,17 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
     refineOptions |= BundleAdjustment::REFINE_STRUCTURE;
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
-    if (!initialize(sfmData, tracksHandler, viewIds))
-    {
-        return false;
-    }
-
     options.setSparseBA();
     BundleAdjustmentCeres bundleObject(options, _minNbCamerasToRefinePrincipalPoint);
 
     //Repeat until nothing change
     do 
     {
+        if (!initializeIteration(sfmData, tracksHandler, viewIds))
+        {
+            return false;
+        }
+        
         const bool success = bundleObject.adjust(sfmData, refineOptions);
         if (!success)
         {
@@ -74,7 +74,7 @@ bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
     return somethingChanged;
 }
 
-bool SfmBundle::initialize(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
+bool SfmBundle::initializeIteration(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
 {
     bool enableLocalStrategy = _useLBA;
 

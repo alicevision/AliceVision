@@ -72,12 +72,14 @@ public:
         _minNbCamerasToRefinePrincipalPoint = count;
     }
 
-
 private:
     /**
      * Initialize bundle properties
+     * @param sfmData the input sfmData
+     * @param tracksHandler the tracks handler
+     * @param viewIds the set of view ids which we are sure we want to be estimated
     */
-    bool initialize(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
+    bool initializeIteration(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
 
     /**
      * Cleanup sfmData 

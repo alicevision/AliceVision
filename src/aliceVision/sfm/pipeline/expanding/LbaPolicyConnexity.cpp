@@ -16,25 +16,25 @@ bool LbaPolicyConnexity::build(sfmData::SfMData & sfmData, const track::TracksHa
         setupIntrinsics(sfmData);
     }
 
-    ConnexityGraph graph;
-    if (!graph.build(sfmData, viewIds))
+    
+    if (!_graph.build(sfmData, tracksHandler.getTracksPerView(), viewIds))
     {
         return false;
     }
 
-    upgradeSfmData(sfmData, graph);
+    upgradeSfmData(sfmData);
 
     return true;
 }
 
-void LbaPolicyConnexity::upgradeSfmData(sfmData::SfMData & sfmData, const ConnexityGraph & graph)
+void LbaPolicyConnexity::upgradeSfmData(sfmData::SfMData & sfmData)
 {
     /**
      * Propagate states to views in sfmData
     */
-    for (auto & [poseId, pose] : sfmData.getPoses().valueRange())
+    for (auto & [idPose, pose] : sfmData.getPoses().valueRange())
     {
-        int d = graph.getDistance(poseId);
+        int d = _graph.getDistance(idPose);
         if (d <= _distanceLimit)
         {
             if (pose.isLocked())
@@ -57,15 +57,16 @@ void LbaPolicyConnexity::upgradeSfmData(sfmData::SfMData & sfmData, const Connex
     }
 
     /*Landmarks*/
-    for (auto & pl : sfmData.getLandmarks())
+    for (auto & [idLandmark, landmark] : sfmData.getLandmarks())
     {
         EEstimatorParameterState state = EEstimatorParameterState::REFINED;
 
-        // By default, the landmark is refined, except if at least one observation comes from an ignored camera
+        bool hasIgnored = false;
+        bool hasEstimated = false;
 
-        for (const auto & po : pl.second.getObservations())
+        // By default, the landmark is refined, except if at least one observation comes from an ignored camera
+        for (const auto & [viewId, _] : landmark.getObservations())
         {
-            IndexT viewId = po.first;
             IndexT poseId = sfmData.getView(viewId).getPoseId();
             
             if (poseId == UndefinedIndexT)
@@ -75,32 +76,52 @@ void LbaPolicyConnexity::upgradeSfmData(sfmData::SfMData & sfmData, const Connex
 
             if (sfmData.getAbsolutePose(poseId).getState() == EEstimatorParameterState::IGNORED)
             {
-                state = EEstimatorParameterState::IGNORED;
+                hasIgnored = true;
+            }
+
+            if (sfmData.getAbsolutePose(poseId).getState() == EEstimatorParameterState::REFINED)
+            {
+                hasEstimated = true;
             }
         }
 
-        pl.second.state = state;
+        //If no associated view which has to be computed, 
+        //then obviously we want to ignore it (should be implicit in the bundle though)
+        if ((!hasEstimated) || hasIgnored)
+        {
+            landmark.state = EEstimatorParameterState::IGNORED;
+        }
     }
 }
 
 void LbaPolicyConnexity::setupIntrinsics(sfmData::SfMData & sfmData)
 {
-    for (auto & pi : sfmData.getIntrinsics())
-    {
-        const auto & vec = _historyHandler->getFocalHistory(pi.first);
+    const int minUsage = 25;
+
+    for (auto & [idIntrinsic, intrinsic] : sfmData.getIntrinsics())
+    {   
+        //If the intrinsic is locked, we're sure we don't need to look at it
+        if (intrinsic->isLocked())
+        {
+            intrinsic->setState(EEstimatorParameterState::CONSTANT);
+            continue;
+        }
+
+        //Retrieve focal history (vector of [usageCount, focalvalue])
+        const auto & vec = _historyHandler->getFocalHistory(idIntrinsic);
         if (vec.size() == 0)
         {
-            pi.second->setState(EEstimatorParameterState::REFINED);
+            intrinsic->setState(EEstimatorParameterState::REFINED);
             continue;
         }
 
         size_t lastGood = std::numeric_limits<size_t>::max();
         std::vector<std::pair<size_t, double>> filtered;
 
+        //Sort by decreasing id
         for (int id = vec.size() - 1; id >= 0; id--)
         {
-            //Make sure the usage decrease,
-            //Remove the steps where the usage increase (we are going to the past)
+            //Make sure the usage decrease.
             if (vec[id].first < lastGood)
             {
                 lastGood = vec[id].first;
@@ -111,6 +132,15 @@ void LbaPolicyConnexity::setupIntrinsics(sfmData::SfMData & sfmData)
         std::vector<double> cropped;
         std::vector<double> focals;
         int largestCount = filtered.front().first;
+
+        //If the largest count is under a threshold, we refine.
+        if (largestCount < minUsage)
+        {
+            intrinsic->setState(EEstimatorParameterState::REFINED);
+            continue;
+        }
+
+        //Build an history of focal values to estimate its variance
         bool nomore = false;
         for (int id = 0; id < filtered.size(); id++)
         {
@@ -119,7 +149,7 @@ void LbaPolicyConnexity::setupIntrinsics(sfmData::SfMData & sfmData)
                 cropped.push_back(filtered[id].second);
             }
 
-            if (largestCount - filtered[id].first > 25)
+            if (largestCount - filtered[id].first > minUsage)
             {
                 nomore = true;
             }
@@ -138,13 +168,14 @@ void LbaPolicyConnexity::setupIntrinsics(sfmData::SfMData & sfmData)
         double maxVal = *std::max_element(focals.begin(), focals.end());
         double normStdev = stddev / (maxVal - minVal);
 
-        if (normStdev < 0.01 || pi.second->isLocked())
+        //If the focal stay fixed on a value, then consider it as constant
+        if (normStdev < 0.01)
         {
-            pi.second->setState(EEstimatorParameterState::CONSTANT);
+            intrinsic->setState(EEstimatorParameterState::CONSTANT);
         }
         else
         {
-            pi.second->setState(EEstimatorParameterState::REFINED);
+            intrinsic->setState(EEstimatorParameterState::REFINED);
         }
     }
 }

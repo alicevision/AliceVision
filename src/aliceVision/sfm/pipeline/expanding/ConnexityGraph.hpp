@@ -8,6 +8,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <lemon/list_graph.h>
+#include <aliceVision/track/Track.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -15,13 +16,18 @@ namespace sfm {
 class ConnexityGraph
 {
 public:
+
     /**
      * Compute distances of all the sfmData views to the viewsOfInterest views
      * @param sfmData the sfmData containing all the views
-     * @param viewsOfInterest the list of views to compute the distance from. Those views must also be in the sfmData !
+     * @param tracksPerView list of track ids indexed per view
+     * @param viewsOfInterest the list of views to compute the distance from. 
+     * Those views must also be in the sfmData !
      * @return false if an error occurred
     */
-    bool build(const sfmData::SfMData & sfmData, const std::set<IndexT> & viewsOfInterest);
+    bool build(const sfmData::SfMData & sfmData,  
+                const track::TracksPerView& tracksPerViews,
+                const std::set<IndexT> & viewsOfInterest);
 
     /**
      * Get the distance for a particular poseId to one view of interest
@@ -32,7 +38,19 @@ public:
 
 
 private:
+    /**
+     * update the coCardinalities
+     * @param sfmData the sfmData containing all the views
+     * @param tracksPerView list of track ids indexed per view
+     * @return false if an error occurred
+    */
+    bool updateCocardinalities(const sfmData::SfMData & sfmData, 
+                              const track::TracksPerView& tracksPerViews);
+
+private:
     std::map<IndexT, int> _distancesPerPoseId;
+    std::set<IndexT> _previousViews;
+    std::map<Pair, size_t> _cocardinalities;
 
 private:
     size_t _minLinksPerView = 10;
