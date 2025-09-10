@@ -102,7 +102,7 @@ class AlembicExporter
      * @brief Initiate an animated camera
      * @param[in] name The camera identifier
      */
-    void initAnimatedCamera(const std::string& name, std::size_t startFrame = 1);
+    void initAnimatedCamera(const std::string& name, std::size_t startFrame = 1, double frameRate = 24.0);
 
     /**
      * @brief Register keyframe on the previous values

@@ -69,6 +69,13 @@ Based on the input image filenames, it will recognize the input video sequence t
             description="Correct principal point.",
             value=False,
         ),
+        desc.FloatParam(
+            name="frameRate",
+            label="Camera Frame Rate",
+            description="Define the camera's Frames per seconds.",
+            value=24.0,
+            range=(1.0, 60.0, 1.0),
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
