@@ -104,9 +104,16 @@ inline Eigen::Vector3d logm(const Eigen::Matrix3d& R)
         costheta = 1.0;
     }
 
-    if (1.0 - costheta < 1e-24)
+    const double sintheta2 = (3.0 - R.trace()) * (1.0 + R.trace());
+
+    // For theta close to 0 (i.e. sin²(theta) close to 0), we do the approximation: sin(theta) ~ theta
+    // i.e. in the general case formula: scale ~ 0.5
+    // We check for cos(theta) > 0, as sin(theta) = 0 also for theta = pi
+    if (costheta > 0 && sintheta2 < 1e-12)
     {
-        ret.fill(0);
+        ret(0) = .5 * p1;
+        ret(1) = .5 * p2;
+        ret(2) = .5 * p3;
         return ret;
     }
 
