@@ -288,6 +288,8 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
             viewPose.lock();
         }
 
+        viewPose.setState(absolutePose.getState());
+
         _poses.assign(view.getPoseId(), viewPose);
 
         return;
