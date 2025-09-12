@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
 
@@ -103,13 +104,52 @@ inline Eigen::Vector3d logm(const Eigen::Matrix3d& R)
         costheta = 1.0;
     }
 
-    if (1.0 - costheta < 1e-24)
+    const double sintheta2 = (3.0 - R.trace()) * (1.0 + R.trace());
+
+    // For theta close to 0 (i.e. sin²(theta) close to 0), we do the approximation: sin(theta) ~ theta
+    // i.e. in the general case formula: scale ~ 0.5
+    // We check for cos(theta) > 0, as sin(theta) = 0 also for theta = pi
+    if (costheta > 0 && sintheta2 < 1e-12)
     {
-        ret.fill(0);
+        ret(0) = .5 * p1;
+        ret(1) = .5 * p2;
+        ret(2) = .5 * p3;
         return ret;
     }
 
     const double theta = acos(costheta);
+
+    // For theta close to pi (i.e. cos(theta) close to 1), we use a specific formula to avoid numerical issues
+    // (However this formula is slightly less acccurate for random theta values,
+    //  and would exhibit numerical issues for theta values close to 0)
+    if (1.0 + costheta < 1e-6)
+    {
+        Eigen::Matrix3d S = R + R.transpose() + (1.0 - R.trace()) * Eigen::Matrix3d::Identity();
+
+        Eigen::Vector3d signs;
+        // Use the sign of the biggest absolute values to define the rotation axis direction (its global sign)
+        if ( abs(p1) >= abs(p2) && abs(p1) >= abs(p3) )
+        {
+            signs << SIGN(p1), SIGN(p1) * SIGN(S(1, 0)), SIGN(p1) * SIGN(S(2, 0));
+        }
+        else if ( abs(p2) >= abs(p1) && abs(p2) >= abs(p3) )
+        {
+            signs << SIGN(p2) * SIGN(S(0, 1)), SIGN(p2), SIGN(p2) * SIGN(S(2, 1));
+        }
+        else
+        {
+            signs << SIGN(p3) * SIGN(S(0, 2)), SIGN(p3) * SIGN(S(1, 2)), SIGN(p3);
+        }
+
+        Eigen::Vector3d Sdiag = S.diagonal() / (3.0 - R.trace());
+
+        ret(0) = Sdiag(0) > 0. ? signs(0) * theta * sqrt(Sdiag(0)) : 0.;
+        ret(1) = Sdiag(1) > 0. ? signs(1) * theta * sqrt(Sdiag(1)) : 0.;
+        ret(2) = Sdiag(2) > 0. ? signs(2) * theta * sqrt(Sdiag(2)) : 0.;
+
+        return ret;
+    }
+
     const double scale = theta / (2.0 * sin(theta));
 
     ret(0) = scale * p1;
