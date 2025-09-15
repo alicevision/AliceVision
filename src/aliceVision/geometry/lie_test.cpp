@@ -6,7 +6,6 @@
 
 #define BOOST_TEST_MODULE lie
 
-//#include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/geometry/lie.hpp>
 #include <boost/test/unit_test.hpp>
