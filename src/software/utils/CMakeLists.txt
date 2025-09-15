@@ -162,19 +162,6 @@ if (ALICEVISION_BUILD_SFM)
                   Alembic::Alembic
         )
 
-        # Transform rig
-        alicevision_add_software(aliceVision_rigTransform
-            SOURCE main_rigTransform.cpp
-            FOLDER ${FOLDER_SOFTWARE_UTILS}
-            LINKS aliceVision_sfmData
-                  aliceVision_sfmDataIO
-                  aliceVision_localization
-                  aliceVision_dataio
-                  aliceVision_rig
-                  aliceVision_system
-                  aliceVision_cmdline
-                  Boost::program_options
-        )
 
         # Output intrinsics transformed images
         alicevision_add_software(aliceVision_exportImages
