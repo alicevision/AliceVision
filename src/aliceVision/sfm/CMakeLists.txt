@@ -166,4 +166,10 @@ alicevision_add_test(utils/alignment_test.cpp
         ${LEMON_LIBRARY}
 )
 
+alicevision_add_test(utils/poseFilter_test.cpp
+    NAME "sfm_poseFilter"
+    LINKS
+        aliceVision_sfm
+)
+
 add_subdirectory(pipeline)
