@@ -173,6 +173,14 @@ class oiioParams
         return _myParamList;
     }
 
+    void add(const std::string & name, const std::string & value)
+    {
+        if (name != "" && value != "")
+        {
+            _myParamList[name] = value;
+        }
+    }
+
     private:
 
     oiio::ParamValueList _myParamList;
@@ -187,6 +195,7 @@ class oiioParams
     oiioParams(int orientation, float pixelAspectRatio, std::string compression = "");
 
     const oiio::ParamValueList & get();
+    void add(std::string name, std::string value);
 
     private:
 
