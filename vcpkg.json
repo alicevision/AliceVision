@@ -41,6 +41,10 @@
     "osi",
     "vcpkg-tool-swig",
     {
+      "name": "vcpkg-get-python",
+      "host": true
+    },
+    {
       "name":"openimageio",
       "features": ["opencolorio","libraw","gif","openjpeg"],
       "default-features": false
@@ -58,7 +62,7 @@
   "overrides": [
     {
       "name": "openimageio",
-      "version": "2.5.16.0"
+      "version": "3.0.9.1#1"
     },
     {
       "name": "suitesparse",

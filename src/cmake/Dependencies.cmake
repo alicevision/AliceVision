@@ -38,6 +38,7 @@ option(AV_BUILD_EIGEN "Enable building an embedded Eigen library" ON)
 option(AV_BUILD_EXPAT "Enable building an embedded Expat library" ON)
 option(AV_BUILD_OPENEXR "Enable building an embedded OpenExr library" ON)
 option(AV_BUILD_ALEMBIC "Enable building an embedded Alembic library" ON)
+option(AV_BUILD_OPENCOLORIO "Enable building an embedded OpenColorIO library" ON)
 option(AV_BUILD_OPENIMAGEIO "Enable building an embedded OpenImageIO library" ON)
 option(AV_BUILD_BOOST "Enable building an embedded Boost library" ON)
 option(AV_BUILD_CERES "Enable building an embedded Ceres library" ON)
@@ -1131,13 +1132,47 @@ if(AV_BUILD_ALEMBIC)
     set(ALEMBIC_CMAKE_FLAGS -DAlembic_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/Alembic)
 endif()
 
+if(AV_BUILD_OPENCOLORIO)
+    set(OPENCOLORIO_TARGET opencolorio)
+
+
+    ExternalProject_Add(${OPENCOLORIO_TARGET}
+        GIT_REPOSITORY https://github.com/AcademySoftwareFoundation/OpenColorIO.git
+        GIT_TAG v2.4.2
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/OpenColorIO
+        BINARY_DIR ${BUILD_DIR}/OpenColorIO_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND
+            ${CMAKE_COMMAND}
+            ${CMAKE_CORE_BUILD_FLAGS}
+            -DCMAKE_PREFIX_PATH=${CMAKE_INSTALL_PREFIX}
+            -DOCIO_BUILD_NUKE=OFF
+            -DOCIO_BUILD_DOCS=OFF
+            -DOCIO_BUILD_TESTS=OFF
+            -DOCIO_BUILD_GPU_TESTS=OFF
+            -DOCIO_BUILD_PYTHON=OFF
+            -DOCIO_INSTALL_EXT_PACKAGES=MISSING
+            -DCMAKE_CXX_STANDARD=17
+            <SOURCE_DIR>
+
+        # TODO: build with libheif
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+    )
+
+    set(OPENCOLORIO_CMAKE_FLAGS -DOpenColorIO_DIR=${CMAKE_INSTALL_PREFIX})
+endif()
+
 if(AV_BUILD_OPENIMAGEIO)
     # Add OpenImageIO
     set(OPENIMAGEIO_TARGET openimageio)
 
     ExternalProject_Add(${OPENIMAGEIO_TARGET}
-        URL https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.5.18.0.tar.gz
-        URL_HASH MD5=3975e5dc0970ad859244a58dc2b8e147
+        URL https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v3.0.9.1.tar.gz
+        URL_HASH MD5=5a3490d405615f48d7340ba4af41380d
         DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -1155,7 +1190,13 @@ if(AV_BUILD_OPENIMAGEIO)
             -DOIIO_BUILD_TOOLS:BOOL=OFF
             -DILMBASE_HOME=${CMAKE_INSTALL_PREFIX}
             -DOPENEXR_HOME=${CMAKE_INSTALL_PREFIX}
-            ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS}
+            ${TIFF_CMAKE_FLAGS} 
+            ${ZLIB_CMAKE_FLAGS} 
+            ${PNG_CMAKE_FLAGS} 
+            ${JPEG_CMAKE_FLAGS} 
+            ${LIBRAW_CMAKE_FLAGS} 
+            ${OPENEXR_CMAKE_FLAGS}
+            ${OPENCOLORIO_CMAKE_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
             -DSTOP_ON_WARNING=OFF
             -DUSE_FFMPEG=${AV_BUILD_FFMPEG}
@@ -1164,11 +1205,19 @@ if(AV_BUILD_OPENIMAGEIO)
             -DUSE_OPENEXR=${AV_BUILD_OPENEXR}
             -DUSE_TIFF=${AV_BUILD_TIFF}
             -DUSE_PNG=${AV_BUILD_PNG}
-            -DPython_EXECUTABLE=${Python_EXECUTABLE}
-            -DUSE_PYTHON=ON -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF -DUSE_NUKE=OFF -DUSE_PTEX=OFF -DBUILD_DOCS=OFF -DBUILD_TESTING=OFF
+            -DPython3_EXECUTABLE=${Python_EXECUTABLE}
+            -DUSE_PYTHON=ON 
+            -DUSE_OPENCV=OFF 
+            -DUSE_OPENGL=OFF 
+            -DUSE_NUKE=OFF 
+            -DUSE_PTEX=OFF 
+            -DUSE_FREETYPE=OFF
+            -DUSE_JXL=OFF
+            -DBUILD_DOCS=OFF 
+            -DBUILD_TESTING=OFF
             # TODO: build with libheif
         BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-        DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET} ${PYBIND11_TARGET}
+        DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET} ${PYBIND11_TARGET} ${EXPAT_TARGET} ${OPENCOLORIO_TARGET}
     )
 
     set(OPENIMAGEIO_CMAKE_FLAGS -DOpenImageIO_DIR=${CMAKE_INSTALL_PREFIX})

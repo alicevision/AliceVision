@@ -22,7 +22,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: "alicevision/alicevision-deps:2025.08.05-rocky9-cuda12.1.1"
+      image: "alicevision/alicevision-deps:2025.09.12-rocky9-cuda12.1.1"
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
@@ -208,7 +208,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1.6.0
         id: vcpkgDownload
         with:
-          url: "https://github.com/alicevision/vcpkg/releases/download/2025.08.22/x64-windows-release.zip"
+          url: "https://github.com/alicevision/vcpkg/releases/download/2025.09.10/x64-windows-release.zip"
           target: "${{ env.dependenciesDir }}"
           filename: installed.zip
 

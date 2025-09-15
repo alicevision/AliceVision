@@ -1284,7 +1284,7 @@ void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadO
 
 void logOIIOImageCacheInfo()
 {
-    oiio::ImageCache* cache = oiio::ImageCache::create(true);
+    std::shared_ptr<oiio::ImageCache> cache = oiio::ImageCache::create(true);
 
     int maxOpenFiles = -1;
     cache->getattribute("max_open_files", maxOpenFiles);
