@@ -42,11 +42,10 @@ alicevision_add_library(aliceVision_image
         aliceVision_numeric
         OpenImageIO::OpenImageIO
         OpenImageIO::OpenImageIO_Util
+        Imath::Imath
     PRIVATE_LINKS
         aliceVision_system
-        ${OPENEXR_LIBRARIES}
-    PRIVATE_INCLUDE_DIRS
-        ${OPENEXR_INCLUDE_DIR}
+        OpenEXR::OpenEXR
 )
 
 # Install config.ocio

@@ -28,7 +28,7 @@ RUN update-alternatives --install /usr/bin/g++ g++ /opt/rh/gcc-toolset-12/root/u
 RUN update-alternatives --install /usr/bin/cpp cpp /opt/rh/gcc-toolset-12/root/usr/bin/cpp 60
 RUN dnf install -y ca-certificates wget cmake git unzip pcre2-devel xerces-c-devel
 RUN dnf install -y python3.11-devel python3.11-pip python3.11-pybind11-devel bison diffutils which file yasm
-RUN dnf install -y gcc-toolset-12-gcc-gfortran libasan libubsan
+RUN dnf install -y gcc-toolset-12-gcc-gfortran libasan libubsan yaml-cpp
 RUN dnf update -y
 
 # RUN scl enable gcc-toolset-12 bash

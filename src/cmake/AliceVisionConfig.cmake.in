@@ -48,7 +48,7 @@ include(CMakeFindDependencyMacro)
 set(Ceres_DIR @Ceres_DIR@)
 find_dependency(Ceres)
 
-find_dependency(OpenImageIO 2.1)
+find_dependency(OpenImageIO 3.0)
 
 # whether it is built with CCTags
 set(ALICEVISION_HAVE_CCTAG @ALICEVISION_HAVE_CCTAG@)

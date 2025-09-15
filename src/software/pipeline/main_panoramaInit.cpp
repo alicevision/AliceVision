@@ -76,6 +76,8 @@ class PyramidFloat
 
     bool apply(const image::Image<float>& grayscale_input)
     {
+        oiio::ParamValue options[] = {{"filtername", "gaussian"}};
+
         // First of all, build pyramid for filtering high frequencies
         _levels[0] = grayscale_input;
         for (int level = 1; level < _levels.size(); level++)
@@ -91,7 +93,8 @@ class PyramidFloat
             oiio::ImageBuf buf_src(spec_src, const_cast<float*>(_levels[level - 1].data()));
             oiio::ImageBuf buf_dst(spec_dst, const_cast<float*>(_levels[level].data()));
 
-            oiio::ImageBufAlgo::resize(buf_dst, buf_src, "gaussian");
+            
+            oiio::ImageBufAlgo::resize(buf_dst, buf_src, options);
         }
 
         return true;
