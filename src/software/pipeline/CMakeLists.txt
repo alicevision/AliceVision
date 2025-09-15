@@ -151,6 +151,22 @@ if (ALICEVISION_BUILD_SFM)
                 Boost::program_options
                 Boost::json
         )
+
+        # SfM Temporal Filtering
+        alicevision_add_software(aliceVision_sfmTempFiltering
+            SOURCE main_sfmTemporalFiltering.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_feature
+                aliceVision_sfm
+                aliceVision_sfmData
+                aliceVision_track
+                aliceVision_dataio
+                aliceVision_mesh
+                Boost::program_options
+                Boost::json
+        )
     endif()
 
     # Global Rotation Estimating
@@ -379,7 +395,7 @@ if (ALICEVISION_BUILD_SFM)
               Boost::boost
               Boost::timer
     )
-         
+
 endif() # if(ALICEVISION_BUILD_SFM)
 
 if (ALICEVISION_BUILD_PANORAMA)

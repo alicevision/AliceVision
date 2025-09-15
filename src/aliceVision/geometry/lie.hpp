@@ -120,7 +120,7 @@ inline Eigen::Vector3d logm(const Eigen::Matrix3d& R)
     const double theta = acos(costheta);
 
     // For theta close to pi (i.e. cos(theta) close to 1), we use a specific formula to avoid numerical issues
-    // (However this formula is slightly less acccurate for random theta values,
+    // (However this formula is slightly less accurate for random theta values,
     //  and would exhibit numerical issues for theta values close to 0)
     if (1.0 + costheta < 1e-6)
     {

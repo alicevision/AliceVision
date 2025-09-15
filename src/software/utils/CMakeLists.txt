@@ -493,6 +493,20 @@ if (ALICEVISION_BUILD_MVS)
     endif()
 
 
+    # Add random noise to SfMData pose
+    alicevision_add_software(aliceVision_addPoseNoise
+        SOURCE main_addPoseNoise.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_numeric
+              aliceVision_sfm
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              aliceVision_mvsUtils
+              ${Boost_LIBRARIES}
+    )
+
     # Create SfMData with some arbitrary data
     alicevision_add_software(aliceVision_generateSampleScene
         SOURCE main_generateSampleScene.cpp
