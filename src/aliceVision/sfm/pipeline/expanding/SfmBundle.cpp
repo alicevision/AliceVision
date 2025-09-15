@@ -90,6 +90,10 @@ bool SfmBundle::initializeIteration(sfmData::SfMData & sfmData, const track::Tra
             _lbaPolicy->build(sfmData, tracksHandler, viewIds);
         }
     }
+    else
+    {
+        sfmData.resetParameterStates();
+    }
 
     return true;
 }

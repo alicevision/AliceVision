@@ -549,10 +549,21 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             const sfmData::View& view = sfmData.getView(viewId);
             const IndexT intrinsicId = view.getIntrinsicId();
 
+            if (!sfmData.isPoseAndIntrinsicDefined(view))
+            {
+                ALICEVISION_LOG_ERROR("We should not have an undefined pose here");
+                continue;
+            }
+
             // each residual block takes a point and a camera as input and outputs a 2
             // dimensional residual. Internally, the cost function stores the observed
             // image location and compares the reprojection against the observation.
-            const auto& pose = sfmData.getPose(view);
+            const auto& pose = sfmData.getAbsolutePose(view.getPoseId());
+            if (pose.getState() == EEstimatorParameterState::IGNORED)
+            {
+                ALICEVISION_LOG_ERROR("We should not have an ignored pose here");
+                continue;
+            }
 
             // needed parameters to create a residual block (K, pose)
             double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
@@ -686,11 +697,6 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
         const auto& intrinsic_1 = sfmData.getIntrinsicSharedPtr(view_1);
         const auto& intrinsic_2 = sfmData.getIntrinsicSharedPtr(view_2);
 
-        assert(pose_1.getState() != EEstimatorParameterState::IGNORED);
-        assert(intrinsic_1->getState() != EEstimatorParameterState::IGNORED);
-        assert(pose_2.getState() != EEstimatorParameterState::IGNORED);
-        assert(intrinsic_2->getState() != EEstimatorParameterState::IGNORED);
-
         double* poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
         double* poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
 
@@ -760,9 +766,6 @@ void BundleAdjustmentCeres::addRotationPriorsToProblem(const sfmData::SfMData& s
 
         const auto& pose_1 = sfmData.getPose(view_1);
         const auto& pose_2 = sfmData.getPose(view_2);
-
-        assert(pose_1.getState() != EEstimatorParameterState::IGNORED);
-        assert(pose_2.getState() != EEstimatorParameterState::IGNORED);
 
         double* poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
         double* poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
