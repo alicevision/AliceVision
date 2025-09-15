@@ -9,6 +9,8 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicy.hpp>
+#include <memory>
 
 namespace aliceVision {
 namespace sfm {
@@ -16,11 +18,30 @@ namespace sfm {
 class SfmResection
 {
 public:
-    SfmResection(size_t maxIterations, double precision) 
-    : _maxIterations(maxIterations),
-    _precision(precision)
-    {
+    using uptr = std::unique_ptr<SfmResection>;
 
+public:
+    void setMaxIterations(size_t maxIterations)
+    {
+        _maxIterations = maxIterations;
+    }
+
+    /**
+     * @brief set the maximal error allowed for ransac resection module
+     * @param error the error value or <= 0 for automatic decision
+    */
+    void setResectionMaxError(double error)
+    {
+        _precision = error;
+        if (_precision <= 0.0)
+        {
+            _precision = std::numeric_limits<double>::infinity();
+        }
+    }
+
+    void setValidationPolicy(LocalizationValidationPolicy::uptr & policy)
+    {
+        _validationPolicy = std::move(policy);
     }
 
     /**
@@ -68,8 +89,11 @@ private:
         );
 
 private:
-    double _precision;
-    size_t _maxIterations;
+    std::unique_ptr<LocalizationValidationPolicy> _validationPolicy;
+
+private:
+    double _precision = std::numeric_limits<double>::infinity();
+    size_t _maxIterations = 1024;
 };
 
 } // namespace sfm

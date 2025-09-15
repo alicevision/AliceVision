@@ -8,6 +8,7 @@
 #include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
+#include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicyLegacy.hpp>
 #include <vector>
 #include <random>
 
@@ -107,7 +108,13 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
     size_t countInliers;
 
     //Compute resection for selected view
-    SfmResection resection(50000, std::numeric_limits<double>::infinity());
+    sfm::LocalizationValidationPolicy::uptr resectionValidationPolicy = std::make_unique<sfm::LocalizationValidationPolicyLegacy>();
+
+    SfmResection resection;
+    resection.setMaxIterations(50000);
+    resection.setResectionMaxError(std::numeric_limits<double>::infinity());
+    resection.setValidationPolicy(resectionValidationPolicy);
+    
     if (!resection.processView(sfmData, tracksMap, tracksPerView, randomNumberGenerator, viewId, pose, threshold, countInliers))
     {
         return false;

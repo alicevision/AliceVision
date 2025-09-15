@@ -85,6 +85,7 @@ set(sfm_files_sources
     pipeline/expanding/ExpansionProcess.cpp
     pipeline/expanding/ConnexityGraph.cpp
     pipeline/expanding/LbaPolicyConnexity.cpp
+    pipeline/expanding/LocalizationValidationPolicyLegacy.cpp
     pipeline/positioning/GlobalPositioning.cpp
     pipeline/regionsIO.cpp
     utils/alignment.cpp

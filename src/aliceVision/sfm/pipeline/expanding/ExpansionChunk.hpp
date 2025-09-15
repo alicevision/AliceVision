@@ -12,6 +12,7 @@
 #include <aliceVision/sfm/pipeline/expanding/ExpansionHistory.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmBundle.hpp>
 #include <aliceVision/sfm/pipeline/expanding/PointFetcher.hpp>
+#include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -61,22 +62,13 @@ public:
         _pointFetcherHandler = std::move(pointFetcherHandler);
     }
 
-    void setResectionMaxIterations(size_t maxIterations)
-    {
-        _resectionIterations = maxIterations;
-    }
-
     /**
-     * @brief set the maximal error allowed for ransac resection module
-     * @param error the error value or <= 0 for automatic decision
+     * brief setup the point fetcher handler
+     * @param resectionHandler a unique ptr. the Ownership will be taken
     */
-    void setResectionMaxError(double error)
+    void setResectionHandler(SfmResection::uptr & resectionHandler)
     {
-        _resectionMaxError = error;
-        if (_resectionMaxError <= 0.0)
-        {
-            _resectionMaxError = std::numeric_limits<double>::infinity();
-        }
+        _resectionHandler = std::move(resectionHandler);
     }
 
     /**
@@ -151,13 +143,12 @@ private:
     ExpansionHistory::sptr _historyHandler;
     PointFetcher::uptr _pointFetcherHandler;
     std::set<IndexT> _ignoredViews;
+    SfmResection::uptr _resectionHandler;
 
 private:    
-    size_t _resectionIterations = 1024;
     size_t _triangulationMinPoints = 2;
     double _minTriangulationAngleDegrees = 3.0;
     double _maxTriangulationError = 8.0;
-    double _resectionMaxError = std::numeric_limits<double>::infinity();
     size_t _weakResectionSize = 100;
 };
 

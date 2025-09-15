@@ -19,6 +19,7 @@
 #include <aliceVision/sfm/pipeline/expanding/ExpansionProcess.hpp>
 #include <aliceVision/sfm/pipeline/expanding/LbaPolicyConnexity.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionPostProcessRig.hpp>
+#include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicyLegacy.hpp>
 
 #include <aliceVision/mesh/MeshIntersection.hpp>
 
@@ -214,7 +215,6 @@ int aliceVision_main(int argc, char** argv)
     sfm::ExpansionHistory::sptr expansionHistory = std::make_shared<sfm::ExpansionHistory>();
 
     sfm::LbaPolicy::uptr sfmPolicy;
-    
     if (useLocalBA) 
     {
         sfm::LbaPolicyConnexity::uptr sfmPolicyTyped = std::make_unique<sfm::LbaPolicyConnexity>();
@@ -244,11 +244,17 @@ int aliceVision_main(int argc, char** argv)
         pointFetcherHandler = std::move(handler);
     }
 
+    sfm::LocalizationValidationPolicy::uptr resectionValidationPolicy = std::make_unique<sfm::LocalizationValidationPolicyLegacy>();
+
+    sfm::SfmResection::uptr sfmResectionHandler = std::make_unique<sfm::SfmResection>();
+    sfmResectionHandler->setResectionMaxError(localizerEstimatorError);
+    sfmResectionHandler->setMaxIterations(localizerEstimatorMaxIterations);
+    sfmResectionHandler->setValidationPolicy(resectionValidationPolicy);
+
     sfm::ExpansionChunk::uptr expansionChunk = std::make_unique<sfm::ExpansionChunk>();
     expansionChunk->setBundleHandler(sfmBundle);
     expansionChunk->setExpansionHistoryHandler(expansionHistory);
-    expansionChunk->setResectionMaxIterations(localizerEstimatorMaxIterations);
-    expansionChunk->setResectionMaxError(localizerEstimatorError);
+    expansionChunk->setResectionHandler(sfmResectionHandler);
     expansionChunk->setTriangulationMaxError(maxTriangulationError);
     expansionChunk->setTriangulationMinPoints(minNbObservationsForTriangulation);
     expansionChunk->setMinAngleTriangulation(minAngleForTriangulation);
