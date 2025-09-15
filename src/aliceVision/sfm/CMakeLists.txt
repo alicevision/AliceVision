@@ -45,6 +45,7 @@ set(sfm_files_headers
     pipeline/regionsIO.hpp
     utils/alignment.hpp
     utils/statistics.hpp
+    utils/poseFilter.hpp
     utils/poseNoise.hpp
     utils/preprocess.hpp
     utils/syntheticScene.hpp
@@ -87,6 +88,7 @@ set(sfm_files_sources
     pipeline/positioning/GlobalPositioning.cpp
     pipeline/regionsIO.cpp
     utils/alignment.cpp
+    utils/poseFilter.cpp
     utils/poseNoise.cpp
     utils/preprocess.cpp
     utils/statistics.cpp
