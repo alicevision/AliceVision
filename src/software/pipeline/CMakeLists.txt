@@ -311,21 +311,6 @@ if (ALICEVISION_BUILD_SFM)
               Boost::boost
     )
 
-    # Calibrate a rig
-    alicevision_add_software(aliceVision_rigCalibration
-        SOURCE main_rigCalibration.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_rig
-              aliceVision_localization
-              aliceVision_dataio
-              aliceVision_image
-              aliceVision_feature
-              aliceVision_cmdline
-              Boost::program_options
-              Boost::boost
-              Boost::timer
-    )
-
     alicevision_add_software(aliceVision_checkerboardDetection
         SOURCE main_checkerboardDetection.cpp
         FOLDER ${FOLDER_SOFTWARE_PIPELINE}
@@ -340,46 +325,6 @@ if (ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
-    if (ALICEVISION_HAVE_CCTAG)
-        target_link_libraries(aliceVision_rigCalibration_exe PUBLIC CCTag::CCTag)
-    endif()
-
-    # Localize a camera
-    alicevision_add_software(aliceVision_cameraLocalization
-        SOURCE main_cameraLocalization.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_localization
-              aliceVision_dataio
-              aliceVision_image
-              aliceVision_feature
-              aliceVision_cmdline
-              Boost::program_options
-              Boost::boost
-              Boost::timer
-    )
-
-    if (ALICEVISION_HAVE_CCTAG)
-        target_link_libraries(aliceVision_cameraLocalization_exe PUBLIC CCTag::CCTag)
-    endif()
-
-    # Localize a rig
-    alicevision_add_software(aliceVision_rigLocalization
-        SOURCE main_rigLocalization.cpp
-        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-        LINKS aliceVision_localization
-              aliceVision_dataio
-              aliceVision_rig
-              aliceVision_image
-              aliceVision_feature
-              aliceVision_cmdline
-              Boost::program_options
-              Boost::boost
-              Boost::timer
-    )
-
-    if (ALICEVISION_HAVE_CCTAG)
-        target_link_libraries(aliceVision_rigLocalization_exe PUBLIC CCTag::CCTag)
-    endif()
 
     # Prepare dense scene for MVS
     alicevision_add_software(aliceVision_prepareDenseScene
