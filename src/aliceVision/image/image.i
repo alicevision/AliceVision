@@ -153,6 +153,11 @@ int NumPyType<image::RGBColor>()
 }
 
 %{
+std::map<std::string, std::string> readImageMetadataAsMap(const std::string& path)
+{
+    return(getMapFromMetadata(readImageMetadata(path)));
+}
+
 class oiioParams
 {
     public:
@@ -167,6 +172,7 @@ class oiioParams
             _myParamList["compression"] = compression;
         }
     }
+    ~oiioParams() {}
 
     const oiio::ParamValueList & get()
     {
@@ -187,12 +193,15 @@ class oiioParams
 };
 
 %}
+std::map<std::string, std::string> readImageMetadataAsMap(const std::string& path);
+
 class oiioParams
 {
     public:
 
     oiioParams();
     oiioParams(int orientation, float pixelAspectRatio, std::string compression = "");
+    ~oiioParams();
 
     const oiio::ParamValueList & get();
     void add(std::string name, std::string value);
