@@ -4,8 +4,6 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#pragma once
-
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Parallelization.hpp>
 

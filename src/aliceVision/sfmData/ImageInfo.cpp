@@ -6,6 +6,7 @@
 
 #include "ImageInfo.hpp"
 
+#include <aliceVision/system/Logger.hpp>
 #include <boost/algorithm/string.hpp>
 #include <aliceVision/numeric/gps.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>

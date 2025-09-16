@@ -13,6 +13,11 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
+namespace cv
+{
+    class Mat;
+}
+
 namespace aliceVision {
 namespace lightingEstimation {
 

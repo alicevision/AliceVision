@@ -7,8 +7,7 @@
 #include <string>
 
 #include <OpenImageIO/imagebuf.h>
-
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 
 namespace aliceVision {
 namespace image {

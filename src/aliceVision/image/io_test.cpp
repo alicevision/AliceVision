@@ -6,7 +6,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/system/Logger.hpp>
-#include "aliceVision/image/all.hpp"
+
+#include <aliceVision/image/io.hpp>
 
 #define BOOST_TEST_MODULE imageIO
 

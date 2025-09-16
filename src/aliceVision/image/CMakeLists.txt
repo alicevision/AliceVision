@@ -6,7 +6,6 @@ set(image_files_headers
     Image.hpp
     imageAlgo.hpp
     colorspace.hpp
-    concat.hpp
     conversion.hpp
     convolutionBase.hpp
     convolution.hpp
@@ -17,7 +16,6 @@ set(image_files_headers
     io.hpp
     jetColorMap.cpp
     resampling.hpp
-    warping.hpp
     pixelTypes.hpp
     Rgb.hpp
     Sampler.hpp
