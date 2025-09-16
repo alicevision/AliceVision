@@ -7,7 +7,6 @@
 #include "ExpansionChunk.hpp"
 
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
-#include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -29,12 +28,21 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
     //Compute the pose given the existing point cloud
     if (!_bundleHandler)
     {
+        ALICEVISION_LOG_ERROR("Bundle handler is not set");
         return false;
     }
 
     //Check if historyHandler exists
     if (!_historyHandler)
     {
+        ALICEVISION_LOG_ERROR("History handler is not set");
+        return false;
+    }
+
+    //Check if resectionHandler exists
+    if (!_resectionHandler)
+    {
+        ALICEVISION_LOG_ERROR("Resection handler is not set");
         return false;
     }
 
@@ -73,10 +81,8 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
             IntermediateResectionInfo iri;
             iri.viewId = viewId;
 
-            SfmResection resection(_resectionIterations, _resectionMaxError);
-
             std::mt19937 randomNumberGenerator;
-            if (!resection.processView(sfmData, 
+            if (!_resectionHandler->processView(sfmData, 
                                 tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                 randomNumberGenerator, viewId, 
                                 iri.pose, iri.threshold, iri.inliersCount))

@@ -12,7 +12,6 @@
 #include <aliceVision/robustEstimation/NACRansac.hpp>
 #include <aliceVision/numeric/Container.hpp>
 #include <aliceVision/multiview/resection/ResectionSphericalKernel.hpp>
-#include <aliceVision/matching/supportEstimation.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 
 namespace aliceVision {
@@ -30,6 +29,12 @@ bool SfmResection::processView(
                         size_t & inliersCount
                         )
 {
+    if (!_validationPolicy)
+    {
+        ALICEVISION_LOG_ERROR("Validation policy is not set.");
+        return false;
+    }
+    
     ALICEVISION_LOG_INFO("SfmResection::processView start " << viewId);
 
     // A. Compute 2D/3D matches
@@ -129,7 +134,7 @@ bool SfmResection::internalResection(
     auto pairResult = robustEstimation::NACRANSAC(kernel, randomNumberGenerator, inliers, _maxIterations, &model, _precision);
 
     errorMax = pairResult.first;
-    const bool resection = matching::hasStrongSupport(inliers, featureTypes, 3);
+    const bool resection = _validationPolicy->validate(*intrinsic, structure, observations, featureTypes, model, inliers);
 
     if (resection)
     {
@@ -197,6 +202,11 @@ bool SfmResection::internalRefinement(
         errorMax = std::max(errorMax, diff.norm());
     }
 
+    const bool resection = _validationPolicy->validateRefinement(tinyScene);
+    if (!resection)
+    {
+        return false;
+    }
 
     return true;
 }
