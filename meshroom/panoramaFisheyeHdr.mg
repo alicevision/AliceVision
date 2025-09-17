@@ -4,6 +4,7 @@
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
+            "CopyFiles": "1.3",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageMatching": "2.0",
@@ -18,7 +19,6 @@
             "PanoramaPrepareImages": "1.1",
             "PanoramaSeams": "2.0",
             "PanoramaWarping": "1.1",
-            "Publish": "1.3",
             "SfMTransform": "3.1"
         },
         "template": true
@@ -209,8 +209,8 @@
                 "input": "{SfMTransform_1.output}"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 3200,
                 0

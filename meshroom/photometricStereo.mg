@@ -4,9 +4,9 @@
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
+            "CopyFiles": "1.3",
             "LightingCalibration": "1.0",
             "PhotometricStereo": "1.0",
-            "Publish": "1.3",
             "SphereDetection": "1.0"
         },
         "template": true
@@ -42,8 +42,8 @@
                 "pathToJSONLightFile": "{LightingCalibration_1.outputFile}"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 800,
                 0

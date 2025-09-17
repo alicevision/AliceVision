@@ -7,6 +7,7 @@
             "CameraInit": "12.0",
             "CheckerboardDetection": "1.0",
             "ConvertSfMFormat": "2.0",
+            "CopyFiles": "1.3",
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
             "DistortionCalibration": "6.0",
@@ -23,7 +24,6 @@
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
             "PrepareDenseScene": "3.1",
-            "Publish": "1.3",
             "ScenePreview": "2.0",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"
@@ -482,8 +482,8 @@
                 "color": "#384a55"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 2400,
                 -100

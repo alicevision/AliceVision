@@ -7,6 +7,7 @@
             "CameraInit": "12.0",
             "ConvertDistortion": "1.0",
             "ConvertSfMFormat": "2.0",
+            "CopyFiles": "1.3",
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
             "ExportAnimatedCamera": "2.0",
@@ -23,7 +24,6 @@
             "MeshDecimate": "1.0",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
-            "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.1",
@@ -389,8 +389,8 @@
                 "color": "#3f3138"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 5228,
                 100
