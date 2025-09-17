@@ -57,7 +57,6 @@ jobs:
            -DALICEVISION_USE_POPSIFT=ON \
            -DALICEVISION_USE_ALEMBIC=ON \
            -DOpenCV_DIR="${DEPS_INSTALL_DIR}/share/OpenCV" \
-           -DALICEVISION_USE_OPENGV=ON \
            -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
            -DAlembic_DIR="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \
            -DSWIG_DIR="${DEPS_INSTALL_DIR}/share/swig/4.3.0" \
@@ -252,7 +251,6 @@ jobs:
                              -DALICEVISION_USE_CCTAG=OFF
                              -DALICEVISION_USE_POPSIFT=OFF
                              -DALICEVISION_USE_ALEMBIC=ON
-                             -DALICEVISION_USE_OPENGV=OFF
                              -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
                              -DALICEVISION_BUILD_SEGMENTATION=OFF
                              -DALICEVISION_BUILD_SWIG_BINDING=ON

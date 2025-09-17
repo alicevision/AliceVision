@@ -109,7 +109,6 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} assimp
 # RUN make -j ${CPU_CORES} geogram
 # RUN make -j ${CPU_CORES} eigen
-# RUN make -j ${CPU_CORES} opengv
 # RUN make -j ${CPU_CORES} suitesparse
 # RUN make -j ${CPU_CORES} ceres
 # RUN make -j ${CPU_CORES} tiff
@@ -123,7 +122,6 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} SWIG
 # RUN make -j ${CPU_CORES} E57Format
 # RUN make -j ${CPU_CORES} LEMON
-# RUN make -j ${CPU_CORES} opengv
 # RUN make -j ${CPU_CORES} OpenMesh
 # RUN make -j ${CPU_CORES} flann
 # RUN make -j ${CPU_CORES} clp

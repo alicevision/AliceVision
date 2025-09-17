@@ -35,7 +35,6 @@
 # ALICEVISION_HAVE_POPSIFT -  TRUE if the library is built with PopSift support
 # ALICEVISION_HAVE_OPENCV  -  TRUE if the library is built with OpenCV support
 # ALICEVISION_HAVE_OPENMP  -  TRUE if the library is built with openMP support
-# ALICEVISION_HAVE_OPENGV  -  TRUE if the library is built with openGV support
 # ALICEVISION_HAVE_ALEMBIC -  TRUE if the library is built with Alembic support
 #
 ################################################################################
@@ -73,13 +72,6 @@ if(ALICEVISION_HAVE_POPSIFT)
   find_dependency(PopSift 1.0.0)
 endif()
 
-# whether it is built with OpenGV
-set(ALICEVISION_HAVE_OPENGV @ALICEVISION_HAVE_OPENGV@)
-
-if(ALICEVISION_HAVE_OPENGV)
-  find_dependency(opengv 1.0)
-endif()
-
 # whether it is built with OpenCV
 set(ALICEVISION_HAVE_OPENCV @ALICEVISION_HAVE_OPENCV@)
 
@@ -112,7 +104,6 @@ if(ALICEVISION_BUILD_MVS)
 endif()
 
 # propagate other building options
-set(ALICEVISION_HAVE_OPENGV @ALICEVISION_HAVE_OPENGV@)
 set(ALICEVISION_HAVE_ALEMBIC @ALICEVISION_HAVE_ALEMBIC@)
 
 if(ALICEVISION_HAVE_ALEMBIC)

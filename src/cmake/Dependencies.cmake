@@ -16,7 +16,6 @@ option(AV_BUILD_LIBRAW "Enable building an embedded libraw" ON)
 option(AV_BUILD_POPSIFT "Enable building an embedded PopSift" ON)
 option(AV_BUILD_CCTAG "Enable building an embedded CCTag" ON)
 option(AV_BUILD_APRILTAG "Enable building an embedded AprilTag" ON)
-option(AV_BUILD_OPENGV "Enable building an embedded OpenGV" ON)
 option(AV_BUILD_OPENCV "Enable building an embedded OpenCV" ON)
 option(AV_BUILD_ONNXRUNTIME "Enable building an embedded ONNX runtime" ON)
 option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
@@ -62,7 +61,6 @@ message(STATUS "AV_BUILD_LIBRAW: ${AV_BUILD_LIBRAW}")
 message(STATUS "AV_BUILD_CCTAG: ${AV_BUILD_CCTAG}")
 message(STATUS "AV_BUILD_APRILTAG: ${AV_BUILD_APRILTAG}")
 message(STATUS "AV_BUILD_POPSIFT: ${AV_BUILD_POPSIFT}")
-message(STATUS "AV_BUILD_OPENGV: ${AV_BUILD_OPENGV}")
 message(STATUS "AV_BUILD_OPENCV: ${AV_BUILD_OPENCV}")
 message(STATUS "AV_BUILD_ONNXRUNTIME: ${AV_BUILD_ONNXRUNTIME}")
 if(APPLE)
@@ -403,34 +401,6 @@ if (AV_BUILD_ONNXRUNTIME)
     )
 endif()
 
-if(AV_BUILD_OPENGV)
-    set(OPENGV_TARGET opengv)
-
-    ExternalProject_Add(${OPENGV_TARGET}
-        # Official repository
-        # GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
-        # Our fork, with a fix:
-        GIT_REPOSITORY https://github.com/alicevision/opengv.git
-        # Use a custom commit with a fix to override the cxx standard from cmake command line
-        GIT_TAG 65f7edccf5044d445d305580f79c50c2efcbd438
-        PREFIX ${BUILD_DIR}
-        BUILD_IN_SOURCE 0
-        BUILD_ALWAYS 0
-        UPDATE_COMMAND ""
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opengv
-        BINARY_DIR ${BUILD_DIR}/opengv_build
-        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-        CONFIGURE_COMMAND 
-            ${CMAKE_COMMAND} 
-            ${CMAKE_CORE_BUILD_FLAGS}
-            ${EIGEN_CMAKE_FLAGS}
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-            <SOURCE_DIR>
-        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-        DEPENDS ${EIGEN_TARGET}
-    )
-    set(OPENGV_CMAKE_FLAGS -DOPENGV_DIR=${CMAKE_INSTALL_PREFIX})
-endif()
 
 if(AV_BUILD_OPENEXR)
     # Add OpenEXR
@@ -1443,7 +1413,6 @@ set(AV_DEPS
     ${TBB_TARGET}
     ${EIGEN_TARGET}
     ${ONNXRUNTIME_TARGET}
-    ${OPENGV_TARGET}
     ${OPENCV_TARGET}
     ${LAPACK_TARGET}
     ${SUITESPARSE_TARGET}
@@ -1490,7 +1459,6 @@ if(AV_BUILD_ALICEVISION)
         -DALICEVISION_USE_CCTAG=${AV_BUILD_CCTAG}
         -DALICEVISION_USE_APRILTAG=${AV_BUILD_APRILTAG}
         -DALICEVISION_USE_OPENCV=${AV_BUILD_OPENCV}
-        -DALICEVISION_USE_OPENGV=${AV_BUILD_OPENGV}
         -DALICEVISION_USE_POPSIFT=${AV_BUILD_POPSIFT}
         -DALICEVISION_USE_CUDA=${AV_USE_CUDA}
         -DALICEVISION_BUILD_SWIG_BINDING=${AV_USE_SWIG}
@@ -1508,7 +1476,6 @@ if(AV_BUILD_ALICEVISION)
         ${CERES_CMAKE_FLAGS}
         ${CUDA_CMAKE_FLAGS}
         ${POPSIFT_CMAKE_FLAGS}
-        ${OPENGV_CMAKE_FLAGS}
         ${OPENCV_CMAKE_FLAGS}
         ${CCTAG_CMAKE_FLAGS}
         ${APRILTAG_CMAKE_FLAGS}

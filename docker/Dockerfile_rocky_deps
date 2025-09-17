@@ -101,7 +101,6 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} turbojpeg
 # RUN make -j ${CPU_CORES} assimp
 # RUN make -j ${CPU_CORES} geogram
-# RUN make -j ${CPU_CORES} opengv
 # RUN make -j ${CPU_CORES} lapack
 # RUN make -j ${CPU_CORES} suitesparse
 # RUN make -j ${CPU_CORES} ceres

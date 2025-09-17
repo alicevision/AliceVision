@@ -63,7 +63,6 @@ trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
 trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
 trilean_option(ALICEVISION_USE_APRILTAG "Enable AprilTag markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
-trilean_option(ALICEVISION_USE_OPENGV "Enable use of OpenGV algorithms" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
@@ -593,26 +592,6 @@ if (NOT ALICEVISION_USE_USD STREQUAL "OFF")
 endif()
 
 # ==============================================================================
-# OpenGV
-# ==============================================================================
-# - optional, it allows to use the generic camera PnP algorithms for rig localization
-# ==============================================================================
-set(ALICEVISION_HAVE_OPENGV 0)
-
-if (ALICEVISION_BUILD_SFM)
-    if (NOT ALICEVISION_USE_OPENGV STREQUAL "OFF")
-        find_package(opengv 1.0 CONFIG)
-        if (opengv_FOUND)
-            set(ALICEVISION_HAVE_OPENGV 1)
-            message(STATUS "OpenGV ${opengv_VERSION} found.")
-        elseif (ALICEVISION_USE_OPENGV STREQUAL "ON")
-            message(SEND_ERROR "Failed to find OpenGV.")
-        endif()
-    endif()
-
-endif()
-
-# ==============================================================================
 # UncertaintyTE
 # ==============================================================================
 # - optional, only external and enabled only if ALICEVISION_USE_UNCERTAINTYTE is ON
@@ -982,7 +961,6 @@ message("** Use OpenCV SIFT features: " ${ALICEVISION_HAVE_OCVSIFT})
 message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
 message("** Use AprilTag markers: " ${ALICEVISION_HAVE_APRILTAG})
-message("** Use OpenGV for rig localization: " ${ALICEVISION_HAVE_OPENGV})
 message("** Use ONNX: " ${ALICEVISION_HAVE_ONNX})
 message("** Use ONNX with CUDA: " ${ALICEVISION_HAVE_ONNX_GPU})
 message("\n")
