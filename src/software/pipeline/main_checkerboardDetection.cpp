@@ -10,7 +10,9 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/calibration/checkerDetector.hpp>
 #include <aliceVision/calibration/checkerDetector_io.hpp>
 
