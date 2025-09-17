@@ -19,6 +19,8 @@
 #include <geogram/mesh/mesh.h>
 #include <geogram/basic/geometry_nd.h>
 
+#include <aliceVision/image/imageAlgo.hpp>
+
 namespace aliceVision {
 namespace fuseCut {
 

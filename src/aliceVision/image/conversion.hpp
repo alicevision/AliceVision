@@ -111,47 +111,5 @@ void ConvertPixelType(const ImageIn& imaIn, ImageOut* imaOut)
             Convert(imaIn(j, i), (*imaOut)(j, i));
 }
 
-//--------------------------------------------------------------------------
-// RGB ( unsigned char or int ) to Float
-//--------------------------------------------------------------------------
-
-template<typename Tin, typename Tout>
-inline void convertRGB2Float(const Tin& valIn, Tout& valOut, float factor = 1.0f / 255.f)
-{
-    for (int channel = 0; channel < 3; ++channel)
-        valOut(channel) = (float)((int)(valIn(channel)) * factor);
-}
-
-template<typename ImageIn>
-void rgb2Float(const ImageIn& imaIn, Image<RGBfColor>* imaOut, float factor = 1.0f / 255.f)
-{
-    assert(imaIn.depth() == 3);
-    (*imaOut).resize(imaIn.width(), imaIn.height());
-    // Convert each int RGB to float RGB values
-    for (int j = 0; j < imaIn.height(); ++j)
-        for (int i = 0; i < imaIn.width(); ++i)
-            convertRGB2Float(imaIn(j, i), (*imaOut)(j, i), factor);
-}
-
-//--------------------------------------------------------------------------
-// Float to RGB ( unsigned char or int )
-//--------------------------------------------------------------------------
-
-inline void convertFloatToInt(const RGBfColor& valIn, RGBColor& valOut, float factor = 255.f)
-{
-    for (int channel = 0; channel < 3; ++channel)
-        valOut(channel) = (int)(valIn(channel) * factor);
-}
-
-inline void rgbFloat2rgbInt(const Image<RGBfColor>& imaIn, Image<RGBColor>* imaOut, float factor = 255.f)
-{
-    assert(imaIn.depth() == 3);
-    (*imaOut).resize(imaIn.width(), imaIn.height());
-    // Convert each int RGB to float RGB values
-    for (int j = 0; j < imaIn.height(); ++j)
-        for (int i = 0; i < imaIn.width(); ++i)
-            convertFloatToInt(imaIn(j, i), (*imaOut)(j, i), factor);
-}
-
 }  // namespace image
 }  // namespace aliceVision
