@@ -266,20 +266,6 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
-    # Calibrate a camera
-    if (ALICEVISION_HAVE_OPENCV)
-        alicevision_add_software(aliceVision_cameraCalibration
-            SOURCE main_cameraCalibration.cpp
-            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-            LINKS aliceVision_dataio
-                  aliceVision_image
-                  aliceVision_calibration
-                  aliceVision_system
-                  aliceVision_cmdline
-                  Boost::program_options
-                  Boost::boost
-        )
-    endif()
 
     alicevision_add_software(aliceVision_distortionCalibration
         SOURCE main_distortionCalibration.cpp

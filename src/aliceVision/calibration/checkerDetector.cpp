@@ -7,6 +7,11 @@
 #include "checkerDetector.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/conversion.hpp>
+#include <aliceVision/image/drawing.hpp>
+#include <aliceVision/image/Sampler.hpp>
+#include <aliceVision/image/filtering.hpp>
+#include <aliceVision/image/convolution.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
 
@@ -158,11 +163,11 @@ bool CheckerDetector::processLevel(std::vector<Vec2>& corners, const image::Imag
     // Resize image
     image::Image<float> toUpdate = input;
     image::Image<float> rescaled(nw, nh);
-    const oiio::ImageSpec imageSpecResized(nw, nh, 1, oiio::TypeDesc::FLOAT);
-    const oiio::ImageSpec imageSpecOrigin(w, h, 1, oiio::TypeDesc::FLOAT);
-    const oiio::ImageBuf inBuf(imageSpecOrigin, toUpdate.data());
-    oiio::ImageBuf outBuf(imageSpecResized, rescaled.data());
-    oiio::ImageBufAlgo::resize(outBuf, inBuf);
+    const OIIO::ImageSpec imageSpecResized(nw, nh, 1, OIIO::TypeDesc::FLOAT);
+    const OIIO::ImageSpec imageSpecOrigin(w, h, 1, OIIO::TypeDesc::FLOAT);
+    const OIIO::ImageBuf inBuf(imageSpecOrigin, toUpdate.data());
+    OIIO::ImageBuf outBuf(imageSpecResized, rescaled.data());
+    OIIO::ImageBufAlgo::resize(outBuf, inBuf);
 
     // Normalize image between 0 and 1
     image::Image<float> normalized;
