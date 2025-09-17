@@ -10,6 +10,7 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/mesh/MeshIntersection.hpp>
 
 #include <filesystem>
@@ -83,7 +84,7 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Generating depthmap for view " << index);
 
         //Retrieve metadatas for copying in the depthmap
-        oiio::ParamValueList metadata = image::readImageMetadata(view->getImageInfo()->getImagePath());
+        OIIO::ParamValueList metadata = image::readImageMetadata(view->getImageInfo()->getImagePath());
 
         const auto & intrinsic = sfmData.getIntrinsicSharedPtr(*view);
         const auto pose = sfmData.getPose(*view);

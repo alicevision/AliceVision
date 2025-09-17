@@ -9,8 +9,10 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/uid.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <stdexcept>
 #include <regex>

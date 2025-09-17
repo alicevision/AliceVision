@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/utils/alignment.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
 
 #include <cmath>

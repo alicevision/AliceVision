@@ -5,6 +5,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ExpansionIteration.hpp"
+
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionChunk.hpp>
 
 namespace aliceVision {

@@ -15,6 +15,7 @@
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/sfmTriangulation.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/config.hpp>
 
 namespace aliceVision {

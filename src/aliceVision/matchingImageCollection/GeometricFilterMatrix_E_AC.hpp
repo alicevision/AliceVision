@@ -19,6 +19,7 @@
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <limits>
 

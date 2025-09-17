@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/image/io.hpp>
 
 namespace aliceVision {

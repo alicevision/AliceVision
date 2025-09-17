@@ -6,13 +6,15 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/FrustumFilter.hpp>
+
+#include <aliceVision/config.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/geometry/HalfPlane.hpp>
-#include <aliceVision/config.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <fstream>
 

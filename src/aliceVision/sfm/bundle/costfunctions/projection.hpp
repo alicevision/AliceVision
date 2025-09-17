@@ -8,6 +8,7 @@
 #pragma once
 
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/intrinsicsProject.hpp>
 #include <ceres/rotation.h>

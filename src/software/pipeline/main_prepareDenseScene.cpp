@@ -14,6 +14,7 @@
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/program_options.hpp>
 

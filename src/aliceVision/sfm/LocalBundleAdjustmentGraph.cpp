@@ -5,7 +5,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "LocalBundleAdjustmentGraph.hpp"
+
 #include <aliceVision/stl/stl.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 

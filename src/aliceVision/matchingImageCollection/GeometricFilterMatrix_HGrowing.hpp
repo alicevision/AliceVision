@@ -6,11 +6,13 @@
 
 #pragma once
 
-#include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/matching/MatchesCollections.hpp"
-#include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
-#include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
-#include "aliceVision/sfmData/SfMData.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
+#include <aliceVision/matchingImageCollection/geometricFilterUtils.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+
 
 #include <aliceVision/utils/filesIO.hpp>
 

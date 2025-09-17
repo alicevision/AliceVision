@@ -5,7 +5,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ConnexityGraph.hpp"
+
 #include <aliceVision/stl/stl.hpp>
+#include <aliceVision/system/Logger.hpp>
+
 #include <lemon/bfs.h>
 
 namespace aliceVision {

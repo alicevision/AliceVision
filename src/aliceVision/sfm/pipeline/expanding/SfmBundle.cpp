@@ -5,6 +5,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SfmBundle.hpp"
+
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 

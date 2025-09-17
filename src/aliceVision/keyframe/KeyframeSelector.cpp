@@ -8,6 +8,7 @@
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <random>
 #include <tuple>

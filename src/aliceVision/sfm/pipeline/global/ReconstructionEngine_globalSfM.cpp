@@ -8,6 +8,7 @@
 #include "ReconstructionEngine_globalSfM.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/graph/connectedComponent.hpp>

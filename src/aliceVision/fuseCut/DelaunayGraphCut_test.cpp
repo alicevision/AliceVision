@@ -9,7 +9,7 @@
 #include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/fuseCut/PointCloud.hpp>
 #include <aliceVision/fuseCut/GraphFiller.hpp>
-
+#include <aliceVision/numeric/projection.hpp>
 #include <boost/math/constants/constants.hpp>
 
 #include <string>

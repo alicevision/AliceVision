@@ -7,6 +7,8 @@
 #include "ReconstructionEngine.hpp"
 
 #include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 

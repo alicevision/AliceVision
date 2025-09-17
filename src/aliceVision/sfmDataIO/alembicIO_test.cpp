@@ -8,6 +8,8 @@
 #include "AlembicImporter.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #define BOOST_TEST_MODULE alembicIO
 

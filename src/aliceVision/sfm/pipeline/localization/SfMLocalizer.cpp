@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SfMLocalizer.hpp"
+
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
@@ -18,6 +19,7 @@
 #include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
 #include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/multiview/ResectionKernel.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 namespace aliceVision {
 namespace sfm {

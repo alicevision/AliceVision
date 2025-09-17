@@ -14,6 +14,7 @@
 #include <aliceVision/multiview/ResectionKernel.hpp>
 #include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/geometry/Pose3.hpp>

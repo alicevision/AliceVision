@@ -18,6 +18,8 @@
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/lensCorrectionProfile/lcp.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>

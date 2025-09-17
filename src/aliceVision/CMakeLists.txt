@@ -46,7 +46,7 @@ if (ALICEVISION_BUILD_HDR)
     add_subdirectory(hdr)
 endif()
 
-# MVS modules
+# # MVS modules
 
 if (ALICEVISION_BUILD_MVS)
     add_subdirectory(mesh)

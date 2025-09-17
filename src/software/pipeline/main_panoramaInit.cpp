@@ -12,6 +12,8 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/image/drawing.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 
 #include <random>
 #include <algorithm>

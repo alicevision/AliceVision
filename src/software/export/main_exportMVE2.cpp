@@ -12,7 +12,11 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
+
 #include <boost/program_options.hpp>
+
 
 #include <filesystem>
 #include <stdlib.h>

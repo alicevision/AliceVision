@@ -7,6 +7,8 @@
 #include "IFeed.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/camera/DistortionRadial.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <fstream>
 #include <exception>

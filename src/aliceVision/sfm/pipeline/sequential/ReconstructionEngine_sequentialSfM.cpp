@@ -14,7 +14,7 @@
 #include <aliceVision/sfm/sfmStatistics.hpp>
 #include <aliceVision/sfm/utils/preprocess.hpp>
 #include <aliceVision/numeric/BoxStats.hpp>
-
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/graph/connectedComponent.hpp>
 #include <aliceVision/matching/MatchesCollections.hpp>

@@ -8,6 +8,7 @@
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfm/utils/syntheticScene.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 
 #include <cmath>

@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "preprocess.hpp"
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace sfm {

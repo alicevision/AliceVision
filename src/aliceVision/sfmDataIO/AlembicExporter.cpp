@@ -12,6 +12,8 @@
 #include <Alembic/AbcCoreOgawa/All.h>
 #include <Alembic/Abc/OObject.h>
 
+#include <aliceVision/camera/Equidistant.hpp>
+
 #include <numeric>
 #include <filesystem>
 

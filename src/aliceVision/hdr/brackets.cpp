@@ -1,10 +1,10 @@
 #include "brackets.hpp"
 
-#include <fstream>
-
 #include <aliceVision/numeric/numeric.hpp>
-#include <cmath>
+#include <aliceVision/system/Logger.hpp>
 
+#include <fstream>
+#include <cmath>
 #include <filesystem>
 
 namespace aliceVision {

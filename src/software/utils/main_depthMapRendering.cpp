@@ -10,6 +10,8 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/mesh/MeshIntersection.hpp>
 
 #include <filesystem>
@@ -83,7 +85,7 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Generating depthmap for view " << index);
 
         //Retrieve metadatas for copying in the depthmap
-        oiio::ParamValueList metadata = image::readImageMetadata(view->getImageInfo()->getImagePath());
+        OIIO::ParamValueList metadata = image::readImageMetadata(view->getImageInfo()->getImagePath());
 
         const auto & intrinsic = sfmData.getIntrinsicSharedPtr(*view);
         std::shared_ptr<camera::Pinhole> pinHole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
@@ -132,8 +134,8 @@ int aliceVision_main(int argc, char** argv)
         
         //Store metadata used for 3D Viewer
         Eigen::Matrix<double, 3, 3, Eigen::RowMajor> iCamArr = pose.rotation().transpose() * pinHole->K().inverse();
-        metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, &center[0]));
-        metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, iCamArr.data()));
+        metadata.push_back(OIIO::ParamValue("AliceVision:CArr", OIIO::TypeDesc(OIIO::TypeDesc::DOUBLE, OIIO::TypeDesc::VEC3), 1, &center[0]));
+        metadata.push_back(OIIO::ParamValue("AliceVision:iCamArr", OIIO::TypeDesc(OIIO::TypeDesc::DOUBLE, OIIO::TypeDesc::MATRIX33), 1, iCamArr.data()));
         
 
         //Store depthmap

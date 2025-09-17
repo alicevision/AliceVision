@@ -7,6 +7,8 @@
 
 #include "syntheticScene.hpp"
 #include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 #include <random>
 #include <iostream>
