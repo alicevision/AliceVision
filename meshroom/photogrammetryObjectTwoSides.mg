@@ -5,6 +5,7 @@
         "nodesVersions": {
             "CameraInit": "12.0",
             "ConvertSfMFormat": "2.0",
+            "CopyFiles": "1.3",
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
             "FeatureExtraction": "1.3",
@@ -16,7 +17,6 @@
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
             "PrepareDenseScene": "3.1",
-            "Publish": "1.3",
             "SfMMerge": "3.0",
             "SfMTransform": "3.1",
             "SfMTriangulation": "1.0",
@@ -403,8 +403,8 @@
                 "color": "#4D3E5C"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 3200,
                 400

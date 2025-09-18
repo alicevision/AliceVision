@@ -6,6 +6,7 @@
             "CameraInit": "12.0",
             "ConvertDistortion": "1.0",
             "ConvertSfMFormat": "2.0",
+            "CopyFiles": "1.3",
             "ExportAnimatedCamera": "2.0",
             "ExportDistortion": "2.0",
             "FeatureExtraction": "1.3",
@@ -14,7 +15,6 @@
             "ImageMatching": "2.0",
             "ImageSegmentationBox": "0.2",
             "NodalSfM": "2.0",
-            "Publish": "1.3",
             "RelativePoseEstimating": "3.0",
             "ScenePreview": "2.0",
             "TracksBuilding": "1.0"
@@ -180,8 +180,8 @@
                 "color": "#80766f"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 2100,
                 100

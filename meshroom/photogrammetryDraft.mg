@@ -4,13 +4,13 @@
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
+            "CopyFiles": "1.3",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageMatching": "2.0",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
             "PrepareDenseScene": "3.1",
-            "Publish": "1.3",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"
         },
@@ -91,8 +91,8 @@
                 "input": "{StructureFromMotion_1.output}"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 1800,
                 0
