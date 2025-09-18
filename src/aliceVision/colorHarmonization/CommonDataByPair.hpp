@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/utils/Histogram.hpp>
 
 #include <string>

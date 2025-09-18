@@ -7,7 +7,7 @@
 
 #include "ImageDescriber_SIFT_OCV.hpp"
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 

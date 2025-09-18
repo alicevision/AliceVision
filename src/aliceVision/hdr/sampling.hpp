@@ -6,7 +6,9 @@
 
 #pragma once
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <set>
 

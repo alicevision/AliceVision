@@ -5,7 +5,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "warper.hpp"
+
 #include <aliceVision/half.hpp>
+#include <aliceVision/image/Sampler.hpp>
 
 namespace aliceVision {
 
