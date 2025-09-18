@@ -25,6 +25,7 @@
 #include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {

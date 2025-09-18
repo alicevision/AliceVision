@@ -7,7 +7,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/sfmData/Landmark.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 

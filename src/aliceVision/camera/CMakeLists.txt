@@ -23,6 +23,7 @@ set(camera_files_headers
 )
 
 set(camera_files_sources
+    camera.cpp
     DistortionBrown.cpp
     DistortionFisheye.cpp
     DistortionFisheye1.cpp

@@ -7,11 +7,13 @@
 #define BOOST_TEST_MODULE colmap
 
 #include <aliceVision/camera/cameraCommon.hpp>
-
 #include <aliceVision/sfmDataIO/colmap.hpp>
+#include <aliceVision/unitTest.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
+
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
-#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 

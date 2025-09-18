@@ -8,6 +8,8 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
+#include <aliceVision/camera/Pinhole.hpp>
+
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/replace.hpp>
 

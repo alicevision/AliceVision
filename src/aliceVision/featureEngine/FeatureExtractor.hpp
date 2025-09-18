@@ -8,6 +8,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/system/hardwareContext.hpp>
+#include <aliceVision/image/colorspace.hpp>
+
 namespace aliceVision {
 namespace featureEngine {
 

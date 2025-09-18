@@ -7,22 +7,9 @@
 
 #pragma once
 
-#include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/Distortion.hpp>
-#include <aliceVision/camera/DistortionBrown.hpp>
-#include <aliceVision/camera/DistortionFisheye.hpp>
-#include <aliceVision/camera/DistortionFisheye1.hpp>
-#include <aliceVision/camera/DistortionRadial.hpp>
 #include <aliceVision/camera/Undistortion.hpp>
-#include <aliceVision/camera/Undistortion3DEA4.hpp>
-#include <aliceVision/camera/Undistortion3DEClassicLD.hpp>
-#include <aliceVision/camera/Undistortion3DERadial4.hpp>
-#include <aliceVision/camera/UndistortionRadial.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
-#include <aliceVision/camera/Pinhole.hpp>
-#include <aliceVision/camera/Equidistant.hpp>
-#include <aliceVision/camera/Equirectangular.hpp>
-#include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <memory>
 #include <initializer_list>
@@ -30,52 +17,16 @@
 namespace aliceVision {
 namespace camera {
 
+class Pinhole;
+class Equidistant;
+
 /**
  * @brief Factory function to create a distortion object.
  * @param[in] distortionType Type of distortion to use.
  * @param[in] params Distortion parameters.
  * @return Shared pointer of initialized distortion object.
  */
-inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType, std::initializer_list<double> params = {})
-{
-    std::shared_ptr<Distortion> distortion = nullptr;
-
-    switch (distortionType)
-    {
-        case EDISTORTION::DISTORTION_RADIALK1:
-            distortion = std::make_shared<DistortionRadialK1>();
-            break;
-        case EDISTORTION::DISTORTION_RADIALK3:
-            distortion = std::make_shared<DistortionRadialK3>();
-            break;
-        case EDISTORTION::DISTORTION_RADIALK3PT:
-            distortion = std::make_shared<DistortionRadialK3PT>();
-            break;
-        case EDISTORTION::DISTORTION_BROWN:
-            distortion = std::make_shared<DistortionBrown>();
-            break;
-        case EDISTORTION::DISTORTION_FISHEYE:
-            distortion = std::make_shared<DistortionFisheye>();
-            break;
-        case EDISTORTION::DISTORTION_FISHEYE1:
-            distortion = std::make_shared<DistortionFisheye1>();
-            break;
-        default:
-            return nullptr;
-    }
-
-    if (distortion && params.size() > 0)
-    {
-        if (params.size() != distortion->getParameters().size())
-        {
-            throw std::invalid_argument("Invalid number of distortion parameters");
-        }
-
-        distortion->setParameters(params);
-    }
-
-    return distortion;
-}
+std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType, std::initializer_list<double> params = {});
 
 /**
  * @brief Factory function to create an undistortion object.
@@ -83,43 +34,11 @@ inline std::shared_ptr<Distortion> createDistortion(EDISTORTION distortionType, 
  * @param[in] params Distortion parameters.
  * @return Shared pointer of initialized undistortion object.
  */
-inline std::shared_ptr<Undistortion> createUndistortion(EUNDISTORTION undistortionType,
-                                                        unsigned int w = 0,
-                                                        unsigned int h = 0,
-                                                        std::initializer_list<double> params = {})
-{
-    std::shared_ptr<Undistortion> undistortion = nullptr;
+std::shared_ptr<Undistortion> createUndistortion(EUNDISTORTION undistortionType,
+                                                unsigned int w = 0,
+                                                unsigned int h = 0,
+                                                std::initializer_list<double> params = {});
 
-    switch (undistortionType)
-    {
-        case EUNDISTORTION::UNDISTORTION_RADIALK3:
-            undistortion = std::make_shared<UndistortionRadialK3>(w, h);
-            break;
-        case EUNDISTORTION::UNDISTORTION_3DEANAMORPHIC4:
-            undistortion = std::make_shared<Undistortion3DEAnamorphic4>(w, h);
-            break;
-        case EUNDISTORTION::UNDISTORTION_3DECLASSICLD:
-            undistortion = std::make_shared<Undistortion3DEClassicLD>(w, h);
-            break;
-        case EUNDISTORTION::UNDISTORTION_3DERADIAL4:
-            undistortion = std::make_shared<Undistortion3DERadial4>(w, h);
-            break;
-        default:
-            return nullptr;
-    }
-
-    if (undistortion && params.size() > 0)
-    {
-        if (params.size() != undistortion->getParameters().size())
-        {
-            throw std::invalid_argument("Invalid number of distortion parameters");
-        }
-
-        undistortion->setParameters(params);
-    }
-
-    return undistortion;
-}
 
 /**
  * @brief Factory function to create an intrinsic object.
@@ -134,36 +53,15 @@ inline std::shared_ptr<Undistortion> createUndistortion(EUNDISTORTION undistorti
  * @param[in] offsetY Optical offset in pixels (y-axis).
  * @return Shared pointer of initialized intrinsic object.
  */
-inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
-                                                      EDISTORTION distortionType,
-                                                      EUNDISTORTION undistortionType,
-                                                      unsigned int w = 0,
-                                                      unsigned int h = 0,
-                                                      double focalLengthPixX = 0.0,
-                                                      double focalLengthPixY = 0.0,
-                                                      double offsetX = 0.0,
-                                                      double offsetY = 0.0)
-{
-    auto distortion = createDistortion(distortionType);
-    auto undistortion = createUndistortion(undistortionType, w, h);
-
-    if (isPinhole(intrinsicType))
-    {
-        return std::make_shared<Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, undistortion);
-    }
-
-    if (isEquidistant(intrinsicType))
-    {
-        return std::make_shared<Equidistant>(w, h, focalLengthPixX, offsetX, offsetY, distortion);
-    }
-
-    if (isEquirectangular(intrinsicType))
-    {
-        return std::make_shared<Equirectangular>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY);
-    }
-
-    return nullptr;
-}
+std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
+                                            EDISTORTION distortionType,
+                                            EUNDISTORTION undistortionType,
+                                            unsigned int w = 0,
+                                            unsigned int h = 0,
+                                            double focalLengthPixX = 0.0,
+                                            double focalLengthPixY = 0.0,
+                                            double offsetX = 0.0,
+                                            double offsetY = 0.0);
 
 /**
  * @brief Factory function to create a pinhole camera object.
@@ -178,21 +76,15 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
  * @param[in] distortionParams Distortion parameters.
  * @return Shared pointer of initialized pinhole camera object.
  */
-inline std::shared_ptr<Pinhole> createPinhole(EDISTORTION distortionType,
-                                              EUNDISTORTION undistortionType,
-                                              unsigned int w = 0,
-                                              unsigned int h = 0,
-                                              double focalLengthPixX = 0.0,
-                                              double focalLengthPixY = 0.0,
-                                              double offsetX = 0.0,
-                                              double offsetY = 0.0,
-                                              std::initializer_list<double> distortionParams = {})
-{
-    auto distortion = createDistortion(distortionType, distortionParams);
-    auto undistortion = createUndistortion(undistortionType, w, h, distortionParams);
-
-    return std::make_shared<Pinhole>(w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, distortion, undistortion);
-}
+std::shared_ptr<Pinhole> createPinhole(EDISTORTION distortionType,
+                                    EUNDISTORTION undistortionType,
+                                    unsigned int w = 0,
+                                    unsigned int h = 0,
+                                    double focalLengthPixX = 0.0,
+                                    double focalLengthPixY = 0.0,
+                                    double offsetX = 0.0,
+                                    double offsetY = 0.0,
+                                    std::initializer_list<double> distortionParams = {});
 
 /**
  * @brief Factory function to create an equidistant camera object.
@@ -206,37 +98,21 @@ inline std::shared_ptr<Pinhole> createPinhole(EDISTORTION distortionType,
  * @param[in] distortionParams Distortion parameters.
  * @return Shared pointer of initialized equidistant camera object.
  */
-inline std::shared_ptr<Equidistant> createEquidistant(EDISTORTION distortionType,
-                                                      unsigned int w = 0,
-                                                      unsigned int h = 0,
-                                                      double focalLengthPix = 0.0,
-                                                      double offsetX = 0.0,
-                                                      double offsetY = 0.0,
-                                                      std::initializer_list<double> distortionParams = {})
-{
-    auto distortion = createDistortion(distortionType, distortionParams);
+std::shared_ptr<Equidistant> createEquidistant(EDISTORTION distortionType,
+                                            unsigned int w = 0,
+                                            unsigned int h = 0,
+                                            double focalLengthPix = 0.0,
+                                            double offsetX = 0.0,
+                                            double offsetY = 0.0,
+                                            std::initializer_list<double> distortionParams = {});
 
-    return std::make_shared<Equidistant>(w, h, focalLengthPix, offsetX, offsetY, distortion);
-}
 
-inline EDISTORTION getDistortionType(const IntrinsicBase& intrinsic)
-{
-    camera::EDISTORTION distoType = camera::EDISTORTION::DISTORTION_NONE;
-
-    try
-    {
-        const auto& isod = dynamic_cast<const camera::IntrinsicScaleOffsetDisto&>(intrinsic);
-        auto disto = isod.getDistortion();
-        if (disto)
-        {
-            distoType = disto->getType();
-        }
-    }
-    catch (const std::bad_cast& e)
-    {}
-
-    return distoType;
-}
+/**
+ * @brief get Distortion Type for a given intrinsic object
+ * @param intrinsic the abstract class IntrinsicBase instance
+ * @return a distortion type enum
+*/
+EDISTORTION getDistortionType(const IntrinsicBase& intrinsic);
 
 }  // namespace camera
 }  // namespace aliceVision

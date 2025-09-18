@@ -12,6 +12,7 @@
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <boost/program_options.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <filesystem>
 #include <fstream>

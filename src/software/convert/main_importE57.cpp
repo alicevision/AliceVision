@@ -13,6 +13,7 @@
 #include <aliceVision/fuseCut/InputSet.hpp>
 #include <aliceVision/dataio/E57Reader.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 #include <filesystem>
 
 #include <boost/program_options.hpp>

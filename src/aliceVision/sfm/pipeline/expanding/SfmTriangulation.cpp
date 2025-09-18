@@ -17,6 +17,7 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/camera/camera.hpp>
 
 namespace aliceVision {

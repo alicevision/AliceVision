@@ -12,7 +12,9 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/AlembicExporter.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/utils/regexFilter.hpp>

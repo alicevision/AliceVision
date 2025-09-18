@@ -7,11 +7,15 @@
 
 #include <aliceVision/camera/camera.hpp>
 
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/DistortionRadial.hpp>
+
 #define BOOST_TEST_MODULE pinholeRadial
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
+
 
 using namespace aliceVision;
 using namespace aliceVision::camera;

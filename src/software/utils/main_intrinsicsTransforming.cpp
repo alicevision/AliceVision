@@ -13,6 +13,7 @@
 #include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/track/trackIO.hpp>
 #include <aliceVision/track/TracksHandler.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

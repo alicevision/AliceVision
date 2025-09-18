@@ -6,6 +6,8 @@
 
 #include "matchesFiltering.hpp"
 
+#include <aliceVision/system/Logger.hpp>
+
 namespace aliceVision {
 namespace matching {
 

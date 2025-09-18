@@ -10,6 +10,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
+
 #include <boost/program_options.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>

@@ -5,6 +5,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "poseNoise.hpp"
+
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
 namespace aliceVision {

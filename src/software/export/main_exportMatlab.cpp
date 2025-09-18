@@ -11,6 +11,8 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
+
 #include <boost/program_options.hpp>
 
 #include <filesystem>

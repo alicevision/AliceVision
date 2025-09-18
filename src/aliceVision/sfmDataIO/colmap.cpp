@@ -7,6 +7,8 @@
 #include "colmap.hpp"
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <filesystem>
 #include <fstream>

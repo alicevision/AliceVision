@@ -5,7 +5,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "jsonIO.hpp"
+
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/property_tree/json_parser.hpp>

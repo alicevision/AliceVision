@@ -5,8 +5,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "middlebury.hpp"
+
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <filesystem>
 #include <fstream>

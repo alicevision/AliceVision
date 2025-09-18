@@ -7,6 +7,7 @@
 
 #include "sfmDataIO.hpp"
 #include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/sfmDataIO/jsonIO.hpp>
 #include <aliceVision/sfmDataIO/plyIO.hpp>

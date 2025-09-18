@@ -16,6 +16,7 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/image/io.cpp>
 #include <aliceVision/image/dcp.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <boost/atomic/atomic_ref.hpp>
 #include <boost/program_options.hpp>

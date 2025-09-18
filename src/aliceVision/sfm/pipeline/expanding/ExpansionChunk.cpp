@@ -7,6 +7,7 @@
 #include "ExpansionChunk.hpp"
 
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace sfm {

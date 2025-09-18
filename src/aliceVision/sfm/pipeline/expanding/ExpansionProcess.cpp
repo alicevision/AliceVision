@@ -6,6 +6,7 @@
 
 #include "ExpansionProcess.hpp"
 
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace sfm {

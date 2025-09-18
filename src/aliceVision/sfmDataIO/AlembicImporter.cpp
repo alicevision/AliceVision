@@ -14,6 +14,8 @@
 #include <aliceVision/version.hpp>
 #include <aliceVision/system/Logger.hpp>
 
+#include <aliceVision/camera/Equidistant.hpp>
+
 namespace aliceVision {
 namespace sfmDataIO {
 

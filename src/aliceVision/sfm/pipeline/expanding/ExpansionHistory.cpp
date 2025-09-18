@@ -6,7 +6,8 @@
 
 #include "ExpansionHistory.hpp"
 
-
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 
 namespace aliceVision {

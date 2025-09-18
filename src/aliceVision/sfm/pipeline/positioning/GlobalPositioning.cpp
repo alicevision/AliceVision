@@ -7,8 +7,10 @@
 
 #include <aliceVision/sfm/pipeline/positioning/GlobalPositioning.hpp>
 
-#include <ceres/ceres.h>
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/position.hpp>
+
+#include <ceres/ceres.h>
 
 namespace aliceVision 
 {

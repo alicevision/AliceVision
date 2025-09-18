@@ -11,6 +11,8 @@
 #include <aliceVision/geometry/lie.hpp>
 #include <aliceVision/geometry/Intersection.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>

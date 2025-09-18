@@ -9,6 +9,9 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/image/Sampler.hpp>
+
 #include <boost/program_options.hpp>
 
 // These constants define the current software version.

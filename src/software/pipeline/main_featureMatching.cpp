@@ -32,6 +32,8 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/stl/stl.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 
 #include <boost/program_options.hpp>
 

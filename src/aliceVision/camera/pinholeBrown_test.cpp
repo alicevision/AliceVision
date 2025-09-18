@@ -7,6 +7,9 @@
 
 #include <aliceVision/camera/camera.hpp>
 
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/DistortionBrown.hpp>
+
 #define BOOST_TEST_MODULE pinholeBrown
 
 #include <boost/test/unit_test.hpp>

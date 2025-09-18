@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "MultiViewParams.hpp"
+
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/io.hpp>
@@ -17,6 +18,7 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>

@@ -5,6 +5,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/constraint2d.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/constraintPoint.hpp>
@@ -12,9 +15,9 @@
 #include <aliceVision/sfm/bundle/costfunctions/rotationPrior.hpp>
 #include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/alicevision_omp.hpp>
-#include <aliceVision/config.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
+
 
 #include <ceres/rotation.h>
 

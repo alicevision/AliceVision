@@ -7,6 +7,9 @@
 
 #include <aliceVision/camera/camera.hpp>
 
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/DistortionFisheye.hpp>
+
 #define BOOST_TEST_MODULE pinholeFisheye
 
 #include <boost/test/unit_test.hpp>

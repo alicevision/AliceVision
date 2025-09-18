@@ -5,10 +5,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "RigSequence.hpp"
+
 #include <aliceVision/stl/mapUtils.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/functional/hash.hpp>
-
 #include <algorithm>
 
 namespace aliceVision {
@@ -260,7 +261,6 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
         // if no rig pose, compute and add it
         if (_sfmData.getPoses().find(rigPoseId) == _sfmData.getPoses().end())
         {
-            // TODO: use opengv resection for more than one valid view
             IndexT bestSubPoseId = UndefinedIndexT;
             double bestScore = 0.0;
 

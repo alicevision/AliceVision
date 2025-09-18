@@ -6,6 +6,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/pipeline/global/GlobalSfMTranslationAveragingSolver.hpp>
+
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfm/filters.hpp>
 #include <aliceVision/sfm/sfmTriangulation.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -26,8 +29,8 @@
 #include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/multiview/translationAveraging/solver.hpp>
 #include <aliceVision/sfm/pipeline/global/TranslationTripletKernelACRansac.hpp>
-#include <aliceVision/config.hpp>
-#include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+
 
 #include <aliceVision/utils/Histogram.hpp>
 
