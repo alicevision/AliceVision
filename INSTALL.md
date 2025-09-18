@@ -43,7 +43,6 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * Magma (required for UncertaintyTE)
 * Mosek >= 6 (linear programming)
 * OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
-* OpenGV (rig calibration and localization)
 * OpenMP (enable multi-threading)
 * PCL (Point Cloud Library) >= 1.12.1 for the registration module
 * PopSift (feature extraction on GPU)
@@ -207,11 +206,6 @@ At the end of the cmake process, a report shows for each library which version (
 * `ALICEVISION_USE_APRILTAG` (default: `AUTO`)  
   Build with AprilTag markers support.  
   `-Dapriltag_DIR:PATH=/path/to/apriltag/install/share/apriltag/cmake` (where apriltagConfig.cmake can be found)
-
-* `ALICEVISION_USE_OPENGV` (default `AUTO`)  
-  Enable use of OpenGV algorithms. Build with openGV for multi-cameras localization.  
-  `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where the `include` and `lib` folders can be found)  
-  We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
 * `ALICEVISION_USE_ALEMBIC` (default `AUTO`)  
   Build with Alembic file format support (required version >= 1.7).  

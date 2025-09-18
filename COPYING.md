@@ -125,11 +125,6 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (c) 2002, Industrial Light & Magic, a division of Lucas Digital Ltd. LLC  
     Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
 
-*   __OpenGV__ (optional)  
-    [https://laurentkneip.github.io/opengv](https://laurentkneip.github.io/opengv)  
-    Copyright (c) 2013 Laurent Kneip, The Australian National University ANU. All rights reserved  
-    Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
-
 *   __OpenImageIO__  
     [https://openimageio.org](https://openimageio.org)  
     Copyright 2008-2016 Larry Gritz et al.  
