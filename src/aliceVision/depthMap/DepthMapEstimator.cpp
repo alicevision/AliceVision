@@ -21,6 +21,7 @@
 #include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceStreamManager.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 namespace depthMap {

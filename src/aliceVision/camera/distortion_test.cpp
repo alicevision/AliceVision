@@ -9,6 +9,7 @@
 #include <aliceVision/camera/DistortionFisheye.hpp>
 #include <aliceVision/camera/DistortionFisheye1.hpp>
 #include <aliceVision/camera/DistortionRadial.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #define BOOST_TEST_MODULE distortion
 #include <boost/test/unit_test.hpp>

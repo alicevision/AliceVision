@@ -14,6 +14,7 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 namespace segmentation {

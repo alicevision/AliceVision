@@ -11,6 +11,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 
 #include <boost/test/unit_test.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #define EXPECT_MATRIX_CLOSE_FRACTION(a, b, tolerance)                                                                                                \
     {                                                                                                                                                \

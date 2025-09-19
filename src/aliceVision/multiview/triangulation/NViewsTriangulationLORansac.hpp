@@ -9,6 +9,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 #include <aliceVision/numeric/Container.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
@@ -20,6 +21,8 @@
 #include <vector>
 #include <cstddef>
 #include <algorithm>
+
+#include <Eigen/Dense>
 
 namespace aliceVision {
 namespace multiview {

@@ -19,6 +19,8 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
+#include <Eigen/Dense>
+
 using namespace aliceVision;
 
 struct TestData

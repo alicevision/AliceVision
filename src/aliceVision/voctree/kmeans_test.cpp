@@ -7,6 +7,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/voctree/SimpleKmeans.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <iostream>
 #include <fstream>

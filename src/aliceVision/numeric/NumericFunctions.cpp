@@ -6,7 +6,16 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "numeric.hpp"
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
+#include <Eigen/Core>
+// #include <Eigen/Eigenvalues>
+#include <Eigen/Geometry>
+// #include <Eigen/LU>
+// #include <Eigen/QR>
+#include <Eigen/SparseCore>
+// #include <Eigen/SVD>
+ #include <Eigen/StdVector>
 
 #include <iostream>
 #include <fstream>
@@ -43,8 +52,6 @@ double getRotationMagnitude(const Mat3& R2)
     cos_theta = clamp(cos_theta, -1.0, 1.0);
     return std::acos(cos_theta);
 }
-
-double rotationDifference(const Mat3& R1, const Mat3& R2) { return getRotationMagnitude(R1 * R2.transpose()); }
 
 Mat3 LookAt(const Vec3& center, const Vec3& up)
 {

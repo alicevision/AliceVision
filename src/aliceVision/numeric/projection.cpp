@@ -8,7 +8,11 @@
 
 #include "projection.hpp"
 
+#include <aliceVision/numeric/NumericFunctions.hpp>
 #include <cmath>
+
+#include <Eigen/Geometry>
+
 
 namespace aliceVision {
 

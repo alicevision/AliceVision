@@ -6,6 +6,7 @@
 
 #include <aliceVision/voctree/TreeBuilder.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <Eigen/Core>
 

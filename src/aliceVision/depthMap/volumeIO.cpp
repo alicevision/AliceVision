@@ -17,6 +17,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/depthMap/BufPtr.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <iostream>
 #include <sstream>

@@ -13,6 +13,9 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/config.hpp>
 
+#include <aliceVision/numeric/NumericFunctions.hpp>
+#include <Eigen/LU>
+
 namespace aliceVision {
 namespace feature {
 

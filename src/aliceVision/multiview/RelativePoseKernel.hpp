@@ -12,6 +12,8 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/PointFittingRansacKernel.hpp>
 
+#include <Eigen/Dense>
+
 namespace aliceVision {
 namespace multiview {
 

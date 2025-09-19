@@ -28,6 +28,7 @@
 
 // Numeric utils
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 // IO
 #include <filesystem>

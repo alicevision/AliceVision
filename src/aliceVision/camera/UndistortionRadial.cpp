@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "UndistortionRadial.hpp"
+#include <Eigen/Dense>
 
 namespace aliceVision {
 namespace camera {

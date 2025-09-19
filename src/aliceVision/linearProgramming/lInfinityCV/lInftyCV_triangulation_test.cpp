@@ -11,6 +11,7 @@
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include "aliceVision/numeric/projection.hpp"
 

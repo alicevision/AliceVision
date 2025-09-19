@@ -109,5 +109,12 @@ void IntrinsicBase::rescale(float factorW, float factorH)
     _h = static_cast<unsigned int>(floor(static_cast<float>(_h) * factorH));
 }
 
+double angleBetweenRays(const Vec3& ray1, const Vec3& ray2)
+{
+    const double mag = ray1.norm() * ray2.norm();
+    const double dotAngle = ray1.dot(ray2);
+    return radianToDegree(acos(clamp(dotAngle / mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
+}
+
 }  // namespace camera
 }  // namespace aliceVision

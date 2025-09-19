@@ -16,6 +16,7 @@
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/gpu/gpu.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <boost/program_options.hpp>
 

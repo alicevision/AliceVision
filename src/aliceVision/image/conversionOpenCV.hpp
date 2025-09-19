@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/config.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 

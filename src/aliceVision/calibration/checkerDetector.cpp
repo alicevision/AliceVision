@@ -20,6 +20,9 @@
 #include <limits>
 #include <algorithm>
 
+#include <Eigen/Eigenvalues>
+#include <Eigen/LU>
+
 // TODO: to remove when moving to eigen 3.4
 namespace Eigen {
 template<typename Type, int Size>

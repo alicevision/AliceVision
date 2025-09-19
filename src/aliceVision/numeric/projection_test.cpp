@@ -7,6 +7,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #define BOOST_TEST_MODULE projection
 

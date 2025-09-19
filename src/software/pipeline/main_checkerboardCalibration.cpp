@@ -35,6 +35,7 @@
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 
 #include <boost/program_options.hpp>
+#include <Eigen/SVD>
 
 #include <fstream>
 #include <map>

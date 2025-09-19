@@ -7,14 +7,15 @@
 
 #pragma once
 
-#include "aliceVision/matching/matcherType.hpp"
-#include "aliceVision/matching/MatchesCollections.hpp"
-#include "aliceVision/matching/IndMatchDecorator.hpp"
-#include "aliceVision/matching/filters.hpp"
+#include <aliceVision/matching/matcherType.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
+#include <aliceVision/matching/IndMatchDecorator.hpp>
+#include <aliceVision/matching/filters.hpp>
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/feature/Regions.hpp"
-#include "aliceVision/feature/RegionsPerView.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
+#include <aliceVision/feature/Regions.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
 
 #include <vector>
 #include <random>

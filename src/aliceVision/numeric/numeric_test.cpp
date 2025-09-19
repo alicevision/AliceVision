@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/numeric/Container.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #define BOOST_TEST_MODULE numeric
 

@@ -30,6 +30,7 @@
 #include "ceres/rotation.h"
 
 #include <aliceVision/numeric/BoxStats.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <map>
 #include <queue>

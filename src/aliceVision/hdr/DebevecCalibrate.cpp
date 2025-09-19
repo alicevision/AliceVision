@@ -11,12 +11,15 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <iostream>
 #include <fstream>
 #include <cassert>
+
+#include <Eigen/LU>
 
 namespace aliceVision {
 namespace hdr {

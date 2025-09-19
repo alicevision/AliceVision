@@ -1,6 +1,8 @@
 #include "dcp.hpp"
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 

@@ -15,6 +15,7 @@
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/Unnormalizer.hpp>
+#include <Eigen/Dense>
 
 namespace aliceVision {
 namespace multiview {

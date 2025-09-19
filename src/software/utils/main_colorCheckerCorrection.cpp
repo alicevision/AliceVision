@@ -17,6 +17,7 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>

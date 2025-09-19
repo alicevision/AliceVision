@@ -8,6 +8,7 @@
 #include "Resection6PSolver.hpp"
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/numeric/algebra.hpp>
+#include <Eigen/SVD>
 
 namespace aliceVision {
 namespace multiview {

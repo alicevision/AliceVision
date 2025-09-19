@@ -9,6 +9,8 @@
 
 #include <iostream>
 #include <cassert>
+#include <Eigen/LU>
+#include <Eigen/Eigenvalues>
 
 namespace aliceVision {
 namespace multiview {

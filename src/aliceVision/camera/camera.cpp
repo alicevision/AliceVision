@@ -21,6 +21,8 @@
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
 
+#include <Eigen/SparseCore>
+
 namespace aliceVision {
 namespace camera {
 

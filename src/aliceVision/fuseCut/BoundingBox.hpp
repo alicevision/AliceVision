@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 namespace aliceVision {
 namespace fuseCut {

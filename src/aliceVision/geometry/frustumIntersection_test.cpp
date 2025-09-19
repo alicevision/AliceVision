@@ -10,6 +10,7 @@
 
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/projection.hpp"
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <iostream>
 

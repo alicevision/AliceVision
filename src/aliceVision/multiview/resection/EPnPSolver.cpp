@@ -6,7 +6,12 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "EPnPSolver.hpp"
+
 #include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
+#include <Eigen/SVD>
+#include <Eigen/Dense>
 
 namespace aliceVision {
 namespace multiview {

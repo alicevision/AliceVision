@@ -8,6 +8,9 @@
 
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
+#include <Eigen/Geometry>
 
 #define BOOST_TEST_MODULE Triangulation
 

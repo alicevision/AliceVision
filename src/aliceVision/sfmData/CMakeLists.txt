@@ -25,6 +25,7 @@ set(sfmData_files_sources
     exif.cpp
     ImageInfo.cpp
     Observation.cpp
+    Landmark.cpp
 )
 
 alicevision_add_library(aliceVision_sfmData

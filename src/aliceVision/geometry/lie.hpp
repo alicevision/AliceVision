@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 

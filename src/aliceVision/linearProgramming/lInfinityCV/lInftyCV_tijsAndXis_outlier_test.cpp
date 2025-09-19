@@ -24,6 +24,8 @@
 #include <iostream>
 #include <vector>
 
+#include <Eigen/Dense>
+
 #define BOOST_TEST_MODULE TranslationStructureLInfinityNoisy
 
 #include <boost/test/unit_test.hpp>

@@ -6,6 +6,9 @@
 
 #include "DistortionRadial.hpp"
 
+#include <aliceVision/numeric/NumericFunctions.hpp>
+#include <Eigen/Dense>
+
 namespace aliceVision {
 namespace camera {
 

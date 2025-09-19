@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 #include <algorithm>
 #include <stdint.h>
 #include <cmath>

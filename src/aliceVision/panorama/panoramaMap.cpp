@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <list>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 

@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/multiview/NViewDataSet.hpp"
 
+#include <Eigen/Dense>
 #include <iostream>
 #include <fstream>
 #include <vector>

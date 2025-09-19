@@ -8,6 +8,10 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
+#include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
+#include <Eigen/SVD>
+
 #include <cmath>
 #include <cstring>
 #include <limits>

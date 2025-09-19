@@ -9,7 +9,7 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
-
+#include <aliceVision/numeric/NumericFunctions.hpp>
 #define BOOST_TEST_MODULE triangulationDLT
 
 #include <boost/test/unit_test.hpp>

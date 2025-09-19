@@ -9,6 +9,8 @@
 
 #include <aliceVision/multiview/rotationAveraging/common.hpp>
 
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
 //------------------
 //-- Bibliography --
 //------------------

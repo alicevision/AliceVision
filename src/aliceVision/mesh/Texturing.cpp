@@ -41,6 +41,9 @@
 #include <map>
 #include <set>
 
+#include <aliceVision/numeric/NumericFunctions.hpp>
+#include <Eigen/Geometry>
+
 // Debug mode: save atlases decomposition in frequency bands and
 // the number of contribution in each band (if useScore is set to false)
 #define TEXTURING_MBB_DEBUG 0

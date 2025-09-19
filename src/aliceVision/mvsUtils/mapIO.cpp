@@ -11,6 +11,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <boost/regex.hpp>
 

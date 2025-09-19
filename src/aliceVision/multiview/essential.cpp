@@ -11,6 +11,8 @@
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 
+#include <Eigen/Dense>
+
 namespace aliceVision {
 
 // HZ 9.6 page 257 (formula 9.12)

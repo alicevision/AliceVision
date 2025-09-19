@@ -7,6 +7,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "conditioning.hpp"
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 namespace robustEstimation {

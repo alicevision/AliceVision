@@ -11,12 +11,14 @@
 
 %include <aliceVision/global.i>
 %include <aliceVision/numeric/numeric.hpp>
+%include <aliceVision/numeric/NumericFunctions.hpp>
 
 double getX(const Vec2 & vec);
 double getY(const Vec2 & vec);
 
 %{
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 using namespace aliceVision;
 
 double getX(const Vec2 & vec)

@@ -8,6 +8,7 @@
 
 #include "Rotation3PSolver.hpp"
 
+#include <Eigen/Dense>
 #include <Eigen/SVD>
 
 #include <iostream>

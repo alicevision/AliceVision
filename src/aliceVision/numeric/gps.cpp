@@ -8,6 +8,7 @@
 #include <cmath>
 #include <boost/algorithm/string.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 

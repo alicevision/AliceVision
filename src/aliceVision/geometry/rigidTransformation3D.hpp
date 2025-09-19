@@ -8,9 +8,12 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 #include <aliceVision/numeric/LMFunctor.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <random>
+
+#include <Eigen/Geometry>
 
 namespace aliceVision {
 namespace geometry {

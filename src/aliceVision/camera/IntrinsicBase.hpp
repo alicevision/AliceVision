@@ -507,12 +507,7 @@ inline Vec3 applyIntrinsicExtrinsic(const geometry::Pose3& pose, const Intrinsic
  * @param[in] ray2 Second bearing vector ray
  * @return The angle (degree) between two bearing vector rays
  */
-inline double angleBetweenRays(const Vec3& ray1, const Vec3& ray2)
-{
-    const double mag = ray1.norm() * ray2.norm();
-    const double dotAngle = ray1.dot(ray2);
-    return radianToDegree(acos(clamp(dotAngle / mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
-}
+extern double angleBetweenRays(const Vec3& ray1, const Vec3& ray2);
 
 /**
  * @brief Return the angle (degree) between two bearing vector rays
@@ -525,11 +520,11 @@ inline double angleBetweenRays(const Vec3& ray1, const Vec3& ray2)
  * @return The angle (degree) between two bearing vector rays
  */
 inline double angleBetweenRays(const geometry::Pose3& pose1,
-                               const IntrinsicBase* intrinsic1,
-                               const geometry::Pose3& pose2,
-                               const IntrinsicBase* intrinsic2,
-                               const Vec2& x1,
-                               const Vec2& x2)
+                        const IntrinsicBase* intrinsic1,
+                        const geometry::Pose3& pose2,
+                        const IntrinsicBase* intrinsic2,
+                        const Vec2& x1,
+                        const Vec2& x2)
 {
     const Vec3 ray1 = applyIntrinsicExtrinsic(pose1, intrinsic1, x1);
     const Vec3 ray2 = applyIntrinsicExtrinsic(pose2, intrinsic2, x2);

@@ -7,7 +7,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "affineSolver.hpp"
-
+#include <Eigen/LU>
 namespace aliceVision {
 namespace multiview {
 

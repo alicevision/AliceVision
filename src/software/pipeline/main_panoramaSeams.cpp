@@ -24,6 +24,9 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 
+// Numeric
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
 // IO
 #include <filesystem>
 #include <fstream>

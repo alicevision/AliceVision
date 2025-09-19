@@ -11,6 +11,9 @@
 #include "aliceVision/robustEstimation/maxConsensus.hpp"
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 #include "aliceVision/numeric/projection.hpp"
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
+#include <Eigen/Geometry>
 
 #include <iostream>
 #include <vector>

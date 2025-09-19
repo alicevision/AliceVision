@@ -20,6 +20,7 @@
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
+#include <Eigen/Dense>
 #include <vector>
 #include <random>
 #include <algorithm>

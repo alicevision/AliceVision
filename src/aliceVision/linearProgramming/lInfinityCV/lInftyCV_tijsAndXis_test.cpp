@@ -26,6 +26,8 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
+#include <Eigen/Dense>
+
 using namespace aliceVision;
 
 using namespace linearProgramming;

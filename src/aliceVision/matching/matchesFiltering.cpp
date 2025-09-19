@@ -7,6 +7,7 @@
 #include "matchesFiltering.hpp"
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 namespace matching {

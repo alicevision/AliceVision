@@ -42,11 +42,7 @@ class Landmark
     image::RGBColor rgb = image::WHITE;  //!> the color associated to the point
     EEstimatorParameterState state = EEstimatorParameterState::REFINED;
 
-    bool operator==(const Landmark& other) const
-    {
-        return AreVecNearEqual(X, other.X, 1e-3) && AreVecNearEqual(rgb, other.rgb, 1e-3) && _observations == other._observations &&
-               descType == other.descType;
-    }
+    bool operator==(const Landmark& other) const;
 
     inline bool operator!=(const Landmark& other) const { return !(*this == other); }
 

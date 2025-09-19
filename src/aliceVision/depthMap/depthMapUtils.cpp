@@ -11,6 +11,7 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/mapIO.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #include <assimp/Importer.hpp>
 #include <assimp/Exporter.hpp>

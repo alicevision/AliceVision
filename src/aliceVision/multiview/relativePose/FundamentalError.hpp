@@ -10,6 +10,7 @@
 
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/multiview/relativePose/ISolverErrorRelativePose.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 namespace multiview {

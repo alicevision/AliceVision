@@ -11,6 +11,8 @@
 #include <aliceVision/depthMap/cuda/imageProcessing/deviceGaussianFilter.hpp>
 #include <aliceVision/depthMap/cuda/imageProcessing/deviceMipmappedArray.hpp>
 
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
 namespace aliceVision {
 namespace depthMap {
 

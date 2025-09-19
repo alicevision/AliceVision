@@ -12,6 +12,8 @@
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/numeric/algebra.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
+#include <Eigen/Dense>
 
 namespace aliceVision {
 namespace multiview {

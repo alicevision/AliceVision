@@ -20,6 +20,7 @@
 #include <geogram/basic/geometry_nd.h>
 
 #include <aliceVision/image/imageAlgo.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 namespace fuseCut {

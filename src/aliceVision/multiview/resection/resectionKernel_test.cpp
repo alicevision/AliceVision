@@ -10,6 +10,10 @@
 #include <aliceVision/multiview/resection/ResectionKernel.hpp>
 #include <aliceVision/multiview/resection/EPnPKernel.hpp>
 #include <aliceVision/multiview/resection/P3PSolver.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 #define BOOST_TEST_MODULE ResectionKernel
 

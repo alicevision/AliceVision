@@ -8,6 +8,9 @@
 
 #include "P3PSolver.hpp"
 #include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
+
+#include <Eigen/Geometry>
 
 namespace aliceVision {
 namespace multiview {

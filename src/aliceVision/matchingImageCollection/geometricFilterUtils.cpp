@@ -7,6 +7,8 @@
 #include "geometricFilterUtils.hpp"
 #include <ceres/ceres.h>
 
+#include <Eigen/SVD>
+
 namespace aliceVision {
 namespace matchingImageCollection {
 

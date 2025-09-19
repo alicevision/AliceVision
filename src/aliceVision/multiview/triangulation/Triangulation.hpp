@@ -9,6 +9,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/numeric/algebra.hpp>
 

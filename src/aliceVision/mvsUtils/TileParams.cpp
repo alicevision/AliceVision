@@ -8,6 +8,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 namespace aliceVision {
 namespace mvsUtils {

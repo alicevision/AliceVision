@@ -9,6 +9,8 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 
+#include <Eigen/LU>
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
 #endif

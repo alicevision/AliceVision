@@ -19,6 +19,9 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/config.hpp>
 
+#include <boost/math/constants/constants.hpp>
+
+
 using namespace aliceVision;
 using namespace aliceVision::image;
 

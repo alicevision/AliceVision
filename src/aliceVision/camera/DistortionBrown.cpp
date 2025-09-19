@@ -7,6 +7,7 @@
 #include "DistortionBrown.hpp"
 #include <aliceVision/system/Logger.hpp>
 #include <vector>
+#include <Eigen/Dense>
 
 namespace aliceVision {
 namespace camera {

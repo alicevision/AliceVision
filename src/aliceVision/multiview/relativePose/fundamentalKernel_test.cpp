@@ -9,10 +9,12 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalKernel.hpp>
+#include <aliceVision/numeric/NumericFunctions.hpp>
 
 #define BOOST_TEST_MODULE fundamentalKernelSolver
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
+#include <Eigen/Dense>
 
 using namespace aliceVision;
 using namespace aliceVision::multiview;

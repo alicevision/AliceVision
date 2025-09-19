@@ -7,7 +7,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Essential5PSolver.hpp"
+
 #include <aliceVision/multiview/epipolarEquation.hpp>
+#include <Eigen/Eigenvalues>
+
 
 namespace aliceVision {
 namespace multiview {

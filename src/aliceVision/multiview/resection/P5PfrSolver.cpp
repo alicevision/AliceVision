@@ -13,6 +13,10 @@
 #include <cmath>
 #include <iostream>
 
+#include <Eigen/SVD>
+#include <Eigen/LU>
+#include <Eigen/Eigenvalues>
+
 namespace aliceVision {
 namespace multiview {
 namespace resection {

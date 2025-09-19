@@ -13,6 +13,8 @@
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
 
+#include <Eigen/Geometry>
+
 #include <vector>
 
 namespace aliceVision {

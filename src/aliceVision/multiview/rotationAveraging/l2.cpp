@@ -16,6 +16,8 @@
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 
+#include <Eigen/SVD>
+
 #ifdef _MSC_VER
     #pragma warning(once : 4267)  // warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
 #endif
