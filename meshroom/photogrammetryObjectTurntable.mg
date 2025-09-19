@@ -9,9 +9,9 @@
             "DepthMapFilter": "4.0",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
-            "ImageDetectionPrompt": "0.1",
+            "ImageDetectionPrompt": "0.2",
             "ImageMatching": "2.0",
-            "ImageSegmentationBox": "0.2",
+            "ImageSegmentationBox": "0.3",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
             "PrepareDenseScene": "3.1",
@@ -115,7 +115,7 @@
                 "input": "{ImageDetectionPrompt_1.input}",
                 "bboxFolder": "{ImageDetectionPrompt_1.output}",
                 "keepFilename": true,
-                "extension": "png"
+                "extensionOut": "png"
             },
             "internalInputs": {
                 "color": "#575963"
