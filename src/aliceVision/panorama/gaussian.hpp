@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 
 namespace aliceVision {
 

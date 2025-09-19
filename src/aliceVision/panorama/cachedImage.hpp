@@ -6,8 +6,10 @@
 
 #pragma once
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/image/cache.hpp>
+
 #include <aliceVision/panorama/boundingBox.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/types.hpp>

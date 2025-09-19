@@ -6,7 +6,7 @@
 
 #pragma once
 #include "rgbCurve.hpp"
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <cmath>
 
 namespace aliceVision {

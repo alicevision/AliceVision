@@ -8,7 +8,7 @@
 #include "lightingEstimation.hpp"
 #include "ellipseGeometry.hpp"
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/convolution.hpp>
 #include <aliceVision/photometricStereo/photometricStereo.hpp>

@@ -7,7 +7,9 @@
 
 #include "imageStats.hpp"
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/filtering.hpp>
+#include <aliceVision/image/convolution.hpp>
 
 namespace aliceVision {
 namespace feature {

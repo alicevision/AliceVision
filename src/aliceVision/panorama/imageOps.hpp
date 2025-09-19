@@ -7,7 +7,7 @@
 #pragma once
 
 #include "cachedImage.hpp"
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/half.hpp>
 
 namespace aliceVision {

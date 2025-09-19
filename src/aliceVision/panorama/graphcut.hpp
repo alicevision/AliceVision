@@ -9,7 +9,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/boykov_kolmogorov_max_flow.hpp>
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 
 #include "distance.hpp"
 #include "boundingBox.hpp"
