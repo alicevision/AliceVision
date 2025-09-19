@@ -17,6 +17,7 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, alic
       {"featureId", boost::json::value_from(input.featureId)},
       {"coords", boost::json::value_from(input.coords)},
       {"scale", boost::json::value_from(input.scale)},
+      {"depth", boost::json::value_from(input.depth)},
     };
 }
 
@@ -27,7 +28,24 @@ aliceVision::track::TrackItem tag_invoke(boost::json::value_to_tag<aliceVision::
     aliceVision::track::TrackItem ret;
     ret.featureId = boost::json::value_to<std::size_t>(obj.at("featureId"));
     ret.coords = boost::json::value_to<Vec2>(obj.at("coords"));
-    ret.scale = boost::json::value_to<double>(obj.at("scale"));
+
+    if (obj.contains("scale"))
+    {
+        ret.scale = boost::json::value_to<double>(obj.at("scale"));
+    }
+    else
+    {
+        ret.scale = 1.0;
+    }
+
+    if (obj.contains("depth"))
+    {
+        ret.depth = boost::json::value_to<double>(obj.at("depth"));
+    }
+    else 
+    {
+        ret.depth = -1.0;
+    }
 
     return ret;
 }

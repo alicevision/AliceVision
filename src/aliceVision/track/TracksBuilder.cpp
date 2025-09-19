@@ -214,6 +214,7 @@ void TracksBuilder::exportToSTL(TracksMap& allTracks, const feature::FeaturesPer
 
                 item.coords = feature.coords().cast<double>();
                 item.scale = feature.scale();
+                item.depth = -1.0;
             }
         }
     }

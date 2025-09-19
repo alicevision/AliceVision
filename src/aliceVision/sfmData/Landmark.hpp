@@ -73,8 +73,21 @@ class Landmark
         }
     }
 
-  private:
+    /**
+     * @brief Is this landmark robustness independent of parallax
+     * @return true if this landmark has this special property
+    */
+    bool isParallaxRobust() const { return _parallaxRobust; }
+
+    /**
+    * @brief decide if this landmark is robust even if its parallax is low
+    * @param parallaxRobust True if robust to lack of parallax
+    */
+    void setParallaxRobust(bool parallaxRobust) { _parallaxRobust = parallaxRobust; }
+
+private:
     Observations _observations;
+    bool _parallaxRobust = false;
 };
 
 }  // namespace sfmData
