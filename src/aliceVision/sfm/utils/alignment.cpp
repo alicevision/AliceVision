@@ -10,14 +10,7 @@
 #include <aliceVision/geometry/lie.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
 #include <aliceVision/stl/regex.hpp>
-
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics.hpp>
-#include <boost/lexical_cast.hpp>
-
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/lexical_cast.hpp>
+#include <aliceVision/numeric/TopN.hpp>
 
 #include <algorithm>
 #include <regex>
@@ -27,29 +20,60 @@
 
 #include <Eigen/Eigenvalues>
 
-namespace bacc = boost::accumulators;
-
 namespace aliceVision {
 namespace sfm {
+
+std::vector<std::string> split(const std::string & input, const std::string & delimiters)
+{
+    std::vector<std::string> result;
+    size_t start = 0;
+    size_t end = input.find_first_of(delimiters);
+    
+    while (end != std::string::npos) 
+    {
+        //Only if content between 2 delimiters
+        if (end != start) 
+        {
+            result.push_back(input.substr(start, end - start));
+        }
+
+        //Next
+        start = end + 1;
+        end = input.find_first_of(delimiters, start);
+    }
+    
+    if (start < input.length()) 
+    { 
+        // Add the last part
+        result.push_back(input.substr(start));
+    }
+    
+    return result;
+}
 
 std::istream& operator>>(std::istream& in, MarkerWithCoord& marker)
 {
     std::string token(std::istreambuf_iterator<char>(in), {});
-    std::vector<std::string> markerCoord;
-    boost::split(markerCoord, token, boost::algorithm::is_any_of(":="));
-    if (markerCoord.size() != 2)
-        throw std::invalid_argument("Failed to parse MarkerWithCoord from: " + token);
-    marker.id = boost::lexical_cast<int>(markerCoord.front());
+    std::vector<std::string> markerCoord = split(token, ":=");
 
-    std::vector<std::string> coord;
-    boost::split(coord, markerCoord.back(), boost::algorithm::is_any_of(",;_"));
+    if (markerCoord.size() != 2)
+    {
+        throw std::invalid_argument("Failed to parse MarkerWithCoord from: " + token);
+    }
+
+    marker.id = std::stoi(markerCoord.front());
+
+    std::vector<std::string> coord = split(markerCoord.back(), ",;_");
     if (coord.size() != 3)
+    {
         throw std::invalid_argument("Failed to parse Marker coordinates from: " + markerCoord.back());
+    }
 
     for (int i = 0; i < 3; ++i)
     {
-        marker.coord(i) = boost::lexical_cast<double>(coord[i]);
+        marker.coord(i) = std::stod(coord[i]);
     }
+    
     return in;
 }
 
@@ -939,7 +963,7 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
 
     try
     {
-        viewId = boost::lexical_cast<IndexT>(camName);
+        viewId = std::stoul(camName);
         if (!sfmData.getViews().count(viewId))
         {
             bool found = false;
@@ -968,7 +992,7 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
             }
         }
     }
-    catch (const boost::bad_lexical_cast&)
+    catch (const std::exception&)
     {
         viewId = -1;
     }
@@ -996,17 +1020,16 @@ IndexT getViewIdFromExpression(const sfmData::SfMData& sfmData, const std::strin
 
 IndexT getCenterCameraView(const sfmData::SfMData& sfmData)
 {
-    using namespace boost::accumulators;
-    accumulator_set<double, stats<tag::mean>> accX, accY, accZ;
+    Vec3 sum = Vec3::Zero();
+    size_t count = 0;
 
     for (auto& [_, pose] : sfmData.getPoses().valueRange())
     {
-        const auto& c = pose.getTransform().center();
-        accX(c(0));
-        accY(c(1));
-        accZ(c(2));
+        sum += pose.getTransform().center();
+        count++;
     }
-    const Vec3 camerasCenter(extract::mean(accX), extract::mean(accY), extract::mean(accZ));
+    
+    const Vec3 camerasCenter = sum / double(count);
 
     double minDist = std::numeric_limits<double>::max();
     IndexT centerViewId = UndefinedIndexT;
@@ -1069,15 +1092,13 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
 
     const std::size_t cacheSize = 10000;
     const double percentile = 0.99;
-    using namespace boost::accumulators;
-    using AccumulatorMax = accumulator_set<double, stats<tag::tail_quantile<right>>>;
-    AccumulatorMax accDist(tag::tail<right>::cache_size = cacheSize);
+    TopN topN(cacheSize);
 
     // Center the point cloud in [0;0;0]
     for (int i = 0; i < landmarksCount; ++i)
     {
         vX.col(i) -= meanPoints;
-        accDist(vX.col(i).norm());
+        topN.add(vX.col(i).norm());
     }
 
     // Perform an svd over vX*vXT (var-covar)
@@ -1092,7 +1113,9 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
         U.col(2) = -U.col(2);
     }
 
-    const double distMax = quantile(accDist, quantile_probability = percentile);
+    std::vector<double> vTopN = topN.getAndReset();
+    size_t pos = size_t(std::ceil(percentile * double(vTopN.size())));
+    const double distMax = vTopN[pos];
 
     out_S = (distMax > 0.00001 ? 1.0 / distMax : 1.0);
     out_R = U.transpose();
