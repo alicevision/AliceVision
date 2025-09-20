@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include <Eigen/Dense>
+#include <Eigen/QR>
 
 #include <iostream>
 

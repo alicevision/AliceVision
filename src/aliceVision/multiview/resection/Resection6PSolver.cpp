@@ -6,8 +6,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Resection6PSolver.hpp"
+
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/numeric/algebra.hpp>
+
+#include <Eigen/SVD>
 
 namespace aliceVision {
 namespace multiview {

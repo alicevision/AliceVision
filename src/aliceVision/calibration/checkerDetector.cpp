@@ -19,6 +19,7 @@
 
 #include <limits>
 #include <algorithm>
+#include <Eigen/Eigenvalues>
 
 // TODO: to remove when moving to eigen 3.4
 namespace Eigen {

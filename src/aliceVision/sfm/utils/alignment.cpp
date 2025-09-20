@@ -25,6 +25,8 @@
 
 #include <aliceVision/numeric/gps.hpp>
 
+#include <Eigen/Eigenvalues>
+
 namespace bacc = boost::accumulators;
 
 namespace aliceVision {

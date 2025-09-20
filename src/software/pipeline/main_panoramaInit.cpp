@@ -24,6 +24,7 @@
 #include <boost/program_options.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/math/constants/constants.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

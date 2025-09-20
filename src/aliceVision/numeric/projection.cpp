@@ -8,6 +8,7 @@
 
 #include "projection.hpp"
 
+#include <Eigen/QR>
 #include <cmath>
 
 namespace aliceVision {

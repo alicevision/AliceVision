@@ -10,6 +10,9 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 
+#include <Eigen/SVD>
+#include <Eigen/Eigenvalues>
+
 #include <vector>
 #include <map>
 

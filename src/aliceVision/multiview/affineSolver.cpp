@@ -8,6 +8,8 @@
 
 #include "affineSolver.hpp"
 
+#include <Eigen/LU>
+
 namespace aliceVision {
 namespace multiview {
 

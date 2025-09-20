@@ -7,6 +7,7 @@
 
 #include "EPnPSolver.hpp"
 #include <aliceVision/numeric/projection.hpp>
+#include <Eigen/SVD>
 
 namespace aliceVision {
 namespace multiview {

@@ -9,6 +9,7 @@
 #include "Fundamental8PSolver.hpp"
 #include <aliceVision/multiview/epipolarEquation.hpp>
 #include <aliceVision/numeric/algebra.hpp>
+#include <Eigen/SVD>
 
 namespace aliceVision {
 namespace multiview {

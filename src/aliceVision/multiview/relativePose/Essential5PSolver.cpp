@@ -9,6 +9,10 @@
 #include "Essential5PSolver.hpp"
 #include <aliceVision/multiview/epipolarEquation.hpp>
 
+#include <Eigen/SVD>
+#include <Eigen/LU>
+#include <Eigen/Eigenvalues>
+
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {

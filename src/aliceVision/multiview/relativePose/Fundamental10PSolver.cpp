@@ -10,6 +10,8 @@
 #include <iostream>
 #include <cassert>
 
+#include <Eigen/Eigenvalues>
+
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
