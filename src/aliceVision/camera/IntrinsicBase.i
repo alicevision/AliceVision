@@ -9,6 +9,26 @@
 
 %{
 #include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 %}
 
 %include <aliceVision/camera/IntrinsicBase.hpp>
+
+%extend aliceVision::camera::IntrinsicBase {
+    bool isIntrinsicScaleOffset() const {
+        return dynamic_cast<const aliceVision::camera::IntrinsicScaleOffset*>($self) != nullptr;
+    }
+
+    aliceVision::camera::IntrinsicScaleOffset* asIntrinsicScaleOffset() {
+        return dynamic_cast<aliceVision::camera::IntrinsicScaleOffset*>($self);
+    }
+
+    bool isIntrinsicScaleOffsetDisto() const {
+        return dynamic_cast<const aliceVision::camera::IntrinsicScaleOffsetDisto*>($self) != nullptr;
+    }
+
+    aliceVision::camera::IntrinsicScaleOffsetDisto* asIntrinsicScaleOffsetDisto() {
+        return dynamic_cast<aliceVision::camera::IntrinsicScaleOffsetDisto*>($self);
+    }
+}
