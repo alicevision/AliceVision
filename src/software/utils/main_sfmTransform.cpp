@@ -217,6 +217,13 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
         rotateMat = quaternion.matrix();
     }
     R = rotateMat;  // Assign Rotation
+
+    Eigen::Matrix3d M = Eigen::Matrix3d::Identity();
+    M(1, 1) = -1;
+    M(2, 2) = -1;
+
+    R = M * R * M;
+    t = M * t;
 }
 
 }  // namespace
