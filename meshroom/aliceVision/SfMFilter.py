@@ -6,6 +6,7 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 class SfMFilter(desc.CommandLineNode):
     commandLine = "aliceVision_sfmFilter {allParams}"
+    size = desc.DynamicNodeSize("inputFile")
     category = "Utils"
     documentation = """This node allows select views from SfMData file using a regular expresion."""
 

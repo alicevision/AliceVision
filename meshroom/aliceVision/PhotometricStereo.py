@@ -5,6 +5,7 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 class PhotometricStereo(desc.CommandLineNode):
     commandLine = "aliceVision_photometricStereo {allParams}"
+    size = desc.DynamicNodeSize("inputPath")
     category = "Photometric Stereo"
     documentation = """
 Reconstruction using Photometric Stereo.
