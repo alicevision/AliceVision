@@ -34,22 +34,63 @@ void TriangulateDLT(const Mat34& P1, const Vec2& x1, const Mat34& P2, const Vec2
     homogeneousToEuclidean(X_homogeneous, X_euclidean);
 }
 
-// Solve:
-// [cross(x0,P0) X = 0]
-// [cross(x1,P1) X = 0]
+/**
+* let v = R.transpose() * x; (to get a world coordinates direction)
+* then lambda * v = X - center
+* (v) cross (X - center) = 0
+* [v]x*X - [V]x*center) = 0
+*/
 void TriangulateSphericalDLT(const Mat4& T1, const Vec3& x1, const Mat4& T2, const Vec3& x2, Vec4& X_homogeneous)
 {
-    Mat design(6, 4);
-    for (int i = 0; i < 4; ++i)
-    {
-        design(0, i) = -x1[2] * T1(1, i) + x1[1] * T1(2, i);
-        design(1, i) = x1[2] * T1(0, i) - x1[0] * T1(2, i);
-        design(2, i) = -x1[1] * T1(0, i) + x1[0] * T1(1, i);
+    const Mat3 R1 = T1.block<3, 3>(0, 0);
+    const Mat3 R2 = T2.block<3, 3>(0, 0);
+    const Vec3 t1 = T1.block<3, 1>(0, 3);
+    const Vec3 t2 = T2.block<3, 1>(0, 3);
+    const Vec3 c1 = -R1.transpose() * t1;
+    const Vec3 c2 = -R2.transpose() * t2;
 
-        design(3, i) = -x2[2] * T2(1, i) + x2[1] * T2(2, i);
-        design(4, i) = x2[2] * T2(0, i) - x2[0] * T2(2, i);
-        design(5, i) = -x2[1] * T2(0, i) + x2[0] * T2(1, i);
-    }
+    const Vec3 v1 = R1.transpose() * x1;
+    const Vec3 v2 = R2.transpose() * x2;
+
+    Mat4 design;
+    
+    //We keep last 2 rows of the equation for each point
+    // [ 0  -z   y]
+    // [ z   0  -x]
+    // [-y   x   0]
+    // --> 
+    // [ z   0  -x]
+    // [-y   x   0]
+
+    // [ z   0  -x] * [cx cy cz]^t = z * cx - x * cz
+    // [-y   x   0] * [cx cy cz]^t = -y * cx + x * cy
+
+    //[v]x
+    design(0, 0) = v1.z();
+    design(0, 1) = 0;
+    design(0, 2) = -v1.x();    
+    design(1, 0) = - v1.y();
+    design(1, 1) = v1.x();
+    design(1, 2) = 0;
+
+    //-[V]x*center
+    design(0, 3) = - (v1.z() * c1.x() - v1.x() * c1.z());
+    design(1, 3) = - (-v1.y() * c1.x() + v1.x() * c1.y());
+
+    //[v]x
+    design(2, 0) = v2.z();
+    design(2, 1) = 0;
+    design(2, 2) = -v2.x();    
+    design(3, 0) = - v2.y();
+    design(3, 1) = v2.x();
+    design(3, 2) = 0;
+
+    //-[V]x*center
+    design(2, 3) = - (v2.z() * c2.x() - v2.x() * c2.z());
+    design(3, 3) = - (-v2.y() * c2.x() + v2.x() * c2.y());
+
+    // Solve AX=0, where X is the homogeneous coordinates vector of the 3d point
+    // in the reference frame
     Nullspace(design, X_homogeneous);
 }
 
