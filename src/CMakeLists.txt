@@ -136,6 +136,13 @@ if (WIN32)
     add_definitions(-DNOMINMAX)
     add_definitions(-D_USE_MATH_DEFINES)
     if (MSVC)
+        # MSVC library version
+        cmake_policy(SET CMP0091 NEW)   # Manually choose msvcrt version
+        if(BUILD_SHARED_LIBS)
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        else()
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        endif()
         add_compile_options(/bigobj)
         add_compile_options(/MP)
     endif()
