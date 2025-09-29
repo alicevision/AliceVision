@@ -10,6 +10,9 @@ option(AV_USE_OPENMP "Enable OpenMP" $<$<CXX_COMPILER_ID:"AppleClang">,OFF,ON>) 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(ALICEVISION_INSTALL_MESHROOM_PLUGIN "Install AliceVision's plugin for Meshroom" ON)
 
+# Global policy section
+cmake_policy(SET CMP0135 NEW)    # Improve timestamp handling in ExternalProject_Add()
+
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
 endif()
