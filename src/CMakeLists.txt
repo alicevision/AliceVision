@@ -145,6 +145,7 @@ if (WIN32)
         endif()
         add_compile_options(/bigobj)
         add_compile_options(/MP)
+        add_compile_options(/GR)   # See policy CMP0117: Enable RTTI on MSVC
     endif()
 endif()
 
