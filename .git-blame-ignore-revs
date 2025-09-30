@@ -1,3 +1,5 @@
+# [meshroom] `KeyframeSelection`: Apply linting
+a1e75dba0e61670eea9d6a9ae1613d0b5d10f942
 # [aliceVision] Apply clang-format to several modules
 6a86b129ac03ff409247428ffb5b8d0008879564
 # CMakeLists.txt: Harmonize 4-space indentation across the project
