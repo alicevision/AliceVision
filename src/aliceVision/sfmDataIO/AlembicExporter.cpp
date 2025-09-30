@@ -679,11 +679,11 @@ void AlembicExporter::addCamera(const std::string& name,
     _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty);
 }
 
-void AlembicExporter::initAnimatedCamera(const std::string& cameraName, std::size_t startFrame)
+void AlembicExporter::initAnimatedCamera(const std::string& cameraName, std::size_t startFrame, double frameRate)
 {
     // Sample the time in order to have one keyframe every frame
     // nb: it HAS TO be attached to EACH keyframed properties
-    TimeSamplingPtr tsp(new TimeSampling(1.0 / 24.0, startFrame / 24.0));
+    TimeSamplingPtr tsp(new TimeSampling(1.0 / frameRate, startFrame / frameRate));
 
     // Create the camera transform object
     std::stringstream ss;

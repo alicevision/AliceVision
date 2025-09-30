@@ -110,6 +110,7 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmDataFilterFilepath;
     std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
     std::string outMapFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
+    double frameRate = 24.0;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -135,7 +136,9 @@ int aliceVision_main(int argc, char** argv)
         ("sfmDataFilter", po::value<std::string>(&sfmDataFilterFilepath)->default_value(sfmDataFilterFilepath),
          "Filter out cameras from the export if they are part of this SfMData. Export all cameras if empty.")
         ("undistortedImageType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
-         image::EImageFileType_informations().c_str());
+         image::EImageFileType_informations().c_str())
+         ("frameRate", po::value<double>(&frameRate)->default_value(frameRate),
+         "Define the camera's Frames per seconds.");
     // clang-format on
 
     CmdLine cmdline("AliceVision exportAnimatedCamera");
@@ -445,7 +448,7 @@ int aliceVision_main(int argc, char** argv)
         const std::map<std::size_t, IndexT>& frameToView = cameraViews.second;
         const std::size_t firstFrame = cameraViews.second.begin()->first;
 
-        exporter.initAnimatedCamera(cameraViews.first, firstFrame);
+        exporter.initAnimatedCamera(cameraViews.first, firstFrame, frameRate);
 
         for (std::size_t frame = firstFrame; frame <= frameToView.rbegin()->first; ++frame)
         {
