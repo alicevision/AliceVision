@@ -158,7 +158,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                             description="Minimum number of frames between two keyframes.",
                             value=12,
                             range=(1, 1000, 1),
-                            enabled=lambda node: node.regularSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.regularSelection.enabled,
                         ),
                         desc.IntParam(
                             name="maxFrameStep",
@@ -166,7 +166,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                             description="Maximum number of frames between two keyframes. Ignored if equal to 0.",
                             value=0,
                             range=(0, 1000, 1),
-                            enabled=lambda node: node.regularSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.regularSelection.enabled,
                         ),
                         desc.IntParam(
                             name="maxNbOutFrames",
@@ -176,7 +176,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                                         "might cause the selection to stop before reaching the end of the input sequence(s).",
                             value=0,
                             range=(0, 10000, 1),
-                            enabled=lambda node: node.regularSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.regularSelection.enabled,
                         ),
                     ],
                 ),
@@ -194,7 +194,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                             description="The percentage of pixels in the frame that need to have moved since the last keyframe to be considered for the selection.",
                             value=10.0,
                             range=(0.0, 100.0, 1.0),
-                            enabled=lambda node: node.smartSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.smartSelection.enabled,
                         ),
                         desc.IntParam(
                             name="minNbOutFrames",
@@ -202,7 +202,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                             description="Minimum number of frames selected to be keyframes.",
                             value=40,
                             range=(1, 100, 1),
-                            enabled=lambda node: node.smartSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.smartSelection.enabled,
                         ),
                         desc.IntParam(
                             name="maxNbOutFrames",
@@ -210,7 +210,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                             description="Maximum number of frames selected to be keyframes.",
                             value=2000,
                             range=(1, 10000, 1),
-                            enabled=lambda node: node.smartSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.smartSelection.enabled,
                         ),
                         desc.IntParam(
                             name="rescaledWidthSharpness",
@@ -219,7 +219,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                                         "Aspect ratio will be preserved. No rescale will be performed if equal to 0.",
                             value=720,
                             range=(0, 4000, 1),
-                            enabled=lambda node: node.smartSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.smartSelection.enabled,
                             advanced=True,
                         ),
                         desc.IntParam(
@@ -229,7 +229,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                                         "Aspect ratio will be preserved. No rescale will be performed if equal to 0.",
                             value=720,
                             range=(0, 4000, 1),
-                            enabled=lambda node: node.smartSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.smartSelection.enabled,
                             advanced=True,
                         ),
                         desc.IntParam(
@@ -238,7 +238,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                             description="The size, in pixels, of the sliding window used to evaluate a frame's sharpness.",
                             value=200,
                             range=(1, 10000, 1),
-                            enabled=lambda node: node.smartSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.smartSelection.enabled,
                             advanced=True,
                         ),
                         desc.IntParam(
@@ -247,7 +247,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                             description="The size, in pixels, of the cells within a frame in which the optical flow scores is evaluated.",
                             value=90,
                             range=(10, 2000, 1),
-                            enabled=lambda node: node.smartSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.smartSelection.enabled,
                             advanced=True,
                         ),
                         desc.IntParam(
@@ -259,7 +259,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                             value=10,
                             range=(1, 1000, 1),
                             invalidate=False,
-                            enabled=lambda node: node.smartSelection.enabled,
+                            enabled=lambda node: node.selectionMethod.smartSelection.enabled,
                             advanced=True,
                         ),
                     ],
