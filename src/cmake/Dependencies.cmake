@@ -185,18 +185,30 @@ endif()
 if(AV_BUILD_GEOGRAM)
     # Add Geogram
     if(WIN32)
-        set(VORPALINE_PLATFORM Win-vs-dynamic-generic)
+        set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Win-vs-dynamic-generic)
     elseif(APPLE)
-        set(VORPALINE_PLATFORM Darwin-clang-dynamic)
-    elseif(UNIX)
-        set(VORPALINE_PLATFORM Linux64-gcc-dynamic)
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+            set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Darwin-clang-dynamic)
+        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+            set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Darwin-aarch64-clang-dynamic)
+        else()
+            message(FATAL_ERROR "Encountered unsupported CMAKE_SYSTEM_PROCESSOR value when trying to set VORPALINE_PLATFORM for Geogram! Supported architectures are x86_64 and aarch64/arm64.")
+        endif()
+    elseif(UNIX) # Assumes Linux
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+            set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Linux64-gcc-dynamic)
+        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+            set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Linux64-gcc-aarch64 -DVORPALINE_BUILD_DYNAMIC=ON) # Manually request dynamic build (via VORPALINE_BUILD_DYNAMIC)
+        else()
+            message(FATAL_ERROR "Encountered unsupported CMAKE_SYSTEM_PROCESSOR value when trying to set VORPALINE_PLATFORM for Geogram! Supported architectures are x86_64 and aarch64/arm64.")
+        endif()
     endif()
 
     set(GEOGRAM_TARGET geogram)
 
     ExternalProject_Add(${GEOGRAM_TARGET}
-        URL https://github.com/BrunoLevy/geogram/releases/download/v1.8.8/geogram_1.8.8.tar.gz
-        URL_HASH MD5=e66563683fad771ef19fdf8b42c8b2a4
+        URL https://github.com/BrunoLevy/geogram/releases/download/v1.9.6/geogram_1.9.6.tar.gz
+        URL_HASH MD5=ca4f42cbda64d8fb386708150dac7057
         DOWNLOAD_DIR ${BUILD_DIR}/download/geogram
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -207,7 +219,7 @@ if(AV_BUILD_GEOGRAM)
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
         CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
             ${ZLIB_CMAKE_FLAGS}
-            -DVORPALINE_PLATFORM=${VORPALINE_PLATFORM}
+            ${VORPALINE_PLATFORM_FLAGS}
             -DGEOGRAM_WITH_HLBFGS=OFF
             -DGEOGRAM_WITH_TETGEN=OFF
             -DGEOGRAM_WITH_GRAPHICS=OFF
