@@ -70,7 +70,7 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
         
         double angle = 0.0;
         std::vector<size_t> usedTracks;
-        if (!sfm::estimatePairAngle(sfmData, pair.reference, pair.next, pair.pose, tracksMap, tracksPerView, angle, usedTracks))
+        if (!sfm::estimatePairAngle(sfmData, pair.reference, pair.next, pair.pose, pair.errorMax, tracksMap, tracksPerView, angle, usedTracks))
         {
             continue;
         }

@@ -16,6 +16,7 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData,
                        const IndexT referenceViewId,
                        const IndexT otherViewId,
                        const geometry::Pose3 & otherTreference,
+                       const double & errorMax,
                        const track::TracksMap& tracksMap, 
                        const track::TracksPerView & tracksPerView, 
                        double & resultAngle, 
@@ -33,7 +34,9 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData,
     track::getCommonTracksInImagesFast({referenceViewId, otherViewId}, tracksMap, tracksPerView, mapTracksCommon);
 
     const Mat4 T1 = Eigen::Matrix4d::Identity();
-    const Mat4 T2 = otherTreference.getHomogeneous();
+    Mat4 T2 = otherTreference.getHomogeneous();
+    const Mat3 R2 = otherTreference.rotation();
+    const Mat3 E = CrossProductMatrix(otherTreference.translation()) * R2;
     
     const Eigen::Vector3d c = otherTreference.center();
 
@@ -51,6 +54,13 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData,
         
         const Vec3 pt3d1 = refIntrinsics->toUnitSphere(refIntrinsics->removeDistortion(refIntrinsics->ima2cam(refpt)));
         const Vec3 pt3d2 = nextIntrinsics->toUnitSphere(nextIntrinsics->removeDistortion(nextIntrinsics->ima2cam(nextpt)));
+
+        const Vec3 x = (E * pt3d1).normalized();
+        double error = std::abs(std::asin(pt3d2.dot(x)));
+        if (error > errorMax)
+        {
+            continue;
+        }
 
         
         Vec3 X;

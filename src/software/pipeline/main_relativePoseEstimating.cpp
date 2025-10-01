@@ -55,6 +55,7 @@ namespace po = boost::program_options;
  * @brief Estimate the relative essential matrix between two cameras
  * @param E the output Essential matrix
  * @param vecInliers the input list of inliers (set of indices in the coordinates vectors)
+ * @param errorMax the allowed error for an inlier
  * @param cam1 the first camera intrinsic object
  * @param cam2 the second camera intrinsic object
  * @param x1 the observed points coordinates in the first camera
@@ -66,6 +67,7 @@ namespace po = boost::program_options;
 */
 bool robustEssential(Mat3& E,
                      std::vector<size_t>& vecInliers,
+                     double & errorMax,
                      const camera::IntrinsicBase & cam1,
                      const camera::IntrinsicBase & cam2,
                      const std::vector<Vec2>& x1,
@@ -90,6 +92,8 @@ bool robustEssential(Mat3& E,
 
     E = model.getMatrix();
 
+    errorMax = acRansacOut.first;
+
     return true;
 }
 
@@ -97,6 +101,7 @@ bool robustEssential(Mat3& E,
  * @brief Estimate the relative rortation matrix between two cameras
  * @param R the output Rotation matrix
  * @param vecInliers the input list of inliers (set of indices in the coordinates vectors)
+ * @param errorMax the allowed error for an inlier
  * @param cam1 the first camera intrinsic object
  * @param cam2 the second camera intrinsic object
  * @param x1 the observed points coordinates in the first camera
@@ -108,6 +113,7 @@ bool robustEssential(Mat3& E,
 */
 bool robustRotation(Mat3& R,
                     std::vector<size_t>& vecInliers,
+                    double & errorMax,
                      const camera::IntrinsicBase & cam1,
                      const camera::IntrinsicBase & cam2,
                      const std::vector<Vec2>& x1,
@@ -131,6 +137,8 @@ bool robustRotation(Mat3& R,
     }
 
     R = model.getMatrix();
+
+    errorMax = acRansacOut.first;
 
     return true;
 }
@@ -298,6 +306,7 @@ int aliceVision_main(int argc, char** argv)
 
         std::vector<size_t> vecInliers;
         sfm::ReconstructedPair reconstructed;
+        double errorMax = 0.0;
 
         if (enforcePureRotation)
         {
@@ -305,6 +314,7 @@ int aliceVision_main(int argc, char** argv)
             Mat3 R;
             const bool relativeSuccess = robustRotation(R, 
                                                         vecInliers, 
+                                                        errorMax,
                                                         *refIntrinsics,
                                                         *nextIntrinsics, 
                                                         refpts, 
@@ -320,6 +330,7 @@ int aliceVision_main(int argc, char** argv)
             reconstructed.reference = refImage;
             reconstructed.next = nextImage;
             reconstructed.pose.setRotation(R);
+            reconstructed.errorMax = errorMax;
         }
         else
         {
@@ -328,6 +339,7 @@ int aliceVision_main(int argc, char** argv)
             std::vector<size_t> inliers;
             const bool essentialSuccess = robustEssential(E,
                                                           inliers,
+                                                          errorMax,
                                                           *refIntrinsics,
                                                           *nextIntrinsics,
                                                           refpts,
@@ -343,6 +355,7 @@ int aliceVision_main(int argc, char** argv)
             std::vector<Vec3> structure;
             reconstructed.reference = refImage;
             reconstructed.next = nextImage;
+            reconstructed.errorMax = errorMax;
 
             Mat4 T;
             if (!estimateTransformStructureFromEssential(T, structure, vecInliers, E, inliers, 
