@@ -173,9 +173,9 @@ Prediction predict(Ort::Session& session, const fs::path imagePath, const float 
 
 void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath, const float minScore)
 {
-    // Main tree
-    bpt::ptree fileTree;
-
+    // Spheres tree
+    bpt::ptree spheresTree;
+    
     for (auto& viewID : sfmData.getViews())
     {
         ALICEVISION_LOG_DEBUG("View Id: " << viewID);
@@ -191,34 +191,56 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
         // If there is no bounding box, then no sphere has been detected
         if (pred.bboxes.size() > 0)
         {
-            bpt::ptree spheresNode;
-
             // We only take the best sphere in the picture
             const int i = 0;
             // Compute sphere coords from bbox coords
             const auto bbox = pred.bboxes.at(i);
             const float r = std::min(bbox.at(3) - bbox.at(1), bbox.at(2) - bbox.at(0)) / 2;
-            const float x = bbox.at(0) + r - pred.size.width / 2;
-            const float y = bbox.at(1) + r - pred.size.height / 2;
+            const float x = bbox.at(0) + r;
+            const float y = bbox.at(1) + r;
 
             // Create an unnamed node containing the sphere
             bpt::ptree sphereNode;
-            sphereNode.put("x", x);
-            sphereNode.put("y", y);
-            sphereNode.put("r", r);
+            sphereNode.put("center.x", x);
+            sphereNode.put("center.y", y);
+            sphereNode.put("radius", r);
             sphereNode.put("score", pred.scores.at(i));
             sphereNode.put("type", "matte");
 
-            // Add sphere to array
-            spheresNode.push_back(std::make_pair("", sphereNode));
-
-            fileTree.add_child(sphereName, spheresNode);
+            // Add sphere node to spheres tree
+            spheresTree.add_child(sphereName, sphereNode);
         }
         else
         {
             ALICEVISION_LOG_WARNING("No sphere detected for '" << imagePath << "'.");
         }
     }
+
+    // Shapes tree
+    bpt::ptree shapesTree;
+    {
+        // Shape tree
+        bpt::ptree shapeTree;
+        shapeTree.put("name", "Sphere Detection");
+        shapeTree.put("type", "Circle");
+
+        // Shape properties tree
+        bpt::ptree shapeProperties;
+        shapeProperties.put("color", "green");
+        shapeTree.add_child("properties", shapeProperties);
+
+        // Shape observations tree
+        shapeTree.add_child("observations", spheresTree);
+
+        // Add shape tree to shapes tree
+        shapesTree.push_back(std::make_pair("", shapeTree));
+    }
+
+    // Main tree
+    bpt::ptree fileTree;
+    fileTree.add_child("shapes", shapesTree);
+
+    // Write JSON
     bpt::write_json(outputPath.string(), fileTree);
 }
 
