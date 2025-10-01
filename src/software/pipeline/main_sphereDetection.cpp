@@ -47,7 +47,7 @@ int aliceVision_main(int argc, char** argv)
     float inputMinScore;
 
     bool autoDetect;
-    Eigen::Vector2f sphereCenterOffset(0, 0);
+    Eigen::Vector2f sphereCenter(0, 0);
     double sphereRadius = 1.0;
 
     // clang-format off
@@ -66,10 +66,10 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("minScore,s", po::value<float>(&inputMinScore)->default_value(0.0),
          "Minimum detection score.")
-        ("x,x", po::value<float>(&sphereCenterOffset(0))->default_value(0.0),
-         "Sphere's center offset X (pixels).")
-        ("y,y", po::value<float>(&sphereCenterOffset(1))->default_value(0.0),
-         "Sphere's center offset Y (pixels).")
+        ("x,x", po::value<float>(&sphereCenter(0))->default_value(0.0),
+         "Sphere's center X (pixels).")
+        ("y,y", po::value<float>(&sphereCenter(1))->default_value(0.0),
+         "Sphere's center Y (pixels).")
         ("sphereRadius,r", po::value<double>(&sphereRadius)->default_value(1.0),
          "Sphere's radius (pixels).");
     // clang-format on
@@ -114,8 +114,8 @@ int aliceVision_main(int argc, char** argv)
     else
     {
         std::array<float, 3> sphereParam;
-        sphereParam[0] = sphereCenterOffset(0);
-        sphereParam[1] = sphereCenterOffset(1);
+        sphereParam[0] = sphereCenter(0);
+        sphereParam[1] = sphereCenter(1);
         sphereParam[2] = sphereRadius;
 
         sphereDetection::writeManualSphereJSON(sfmData, sphereParam, fsOutputPath);
