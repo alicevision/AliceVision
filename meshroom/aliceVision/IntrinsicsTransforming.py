@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -39,6 +39,12 @@ class IntrinsicsTransforming(desc.AVCommandLineNode):
             description="If the input intrinsic is not a pinhole but the output is, what is the virtual FOV requested.",
             value=90.0,
             range=(1.0, 179.0, 0.1),
+        ),
+        desc.BoolParam(
+            name="correctPrincipalPoint",
+            label="Correct Principal Point",
+            description="Correct principal point.",
+            value=False,
         ),
         desc.ChoiceParam(
             name="verboseLevel",
