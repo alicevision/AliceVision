@@ -246,8 +246,8 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
 
 void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath)
 {
-    // Main tree
-    bpt::ptree fileTree;
+    // Spheres tree
+    bpt::ptree spheresTree;
 
     for (auto& viewID : sfmData.getViews())
     {
@@ -255,19 +255,42 @@ void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<flo
 
         const std::string sphereName = std::to_string(viewID.second->getViewId());
 
-        bpt::ptree spheresNode;
         // Create an unnamed node containing the sphere
         bpt::ptree sphereNode;
-        sphereNode.put("x", sphereParam[0]);
-        sphereNode.put("y", sphereParam[1]);
-        sphereNode.put("r", sphereParam[2]);
+        sphereNode.put("center.x", sphereParam[0]);
+        sphereNode.put("center.y", sphereParam[1]);
+        sphereNode.put("radius", sphereParam[2]);
         sphereNode.put("type", "matte");
 
-        // Add sphere to array
-        spheresNode.push_back(std::make_pair("", sphereNode));
-
-        fileTree.add_child(sphereName, spheresNode);
+        // Add sphere node to spheres tree
+        spheresTree.add_child(sphereName, sphereNode);
     }
+
+    // Shapes tree
+    bpt::ptree shapesTree;
+    {
+        // Shape tree
+        bpt::ptree shapeTree;
+        shapeTree.put("name", "Manual Sphere Detection");
+        shapeTree.put("type", "Circle");
+
+        // Shape properties tree
+        bpt::ptree shapeProperties;
+        shapeProperties.put("color", "green");
+        shapeTree.add_child("properties", shapeProperties);
+
+        // Shape observations tree
+        shapeTree.add_child("observations", spheresTree);
+
+        // Add shape tree to shapes tree
+        shapesTree.push_back(std::make_pair("", shapeTree));
+    }
+
+    // Main tree
+    bpt::ptree fileTree;
+    fileTree.add_child("shapes", shapesTree);
+
+    // Write JSON
     bpt::write_json(outputPath.string(), fileTree);
 }
 
