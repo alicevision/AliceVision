@@ -20,6 +20,21 @@ if (ALICEVISION_BUILD_SFM)
         )
     endif()
 
+    # Export an alembic animated camera from a SfMData file
+    if (ALICEVISION_HAVE_ALEMBIC)
+        alicevision_add_software(aliceVision_exportAlembic
+            SOURCE main_exportAlembic.cpp
+            FOLDER ${FOLDER_SOFTWARE_EXPORT}
+            LINKS aliceVision_system
+                  aliceVision_cmdline
+                  aliceVision_sfmData
+                  aliceVision_sfmDataIO
+                  Boost::program_options
+                  Boost::boost
+                  Boost::timer
+        )
+    endif()
+
     # Export view extracted keypoints
     alicevision_add_software(aliceVision_exportKeypoints
         SOURCE main_exportKeypoints.cpp
