@@ -20,6 +20,7 @@ struct ReconstructedPair
     IndexT next;
     geometry::Pose3 pose;
     double score;
+    double errorMax;
 };
 
 void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, sfm::ReconstructedPair const& input)
@@ -28,7 +29,9 @@ void tag_invoke(const boost::json::value_from_tag&, boost::json::value& jv, sfm:
           {"next", input.next},
           {"R", boost::json::value_from(SO3::logm(input.pose.rotation()))},
           {"t", boost::json::value_from(input.pose.translation())},
-          {"score", boost::json::value_from(input.score)}};
+          {"score", boost::json::value_from(input.score)},
+          {"errorMax", boost::json::value_from(input.errorMax)}
+          };
 }
 
 ReconstructedPair tag_invoke(boost::json::value_to_tag<ReconstructedPair>, boost::json::value const& jv)
@@ -42,6 +45,7 @@ ReconstructedPair tag_invoke(boost::json::value_to_tag<ReconstructedPair>, boost
     ret.pose.setRotation(SO3::expm(boost::json::value_to<Vec3>(obj.at("R"))));
     ret.pose.setTranslation(boost::json::value_to<Vec3>(obj.at("t")));
     ret.score = boost::json::value_to<double>(obj.at("score"));
+    ret.errorMax = boost::json::value_to<double>(obj.at("errorMax"));
 
     return ret;
 }

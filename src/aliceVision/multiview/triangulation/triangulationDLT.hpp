@@ -50,9 +50,9 @@ void TriangulateSphericalDLT(const Mat4& T1, const Vec3& x1, const Mat4& T2, con
  * Triangulate a point given a set of bearing vectors
  * and associated projection matrices (in meters)
  * @param T1 a projection matrix (R | t)
- * @param x1 a unit bearing vector
+ * @param x1 a unit bearing vector (on the unit sphere)
  * @param T2 a projection matrix K (R | t)
- * @param x2 a unit bearing vector
+ * @param x2 a unit bearing vector (on the unit sphere)
  * @param X_homogeneous a 3d point
  */
 void TriangulateSphericalDLT(const Mat4& T1, const Vec3& x1, const Mat4& T2, const Vec3& x2, Vec3& X_euclidean);
