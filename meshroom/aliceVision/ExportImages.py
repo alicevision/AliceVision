@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -43,6 +43,13 @@ For example, the target intrinsics may be the same without the distortion.
             description="Apply a correction on images' exposure value.",
             value=False,
             advanced=True,
+        ),
+        desc.BoolParam(
+            name="exportFullROD",
+            label="Export Full ROD",
+            description="Export images with the full Region of Definition (ROD). Only supported by the EXR file format.",
+            value=False,
+            enabled=lambda node: node.outputFileType.value == "exr"
         ),
         desc.ChoiceParam(
             name="namingMode",

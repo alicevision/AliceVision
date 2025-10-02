@@ -17,7 +17,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -26,6 +26,55 @@ namespace fs = std::filesystem;
 
 using NameFunction = std::function<std::string(const sfmData::View &)>;
 
+oiio::ROI computeRod(const camera::IntrinsicBase & source, const camera::IntrinsicBase & dest)
+{
+    //Build the 4 corners of the source image
+    std::vector<Vec2> pointToBeChecked;
+    pointToBeChecked.push_back(Vec2(0, 0));
+    pointToBeChecked.push_back(Vec2(source.w() - 1, 0));
+    pointToBeChecked.push_back(Vec2(0, source.h() - 1));
+    pointToBeChecked.push_back(Vec2(source.w() - 1, source.h() - 1));
+
+    const Vec2 center(source.w() * 0.5, source.h() * 0.5);
+
+    //Add the middle of the edges
+    pointToBeChecked.push_back(Vec2(center.x(), 0));
+    pointToBeChecked.push_back(Vec2(center.x(), source.h() - 1));
+    pointToBeChecked.push_back(Vec2(0, center.y()));
+    pointToBeChecked.push_back(Vec2(source.w() - 1, center.y()));
+
+    //Undistort all points
+    double minx = std::numeric_limits<double>::max();
+    double miny = std::numeric_limits<double>::max();
+    double maxx = std::numeric_limits<double>::lowest();
+    double maxy = std::numeric_limits<double>::lowest();
+
+    for (const Vec2& n : pointToBeChecked)
+    {
+        // compute every source pixel into the new destination camera
+        const Vec3 intermediate = source.backProjectUnit(n);
+        const Vec2 undisto_pix = dest.project(intermediate.homogeneous(), true);
+ 
+        minx = std::min(minx, undisto_pix.x());
+        miny = std::min(miny, undisto_pix.y());
+        maxx = std::max(maxx, undisto_pix.x());
+        maxy = std::max(maxy, undisto_pix.y());
+    }
+
+    oiio::ROI rod(minx, maxx + 1, miny, maxy + 1);
+        
+    return rod;
+}
+
+oiio::ROI convertRodToRoi(const camera::IntrinsicBase & intrinsic, const oiio::ROI& rod)
+{
+    const int xOffset = rod.xbegin;
+    const int yOffset = rod.ybegin;
+
+    const oiio::ROI roi(-xOffset, intrinsic.w() - xOffset, -yOffset, intrinsic.h() - yOffset);
+
+    return roi;
+}
 
 template<typename T>
 void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
@@ -121,6 +170,7 @@ void ImageRemoveDistortion(const image::Image<T>& imageIn,
  * @param viewId the image view Id
  * @param srcFileName the initial image file path
  * @param evCorrection do we apply exposure compensation
+ * @param exportFullRod do we export the full rod or not
  * @param cameraExposure current image camera exposure
  * @param medianCameraExposure median camera exposure for the sfmData
  * @param masksFolders the mask folders list
@@ -133,6 +183,7 @@ bool processImage(const std::string& dstFileName,
              const IndexT & viewId,
              const std::string& srcFileName,
              bool evCorrection,
+             bool exportFullRod,
              double cameraExposure,
              double medianCameraExposure,
              const std::vector<std::string> & masksFolders,
@@ -201,24 +252,31 @@ bool processImage(const std::string& dstFileName,
             image(pix)[2] *= exposureCompensation;
         }
     }
+
+    oiio::ROI roi, rod;
+    if (exportFullRod)
+    {
+        rod = computeRod(sourceIntrinsic, outputIntrinsic);
+        roi = convertRodToRoi(outputIntrinsic, rod);
+    }
     
     bool shortCut = (sourceIntrinsic.getType() == outputIntrinsic.getType()) &&
                     (outputIntrinsic.hasDistortion() == false);
     if (shortCut)
     {
         // undistort the image and save it
-        ImageRemoveDistortion(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0));
+        ImageRemoveDistortion(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0), rod);
     }
     else 
     {
         // Transform the image and save it
-        ImageIntrinsicsTransform(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0));
+        ImageIntrinsicsTransform(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0), rod);
     }
 
     //Write the result
     try
     {
-        writeImage(dstFileName, image_ud, image::ImageWriteOptions(), metadata);
+        writeImage(dstFileName, image_ud, image::ImageWriteOptions(), metadata, roi);
     }
     catch (...)
     {
@@ -235,6 +293,7 @@ bool processImage(const std::string& dstFileName,
  * @param target the transformed sfmData which will be used for intrinsics properties
  * @param namingFunction function which defines how is the image named given the view object
  * @param evCorrection do we correct the exposure
+ * @param exportFullRod do we export the full rod or not
  * @param masksFolders the mask folders list
  * @param maskExtension the mask extension
  * @param rangeStart the initial view index to process (range selection)
@@ -244,6 +303,7 @@ bool process(const sfmData::SfMData & input,
              sfmData::SfMData & target, 
              const NameFunction & namingFunction,
              bool evCorrection,
+             bool exportFullRod,
              const std::vector<std::string> & masksFolders,
              const std::string & maskExtension,
              size_t rangeStart,
@@ -298,6 +358,7 @@ bool process(const sfmData::SfMData & input,
                     viewId,
                     srcFileName,
                     evCorrection,
+                    exportFullRod,
                     view.getImage().getCameraExposureSetting().getExposure(),
                     medianCameraExposure,
                     masksFolders,
@@ -322,6 +383,7 @@ int aliceVision_main(int argc, char* argv[])
     int rangeStart = -1;
     int rangeSize = 1;
     bool evCorrection = false;
+    bool exportFullROD = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -344,6 +406,8 @@ int aliceVision_main(int argc, char* argv[])
          "Range size.")
         ("evCorrection", po::value<bool>(&evCorrection)->default_value(evCorrection),
          "Correct exposure value.")
+        ("exportFullROD", po::value<bool>(&exportFullROD)->default_value(exportFullROD),
+         "Export undistorted images with the full Region of Definition (RoD). Only supported by the EXR image file format.")
         ("namingMode", po::value<std::string>(&namingMode)->default_value(namingMode),
          "naming mode.")
         ("masksFolders", po::value<std::vector<std::string>>(&masksFolders)->multitoken(),
@@ -363,6 +427,13 @@ int aliceVision_main(int argc, char* argv[])
 
     // set output file type
     image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+
+    // Check compatibility
+    if (exportFullROD && outputFileType != image::EImageFileType::EXR)
+    {
+        ALICEVISION_LOG_ERROR("Export full RoD (Region Of Definition) is only possible in EXR file format and not in '" << outputFileType << "'.");
+        return EXIT_FAILURE;
+    }
 
     // Create output dir
     if (!utils::exists(outFolder))
@@ -455,7 +526,8 @@ int aliceVision_main(int argc, char* argv[])
     if (!process(inputSfmData, 
                 targetSfmData, 
                 namingFunction, 
-                evCorrection, 
+                evCorrection,
+                exportFullROD,
                 masksFolders, 
                 maskExtension,
                 rangeStart, 

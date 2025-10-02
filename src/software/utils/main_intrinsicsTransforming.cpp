@@ -18,7 +18,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -209,6 +209,16 @@ bool convertTracks(const sfmData::SfMData & inputSfmData,
     return true;
 }
 
+void resetOffset(sfmData::SfMData & sfmData)
+{
+    for (auto & [_, intrinsic] : sfmData.getIntrinsics().valueRange())
+    {
+        camera::IntrinsicScaleOffset & iso = dynamic_cast<camera::IntrinsicScaleOffset&>(intrinsic);
+        
+        iso.setOffset(Vec2::Zero());
+    }
+}
+
 int aliceVision_main(int argc, char* argv[])
 {
     // command-line parameters
@@ -219,6 +229,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string outputTracksFilename;
     std::string cameraTypeStr;
     double fakeFov = 90.0;
+    bool correctPrincipalPoint = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -234,6 +245,8 @@ int aliceVision_main(int argc, char* argv[])
          "Virtual FOV if output is pinhole and input is not.")
         ("type", po::value<std::string>(&cameraTypeStr)->default_value(cameraTypeStr),
          "Default camera model type (pinhole, equidistant, equirectangular).")
+        ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
+         "Force principal point to image center.")
         ("inputTracks", po::value<std::string>(&inputTracksFilename)->required(),
          "Input Tracks file.")
         ("outputTracks", po::value<std::string>(&outputTracksFilename)->required(),
@@ -287,6 +300,12 @@ int aliceVision_main(int argc, char* argv[])
     {
         ALICEVISION_LOG_ERROR("Invalid camera model");
         return EXIT_FAILURE;
+    }
+
+    if (correctPrincipalPoint)
+    {
+        //Set all intrinsics to zero offset
+        resetOffset(outputSfmData);
     }
 
     if (!convertObservations(inputSfmData, outputSfmData))
