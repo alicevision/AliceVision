@@ -226,7 +226,13 @@ int aliceVision_main(int argc, char** argv)
     HardwareContext hwc = cmdline.getHardwareContext();
     omp_set_num_threads(hwc.getMaxThreads());
 
-    std::mt19937 randomNumberGenerator(randomSeed);
+    // Generate one number generator per thread to enable repetability
+    // Without thread concurrency
+    std::vector<std::mt19937> randomNumberGenerators;
+    for (int i = 0; i < omp_get_max_threads(); i++)
+    {
+        randomNumberGenerators.emplace_back(randomSeed);
+    }
 
     // load input SfMData scene
     sfmData::SfMData sfmData;
@@ -303,11 +309,13 @@ int aliceVision_main(int argc, char** argv)
     std::ofstream of(ss.str());
 
     // For each covisible pair
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for //schedule(dynamic)
     for (int posPairs = chunkStart; posPairs < chunkEnd; posPairs++)
     {
         auto iterPairs = covisibility.begin();
         std::advance(iterPairs, posPairs);
+
+        std::mt19937 & randomNumberGenerator = randomNumberGenerators[omp_get_thread_num()];
 
         // Retrieve pair information
         IndexT refImage = iterPairs->first.first;
