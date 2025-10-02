@@ -1,4 +1,4 @@
-__version__ = "3.0"
+__version__ = "3.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -46,6 +46,14 @@ class RelativePoseEstimating(desc.AVCommandLineNode):
             description="Minimal allowed inliers in two view relationship.",
             value=35,
             range=(1, 1000, 1),
+            advanced=True,
+        ),
+        desc.FloatParam(
+            name="distanceThreshold",
+            label="Distance Threshold",
+            description="Threshold on geometric distance (epipolar distance or reprojection distance for pure rotation)",
+            value=4.0,
+            range=(0.0, 50.0, 1.0),
             advanced=True,
         ),
         desc.File(

@@ -44,7 +44,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -63,6 +63,7 @@ namespace po = boost::program_options;
  * @param randomNumberGenerator a random number generator object shared among objects
  * @param maxIterationsCount how many iterations are allowed during ransac
  * @param minInliers what is the minimal number of inliers required to consider the estimation successful
+ * @param distanceThreshold minimal distance allowed for epipolar line to point distance in pixels
  * @return true if estimation succeeded
 */
 bool robustEssential(Mat3& E,
@@ -74,16 +75,31 @@ bool robustEssential(Mat3& E,
                      const std::vector<Vec2>& x2,
                      std::mt19937& randomNumberGenerator,
                      const size_t maxIterationCount,
-                     const size_t minInliers)
+                     const size_t minInliers,
+                     const double distanceThreshold)
 {
     multiview::relativePose::RelativeSphericalKernel kernel(cam1, cam2, x1, x2);
+
+    double threshold = std::numeric_limits<double>::infinity();
+    if (distanceThreshold > 0.0)
+    {
+        //From pixel distance to angular error
+        double angularError1 = cam1.getHorizontalFov() * distanceThreshold / cam1.w();
+        double angularError2 = cam2.getHorizontalFov() * distanceThreshold / cam2.w();
+        threshold = std::max(angularError1, angularError2);
+    }
 
     robustEstimation::Mat3Model model;
     vecInliers.clear();
 
     // robustly estimation of the Essential matrix and its precision
     const std::pair<double, double> acRansacOut =
-      robustEstimation::NACRANSAC(kernel, randomNumberGenerator, vecInliers, maxIterationCount, &model);
+      robustEstimation::NACRANSAC(kernel, 
+                                randomNumberGenerator, 
+                                vecInliers, 
+                                maxIterationCount, 
+                                &model, 
+                                threshold);
 
     if (vecInliers.size() < minInliers)
     {
@@ -109,6 +125,7 @@ bool robustEssential(Mat3& E,
  * @param randomNumberGenerator a random number generator object shared among objects
  * @param maxIterationsCount how many iterations are allowed during ransac
  * @param minInliers what is the minimal number of inliers required to consider the estimation successful
+ * @param distanceThreshold minimal distance allowed to reprojection
  * @return true if estimation succeeded
 */
 bool robustRotation(Mat3& R,
@@ -120,16 +137,31 @@ bool robustRotation(Mat3& R,
                      const std::vector<Vec2>& x2,
                      std::mt19937& randomNumberGenerator,
                      const size_t maxIterationCount,
-                     const size_t minInliers)
+                     const size_t minInliers,
+                     const double distanceThreshold)
 {
     multiview::relativePose::RotationSphericalKernel kernel(cam1, cam2, x1, x2);
+
+    double threshold = std::numeric_limits<double>::infinity();
+    if (distanceThreshold > 0.0)
+    {
+        //From pixel distance to angular error
+        double angularError1 = cam1.getHorizontalFov() * distanceThreshold / cam1.w();
+        double angularError2 = cam2.getHorizontalFov() * distanceThreshold / cam2.w();
+        threshold = std::max(angularError1, angularError2);
+    }
 
     robustEstimation::Mat3Model model;
     vecInliers.clear();
 
     // robustly estimation of the Essential matrix and its precision
     const std::pair<double, double> acRansacOut =
-      robustEstimation::NACRANSAC(kernel, randomNumberGenerator, vecInliers, maxIterationCount, &model);
+      robustEstimation::NACRANSAC(kernel,
+                                randomNumberGenerator, 
+                                vecInliers, 
+                                maxIterationCount, 
+                                &model, 
+                                threshold);
 
     if (vecInliers.size() < minInliers)
     {
@@ -155,6 +187,7 @@ int aliceVision_main(int argc, char** argv)
     bool enforcePureRotation = false;
     size_t countIterations = 1024;
     std::vector<std::string> predefinedPairList;
+    double distanceThreshold = 4.0;
 
     // user optional parameters
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -173,6 +206,7 @@ int aliceVision_main(int argc, char** argv)
         ("enforcePureRotation,e", po::value<bool>(&enforcePureRotation)->default_value(enforcePureRotation), "Enforce pure rotation in estimation.")
         ("countIterations", po::value<size_t>(&countIterations)->default_value(countIterations), "Maximal number of iterations.")
         ("minInliers", po::value<size_t>(&minInliers)->default_value(minInliers), "Minimal number of inliers for a valid ransac.")
+        ("distanceThreshold", po::value<double>(&distanceThreshold)->default_value(distanceThreshold), "Threshold on geometric distance (epipolar distance or reprojection distance for pure rotation)")
         ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
          "Path(s) to one or more files which contain the list of image pairs to match.")
         ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Chunk id.")
@@ -321,7 +355,8 @@ int aliceVision_main(int argc, char** argv)
                                                         nextpts, 
                                                         randomNumberGenerator, 
                                                         countIterations, 
-                                                        minInliers);
+                                                        minInliers,
+                                                        distanceThreshold);
             if (!relativeSuccess)
             {
                 continue;
@@ -346,7 +381,8 @@ int aliceVision_main(int argc, char** argv)
                                                           nextpts,
                                                           randomNumberGenerator,
                                                           countIterations,
-                                                          minInliers);
+                                                          minInliers,
+                                                          distanceThreshold);
             if (!essentialSuccess)
             {
                 continue;
