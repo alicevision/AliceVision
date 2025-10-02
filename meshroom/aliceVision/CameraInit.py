@@ -671,7 +671,7 @@ The needed metadata are:
                 "featureFolder": "",
                 "matchingFolder": "",
             }
-            node.viewpointsFile = os.path.join(node.internalFolder, 'viewpoints.sfm').format(**node._cmdVars)
+            node.viewpointsFile = os.path.join(node.internalFolder, 'viewpoints.sfm')
             with open(node.viewpointsFile, 'w') as f:
                 json.dump(sfmData, f, indent=4)
 
