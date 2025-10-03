@@ -320,7 +320,7 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
               Boost::json
     )
-
+    
     # SfM Survey Injecting
     alicevision_add_software(aliceVision_sfmSurveyInjecting
         SOURCE main_sfmSurveyInjecting.cpp
@@ -342,6 +342,20 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_cmdline
               aliceVision_sfmData
               aliceVision_sfmDataIO
+              aliceVision_sfm
+              Boost::program_options
+              Boost::json
+    )
+
+    # Track from depthmap
+    alicevision_add_software(aliceVision_sfmLandmarksRemapping
+        SOURCE main_sfmLandmarksRemapping.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              aliceVision_track
               aliceVision_sfm
               Boost::program_options
               Boost::json
