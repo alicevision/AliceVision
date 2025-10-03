@@ -14,6 +14,7 @@ set(matching_collection_images_files_headers
     ImagePairListIO.hpp
     geometricFilterUtils.hpp
     pairBuilder.hpp
+    GeometricInfo.hpp
 )
 
 # Sources
@@ -26,6 +27,7 @@ set(matching_collection_images_files_sources
     geometricFilterUtils.cpp
     ImagePairListIO.cpp
     pairBuilder.cpp
+    GeometricInfo.cpp
 )
 
 alicevision_add_library(aliceVision_matchingImageCollection
@@ -38,6 +40,7 @@ alicevision_add_library(aliceVision_matchingImageCollection
         aliceVision_sfmData
         Boost::boost
         Boost::timer
+        Boost::json
     PRIVATE_LINKS
         aliceVision_system
         ${CERES_LIBRARIES}
