@@ -43,7 +43,8 @@ class MaskProcessing(desc.AVCommandLineNode):
             ),
             name="inputs",
             label="Input Directories",
-            description="A set of directories containing masks with the same names.",
+            description="A set of directories containing masks with the same names.\n" 
+            "Any entry (except the first one) may be an image path. In this case, this mask will be used as an operand for each entry of the first directory.",
             exposed=True,
         ),
         desc.ChoiceParam(
