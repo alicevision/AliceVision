@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.25)
 message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 
 # ==============================================================================
@@ -136,8 +136,16 @@ if (WIN32)
     add_definitions(-DNOMINMAX)
     add_definitions(-D_USE_MATH_DEFINES)
     if (MSVC)
+        # MSVC library version
+        cmake_policy(SET CMP0091 NEW)   # Manually choose msvcrt version
+        if(BUILD_SHARED_LIBS)
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        else()
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        endif()
         add_compile_options(/bigobj)
         add_compile_options(/MP)
+        add_compile_options(/GR)   # See policy CMP0117: Enable RTTI on MSVC
     endif()
 endif()
 
