@@ -2,11 +2,13 @@
 set(sfm_bundle_files_headers
     bundle/BundleAdjustment.hpp
     bundle/BundleAdjustmentCeres.hpp
+    utils/poseFilter.hpp
 )
 
 # Sources
 set(sfm_bundle_files_sources
     bundle/BundleAdjustmentCeres.cpp
+    utils/poseFilter.cpp
 )
 
 set(sfm_files_headers

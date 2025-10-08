@@ -75,6 +75,133 @@ bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, c
 }
 
 
+bool poseFilter::interpolateMissingPoses(sfmData::SfMData& sfmData, const bool ignoreFirstAndLast)
+{
+    using namespace Eigen;
+
+    ALICEVISION_LOG_INFO("poseFilter::interpolateMissingPoses start");
+
+    const int viewCount = sfmData.getViews().size();
+
+    std::vector<IndexT> viewIdsVec(viewCount);
+
+    IndexT firstViewFrameId = sfmData.getViews().begin()->second->getFrameId();
+    IndexT minFrameId = firstViewFrameId;  // Arbitrary frameId init
+    IndexT maxFrameId = firstViewFrameId;  // Arbitrary frameId init
+    IndexT minFrameIdWithPose;
+    IndexT maxFrameIdWithPose;
+
+    bool existingPoseFound = false;
+
+    // Get the frameIDs range and the frameID of the first and last views with an existing pose
+    for (const auto& [viewID, viewPtr] : sfmData.getViews())
+    {
+        const IndexT frameId = viewPtr->getFrameId();
+        if (frameId < minFrameId)
+        {
+            minFrameId = frameId;
+        }
+        if (frameId > maxFrameId)
+        {
+            maxFrameId = frameId;
+        }
+        if ( sfmData.existsPose(*viewPtr) )
+        {
+            if (!existingPoseFound || frameId < minFrameIdWithPose)
+                minFrameIdWithPose = frameId;
+
+            if (!existingPoseFound || frameId > maxFrameIdWithPose)
+                maxFrameIdWithPose = frameId;
+
+            existingPoseFound = true;
+        }
+    }
+
+    const int frameIdRange = maxFrameId - minFrameId + 1;
+
+    if ( !existingPoseFound || (frameIdRange != viewCount) )
+    {
+        return false;
+    }
+
+    // Store the temporally ordered view IDs
+    for (const auto& [viewID, viewPtr] : sfmData.getViews())
+    {
+        const IndexT frameId = viewPtr->getFrameId();
+        viewIdsVec[frameId-minFrameId] = viewID;
+
+        if (!sfmData.existsPose(*viewPtr))
+            ALICEVISION_LOG_INFO(" frameId without pose : " << frameId);
+    }
+
+    const sfmData::View& lastValidView = sfmData.getView(viewIdsVec[minFrameIdWithPose-minFrameId]);
+    sfmData::CameraPose lastValidPose = sfmData.getPose(lastValidView);
+
+    VectorX<bool> missingPosesMask(viewCount);
+    missingPosesMask.setZero();
+
+    // Initialize the pose of the views without pose
+    for (int frameIdx = 0; frameIdx < viewCount; frameIdx++)
+    {
+        IndexT frameViewID = viewIdsVec[frameIdx];
+        const sfmData::View& currentView = sfmData.getView(frameViewID);
+
+        if (!sfmData.existsPose(currentView))
+        {
+            // Create a binary mask to be able to restore the original values
+            missingPosesMask(frameIdx) = true;
+
+            if (!ignoreFirstAndLast || (minFrameIdWithPose < (frameIdx + minFrameId) && (frameIdx + minFrameId) < maxFrameIdWithPose) )
+                sfmData.setPose(currentView, lastValidPose);
+        }
+        else
+            lastValidPose = sfmData.getPose(currentView);
+    }
+
+    tempFilter tFilter;
+
+    tFilter.init();
+
+    MatrixXd viewRotations(4, viewCount);
+    MatrixXd viewCenters(3, viewCount);
+
+    // Get the temporally ordered view positions and orientations
+    for (int frameIdx = 0; frameIdx < viewCount; frameIdx++)
+    {
+        const sfmData::View& frameView = sfmData.getView(viewIdsVec[frameIdx]);
+        const sfmData::CameraPose framePose = sfmData.getPose(frameView);
+        viewCenters.col(frameIdx) = framePose.getTransform().center();
+        AngleAxisd aa(framePose.getTransform().rotation());
+        viewRotations.col(frameIdx) << aa.angle(), aa.axis();
+    }
+
+    int scaleFactor = 8;
+    int iterationCount = 1000;
+
+    // Apply a temporal filter to view positions
+    viewCenters = tFilter.applyMultiscale(viewCenters, scaleFactor, iterationCount, false, missingPosesMask);
+
+    // Apply a temporal filter to view orientations
+    viewRotations = tFilter.applyMultiscale(viewRotations, scaleFactor, iterationCount, true, missingPosesMask);
+
+    // Save the temporally filtered poses
+    for (int frameIdx = 0; frameIdx < viewCount; frameIdx++)
+    {
+        if (!missingPosesMask(frameIdx))
+            continue;
+
+        IndexT frameViewID = viewIdsVec[frameIdx];
+        AngleAxisd aa(viewRotations(0, frameIdx), viewRotations(seqN(1,3), frameIdx));
+        geometry::Pose3 newPose(aa.toRotationMatrix(), viewCenters.col(frameIdx));
+        const sfmData::View& frameView = sfmData.getView(frameViewID);
+        sfmData.setPose(frameView, sfmData::CameraPose(newPose));
+   }
+
+    ALICEVISION_LOG_INFO("poseFilter::interpolateMissingPoses end");
+    return true;
+}
+
+
 bool poseFilter::getOrderedViewIds(sfmData::SfMData& sfmData, std::vector<IndexT>& viewIdsVec)
 {
     const int viewCount = sfmData.getViews().size();
@@ -119,6 +246,9 @@ bool poseFilter::getOrderedViewIds(sfmData::SfMData& sfmData, std::vector<IndexT
     {
         const IndexT frameId = viewPtr->getFrameId();
         viewIdsVec[frameId-minFrameId] = viewID;
+
+        if (!sfmData.existsPose(*viewPtr))
+            ALICEVISION_LOG_INFO(" frameId without pose : " << frameId);
     }
 
     ALICEVISION_LOG_DEBUG(" minFrameIdWithPose : " << minFrameIdWithPose);
@@ -139,6 +269,82 @@ bool poseFilter::getOrderedViewIds(sfmData::SfMData& sfmData, std::vector<IndexT
         else
             lastValidPose = sfmData.getPose(currentView);
     }
+
+    return true;
+}
+
+
+bool getOrderedPoseIds(const sfmData::SfMData& sfmData, std::vector<IndexT>& poseIdsVec, IndexT& firstViewWithPose, IndexT& lastViewWithPose)
+{
+    std::map<std::string, std::vector<IndexT>> candidateViewIdLists;
+    std::map<std::string, std::vector<IndexT>> candidateFrameIdLists;
+
+    // Group views by common filename pattern
+    for (const auto& [viewID, viewPtr] : sfmData.getViews())
+    {
+        const std::filesystem::path imagePath = std::filesystem::path(viewPtr->getImage().getImagePath());
+        std::string parentPath = imagePath.parent_path().string();
+        // Remove every digit in the filename
+        std::string filePattern = std::regex_replace(imagePath.filename().string(), std::regex("\\d"), "");
+        candidateViewIdLists[parentPath+filePattern].push_back(viewID);
+        candidateFrameIdLists[parentPath+filePattern].push_back(viewPtr->getFrameId());
+    }
+
+    IndexT minFrameId;
+
+    int longestValidRange = 1;
+    std::string longestValidList;
+
+    // Select the longest list of views having no hole in the frameIds range
+    for (const auto& [filePattern, frameIDs] : candidateFrameIdLists)
+    {
+        auto [listMin, listMax] = std::minmax_element(frameIDs.begin(), frameIDs.end());
+        auto listRange = *listMax + 1 - *listMin;
+        bool noHole = frameIDs.size() == listRange;
+        if (noHole && listRange > longestValidRange)
+        {
+            longestValidRange = listRange;
+            longestValidList = filePattern;
+            minFrameId = *listMin;
+        }
+    }
+
+    if (longestValidRange == 1)
+        return false;
+
+    poseIdsVec.resize(longestValidRange);
+
+    bool existingPoseFound = false;
+    IndexT minFrameIdWithPose;
+    IndexT maxFrameIdWithPose;
+
+    // Get the frameID of the first and last views with an existing pose
+    // And store the temporally ordered poseIDs
+    for (const auto& viewID : candidateViewIdLists[longestValidList])
+    {
+        const sfmData::View& view = sfmData.getView(viewID);
+
+        if ( sfmData.existsPose(view) )
+        {
+            const IndexT frameId = view.getFrameId();
+
+            if (!existingPoseFound || frameId < minFrameIdWithPose)
+                minFrameIdWithPose = frameId;
+
+            if (!existingPoseFound || frameId > maxFrameIdWithPose)
+                maxFrameIdWithPose = frameId;
+
+            existingPoseFound = true;
+
+            poseIdsVec[frameId-minFrameId] = view.getPoseId();
+        }
+    }
+
+    if (!existingPoseFound)
+        return false;
+
+    firstViewWithPose = minFrameIdWithPose - minFrameId;
+    lastViewWithPose = maxFrameIdWithPose - minFrameId;
 
     return true;
 }
@@ -338,7 +544,7 @@ Eigen::MatrixXd tempFilter::apply(Eigen::MatrixXd& inputSignal, bool isAngle)
 }
 
 
-Eigen::MatrixXd tempFilter::applyMultiscale(Eigen::MatrixXd& inputSignal, const unsigned int scaleFactor, const int iterationCount, bool isAngle)
+Eigen::MatrixXd tempFilter::applyMultiscale(Eigen::MatrixXd& inputSignal, const unsigned int scaleFactor, const int iterationCount, bool isAngle, const Eigen::VectorX<bool>& posesMask)
 {
     using namespace Eigen;
     using namespace indexing;
@@ -351,6 +557,10 @@ Eigen::MatrixXd tempFilter::applyMultiscale(Eigen::MatrixXd& inputSignal, const 
     // controlled by the following constant
     const double SCALE_REDUCTION_FACTOR = 1.4;
 
+    // An optional mask can be used to apply the filter just on some poses
+    bool useMask = posesMask.cols() != 0;
+    MatrixX<bool> mask;
+
     for (int scaleF = scaleFactor; scaleF >= 1; scaleF = (scaleF > 1) ? round(double(scaleF) / SCALE_REDUCTION_FACTOR) : 0)
     {
         ALICEVISION_LOG_DEBUG(" Filter scale factor : " << scaleF);
@@ -361,9 +571,19 @@ Eigen::MatrixXd tempFilter::applyMultiscale(Eigen::MatrixXd& inputSignal, const 
         for (int phase = 0; phase < scaleF; phase++)
         {
             MatrixXd scaledSignal(filteredSignal(all, seq(phase, last, scaleF)));
+
+            if (useMask)
+                mask = posesMask(seq(phase, last, scaleF)).rowwise().replicate(inputSignal.rows()).transpose();
+
             for (int iterFilter = 0; iterFilter < iterationCount; iterFilter++)
             {
                 scaledSignal = apply(scaledSignal, isAngle);
+
+                if (useMask)
+                {
+                    // Restore the original poses
+                    scaledSignal = mask.select(scaledSignal, inputSignal(all, seq(phase, last, scaleF)));
+                }
             }
             filteredSignal(all, seq(phase, last, scaleF)) = scaledSignal;
         }

@@ -20,7 +20,7 @@ class SfmBundle
 {
 public:
     using uptr = std::unique_ptr<SfmBundle>;
-    
+
 public:
     /**
      * @brief Process bundle
@@ -43,6 +43,13 @@ public:
     void setBundleAdjustmentMaxOutlier(size_t bundleAdjustmentMaxOutlier)
     {
         _bundleAdjustmentMaxOutlier = bundleAdjustmentMaxOutlier;
+    }
+
+    void setTemporalConstraintParams(aliceVision::sfm::TemporalConstraintParams tempConstrParams, bool bundleTemporalConstraint, bool bundleExitAfterPoseInterpolation)
+    {
+        _tempConstrParams = tempConstrParams;
+        _bundleTemporalConstraint = bundleTemporalConstraint;
+        _bundleExitAfterPoseInterpolation = bundleExitAfterPoseInterpolation;
     }
 
     /**
@@ -91,7 +98,7 @@ private:
     bool initializeIteration(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
 
     /**
-     * Cleanup sfmData 
+     * Cleanup sfmData
      * @param sfmData the scene to clean
      * @return true if enough change occurred during the cleaning
     */
@@ -111,6 +118,9 @@ private:
     size_t _bundleAdjustmentMaxOutlier = 50;
     size_t _minNbCamerasToRefinePrincipalPoint = 3;
     bool _useLBA = true;
+    bool _bundleTemporalConstraint = false;
+    bool _bundleExitAfterPoseInterpolation = false;
+    aliceVision::sfm::TemporalConstraintParams _tempConstrParams;
     size_t _minNbCamerasLBA = 100;
     size_t _LBAGraphDistanceLimit = 1;
     size_t _LBAMinNbOfMatches = 50;
