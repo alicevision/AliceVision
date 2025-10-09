@@ -71,6 +71,18 @@ if (ALICEVISION_BUILD_SFM)
               ${Boost_LIBRARIES}
     )
 
+    alicevision_add_software(aliceVision_maskRandomApplying 
+        SOURCE main_maskRandomApplying.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_image
+              aliceVision_sfm
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              ${Boost_LIBRARIES}
+    )
+
     # Track builder
     alicevision_add_software(aliceVision_tracksSimulating
         SOURCE main_tracksSimulating.cpp
