@@ -77,5 +77,5 @@ Production
 **/.vscode
 **/.vs
 
-vcpkg_installed/
-export/
+/vcpkg_installed/
+/export/

@@ -202,8 +202,8 @@ if (ALICEVISION_BUILD_SFM)
 
     # Export geometry and textures as USD
     if (ALICEVISION_HAVE_USD)
-        alicevision_add_software(aliceVision_exportUSD
-            SOURCE main_exportUSD.cpp
+        alicevision_add_software(aliceVision_exportMeshUSD
+            SOURCE main_exportMeshUSD.cpp
             FOLDER ${FOLDER_SOFTWARE_EXPORT}
             LINKS aliceVision_system
                   aliceVision_cmdline
@@ -213,6 +213,17 @@ if (ALICEVISION_BUILD_SFM)
                   usdGeom
                   usdImaging
                   usdShade
+        )
+
+        alicevision_add_software(aliceVision_exportUSD
+            SOURCE main_exportUSD.cpp
+            FOLDER ${FOLDER_SOFTWARE_EXPORT}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_sfmData
+                aliceVision_sfmDataIO
+                Boost::program_options
+                Boost::boost
         )
     endif()
 
