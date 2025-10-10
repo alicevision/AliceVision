@@ -177,50 +177,99 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
     ALICEVISION_LOG_INFO("ExpansionChunk::triangulate start");
     SfmTriangulation triangulation(_triangulationMinPoints, _maxTriangulationError);
 
-    std::set<IndexT> evaluatedTracks;
-    std::map<IndexT, sfmData::Landmark> outputLandmarks;
+    
+    const bool enableMultiviewTriangulation = true;
 
-    std::mt19937 randomNumberGenerator;
-    if (!triangulation.process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
-                                randomNumberGenerator, viewIds, 
-                                evaluatedTracks, outputLandmarks))
+    if (enableMultiviewTriangulation)
     {
-        return false;
+        std::set<IndexT> evaluatedTracks;
+        std::map<IndexT, sfmData::Landmark> outputLandmarks;
+        std::mt19937 randomNumberGenerator;
+        if (!triangulation.process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
+                                    randomNumberGenerator, viewIds, 
+                                    evaluatedTracks, outputLandmarks, false))
+        {
+            return false;
+        }
+
+        auto & landmarks = sfmData.getLandmarks();
+        ALICEVISION_LOG_INFO("Existing landmarks : " << landmarks.size());
+
+        for (const auto & pl : outputLandmarks)
+        {
+            const auto & landmark = pl.second;
+
+            if (landmarks.find(pl.first) != landmarks.end())
+            {
+                landmarks.erase(pl.first);
+            }
+
+            if (landmark.getObservations().size() < _triangulationMinPoints)
+            {
+                continue;
+            }
+
+            if (!SfmTriangulation::checkChierality(sfmData, landmark))
+            {
+                continue;
+            }
+
+            double maxAngle = SfmTriangulation::getMaximalAngle(sfmData, landmark);
+            if (maxAngle < _minTriangulationAngleDegrees)
+            {
+                continue;
+            }
+
+            landmarks.insert(pl);
+        }
+
+        ALICEVISION_LOG_INFO("New landmarks count : " << landmarks.size());
+        ALICEVISION_LOG_INFO("ExpansionChunk::triangulate end");
     }
 
-    auto & landmarks = sfmData.getLandmarks();
-    ALICEVISION_LOG_INFO("Existing landmarks : " << landmarks.size());
-
-    for (const auto & pl : outputLandmarks)
+    if (_enableDepthPrior)
     {
-        const auto & landmark = pl.second;
-
-        if (landmarks.find(pl.first) != landmarks.end())
+        std::set<IndexT> evaluatedTracks;
+        std::map<IndexT, sfmData::Landmark> outputLandmarks;
+        std::mt19937 randomNumberGenerator;
+        if (!triangulation.process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
+                                    randomNumberGenerator, viewIds, 
+                                    evaluatedTracks, outputLandmarks, true))
         {
-            landmarks.erase(pl.first);
+            return false;
         }
 
-        if (landmark.getObservations().size() < _triangulationMinPoints)
+        auto & landmarks = sfmData.getLandmarks();
+        ALICEVISION_LOG_INFO("Existing landmarks : " << landmarks.size());
+
+        for (const auto & pl : outputLandmarks)
         {
-            continue;
+            const auto & landmark = pl.second;
+
+            if (landmarks.find(pl.first) != landmarks.end())
+            {
+                if (!_ignoreMultiviewOnPrior)
+                {
+                    continue;
+                }
+            }
+
+            if (landmark.getObservations().size() < _triangulationMinPoints)
+            {
+                continue;
+            }
+
+            if (!SfmTriangulation::checkChierality(sfmData, landmark))
+            {
+                continue;
+            }
+
+            landmarks.insert(pl);
         }
 
-        if (!SfmTriangulation::checkChierality(sfmData, landmark))
-        {
-            continue;
-        }
-
-        double maxAngle = SfmTriangulation::getMaximalAngle(sfmData, landmark);
-        if (maxAngle < _minTriangulationAngleDegrees)
-        {
-            continue;
-        }
-
-        landmarks.insert(pl);
+        ALICEVISION_LOG_INFO("New landmarks count : " << landmarks.size());
+        ALICEVISION_LOG_INFO("ExpansionChunk::triangulate end");
     }
-
-    ALICEVISION_LOG_INFO("New landmarks count : " << landmarks.size());
-    ALICEVISION_LOG_INFO("ExpansionChunk::triangulate end");
 
     return true;
 }

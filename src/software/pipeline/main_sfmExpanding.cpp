@@ -28,7 +28,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -104,6 +104,8 @@ int aliceVision_main(int argc, char** argv)
     bool useRigConstraint = true;
     int minNbCamerasForRigCalibration = 20;
     int weakResectionSize = 100;
+    bool enableDepthPrior = true;
+    bool ignoreMultiviewOnPrior = false;
 
     int randomSeed = std::mt19937::default_seed;
 
@@ -119,6 +121,8 @@ int aliceVision_main(int argc, char** argv)
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
     ("localizerEstimatorMaxIterations", po::value<std::size_t>(&localizerEstimatorMaxIterations)->default_value(localizerEstimatorMaxIterations), "Maximum number of RANSAC iterations.")
     ("localizerEstimatorError", po::value<double>(&localizerEstimatorError)->default_value(0.0), "Reprojection error threshold (in pixels) for the localizer estimator (0 for default value according to the estimator).")
+    ("enableDepthPrior", po::value<bool>(&enableDepthPrior)->default_value(enableDepthPrior),"If available in the tracks, use the depth prior.")
+    ("ignoreMultiviewOnPrior", po::value<bool>(&ignoreMultiviewOnPrior)->default_value(ignoreMultiviewOnPrior),"Favour the prior based 3d reconstruction over the multiview reconstruction.")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),"Lock/Unlock scene previously reconstructed.")
     ("useLocalBA,l", po::value<bool>(&useLocalBA)->default_value(useLocalBA), "Enable/Disable the Local bundle adjustment strategy.\n It reduces the reconstruction time, especially for big datasets (500+ images).")
     ("localBAGraphDistance", po::value<int>(&lbaDistanceLimit)->default_value(lbaDistanceLimit), "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
@@ -257,6 +261,8 @@ int aliceVision_main(int argc, char** argv)
     expansionChunk->setResectionHandler(sfmResectionHandler);
     expansionChunk->setTriangulationMaxError(maxTriangulationError);
     expansionChunk->setTriangulationMinPoints(minNbObservationsForTriangulation);
+    expansionChunk->setEnableDepthPrior(enableDepthPrior);
+    expansionChunk->setIgnoreMultiviewOnPrior(ignoreMultiviewOnPrior);
     expansionChunk->setMinAngleTriangulation(minAngleForTriangulation);
     expansionChunk->setPointFetcherHandler(pointFetcherHandler);
     expansionChunk->setWeakResectionSize(weakResectionSize);
