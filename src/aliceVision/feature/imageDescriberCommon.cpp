@@ -39,6 +39,7 @@ std::string EImageDescriberType_informations()
     #endif
            "* akaze_ocv: OpenCV implementation of A-KAZE describer.\n"
 #endif
+           "* manual: Manually selected points.\n "
            "";
 }
 
@@ -62,6 +63,8 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
             return "akaze_liop";
         case EImageDescriberType::AKAZE_MLDB:
             return "akaze_mldb";
+        case EImageDescriberType::MANUAL:
+            return "manual";
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
         case EImageDescriberType::CCTAG3:
@@ -113,6 +116,8 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
         return EImageDescriberType::AKAZE_LIOP;
     if (type == "akaze_mldb")
         return EImageDescriberType::AKAZE_MLDB;
+    if (type == "manual")
+        return EImageDescriberType::MANUAL;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     if (type == "cctag3")

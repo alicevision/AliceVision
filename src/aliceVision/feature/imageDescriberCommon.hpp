@@ -48,6 +48,8 @@ enum class EImageDescriberType : unsigned char
     ,
     APRILTAG16H5 = 50
 #endif
+    ,
+    MANUAL
 };
 
 /**
@@ -131,7 +133,8 @@ inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
         case EImageDescriberType::AKAZE_OCV:
             return 0.14f;
 #endif  // ALICEVISION_HAVE_OPENCV
-
+        case EImageDescriberType::MANUAL:
+            return 1.0f;
         case EImageDescriberType::UNKNOWN:
             return 1.0f;
         case EImageDescriberType::UNINITIALIZED:
