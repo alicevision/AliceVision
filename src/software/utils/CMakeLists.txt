@@ -71,7 +71,7 @@ if (ALICEVISION_BUILD_SFM)
               ${Boost_LIBRARIES}
     )
 
-    # Track builder
+    # Track Simulating
     alicevision_add_software(aliceVision_tracksSimulating
         SOURCE main_tracksSimulating.cpp
         FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -85,6 +85,18 @@ if (ALICEVISION_BUILD_SFM)
               Boost::json
     )
 
+    # Track Shapes injecting
+    alicevision_add_software(aliceVision_tracksShapesInjecting
+        SOURCE main_tracksShapesInjecting.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              aliceVision_track
+              Boost::program_options
+              Boost::json
+    )
 
     # Track from depthmap
     alicevision_add_software(aliceVision_depthmapTracksInjecting
