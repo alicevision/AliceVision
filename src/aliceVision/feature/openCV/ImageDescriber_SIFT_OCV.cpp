@@ -18,9 +18,9 @@
 namespace aliceVision {
 namespace feature {
 
-void SIFT_openCV_Params::setConfigurationPreset(EImageDescriberPreset preset)
+void SIFT_openCV_Params::setConfigurationPreset(ConfigurationPreset preset)
 {
-    switch (preset)
+    switch (preset.descPreset)
     {
         case EImageDescriberPreset::LOW:
             contrastThreshold = 0.01;
@@ -67,7 +67,7 @@ bool ImageDescriber_SIFT_openCV::describe(const image::Image<unsigned char>& ima
             maxDetect = _params.maxTotalKeypoints;
 
     cv::Ptr<cv::Feature2D> siftdetector =
-      cv::xfeatures2d::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
+      cv::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
 
     // Detect SIFT keypoints
     auto detect_start = std::chrono::steady_clock::now();
