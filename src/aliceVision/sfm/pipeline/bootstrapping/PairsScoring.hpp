@@ -37,5 +37,20 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
                     double softMinAngle,
                     double maxAngle);
 
+/**
+* @brief Get best pair from track Depths with highest score
+* @param sfmData the input sfmData which contains camera information
+* @param pairs the input list of reconstructed pairs
+* @param tracksMap the input map of tracks
+* @param tracksPerView tracks grouped by views
+* @param randomNumberGenerator the random number generator used for drawing numbers
+* @return The best pair (pair.reference is UndefinedIndexT if nothing found)
+*/
+sfm::ReconstructedPair findBestPairFromTrackDepths(const sfmData::SfMData & sfmData, 
+                            const std::vector<sfm::ReconstructedPair> & pairs,
+                            const track::TracksMap& tracksMap, 
+                            const track::TracksPerView & tracksPerView,
+                            std::mt19937 & randomNumberGenerator);
+
 }
 }

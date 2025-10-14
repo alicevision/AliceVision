@@ -10,6 +10,7 @@
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
 #include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicyLegacy.hpp>
+#include <aliceVision/sfm/pipeline/bootstrapping/TracksDepths.hpp>
 #include <vector>
 #include <random>
 
@@ -167,6 +168,103 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
 
             //Add observation to landmark
             sfmData::Observations & observations = outLandmarks[landmarkId].getObservations();
+            observations[nextViewId] = obs;
+        }
+    }
+
+    return true;
+}
+
+bool bootstrapDepth(sfmData::SfMData & sfmData, 
+                    const IndexT referenceViewId,
+                    const IndexT nextViewId,
+                    const track::TracksMap& tracksMap, 
+                    const track::TracksPerView & tracksPerView)
+{
+    std::mt19937 randomNumberGenerator;
+
+    const sfmData::View & viewReference = sfmData.getView(referenceViewId);
+    const sfmData::View & viewNext = sfmData.getView(nextViewId);
+
+    camera::IntrinsicBase::sptr camReference = sfmData.getIntrinsicSharedPtr(viewReference.getIntrinsicId());
+    camera::IntrinsicBase::sptr camNext = sfmData.getIntrinsicSharedPtr(viewNext.getIntrinsicId());
+
+    sfmData::CameraPose & poseReference = sfmData.getPoses()[viewReference.getPoseId()];
+    sfmData::CameraPose & poseNext = sfmData.getPoses()[viewNext.getPoseId()];
+
+
+    sfmData::SfMData miniSfm;
+    if (!buildSfmDataFromDepthMap(miniSfm, sfmData, tracksMap, tracksPerView, referenceViewId))
+    {
+        return false;
+    }
+
+    //Compute resection for selected view
+    sfm::LocalizationValidationPolicy::uptr resectionValidationPolicy = std::make_unique<sfm::LocalizationValidationPolicyLegacy>();
+
+    sfm::SfmResection resection;
+    resection.setMaxIterations(50000);
+    resection.setResectionMaxError(std::numeric_limits<double>::infinity());
+    resection.setValidationPolicy(resectionValidationPolicy);
+
+    Eigen::Matrix4d pose;
+    double newThreshold;
+    size_t inliersCount;
+
+    if (!resection.processView(miniSfm, 
+                            tracksMap, tracksPerView, 
+                            randomNumberGenerator,
+                            nextViewId, pose, newThreshold, inliersCount))
+    {
+        return false;
+    }
+
+
+    geometry::Pose3 pose3(pose);
+    poseNext.setTransform(pose3);
+
+    const auto & landmarks = miniSfm.getLandmarks();
+    auto & outLandmarks = sfmData.getLandmarks();
+
+    for (const auto & [landmarkId, landmark] : landmarks)
+    {
+        //Retrieve track object
+        const auto & track = tracksMap.at(landmarkId);
+
+        const track::TrackItem & itemReference = track.featPerView.at(referenceViewId);
+
+        //Maybe this track is not observed in the next view
+        if (track.featPerView.find(nextViewId) == track.featPerView.end())
+        {
+            continue;
+        }
+
+        //Compute error
+        const track::TrackItem & item = track.featPerView.at(nextViewId);
+        const Vec2 pt = item.coords;
+        const Vec2 estpt = camNext->transformProject(pose3, landmark.X.homogeneous(), true);
+        double err = (pt - estpt).norm();
+
+        //If error is ok, then we add it to the sfmData
+        if (err <= newThreshold)
+        {
+            sfmData::Observation obs;
+            obs.setFeatureId(item.featureId);
+            obs.setScale(item.scale);
+            obs.setCoordinates(item.coords);
+
+            sfmData::Observation obsReference;
+            obsReference.setFeatureId(itemReference.featureId);
+            obsReference.setScale(itemReference.scale);
+            obsReference.setCoordinates(itemReference.coords);
+
+            //Add landmark to sfmData
+            outLandmarks[landmarkId] = landmark;
+            outLandmarks[landmarkId].setParallaxRobust(true);
+
+            //Add observation to landmark
+            sfmData::Observations & observations = outLandmarks[landmarkId].getObservations();
+            observations[referenceViewId] = obsReference;
             observations[nextViewId] = obs;
         }
     }
