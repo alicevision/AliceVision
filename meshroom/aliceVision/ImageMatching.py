@@ -63,9 +63,10 @@ If images have known poses, use frustum intersection else use VocabularuTree.
                         " - SequentialAndVocabularyTree:  Combines sequential approach with VocTree to enable connections between keyframes at different times.\n"
                         " - Exhaustive: Export all image pairs.\n"
                         " - Frustum: If images have known poses, computes the intersection between cameras frustums to create the list of image pairs.\n"
-                        " - FrustumOrVocabularyTree: If images have known poses, use frustum intersection else use VocabularyTree.\n",
+                        " - FrustumOrVocabularyTree: If images have known poses, use frustum intersection else use VocabularyTree.\n"
+                        " - Mirror: Try to match images with themselves. \n",
             value="SequentialAndVocabularyTree",
-            values=["VocabularyTree", "Sequential", "SequentialAndVocabularyTree", "Exhaustive", "Frustum", "FrustumOrVocabularyTree"],
+            values=["VocabularyTree", "Sequential", "SequentialAndVocabularyTree", "Exhaustive", "Frustum", "FrustumOrVocabularyTree", "Mirror"],
         ),
         desc.File(
             name="tree",

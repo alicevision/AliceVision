@@ -191,6 +191,16 @@ int aliceVision_main(int argc, char** argv)
 
     switch (method)
     {
+        case EImageMatchingMethod::MIRROR:
+            if (!useMultiSfM)
+            {
+                generateMirrorsMatches(sfmDataA, selectedPairs);
+            }
+            else
+            {
+                ALICEVISION_THROW_ERROR("Invalid mirror mode for multisfm");
+            }
+            break;
         case EImageMatchingMethod::EXHAUSTIVE:
         {
             ALICEVISION_LOG_INFO("Use EXHAUSTIVE method.");
