@@ -100,7 +100,7 @@ For example, the target intrinsics may be the same without the distortion.
             label="Undistorted Images",
             description="List of undistorted images.",
             semantic="image",
-            value="{nodeCacheFolder}/<VIEW_ID>.{outputFileTypeValue}",
+            value=lambda attr: getUndistortedPath(attr.node.namingMode.value),
             group="",
             advanced=True,
         ),
@@ -111,3 +111,14 @@ For example, the target intrinsics may be the same without the distortion.
             value="{nodeCacheFolder}/sfm.abc",
         ),
     ]
+
+def getUndistortedPath(namingMode):
+    
+    replacement = "<FILESTEM>"
+    if (namingMode == "viewid"):
+        replacement = "<VIEW_ID>"
+    elif (namingMode == "frameid"):
+        replacement = "<FRAME_ID>"
+
+    return "{nodeCacheFolder}/" + replacement + ".{outputFileTypeValue}"
+                    
