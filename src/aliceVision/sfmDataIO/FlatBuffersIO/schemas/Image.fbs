@@ -1,0 +1,16 @@
+namespace AliceVisionIO.V1;
+
+table MetaDataItem
+{
+    key: string;
+    value: string;
+}
+
+table Image
+{
+    id: uint;
+    image_path: string;
+    width: uint;
+    height: uint;
+    metadatas : [MetaDataItem];
+}

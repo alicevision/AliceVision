@@ -23,6 +23,9 @@ namespace camera {
 class Distortion
 {
   public:
+    using sptr = std::shared_ptr<Distortion>;
+    
+  public:
     Distortion() = default;
 
     virtual EDISTORTION getType() const = 0;

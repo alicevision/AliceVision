@@ -1,0 +1,24 @@
+include "Vec.fbs";
+
+namespace AliceVisionIO.V1;
+
+enum TYPEUNDISTORTION : byte
+{
+    UNDISTORTION_NONE = 0,
+    UNDISTORTION_RADIALK3 = 1,
+    UNDISTORTION_3DEANAMORPHIC4 = 2,
+    UNDISTORTION_3DECLASSICLD = 3,
+    UNDISTORTION_3DERADIAL4 = 4,
+}
+
+table Undistortion
+{
+    id: uint;
+    type: TYPEUNDISTORTION;
+    locked: bool;
+    parameters: [double];
+    size: AliceVisionIO.Vec2;
+    offset: AliceVisionIO.Vec2;
+    pixel_aspect_ratio: double;
+    is_desqueezed: bool;
+}

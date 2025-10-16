@@ -1,0 +1,12 @@
+include "Vec.fbs";
+
+namespace AliceVisionIO.V1;
+
+struct Observation
+{
+    id_landmark: uint;
+    id_view: uint;
+    coordinates: Vec2;
+    id_feature: uint;
+    scale: float;
+}

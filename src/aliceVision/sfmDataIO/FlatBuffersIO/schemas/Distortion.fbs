@@ -1,0 +1,22 @@
+include "Vec.fbs";
+
+namespace AliceVisionIO.V1;
+
+enum TYPEDISTORTION : byte
+{
+    DISTORTION_NONE = 0,
+    DISTORTION_RADIALK1 = 1,
+    DISTORTION_RADIALK3 = 2,
+    DISTORTION_RADIALK3PT = 3,
+    DISTORTION_BROWN = 4,
+    DISTORTION_FISHEYE = 5,
+    DISTORTION_FISHEYE1 = 6,
+}
+
+table Distortion
+{
+    id: uint;
+    type: TYPEDISTORTION;
+    locked: bool;
+    parameters: [double];
+}

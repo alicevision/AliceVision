@@ -1,0 +1,30 @@
+include "Vec.fbs";
+
+namespace AliceVisionIO.V1;
+
+enum IMAGEDESCRIBERTYPE : byte
+{
+    UNKNOWN = 0,
+    UNINITIALIZED = 1,
+    SIFT = 10,
+    SIFT_FLOAT = 11,
+    SIFT_UPRIGHT = 12,
+    DSPSIFT = 13,
+    AKAZE = 20,
+    AKAZE_LIOP = 21,
+    AKAZE_MLDB = 22,
+    CCTAG3 = 30,
+    CCTAG4 = 31,
+    SIFT_OCV = 40,
+    AKAZE_OCV = 41, 
+    APRILTAG16H5 = 50
+}
+
+table Landmark
+{
+    id: uint;
+    coordinates: Vec3;
+    describer_type: IMAGEDESCRIBERTYPE;
+    rgb: Rgb;
+}
+

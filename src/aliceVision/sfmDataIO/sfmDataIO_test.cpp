@@ -79,7 +79,7 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
 
 BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
 {
-    std::vector<std::string> ext_Type = {"sfm", "json"};
+    std::vector<std::string> ext_Type = {"sfm", "json", "fbd"};
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
     ext_Type.push_back("abc");

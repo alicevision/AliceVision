@@ -21,7 +21,10 @@ namespace aliceVision {
 namespace sfmData {
 
 class ImageInfo
-{
+{ 
+  public:
+    using sptr = std::shared_ptr<ImageInfo>;
+    
   public:
     /**
      * @brief Image Constructor

@@ -1,0 +1,14 @@
+namespace AliceVisionIO.V1;
+
+table View 
+{
+    id: uint;
+    intrinsic: uint;
+    pose: uint;
+    rig: uint;
+    sub_pose: uint;
+    frame: uint;
+    resection: uint;
+    is_pose_independent: uint;
+    ancestors: [uint];
+}

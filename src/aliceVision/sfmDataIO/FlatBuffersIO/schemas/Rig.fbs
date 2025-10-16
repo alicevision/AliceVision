@@ -1,0 +1,23 @@
+include "CameraPose.fbs";
+
+namespace AliceVisionIO.V1;
+
+enum RIGSUBPOSESTATUS : byte
+{
+    UNINITIALIZED = 0,
+    ESTIMATED = 1,
+    CONSTANT = 2
+}
+
+table RigSubPose
+{
+    status: RIGSUBPOSESTATUS;
+    rotation: AliceVisionIO.Vec3;
+    center: AliceVisionIO.Vec3;
+}
+
+table Rig
+{
+    id: uint;
+    sub_poses: [RigSubPose];
+}
