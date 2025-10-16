@@ -112,6 +112,24 @@ public:
         return _ignoredViews;
     }
 
+     /**
+     * @brief Are the optional depths priors used ?
+     * @param flag boolean to set value to
+    */
+    void setEnableDepthPrior(bool flag)
+    {
+        _enableDepthPrior = flag;
+    }
+
+    /**
+     * @brief Do we prefer prior depth over estimated multiview depth ?
+     * @param flag boolean to set value to
+    */
+    void setIgnoreMultiviewOnPrior(bool flag)
+    {
+        _ignoreMultiviewOnPrior = flag;
+    }
+
 private:
 
     /**
@@ -150,6 +168,8 @@ private:
     double _minTriangulationAngleDegrees = 3.0;
     double _maxTriangulationError = 8.0;
     size_t _weakResectionSize = 100;
+    bool _enableDepthPrior = true;
+    bool _ignoreMultiviewOnPrior = false;
 };
 
 } // namespace sfm

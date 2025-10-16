@@ -36,6 +36,7 @@ public:
      * @param viewIds the set of view ids to process. Only tracks observed in these views will be considered
      * @param evaluatedTracks output list of track ids which were evaluated (Not necessarily with success)
      * @param outputLandmarks a set of generated landmarks indexed by their landmark id (the associated track id)
+     * @param useDepthPrior use depth prior found in tracks
      * @return false if a critical error occurred
     */
     bool process(
@@ -45,7 +46,8 @@ public:
             std::mt19937 &randomNumberGenerator,
             const std::set<IndexT> & viewIds,
             std::set<IndexT> & evaluatedTracks,
-            std::map<IndexT, sfmData::Landmark> & outputLandmarks
+            std::map<IndexT, sfmData::Landmark> & outputLandmarks,
+            bool useDepthPrior
         );
 
 public:
@@ -82,6 +84,23 @@ private:
             const std::set<IndexT> & viewIds,
             sfmData::Landmark & result
         );  
+    
+    /**
+     * Process triangulation of a track with depth prior enabled
+     * @param sfmData the actual state of the sfm
+     * @param track the track of interest
+     * @param randomNumberGenerator random number generator object
+     * @param viewIds the set of view ids to process. Only tracks observed in these views will be considered
+     * @param result the output landmark
+     * @return false if a critical error occurred
+    */
+    bool processTrackWithPrior(
+            const sfmData::SfMData & sfmData,
+            const track::Track & track,
+            std::mt19937 &randomNumberGenerator,
+            const std::set<IndexT> & viewIds,
+            sfmData::Landmark & result
+        ); 
 
 private:
     const size_t _minObservations;

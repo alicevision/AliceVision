@@ -1,4 +1,4 @@
-__version__ = "2.1"
+__version__ = "2.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -51,7 +51,19 @@ class SfMExpanding(desc.AVCommandLineNode):
             range=(0.0, 100.0, 0.1),
             advanced=True,
         ),
-       desc.BoolParam(
+        desc.BoolParam(
+            name="enableDepthPrior",
+            label="Use Depth Prior",
+            description="If available in the tracks, use the depth prior to help the structure estimation.",
+            value=True,
+        ),
+        desc.BoolParam(
+            name="ignoreMultiviewOnPrior",
+            label="Ignore Multiview On Prior",
+            description="Favour the prior based 3d reconstruction over the multiview reconstruction.",
+            value=False,
+        ),
+        desc.BoolParam(
             name="lockScenePreviouslyReconstructed",
             label="Lock Previously Reconstructed Scene",
             description="Lock previously reconstructed poses and intrinsics.\n"

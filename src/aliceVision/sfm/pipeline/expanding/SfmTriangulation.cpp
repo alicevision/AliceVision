@@ -33,7 +33,8 @@ bool SfmTriangulation::process(
             std::mt19937 &randomNumberGenerator,
             const std::set<IndexT> &viewIds,
             std::set<IndexT> & evaluatedTracks,
-            std::map<IndexT, sfmData::Landmark> & outputLandmarks
+            std::map<IndexT, sfmData::Landmark> & outputLandmarks,
+            bool useDepthPrior
         )
 {
     evaluatedTracks.clear();
@@ -83,9 +84,19 @@ bool SfmTriangulation::process(
         }
 
         sfmData::Landmark result;
-        if (!processTrack(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+        if (useDepthPrior)
         {
-            continue;
+            if (!processTrackWithPrior(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+            {
+                continue;
+            }
+        }
+        else 
+        {
+            if (!processTrack(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+            {
+                continue;
+            }
         }
 
         #pragma omp critical
@@ -173,6 +184,100 @@ bool SfmTriangulation::processTrack(
         o.setFeatureId(trackItem.featureId);
         o.setScale(trackItem.scale);
         o.setCoordinates(trackItem.coords);
+    }
+
+    return true;
+}
+
+bool SfmTriangulation::processTrackWithPrior(
+            const sfmData::SfMData & sfmData,
+            const track::Track & track,
+            std::mt19937 &randomNumberGenerator,
+            const std::set<IndexT> & viewIds,
+            sfmData::Landmark & result
+        )
+{
+    size_t bestInliersCount = 0;
+
+    //For each observed view in the track
+    for (auto referenceViewId : viewIds)
+    {   
+        if (track.featPerView.find(referenceViewId) == track.featPerView.end())
+        {
+            continue;
+        }
+
+        //Look if this observation has an associated depth
+        const auto & refTrackItem = track.featPerView.at(referenceViewId);
+        if (refTrackItem.depth < 0.0)
+        {
+            continue;
+        }
+
+        //Retrieve pose and feature coordinates for this observation
+        const sfmData::View & rView = sfmData.getView(referenceViewId);
+        const camera::IntrinsicBase & rIntrinsic = sfmData.getIntrinsic(rView.getIntrinsicId());
+        const geometry::Pose3 rPose = sfmData.getPose(rView).getTransform();        
+
+        //Compute 3D point in camera space
+        const double Z = refTrackItem.depth;
+        const Vec2 meters = rIntrinsic.removeDistortion(rIntrinsic.ima2cam(refTrackItem.coords.cast<double>()));
+        Vec3 cX = Z * meters.homogeneous();
+
+        //Transform 3D point in world space
+        const Vec3 oX = rPose.inverse()(cX);
+        
+        //Make sure this point is not dependent on parallax 
+        //As it does not need parallax to estimate its depth
+        sfmData::Landmark landmark;
+        landmark.setParallaxRobust(true);
+        landmark.X = oX;
+        landmark.descType = track.descType;
+
+        //Compute consensus for this depth
+        for (auto viewId : viewIds)
+        {
+            if (track.featPerView.find(viewId) == track.featPerView.end())
+            {
+                continue;
+            }
+
+            const auto & trackItem = track.featPerView.at(viewId);
+
+            const sfmData::View & view = sfmData.getView(viewId);
+            const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
+            const geometry::Pose3 pose = sfmData.getPose(view).getTransform();    
+
+            const Vec2 est = intrinsic.transformProject(pose, oX.homogeneous(), true);
+            const Vec2 mes = trackItem.coords.cast<double>();
+            double err = (est - mes).norm() / trackItem.scale;
+
+            //Use _maxError as threshold for inliers/outlier detection
+            if (err > _maxError)
+            {
+                continue;
+            }
+
+            //Create and associated an observation to the landmark
+            sfmData::Observation & o = landmark.getObservations()[viewId];
+            o.setFeatureId(trackItem.featureId);
+            o.setScale(trackItem.scale);
+            o.setCoordinates(trackItem.coords);
+        }
+
+        //Store the landmark if it's better than the previously estimated one
+        int count = landmark.getObservations().size();
+        if (count > bestInliersCount)
+        {
+            bestInliersCount = count;
+            result = landmark;
+        }
+    }
+
+    //One inlier is the reference, so we need at least 2 inliers
+    if (bestInliersCount < 2)
+    {
+        return false;
     }
 
     return true;
