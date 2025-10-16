@@ -15,7 +15,7 @@ namespace matchingImageCollection {
 
 /// Load a set of PairSet from a stream
 /// I J K L (pair that link I)
-bool loadPairs(std::istream& stream, PairSet& pairs, int rangeStart = -1, int rangeSize = 0);
+bool loadPairs(std::istream& stream, PairSet& pairs, int rangeStart = -1, int rangeSize = 0, bool useSymmetry = true);
 
 /// Save a set of PairSet to a stream (one pair per line)
 /// I J
@@ -26,7 +26,8 @@ void savePairs(std::ostream& stream, const PairSet& pairs);
 bool loadPairsFromFile(const std::string& sFileName,  // filename of the list file,
                        PairSet& pairs,
                        int rangeStart = -1,
-                       int rangeSize = 0);
+                       int rangeSize = 0,
+                       bool useSymmetry = true);
 
 /// Same as savePairs, but saves to a given file
 bool savePairsToFile(const std::string& sFileName, const PairSet& pairs);
