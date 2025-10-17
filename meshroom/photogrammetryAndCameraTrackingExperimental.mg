@@ -1,6 +1,6 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0",
+        "releaseVersion": "2026.1.0+develop",
         "fileVersion": "2.0",
         "nodesVersions": {
             "ApplyCalibration": "1.0",
@@ -11,27 +11,27 @@
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
             "DistortionCalibration": "6.0",
-            "ExportAnimatedCamera": "2.0",
+            "ExportAlembic": "1.0",
             "ExportDistortion": "2.0",
-            "ExportImages": "1.0",
+            "ExportImages": "1.1",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageDetectionPrompt": "0.2",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.0",
             "ImageSegmentationBox": "0.3",
-            "IntrinsicsTransforming": "1.0",
+            "IntrinsicsTransforming": "1.1",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
-            "RelativePoseEstimating": "3.0",
+            "RelativePoseEstimating": "3.1",
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.1",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.1",
+            "SfMExpanding": "2.2",
             "SfMTransfer": "2.1",
-            "SfMTransform": "3.1",
+            "SfMTransform": "3.2",
             "Texturing": "6.0",
             "TracksBuilding": "1.0",
             "TracksMerging": "3.0"
@@ -107,11 +107,11 @@
         "ConvertSfMFormat_1": {
             "nodeType": "ConvertSfMFormat",
             "position": [
-                4333,
-                201
+                4802,
+                171
             ],
             "inputs": {
-                "input": "{ExportAnimatedCamera_1.input}",
+                "input": "{SfMTransfer_1.output}",
                 "fileExt": "sfm",
                 "describerTypes": "{TracksBuilding_3.describerTypes}",
                 "structure": false,
@@ -119,6 +119,22 @@
             },
             "internalInputs": {
                 "color": "#4c594c"
+            }
+        },
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
+            "position": [
+                5368,
+                -145
+            ],
+            "inputs": {
+                "inputFiles": [
+                    "{ScenePreview_1.output}",
+                    "{ExportDistortion_1.output}",
+                    "{Texturing_2.output}",
+                    "{ExportImages_2.output}",
+                    "{ExportAlembic_1.output}"
+                ]
             }
         },
         "DepthMapFilter_2": {
@@ -163,15 +179,14 @@
                 "color": "#302e2e"
             }
         },
-        "ExportAnimatedCamera_1": {
-            "nodeType": "ExportAnimatedCamera",
+        "ExportAlembic_1": {
+            "nodeType": "ExportAlembic",
             "position": [
-                4126,
-                158
+                4522.0,
+                218.0
             ],
             "inputs": {
-                "input": "{SfMTransfer_1.output}",
-                "exportUndistortedImages": true
+                "input": "{ExportImages_2.outputSfMData}"
             },
             "internalInputs": {
                 "color": "#80766f"
@@ -203,6 +218,21 @@
             },
             "internalInputs": {
                 "color": "#384a55"
+            }
+        },
+        "ExportImages_2": {
+            "nodeType": "ExportImages",
+            "position": [
+                4316.0,
+                206.0
+            ],
+            "inputs": {
+                "input": "{IntrinsicsTransforming_2.input}",
+                "target": "{IntrinsicsTransforming_2.output}",
+                "namingMode": "keep"
+            },
+            "internalInputs": {
+                "color": "#80766f"
             }
         },
         "FeatureExtraction_1": {
@@ -447,6 +477,19 @@
                 "color": "#384a55"
             }
         },
+        "IntrinsicsTransforming_2": {
+            "nodeType": "IntrinsicsTransforming",
+            "position": [
+                4116.0,
+                206.0
+            ],
+            "inputs": {
+                "input": "{SfMTransfer_1.output}"
+            },
+            "internalInputs": {
+                "color": "#80766f"
+            }
+        },
         "KeyframeSelection_1": {
             "nodeType": "KeyframeSelection",
             "position": [
@@ -503,21 +546,6 @@
                 "color": "#384a55"
             }
         },
-        "CopyFiles_1": {
-            "nodeType": "CopyFiles",
-            "position": [
-                4725,
-                -186
-            ],
-            "inputs": {
-                "inputFiles": [
-                    "{ExportAnimatedCamera_1.output}",
-                    "{ScenePreview_1.output}",
-                    "{ExportDistortion_1.output}",
-                    "{Texturing_2.output}"
-                ]
-            }
-        },
         "RelativePoseEstimating_1": {
             "nodeType": "RelativePoseEstimating",
             "position": [
@@ -537,13 +565,13 @@
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
             "position": [
-                4526,
-                158
+                4991,
+                150
             ],
             "inputs": {
                 "cameras": "{ConvertSfMFormat_1.output}",
                 "model": "{MeshDecimate_1.output}",
-                "undistortedImages": "{ExportAnimatedCamera_1.outputUndistorted}",
+                "undistortedImages": "{ExportImages_2.output}",
                 "masks": "{ImageSegmentationBox_2.output}"
             },
             "internalInputs": {
