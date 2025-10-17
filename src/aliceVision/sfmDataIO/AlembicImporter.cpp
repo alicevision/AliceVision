@@ -314,6 +314,7 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         AV_UInt32ArraySamplePtr sampleVisibilityFeatId;
         FloatArraySamplePtr sampleVisibilityFeatPos;
         FloatArraySamplePtr sampleVisibilityFeatScale;
+        FloatArraySamplePtr sampleVisibilityFeatDepth;
 
         if (userProps.getPropertyHeader("mvg_visibilityFeatId") && userProps.getPropertyHeader("mvg_visibilityFeatPos") &&
             flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES)
@@ -327,6 +328,12 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
             {
                 IFloatArrayProperty propVisibilityFeatScale(userProps, "mvg_visibilityFeatScale");
                 propVisibilityFeatScale.get(sampleVisibilityFeatScale);
+            }
+
+            if (userProps && userProps.getPropertyHeader("mvg_visibilityFeatDepth"))
+            {
+                IFloatArrayProperty propVisibilityFeatDepth(userProps, "mvg_visibilityFeatDepth");
+                propVisibilityFeatDepth.get(sampleVisibilityFeatDepth);
             }
 
             if (sampleVisibilityViewId.size() != sampleVisibilityFeatId.size() ||
@@ -381,6 +388,11 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
                     if (sampleVisibilityFeatScale)
                     {
                         observation.setScale((*sampleVisibilityFeatScale)[obsGlobalIndex]);
+                    }
+
+                    if (sampleVisibilityFeatDepth)
+                    {
+                        observation.setDepth((*sampleVisibilityFeatDepth)[obsGlobalIndex]);
                     }
                 }
                 else
