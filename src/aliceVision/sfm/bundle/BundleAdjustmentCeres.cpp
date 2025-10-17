@@ -13,6 +13,7 @@
 #include <aliceVision/sfm/bundle/costfunctions/constraintPoint.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/projection.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/rotationPrior.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/depth.hpp>
 #include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/camera/camera.hpp>
@@ -615,6 +616,18 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(landmarkBlockPtr);
 
                 problem.AddResidualBlock(costFunction, lossFunction, params);
+            }
+
+            if (observation.getDepth() > 0.0)
+            {
+                const double depthVariance = 0.1; //10 cm ?
+                ceres::CostFunction* costFunction = DepthErrorFunctor::createCostFunction(observation, depthVariance);
+ 
+                std::vector<double*> params;
+                params.push_back(poseBlockPtr);
+                params.push_back(landmarkBlockPtr);
+
+                problem.AddResidualBlock(costFunction, nullptr, params);
             }
 
             if (!refineStructure || landmark.state == EEstimatorParameterState::CONSTANT)
