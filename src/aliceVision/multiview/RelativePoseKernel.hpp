@@ -8,6 +8,7 @@
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/PointFittingRansacKernel.hpp>

@@ -10,8 +10,10 @@
 #include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/IndMatchDecorator.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
+#include <aliceVision/matchingImageCollection/geometricFilterUtils.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/matching/guidedMatching.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
 #include <aliceVision/multiview/relativePose/Homography4PSolver.hpp>
 #include <aliceVision/multiview/relativePose/HomographyError.hpp>
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
@@ -37,7 +39,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
      * relating them using a robust method (like A Contrario Ransac).
      */
     template<typename Regions_or_Features_ProviderT>
-    EstimationStatus geometricEstimation(const sfmData::SfMData* sfmData,
+    EstimationStatus geometricEstimation(const sfmData::SfMData& sfmData,
                                          const Regions_or_Features_ProviderT& regionsPerView,
                                          const Pair& pairIndex,
                                          const matching::MatchesPerDescType& putativeMatchesPerType,
@@ -50,8 +52,8 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
         const IndexT I = pairIndex.first;
         const IndexT J = pairIndex.second;
 
-        const sfmData::View& viewI = sfmData->getView(I);
-        const sfmData::View& viewJ = sfmData->getView(J);
+        const sfmData::View& viewI = sfmData.getView(I);
+        const sfmData::View& viewJ = sfmData.getView(J);
 
         const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
 
@@ -157,7 +159,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
      * @param matches
      * @return
      */
-    bool Geometry_guided_matching(const sfmData::SfMData* sfmData,
+    bool Geometry_guided_matching(const sfmData::SfMData& sfmData,
                                   const feature::RegionsPerView& regionsPerView,
                                   const Pair imageIdsPair,
                                   const double dDistanceRatio,
@@ -174,14 +176,14 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
             const IndexT I = imageIdsPair.first;
             const IndexT J = imageIdsPair.second;
 
-            const sfmData::View& viewI = sfmData->getView(I);
-            const sfmData::View& viewJ = sfmData->getView(J);
+            const sfmData::View& viewI = sfmData.getView(I);
+            const sfmData::View& viewJ = sfmData.getView(J);
 
             // retrieve corresponding pair camera intrinsic if any
             const camera::IntrinsicBase* camI =
-              sfmData->getIntrinsics().count(viewI.getIntrinsicId()) ? sfmData->getIntrinsics().at(viewI.getIntrinsicId()).get() : nullptr;
+              sfmData.getIntrinsics().count(viewI.getIntrinsicId()) ? sfmData.getIntrinsics().at(viewI.getIntrinsicId()).get() : nullptr;
             const camera::IntrinsicBase* camJ =
-              sfmData->getIntrinsics().count(viewJ.getIntrinsicId()) ? sfmData->getIntrinsics().at(viewJ.getIntrinsicId()).get() : nullptr;
+              sfmData.getIntrinsics().count(viewJ.getIntrinsicId()) ? sfmData.getIntrinsics().at(viewJ.getIntrinsicId()).get() : nullptr;
 
             robustEstimation::Mat3Model model(m_H);
 
@@ -228,6 +230,13 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
 
         return matches.getNbAllMatches() != 0;
     }
+
+    Eigen::Matrix3d getMatrix() { return m_H; }
+
+    /**
+     * @return geometric filter type represented by this class
+     */
+    EGeometricFilterType getType() { return EGeometricFilterType::HOMOGRAPHY_MATRIX; }
 
     // stored data
     Mat3 m_H;

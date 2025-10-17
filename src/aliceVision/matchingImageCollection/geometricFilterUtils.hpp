@@ -129,18 +129,18 @@ void fillMatricesWithUndistortFeaturesMatches(const matching::MatchesPerDescType
 template<typename MatT>
 void fillMatricesWithUndistortFeaturesMatches(const Pair& pairIndex,
                                               const matching::MatchesPerDescType& putativeMatchesPerType,
-                                              const sfmData::SfMData* sfmData,
+                                              const sfmData::SfMData& sfmData,
                                               const feature::RegionsPerView& regionsPerView,
                                               const std::vector<feature::EImageDescriberType>& descTypes,
                                               MatT& x_I,
                                               MatT& x_J)
 {
-    const sfmData::View* view_I = sfmData->getViews().at(pairIndex.first).get();
-    const sfmData::View* view_J = sfmData->getViews().at(pairIndex.second).get();
+    const sfmData::View& view_I = sfmData.getView(pairIndex.first);
+    const sfmData::View& view_J = sfmData.getView(pairIndex.second);
 
     // Retrieve corresponding pair camera intrinsic if any
-    const camera::IntrinsicBase* cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());
-    const camera::IntrinsicBase* cam_J = sfmData->getIntrinsicPtr(view_J->getIntrinsicId());
+    const camera::IntrinsicBase* cam_I = sfmData.getIntrinsicPtr(view_I.getIntrinsicId());
+    const camera::IntrinsicBase* cam_J = sfmData.getIntrinsicPtr(view_J.getIntrinsicId());
 
     fillMatricesWithUndistortFeaturesMatches(putativeMatchesPerType,
                                              cam_I,

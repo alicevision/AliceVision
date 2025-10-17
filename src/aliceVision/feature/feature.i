@@ -9,6 +9,15 @@
 %include <aliceVision/config.hpp>
 %include <aliceVision/global.i>
 
+namespace std
+{
+    #ifdef LINUXPLATFORM
+    typedef long unsigned int size_t;
+    #else
+    typedef long unsigned long size_t;
+    #endif
+}
+
 %{    
 #include <aliceVision/feature/Regions.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
