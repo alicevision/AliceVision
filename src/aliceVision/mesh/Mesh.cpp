@@ -44,10 +44,14 @@ std::string EFileType_enumToString(const EFileType meshFileType)
             return "obj";
         case EFileType::FBX:
             return "fbx";
-        case EFileType::STL:
-            return "stl";
         case EFileType::GLTF:
             return "gltf";
+        case EFileType::GLB:
+            return "glb";
+        case EFileType::STL:
+            return "stl";
+        case EFileType::PLY:
+            return "ply";
     }
     throw std::out_of_range("Unrecognized EMeshFileType");
 }
@@ -61,10 +65,15 @@ EFileType EFileType_stringToEnum(const std::string& meshFileType)
         return EFileType::OBJ;
     if (m == "fbx")
         return EFileType::FBX;
-    if (m == "stl")
-        return EFileType::STL;
     if (m == "gltf")
         return EFileType::GLTF;
+    if (m == "glb")
+        return EFileType::GLB;
+    if (m == "stl")
+        return EFileType::STL;
+    if (m == "ply")
+        return EFileType::PLY;
+
     throw std::out_of_range("Invalid mesh file type " + meshFileType);
 }
 
@@ -81,26 +90,42 @@ void Mesh::save(const std::string& filepath)
     const std::string fileTypeStr = std::filesystem::path(filepath).extension().string().substr(1);
     const EFileType fileType = mesh::EFileType_stringToEnum(fileTypeStr);
 
-    ALICEVISION_LOG_INFO("Save " << fileTypeStr << " mesh file");
+    ALICEVISION_LOG_INFO("Saving " << fileTypeStr << " mesh file using Assimp.");
 
+    // Assimp scene setup
+    // create scene and root node
     aiScene scene;
+    scene.mRootNode = new aiNode();
 
-    scene.mRootNode = new aiNode;
-
-    scene.mMeshes = new aiMesh*[1];
-    scene.mNumMeshes = 1;
-    scene.mRootNode->mMeshes = new unsigned int[1];
-    scene.mRootNode->mNumMeshes = 1;
-
+    // create default material
     scene.mMaterials = new aiMaterial*[1];
+    scene.mMaterials[0] = new aiMaterial();
     scene.mNumMaterials = 1;
-    scene.mMaterials[0] = new aiMaterial;
+    
+    // create mesh
+    scene.mMeshes = new aiMesh*[1];
+    scene.mMeshes[0] = new aiMesh();
+    scene.mNumMeshes = 1;
 
+    // link mesh to root node
+    scene.mRootNode->mMeshes = new unsigned int[1];
     scene.mRootNode->mMeshes[0] = 0;
-    scene.mMeshes[0] = new aiMesh;
+    scene.mRootNode->mNumMeshes = 1;
+    
+    // fill mesh data
     aiMesh* aimesh = scene.mMeshes[0];
-    aimesh->mMaterialIndex = 0;
 
+    // set default material index
+    aimesh->mMaterialIndex = 0;  
+
+    if (fileType == EFileType::GLTF || fileType == EFileType::GLB) 
+    {
+        // set primitive types to triangles, required for gltf and glb export
+        // for other file types, primitive types is unspecified to avoid normal generation 
+        aimesh->mPrimitiveTypes = aiPrimitiveType_TRIANGLE; 
+    }
+
+    // fill mesh vertices
     aimesh->mNumVertices = pts.size();
     aimesh->mVertices = new aiVector3D[pts.size()];
 
@@ -114,6 +139,7 @@ void Mesh::save(const std::string& filepath)
         ++index;
     }
 
+    // fill mesh faces
     aimesh->mNumFaces = tris.size();
     aimesh->mFaces = new aiFace[tris.size()];
 
@@ -128,31 +154,57 @@ void Mesh::save(const std::string& filepath)
         }
     }
 
-    std::string formatId = fileTypeStr;
+    // exporter setup
+    std::string pFormatId = fileTypeStr;
     unsigned int pPreprocessing = 0u;
-    // If gltf, use gltf 2.0
-    if (fileType == EFileType::GLTF)
+
+    if (fileType == EFileType::GLTF || fileType == EFileType::GLB)
     {
-        formatId = "gltf2";
+        if (fileType == EFileType::GLTF)
+        {
+            // gltf file, use gltf 2.0
+            pFormatId = "gltf2";
+        }
+        else
+        {
+            // glb file, use glb 2.0
+            pFormatId = "glb2";
+        }
+
         // gen normals in order to have correct shading in Qt 3D Scene
         // but cause problems with assimp importer
         pPreprocessing |= aiProcess_GenNormals;
     }
-    // If obj, do not use material
     else if (fileType == EFileType::OBJ)
     {
-        formatId = "objnomtl";
+        // obj file, do not use material
+        pFormatId = "objnomtl";
     }
 
+    // export mesh
     Assimp::Exporter exporter;
-    exporter.Export(&scene, formatId, filepath, pPreprocessing);
+    const aiReturn ret = exporter.Export(&scene, pFormatId, filepath, pPreprocessing);
 
-    ALICEVISION_LOG_INFO("Save mesh to " << fileTypeStr << " done.");
+    // log mesh information
+    ALICEVISION_LOG_DEBUG("Mesh information:" << std::endl
+                          << "\t- # vertices: " << pts.size() << std::endl
+                          << "\t- # triangles: " << tris.size() << std::endl
+                          << "\t- # UVs: " << uvCoords.size() << std::endl
+                          << "\t- # normals: " << normals.size());
 
-    ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
-    ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
-    ALICEVISION_LOG_DEBUG("UVs: " << uvCoords.size());
-    ALICEVISION_LOG_DEBUG("Normals: " << normals.size());
+    // check for errors
+    if (ret != AI_SUCCESS)
+    {
+        if (ret == AI_OUTOFMEMORY)
+        {
+            ALICEVISION_LOG_ERROR("Assimp exporter ran out of memory while exporting mesh to " << filepath);
+        }
+
+        ALICEVISION_THROW_ERROR("Assimp exporter failed to export mesh to " << filepath << ", error: " << exporter.GetErrorString());
+        return;
+    }
+    
+    ALICEVISION_LOG_INFO("Mesh saved.");
 }
 
 bool Mesh::loadFromBin(const std::string& binFilepath)
@@ -2560,52 +2612,72 @@ void Mesh::load(const std::string& filepath, bool mergeCoincidentVerts, Material
             f.v[2] = oldToNewMap[f.v[2]];
         }
     }
-
-    // set number of materials used
-    const std::unordered_set<int> materialIds = std::unordered_set<int>(_trisMtlIds.begin(), _trisMtlIds.end());
-    nmtls = static_cast<int>(materialIds.size());
-
-    // store textures per atlas
-    if (material != nullptr)
+    
+    // get number of materials used and materials properties
+    if (material== nullptr || scene->mNumMaterials <= 1) 
     {
+        std::unordered_set<int> materialIds = std::unordered_set<int>(_trisMtlIds.begin(), _trisMtlIds.end());
+
+        // set number of materials used
+        nmtls = static_cast<int>(materialIds.size());
+    }
+    else
+    {
+        std::unordered_set<int> materialIds; // does not preserve insertion order 
+        std::vector<int> materialIdsWithTriangleOrder;
+
+        // build materialIds and materialIdsWithTriangleOrder
+        for(int id : _trisMtlIds)
+        {
+            if(materialIds.insert(id).second)
+                materialIdsWithTriangleOrder.push_back(id);
+        }
+
+        // set number of materials used
+        nmtls = static_cast<int>(materialIds.size());
+
         // get material properties from the first material as they are shared across all others
         scene->mMaterials[1]->Get(AI_MATKEY_COLOR_AMBIENT, material->ambient);
         scene->mMaterials[1]->Get(AI_MATKEY_COLOR_DIFFUSE, material->diffuse);
         scene->mMaterials[1]->Get(AI_MATKEY_COLOR_SPECULAR, material->specular);
         scene->mMaterials[1]->Get(AI_MATKEY_SHININESS, material->shininess);
 
-        for (int id : materialIds)
+        // get textures from the next materials
+        for (int id : materialIdsWithTriangleOrder)
         {
             aiString diffuse;
-            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), diffuse) == aiReturn_SUCCESS)
+            if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), diffuse) == aiReturn_SUCCESS)
             {
                 material->addTexture(Material::TextureType::DIFFUSE, std::string(diffuse.C_Str()));
             }
 
             aiString displacement;
-            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_DISPLACEMENT(0), displacement) == aiReturn_SUCCESS)
+            if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_DISPLACEMENT(0), displacement) == aiReturn_SUCCESS)
             {
                 material->addTexture(Material::TextureType::DISPLACEMENT, std::string(displacement.C_Str()));
             }
 
             aiString normal;
-            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_NORMALS(0), normal) == aiReturn_SUCCESS)
+            if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_NORMALS(0), normal) == aiReturn_SUCCESS)
             {
                 material->addTexture(Material::TextureType::NORMAL, std::string(normal.C_Str()));
             }
 
             aiString height;
-            if (scene->mMaterials[id + 1]->Get(AI_MATKEY_TEXTURE_HEIGHT(0), height) == aiReturn_SUCCESS)
+            if (scene->mMaterials[id + materialIdOffset]->Get(AI_MATKEY_TEXTURE_HEIGHT(0), height) == aiReturn_SUCCESS)
             {
                 material->addTexture(Material::TextureType::BUMP, std::string(height.C_Str()));
             }
         }
     }
 
-    ALICEVISION_LOG_DEBUG("Vertices: " << pts.size());
-    ALICEVISION_LOG_DEBUG("Triangles: " << tris.size());
-    ALICEVISION_LOG_DEBUG("UVs: " << uvCoords.size());
-    ALICEVISION_LOG_DEBUG("Num Materials: " + std::to_string(nmtls));
+    // log mesh information
+    ALICEVISION_LOG_DEBUG("Mesh information:" << std::endl
+                           << "\t- # vertices: " << pts.size() << std::endl
+                           << "\t- # triangles: " << tris.size() << std::endl
+                           << "\t- # UVs: " << uvCoords.size() << std::endl
+                           << "\t- # normals: " << normals.size() << std::endl
+                           << "\t- # materials: " << nmtls);
 }
 
 bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat, StaticVector<Voxel>& edgesXYStat)

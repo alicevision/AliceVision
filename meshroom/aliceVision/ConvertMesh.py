@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "2.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -6,24 +6,38 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 class ConvertMesh(desc.AVCommandLineNode):
     commandLine = "aliceVision_convertMesh {allParams}"
-
     category = "Utils"
-    documentation = """This node allows to convert a mesh to another format."""
+    documentation = """Convert a mesh to another mesh format."""
 
     inputs = [
         desc.File(
             name="inputMesh",
             label="Input Mesh",
-            description="Input mesh (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).",
+            description="Input mesh (*.obj, *.fbx, *.gltf, *.glb, *.stl, *.ply).",
             value="",
         ),
         desc.ChoiceParam(
             name="outputMeshFileType",
             label="Output File Type",
-            description="Output mesh format (*.obj, *.gltf, *.fbx, *.stl).",
+            description="Output mesh format (*.obj, *.fbx, *.gltf, *.glb, *.stl, *.ply).",
             value="obj",
-            values=["gltf", "obj", "fbx", "stl"],
+            values=["obj", "fbx", "gltf", "glb", "stl", "ply"],
             group="",
+        ),
+        desc.BoolParam(
+            name="flipNormals",
+            label="Flip Normals",
+            description="Flip face normals. It can be needed as it depends on the vertices order "
+                        "in triangles and the convention changes from one software to another.",
+            value=False,
+            advanced=True,
+        ),
+        desc.BoolParam(
+            name="copyTextures",
+            label="Copy Textures",
+            description="Copy input mesh texture files to the output mesh folder.",
+            value=True,
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",
@@ -38,7 +52,7 @@ class ConvertMesh(desc.AVCommandLineNode):
         desc.File(
             name="output",
             label="Mesh",
-            description="Output mesh (*.obj, *.mesh, *.meshb, *.ply, *.off, *.stl).",
+            description="Output mesh (*.obj, *.fbx, *.gltf, *.glb, *.stl, *.ply).",
             value="{nodeCacheFolder}/mesh.{outputMeshFileTypeValue}",
         ),
     ]
