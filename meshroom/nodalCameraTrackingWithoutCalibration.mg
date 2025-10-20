@@ -1,21 +1,23 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0",
+        "releaseVersion": "2026.1.0+develop",
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
             "ConvertDistortion": "1.0",
             "ConvertSfMFormat": "2.0",
             "CopyFiles": "1.3",
-            "ExportAnimatedCamera": "2.0",
+            "ExportAlembic": "1.0",
             "ExportDistortion": "2.0",
+            "ExportImages": "1.1",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageDetectionPrompt": "0.2",
             "ImageMatching": "2.0",
             "ImageSegmentationBox": "0.3",
+            "IntrinsicsTransforming": "1.1",
             "NodalSfM": "2.0",
-            "RelativePoseEstimating": "3.0",
+            "RelativePoseEstimating": "3.1",
             "ScenePreview": "2.0",
             "TracksBuilding": "1.0"
         },
@@ -36,11 +38,11 @@
         "ConvertDistortion_1": {
             "nodeType": "ConvertDistortion",
             "position": [
-                1600,
-                0
+                1616,
+                4
             ],
             "inputs": {
-                "input": "{ExportAnimatedCamera_1.input}"
+                "input": "{NodalSfM_1.output}"
             },
             "internalInputs": {
                 "color": "#80766f"
@@ -62,15 +64,29 @@
                 "color": "#4c594c"
             }
         },
-        "ExportAnimatedCamera_1": {
-            "nodeType": "ExportAnimatedCamera",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
-                1400,
-                0
+                2100,
+                100
             ],
             "inputs": {
-                "input": "{NodalSfM_1.output}",
-                "exportUndistortedImages": true
+                "inputFiles": [
+                    "{ScenePreview_1.output}",
+                    "{ExportDistortion_1.output}",
+                    "{ExportAlembic_1.output}",
+                    "{ExportImages_1.output}"
+                ]
+            }
+        },
+        "ExportAlembic_1": {
+            "nodeType": "ExportAlembic",
+            "position": [
+                1807.0,
+                -129.5
+            ],
+            "inputs": {
+                "input": "{ExportImages_1.target}"
             },
             "internalInputs": {
                 "color": "#80766f"
@@ -85,6 +101,22 @@
             "inputs": {
                 "input": "{ConvertDistortion_1.output}",
                 "exportLensGridsUndistorted": false
+            },
+            "internalInputs": {
+                "color": "#80766f"
+            }
+        },
+        "ExportImages_1": {
+            "nodeType": "ExportImages",
+            "position": [
+                1618.0,
+                -132.5
+            ],
+            "inputs": {
+                "input": "{IntrinsicsTransforming_1.input}",
+                "target": "{IntrinsicsTransforming_1.output}",
+                "outputFileType": "jpg",
+                "namingMode": "keep"
             },
             "internalInputs": {
                 "color": "#80766f"
@@ -165,6 +197,19 @@
                 "color": "#80766f"
             }
         },
+        "IntrinsicsTransforming_1": {
+            "nodeType": "IntrinsicsTransforming",
+            "position": [
+                1423.0,
+                -132.5
+            ],
+            "inputs": {
+                "input": "{NodalSfM_1.output}"
+            },
+            "internalInputs": {
+                "color": "#80766f"
+            }
+        },
         "NodalSfM_1": {
             "nodeType": "NodalSfM",
             "position": [
@@ -178,20 +223,6 @@
             },
             "internalInputs": {
                 "color": "#80766f"
-            }
-        },
-        "CopyFiles_1": {
-            "nodeType": "CopyFiles",
-            "position": [
-                2100,
-                100
-            ],
-            "inputs": {
-                "inputFiles": [
-                    "{ExportAnimatedCamera_1.output}",
-                    "{ScenePreview_1.output}",
-                    "{ExportDistortion_1.output}"
-                ]
             }
         },
         "RelativePoseEstimating_1": {
@@ -213,13 +244,13 @@
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
             "position": [
-                1600,
-                200
+                1799,
+                185
             ],
             "inputs": {
                 "cameras": "{ConvertSfMFormat_1.output}",
                 "model": "{NodalSfM_1.output}",
-                "undistortedImages": "{ExportAnimatedCamera_1.outputUndistorted}",
+                "undistortedImages": "{ExportImages_1.output}",
                 "masks": "{ImageSegmentationBox_1.output}",
                 "pointCloudParams": {
                     "particleSize": 0.001,
