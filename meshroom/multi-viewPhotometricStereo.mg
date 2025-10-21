@@ -1,6 +1,6 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0",
+        "releaseVersion": "2026.1.0+develop",
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.1",
@@ -17,7 +17,7 @@
             "PrepareDenseScene": "3.1",
             "SfMFilter": "2.0",
             "SfMTransfer": "2.1",
-            "SphereDetection": "1.0",
+            "SphereDetection": "2.0",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"
         },
