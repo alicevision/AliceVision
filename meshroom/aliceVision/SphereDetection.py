@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "2.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -31,44 +31,42 @@ Spheres can be automatically detected or manually defined in the interface.
             description="Automatic detection of calibration spheres.",
             value=False,
         ),
+        desc.Circle(
+            name="sphereShape",
+            label="Sphere Shape",
+            description="The shape of the calibration sphere for every image.",
+            enabled=lambda node: not node.autoDetect.value,
+            commandLineGroup=lambda node: None if node.sphereFile.value else "allParams",
+            keyable=True,
+            keyType="viewId",
+        ),
+        desc.File(
+            name="sphereFile",
+            label="Sphere Shape File",
+            description="An input JSON file containing the shapes for every image. If provided, "
+                        "the shapes provided with \"Sphere Shape\" will be ignored.",
+            semantic="shapeFile",
+            value="",
+            enabled=lambda node: not node.autoDetect.value,
+            commandLineGroup=lambda node: None if not node.sphereFile.value else "allParams",
+        ),
+        desc.BoolParam(
+            name="fillMissingSpheres",
+            label="Fill Missing Spheres",
+            description="Checked if a sphere position is to be written as detected although it "
+                        "was not provided. In that case, the position of the last known sphere "
+                        "will be used.",
+            value=False,
+            enabled=lambda node: not node.autoDetect.value,
+        ),
         desc.FloatParam(
             name="minScore",
             label="Minimum Score",
             description="Minimum score for the detection.",
             value=0.0,
             range=(0.0, 50.0, 0.01),
+            enabled=lambda node: node.autoDetect.value,
             advanced=True,
-        ),
-        desc.GroupAttribute(
-            name="sphereCenter",
-            label="Sphere Center",
-            description="Center of the circle (XY offset to the center of the image in pixels).",
-            items=[
-                desc.FloatParam(
-                    name="x",
-                    label="x",
-                    description="X offset in pixels.",
-                    value=0.0,
-                    range=(-1000.0, 10000.0, 1.0),
-                ),
-                desc.FloatParam(
-                    name="y",
-                    label="y",
-                    description="Y offset in pixels.",
-                    value=0.0,
-                    range=(-1000.0, 10000.0, 1.0),
-                ),
-            ],
-            enabled=lambda node: not node.autoDetect.value,
-            commandLineGroup=None,  # skip group from command line
-        ),
-        desc.FloatParam(
-            name="sphereRadius",
-            label="Radius",
-            description="Sphere radius in pixels.",
-            value=500.0,
-            range=(0.0, 10000.0, 0.1),
-            enabled=lambda node: not node.autoDetect.value,
         ),
         desc.ChoiceParam(
             name="verboseLevel",
