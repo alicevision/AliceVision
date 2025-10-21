@@ -12,6 +12,9 @@
 // ONNXRuntime
 #include <onnxruntime_cxx_api.h>
 
+// Boost Property Tree
+#include <boost/property_tree/ptree.hpp>
+
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -23,6 +26,7 @@ namespace sphereDetection {
 
 // namespaces
 namespace fs = std::filesystem;
+namespace bpt = boost::property_tree;
 
 struct Prediction
 {
@@ -30,6 +34,8 @@ struct Prediction
     std::vector<float> scores;
     cv::Size size;
 };
+
+void fillShapeTree(bpt::ptree& fileTree, const bpt::ptree& spheresTree);
 
 /**
  * @brief Print inputs and outputs of neural network, and checks the requirements

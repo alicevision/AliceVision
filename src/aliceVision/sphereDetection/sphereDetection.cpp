@@ -32,18 +32,38 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 // Boost JSON
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-// namespaces
-namespace bpt = boost::property_tree;
-
 namespace aliceVision {
 namespace sphereDetection {
+
+void fillShapeTree(bpt::ptree& fileTree, const bpt::ptree& spheresTree)
+{
+    bpt::ptree shapesTree;
+    {
+        // Shape tree
+        bpt::ptree shapeTree;
+        shapeTree.put("name", "Manual Sphere Detection");
+        shapeTree.put("type", "Circle");
+
+        // Shape properties tree
+        bpt::ptree shapeProperties;
+        shapeProperties.put("color", "green");
+        shapeTree.add_child("properties", shapeProperties);
+
+        // Shape observations tree
+        shapeTree.add_child("observations", spheresTree);
+
+        // Add shape tree to shapes tree
+        shapesTree.push_back(std::make_pair("", shapeTree));
+    }
+
+    fileTree.add_child("shapes", shapesTree);
+}
 
 void modelExplore(Ort::Session& session)
 {
@@ -175,7 +195,7 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
 {
     // Spheres tree
     bpt::ptree spheresTree;
-    
+
     for (auto& viewID : sfmData.getViews())
     {
         ALICEVISION_LOG_DEBUG("View Id: " << viewID);
@@ -216,29 +236,13 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
         }
     }
 
-    // Shapes tree
-    bpt::ptree shapesTree;
-    {
-        // Shape tree
-        bpt::ptree shapeTree;
-        shapeTree.put("name", "Sphere Detection");
-        shapeTree.put("type", "Circle");
 
-        // Shape properties tree
-        bpt::ptree shapeProperties;
-        shapeProperties.put("color", "green");
-        shapeTree.add_child("properties", shapeProperties);
 
-        // Shape observations tree
-        shapeTree.add_child("observations", spheresTree);
 
-        // Add shape tree to shapes tree
-        shapesTree.push_back(std::make_pair("", shapeTree));
-    }
 
     // Main tree
     bpt::ptree fileTree;
-    fileTree.add_child("shapes", shapesTree);
+    fillShapeTree(fileTree, spheresTree);
 
     // Write JSON
     bpt::write_json(outputPath.string(), fileTree);
