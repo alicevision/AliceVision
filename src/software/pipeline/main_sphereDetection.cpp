@@ -29,7 +29,7 @@
 
 #include <onnxruntime_cxx_api.h>
 
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace fs = std::filesystem;
@@ -47,6 +47,9 @@ int aliceVision_main(int argc, char** argv)
     float inputMinScore;
 
     bool autoDetect;
+    std::vector<std::string> x, y, radius;
+    std::string sphereFile;
+    bool fillMissingSpheres;
     Eigen::Vector2f sphereCenter(0, 0);
     double sphereRadius = 1.0;
 
@@ -66,12 +69,16 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("minScore,s", po::value<float>(&inputMinScore)->default_value(0.0),
          "Minimum detection score.")
-        ("x,x", po::value<float>(&sphereCenter(0))->default_value(0.0),
+        ("x,x", po::value<std::vector<std::string>>(&x)->multitoken(),
          "Sphere's center X (pixels).")
-        ("y,y", po::value<float>(&sphereCenter(1))->default_value(0.0),
+        ("y,y", po::value<std::vector<std::string>>(&y)->multitoken(),
          "Sphere's center Y (pixels).")
-        ("sphereRadius,r", po::value<double>(&sphereRadius)->default_value(1.0),
-         "Sphere's radius (pixels).");
+        ("radius,r", po::value<std::vector<std::string>>(&radius)->multitoken(),
+         "Sphere's radius (pixels).")
+        ("sphereFile,f", po::value<std::string>(&sphereFile)->default_value(""),
+         "File containing the positions for the spheres in all the images.")
+        ("fillMissingSpheres,m", po::value<bool>(&fillMissingSpheres)->default_value(true),
+         "True if a sphere position is to be written as detected although it was not provided. In that case, the position of the last known sphere will be used.");
     // clang-format on
 
     CmdLine cmdline("AliceVision sphereDetection");
