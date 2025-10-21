@@ -50,8 +50,6 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::string> x, y, radius;
     std::string sphereFile;
     bool fillMissingSpheres;
-    Eigen::Vector2f sphereCenter(0, 0);
-    double sphereRadius = 1.0;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -120,12 +118,17 @@ int aliceVision_main(int argc, char** argv)
     }
     else
     {
-        std::array<float, 3> sphereParam;
-        sphereParam[0] = sphereCenter(0);
-        sphereParam[1] = sphereCenter(1);
-        sphereParam[2] = sphereRadius;
-
-        sphereDetection::writeManualSphereJSON(sfmData, sphereParam, fsOutputPath);
+        if (sphereFile.empty())
+        {
+            sphereDetection::writeManualSphereJSON(sfmData, x, y, radius, fsOutputPath, fillMissingSpheres);
+        }
+        else
+        {
+            if (!sphereDetection::writeManualSphereJSON(sfmData, sphereFile, outputPath, fillMissingSpheres))
+            {
+                return EXIT_FAILURE;
+            }
+        }
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
