@@ -665,7 +665,7 @@ The needed metadata are:
                     view['metadata'] = json.loads(view['metadata'])
 
             sfmData = {
-                "version": [1, 2, 12],
+                "version": [1, 2, 13],
                 "views": views + newViews,
                 "intrinsics": intrinsics,
                 "featureFolder": "",
