@@ -263,6 +263,7 @@ bool SfmTriangulation::processTrackWithPrior(
             o.setFeatureId(trackItem.featureId);
             o.setScale(trackItem.scale);
             o.setCoordinates(trackItem.coords);
+            o.setDepth(trackItem.depth);
         }
 
         //Store the landmark if it's better than the previously estimated one
