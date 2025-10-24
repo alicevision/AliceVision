@@ -315,7 +315,7 @@ bool process(const sfmData::SfMData & input,
     // for exposure correction
     const double medianCameraExposure = input.getMedianCameraExposureSetting().getExposure(); 
 
-    for (int posImage = 0; posImage < countElements; posImage++)
+    for (int posImage = rangeStart; posImage < rangeEnd; posImage++)
     {
         auto viewsIt = input.getViews().begin();
         std::advance(viewsIt, posImage);
