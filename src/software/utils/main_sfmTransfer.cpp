@@ -191,6 +191,22 @@ int aliceVision_main(int argc, char** argv)
         }
         case EMatchingMethod::FROM_POSEID:
         {
+            for (const auto& viewA : sfmData.getViews())
+            {
+                const auto& poseA = sfmData.getPoses().find(viewA.second->getPoseId());
+                if (sfmDataRef.getPoses().find(poseA->first) != sfmDataRef.getPoses().end())
+                {
+                    for (const auto& viewB : sfmDataRef.getViews())
+                    {
+                        const auto& poseB = sfmDataRef.getPoses().find(viewB.second->getPoseId());
+                        if (poseA->second == poseB->second)
+                        {
+                            commonViewIds.push_back(std::make_pair(viewA.first, poseB->first));
+                            break;
+                        }
+                    }
+                }
+            }
             break;
         }
         case EMatchingMethod::FROM_INTRINSICID:
@@ -223,6 +239,54 @@ int aliceVision_main(int argc, char** argv)
             {
                 view.second->setPoseId(pose->first);
                 sfmData.getPoses().assign(pose->first, *(pose->second));
+            }
+        }
+
+        if (transferLandmarks)
+        {
+            aliceVision::sfmData::Landmarks refLandmarks = sfmDataRef.getLandmarks();
+            if (!refLandmarks.empty())
+            {
+                ALICEVISION_LOG_TRACE("Transfer landmarks");
+                std::map<IndexT, IndexT> commonViewsMap;
+
+                // Create map of common views <viewIdInRef; viewIdInNewSfMData>
+                for (auto viewPair : commonViewIds)
+                {
+                    commonViewsMap.emplace(viewPair.second, viewPair.first);
+                }
+
+                std::map<IndexT, aliceVision::sfmData::Landmark> newLandmarks;
+                for (const auto& landIt : refLandmarks)
+                {
+                    // Copy of the current landmark :
+                    aliceVision::sfmData::Landmark newLandmark = landIt.second;
+
+                    // Clear all observations :
+                    newLandmark.getObservations().clear();
+
+                    // For all observations of the ref landmark :
+                    for (const auto& obsIt : landIt.second.getObservations())
+                    {
+                        const IndexT viewId = obsIt.first;
+                        // If the observation view has a correspondance in the other sfmData, we copy it :
+                        if (commonViewsMap.find(viewId) != commonViewsMap.end())
+                        {
+                            newLandmark.getObservations().emplace(commonViewsMap.at(viewId), landIt.second.getObservations().at(viewId));
+                        }
+                    }
+
+                    // If the landmark has at least one observation in the new scene, we copy it :
+                    if (newLandmark.getObservations().size() > 0)
+                    {
+                        newLandmarks.emplace(landIt.first, newLandmark);
+                    }
+                }
+                sfmData.getLandmarks() = newLandmarks;
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("No landmarks to transfer.");
             }
         }
     }

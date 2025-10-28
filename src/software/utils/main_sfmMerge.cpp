@@ -28,7 +28,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-
 namespace {
 
 /**
@@ -87,13 +86,13 @@ inline std::ostream& operator<<(std::ostream& os, EMergeMethod e) { return os <<
 }  // namespace
 
 /**
- * @brief Merge two sfmData assuming 0 duplicates. 
+ * @brief Merge two sfmData assuming 0 duplicates.
  * simply copy from one to another
  * @param [in, out] sfmData1 the first sfmData
  * @param [in] sfmData2 the second sfmData
  * @return true if no duplicate found
-*/
-bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
+ */
+bool simpleMerge(sfmData::SfMData& sfmData1, const sfmData::SfMData& sfmData2)
 {
     {
         auto& views1 = sfmData1.getViews();
@@ -113,25 +112,23 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
         auto& intrinsics2 = sfmData2.getIntrinsics();
         const size_t totalSize = intrinsics1.size() + intrinsics2.size();
 
-        //If both sfm share a common intrinsicId
-        //Make sure there is no ambiguity and the  content is the same
-        for (const auto & [key, intrinsic] : intrinsics1)
+        intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());  // A modifier
+        // If both sfm share a common intrinsicId
+        // Make sure there is no ambiguity and the  content is the same
+        for (const auto& [key, intrinsic] : intrinsics1)
         {
-            const auto & itIntrinsicOther = intrinsics2.find(key);
+            const auto& itIntrinsicOther = intrinsics2.find(key);
             if (itIntrinsicOther != intrinsics2.end())
             {
-                const auto & obj1 = *intrinsic;
-                const auto & obj2 = *(itIntrinsicOther->second);
+                const auto& obj1 = *intrinsic;
+                const auto& obj2 = *(itIntrinsicOther->second);
 
                 if (!(obj1 == obj2))
                 {
                     ALICEVISION_LOG_ERROR("Unhandled error: common intrinsic ID with different parameters between both SfMData");
-                    return false;
                 }
-            } 
+            }
         }
-
-        intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());
     }
 
     {
@@ -139,25 +136,12 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
         auto& rigs2 = sfmData2.getRigs();
         const size_t totalSize = rigs1.size() + rigs2.size();
 
-        //If both sfm share a common rigid
-        //Make sure there is no ambiguity and the  content is the same
-        for (const auto & [key, rig] : rigs1)
-        {
-            const auto & itRigOther = rigs2.find(key);
-            if (itRigOther != rigs2.end())
-            {
-                const auto & obj1 = rig;
-                const auto & obj2 = itRigOther->second;
-
-                if (!(obj1 == obj2))
-                {
-                    ALICEVISION_LOG_ERROR("Unhandled error: common rig ID with different parameters between both SfMData");
-                    return false;
-                }
-            } 
-        }
-
         rigs1.insert(rigs2.begin(), rigs2.end());
+        if (rigs1.size() < totalSize)
+        {
+            ALICEVISION_LOG_ERROR("Unhandled error: common rigs ID between both SfMData");
+            return false;
+        }
     }
 
     {
@@ -173,30 +157,34 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
         }
     }
 
+    auto& poses1 = sfmData1.getPoses();
+    auto& poses2 = sfmData2.getPoses();
+    const size_t totalSize = poses1.size() + poses2.size();
+    poses1.insert(poses2.begin(), poses2.end());
+
     sfmData1.addFeaturesFolders(sfmData2.getRelativeFeaturesFolders());
     sfmData1.addMatchesFolders(sfmData2.getRelativeMatchesFolders());
 
     return true;
 }
 
-
 /**
- * @brief Merge two sfmData 
+ * @brief Merge two sfmData
  * Align using common landmarks
  * @param [in, out] sfmData1 the first sfmData
  * @param [in] sfmData2 the second sfmData
  * @return true if no duplicate found
-*/
-bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2, const matching::PairwiseMatches & pairwiseMatches)
+ */
+bool fromLandmarksMerge(sfmData::SfMData& sfmData1, const sfmData::SfMData& sfmData2, const matching::PairwiseMatches& pairwiseMatches)
 {
-    //create map (viewId, featureId) -> landmarkId
+    // create map (viewId, featureId) -> landmarkId
     std::map<Pair, IndexT> mapFeatureIdToLandmarkId;
-    for (const auto & plandmark : sfmData1.getLandmarks())
+    for (const auto& plandmark : sfmData1.getLandmarks())
     {
-        for (const auto & pobs : plandmark.second.getObservations())
+        for (const auto& pobs : plandmark.second.getObservations())
         {
             IndexT featureId = pobs.second.getFeatureId();
-            
+
             std::pair<IndexT, IndexT> pairViewFeature;
             pairViewFeature.first = pobs.first;
             pairViewFeature.second = featureId;
@@ -204,12 +192,12 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
         }
     }
 
-    for (const auto & plandmark : sfmData2.getLandmarks())
+    for (const auto& plandmark : sfmData2.getLandmarks())
     {
-        for (const auto & pobs : plandmark.second.getObservations())
+        for (const auto& pobs : plandmark.second.getObservations())
         {
             IndexT featureId = pobs.second.getFeatureId();
-            
+
             std::pair<IndexT, IndexT> pairViewFeature;
             pairViewFeature.first = pobs.first;
             pairViewFeature.second = featureId;
@@ -217,30 +205,30 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
             mapFeatureIdToLandmarkId[pairViewFeature] = plandmark.first;
         }
     }
- 
+
     std::set<std::pair<IndexT, IndexT>> landmarkUniquePairs;
-    //For all pairs:
-    for (const auto & pairMatches : pairwiseMatches)
+    // For all pairs:
+    for (const auto& pairMatches : pairwiseMatches)
     {
         Pair pairViews = pairMatches.first;
 
-        //Is the pair of views is (view in sfmData2, view in sfmData1)
-        //Or the reverse ?
+        // Is the pair of views is (view in sfmData2, view in sfmData1)
+        // Or the reverse ?
         bool reverse = false;
         if (sfmData2.getViews().find(pairViews.first) == sfmData2.getViews().end())
         {
             reverse = true;
         }
 
-        //For all types:
-        for (const auto & pDescMatches: pairMatches.second)
+        // For all types:
+        for (const auto& pDescMatches : pairMatches.second)
         {
-            //For all matches
-            for (const auto & match : pDescMatches.second)
+            // For all matches
+            for (const auto& match : pDescMatches.second)
             {
                 Pair lookup;
-                
-                //Check if the first feature is associated to a landmark
+
+                // Check if the first feature is associated to a landmark
                 lookup.first = pairViews.first;
                 lookup.second = match._i;
                 auto itl1 = mapFeatureIdToLandmarkId.find(lookup);
@@ -249,7 +237,7 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
                     continue;
                 }
 
-                //Check if the second feature is associated to a landmark
+                // Check if the second feature is associated to a landmark
                 lookup.first = pairViews.second;
                 lookup.second = match._j;
                 auto itl2 = mapFeatureIdToLandmarkId.find(lookup);
@@ -259,24 +247,24 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
                 }
 
                 std::pair<IndexT, IndexT> pairOfLandmarks;
-                
+
                 if (reverse)
                 {
                     pairOfLandmarks = std::make_pair(itl1->second, itl2->second);
                 }
-                else 
+                else
                 {
                     pairOfLandmarks = std::make_pair(itl2->second, itl1->second);
                 }
-                
+
                 landmarkUniquePairs.insert(pairOfLandmarks);
             }
         }
     }
 
-    //Transform set to vector for easier manipulation
+    // Transform set to vector for easier manipulation
     std::vector<std::pair<IndexT, IndexT>> landmarkPairs;
-    for (const auto & pair : landmarkUniquePairs)
+    for (const auto& pair : landmarkUniquePairs)
     {
         landmarkPairs.push_back(pair);
     }
@@ -286,9 +274,9 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
     // Move input point in appropriate container
     Mat xA(3, landmarkPairs.size());
     Mat xB(3, landmarkPairs.size());
-    
+
     int count = 0;
-    for (auto & pair : landmarkPairs)
+    for (auto& pair : landmarkPairs)
     {
         xA.col(count) = sfmData1.getLandmarks().at(pair.first).X;
         xB.col(count) = sfmData2.getLandmarks().at(pair.second).X;
@@ -310,18 +298,17 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
 
     ALICEVISION_LOG_INFO("Inliers for SIM(3) : " << inliers.size());
 
-    //Given inliers, create a map to translate matched landmarks from sfmData2 to sfmData1
+    // Given inliers, create a map to translate matched landmarks from sfmData2 to sfmData1
     std::map<IndexT, IndexT> mapL2toL1;
-    for (const auto & pl : sfmData2.getLandmarks())
+    for (const auto& pl : sfmData2.getLandmarks())
     {
         mapL2toL1[pl.first] = UndefinedIndexT;
     }
-    for (const auto & inlier : inliers)
+    for (const auto& inlier : inliers)
     {
-        const auto & p = landmarkPairs[inlier];
+        const auto& p = landmarkPairs[inlier];
         mapL2toL1[p.second] = p.first;
     }
-
 
     // Apply found transformation on sfmData1
     sfm::applyTransform(sfmData1, S, R, t);
@@ -329,8 +316,8 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
     ALICEVISION_LOG_INFO("First sfmData landmarks : " << sfmData1.getLandmarks().size());
     ALICEVISION_LOG_INFO("Second sfmData landmarks : " << sfmData2.getLandmarks().size());
 
-    //Merge landmarks
-    auto & landmarks1 = sfmData1.getLandmarks();
+    // Merge landmarks
+    auto& landmarks1 = sfmData1.getLandmarks();
 
     //Find the largest landmarkId to start available index
     IndexT availableId = 0;
@@ -348,17 +335,16 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
             landmarks1[availableId] = landmark;
             availableId++;
         }
-        else 
+        else
         {
-            auto & obs1 = landmarks1[l1id].getObservations();
-            const auto & obs2 = landmark.getObservations();
+            auto& obs1 = landmarks1[l1id].getObservations();
+            const auto& obs2 = pl.second.getObservations();
             obs1.insert(obs2.begin(), obs2.end());
         }
     }
 
     ALICEVISION_LOG_INFO("Result sfmData landmarks : " << sfmData1.getLandmarks().size());
-    
-    
+
     // Simple merge of views
     auto& views1 = sfmData1.getViews();
     auto& views2 = sfmData2.getViews();
@@ -435,7 +421,7 @@ int aliceVision_main(int argc, char** argv)
 
     for (int id = 0; id < sfmDataFilenames.size(); id++)
     {
-        const std::string & filename = sfmDataFilenames[id];
+        const std::string& filename = sfmDataFilenames[id];
         ALICEVISION_LOG_INFO("Processing " << filename);
 
         // Load input scene
@@ -459,7 +445,7 @@ int aliceVision_main(int argc, char** argv)
                 return EXIT_FAILURE;
             }
         }
-        else 
+        else
         {
             // get imageDescriber type
             const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
@@ -475,7 +461,7 @@ int aliceVision_main(int argc, char** argv)
                 }
 
                 ALICEVISION_LOG_WARNING(ss.str());
-                
+
                 return EXIT_FAILURE;
             }
 
@@ -485,7 +471,6 @@ int aliceVision_main(int argc, char** argv)
             }
         }
     }
-  
 
     if (!sfmDataIO::save(outputSfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     {
