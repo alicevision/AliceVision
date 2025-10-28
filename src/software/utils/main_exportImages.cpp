@@ -315,7 +315,7 @@ bool process(const sfmData::SfMData & input,
     // for exposure correction
     const double medianCameraExposure = input.getMedianCameraExposureSetting().getExposure(); 
 
-    for (int posImage = rangeStart; posImage < rangeEnd; posImage++)
+    for (int posImage = 0; posImage < countElements; posImage++)
     {
         auto viewsIt = input.getViews().begin();
         std::advance(viewsIt, posImage);
@@ -345,7 +345,8 @@ bool process(const sfmData::SfMData & input,
         std::string outFileName = namingFunction(view);
         outputView.getImage().setImagePath(outFileName);
 
-        if (posImage < rangeStart && posImage >= rangeEnd)
+        //Real processing is ignored if we are not in the chunk
+        if (posImage < rangeStart || posImage >= rangeEnd)
         {
             continue;
         }
