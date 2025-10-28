@@ -441,7 +441,10 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     const int memoryPerAtlas = (imageMaxMemSize + imagePyramidMaxMemSize) + atlasPyramidMaxMemSize;
     int nbAtlasMax = std::floor(availableMem / double(memoryPerAtlas));  // maximum number of textures laplacian pyramid in RAM
     nbAtlasMax = std::min(nbAtlas, nbAtlasMax);                          // if enough memory, do it with all atlases
+
     nbAtlasMax = std::max(1, nbAtlasMax);                                // avoid division zero calculating chunks
+    if (nbAtlasMax == 0)
+        nbAtlasMax = 1;
 
     ALICEVISION_LOG_INFO("nbAtlas: " << nbAtlas);
     ALICEVISION_LOG_INFO("availableRam: " << availableRam);

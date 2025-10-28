@@ -144,7 +144,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         for (auto& viewId : viewIds)
         {
             const fs::path imagePath = fs::path(sfmData.getView(viewId).getImage().getImagePath());
-            if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
+            if (!boost::algorithm::icontains(imagePath.stem().string(), "led_19"))
             {
                 ALICEVISION_LOG_INFO(" - " << imagePath.string());
                 imageList.push_back(imagePath.string());
@@ -196,6 +196,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
             }
             continue;
         }
+
         skipAll = false;
         groupedImages = imageList.size() > 1 ? true : false;
 
@@ -215,7 +216,8 @@ void photometricStereo(const sfmData::SfMData& sfmData,
 
         if (sfmData.getPoses().size() > 0)
         {
-            const Mat3 rotation = sfmData.getPose(sfmData.getView(viewIds[0])).getTransform().rotation().transpose();
+            Eigen::MatrixXd rotation = sfmData.getPose(sfmData.getView(viewIds[0])).getTransform().rotation().transpose();
+            std::cout << "rotation: " << rotation << std::endl;
             applyRotation(rotation, normals);
         }
 
@@ -224,13 +226,12 @@ void photometricStereo(const sfmData::SfMData& sfmData,
           normals,
           image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 
-
-        image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
-        convertNormalMap2png(normals, normalsImPNG);
-        image::writeImage(
-            outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.png",
-            normalsImPNG,
-            image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+        // image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
+        // convertNormalMap2png(normals, normalsImPNG);
+        // image::writeImage(
+        //     outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.png",
+        //     normalsImPNG,
+        //     image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
     }
 
     if (skipAll)
@@ -247,28 +248,67 @@ void photometricStereo(const sfmData::SfMData& sfmData,
                                    "pose ID. The photometric stereo cannot run otherwise.");
     }
 
+    // Create map views to poseId(= new viewId)
+    std::map<IndexT, IndexT> viewToPoseId;
     sfmData::SfMData albedoSfmData = sfmData;
 
     std::set<IndexT> viewIdsToRemove;
-    // Create Albedo SfmData
-    for (auto& viewIt : albedoSfmData.getViews())
-    {
-        const IndexT viewId = viewIt.first;
-        IndexT poseId = viewIt.second->getPoseId();
 
-        if (viewId == poseId)
+    // Create Albedo SfmData
+    for (auto it1 = albedoSfmData.getViews().begin(); it1 != albedoSfmData.getViews().end(); ++it1)
+    {
+        const IndexT viewId = it1->first;
+        IndexT poseId = it1->second->getPoseId();
+
+        std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.exr";
+        it1->second->getImage().setImagePath(imagePath);
+
+        viewToPoseId.insert(std::make_pair(viewId, poseId));
+
+        for (auto it2 = std::next(it1); it2 != albedoSfmData.getViews().end(); ++it2)
         {
-            sfmData::View* view = albedoSfmData.getViews().at(viewId).get();
-            std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.exr";
-            view->getImage().setImagePath(imagePath);
+            const IndexT otherViewId = it2->first;
+            IndexT otherPoseId = it2->second->getPoseId();
+
+            if (poseId == otherPoseId)
+            {
+                viewIdsToRemove.insert(otherViewId);
+            }
         }
-        else
-        {
-            viewIdsToRemove.insert(viewId);
-        }
+
+        for (auto r : viewIdsToRemove)
+            albedoSfmData.getViews().erase(r);
+
+        viewIdsToRemove.clear();
     }
-    for (auto r : viewIdsToRemove)
-        albedoSfmData.getViews().erase(r);
+
+    std::cout << "test" << std::endl;
+    for (auto& viewsIt : albedoSfmData.getViews())
+    {
+        IndexT oldViewId = viewsIt.first;
+        IndexT newViewId = viewsIt.second->getPoseId();
+
+        viewsIt.second->setViewId(newViewId);
+    }
+
+    // for (auto& viewIt : albedoSfmData.getViews())
+    // {
+    //     const IndexT viewId = viewIt.first;
+    //     IndexT poseId = viewIt.second->getPoseId();
+
+    //     if (viewId == poseId)
+    //     {
+    //         sfmData::View* view = albedoSfmData.getViews().at(viewId).get();
+    //         std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.exr";
+    //         view->getImage().setImagePath(imagePath);
+    //     }
+    //     else
+    //     {
+    //         viewIdsToRemove.insert(viewId);
+    //     }
+    // }
+    // for (auto r : viewIdsToRemove)
+    //     albedoSfmData.getViews().erase(r);
 
     sfmDataIO::save(
       albedoSfmData, outputPath + "/albedoMaps.sfm", sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS));
@@ -513,7 +553,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
             int currentIdx;
             for (size_t ch = 0; ch < 3; ++ch)
             {
-                // Create I matrix for current pixel
+                // Create pixelValues_channel matrix for current channel
                 Eigen::MatrixXf pixelValues_channel(imageList.size(), currentMaskSize);
                 for (size_t i = 0; i < imageList.size(); ++i)
                 {
@@ -558,7 +598,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
             // Channelwise albedo estimation
             for (size_t ch = 0; ch < 3; ++ch)
             {
-                // Create I matrix for current pixel
+                // Create pixelValues_channel matrix for current pixel
                 Eigen::MatrixXf pixelValues_channel(imageList.size(), currentMaskSize);
                 for (size_t i = 0; i < imageList.size(); ++i)
                 {
@@ -604,7 +644,7 @@ void loadPSData(const std::string& folderPath, const size_t SH_order, std::vecto
     intFileName = folderPath + "/light_intensities.txt";
     loadLightIntensities(intFileName, intList);
 
-    // Conversion matrix
+    // Convertion matrix
     Eigen::MatrixXf convertionMatrix = Eigen::Matrix<float, 3, 3>::Identity();
     pathToCM = folderPath + "/convertionMatrix.txt";
     if (utils::exists(pathToCM))
@@ -638,7 +678,7 @@ void getPicturesNames(const std::string& folderPath, std::vector<std::string>& i
         std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
 
         if (!boost::algorithm::icontains(currentFilePath.stem().string(), "mask") &&
-            !boost::algorithm::icontains(currentFilePath.stem().string(), "ambient"))
+            !boost::algorithm::icontains(currentFilePath.stem().string(), "led_19"))
         {
             for (const std::string& extension : extensions)
             {
@@ -695,9 +735,12 @@ void applyRotation(const Eigen::MatrixXd& rotation, image::Image<image::RGBfColo
     {
         for (int j = 0; j < normals.cols(); ++j)
         {
-            normals(i, j)(0) = rotation(0, 0) * normals(i, j)(0) + rotation(0, 1) * normals(i, j)(1) + rotation(0, 2) * normals(i, j)(2);
-            normals(i, j)(1) = rotation(1, 0) * normals(i, j)(0) + rotation(1, 1) * normals(i, j)(1) + rotation(1, 2) * normals(i, j)(2);
-            normals(i, j)(2) = rotation(2, 0) * normals(i, j)(0) + rotation(2, 1) * normals(i, j)(1) + rotation(2, 2) * normals(i, j)(2);
+            const auto& normal = normals(i, j).cast<double>();
+            image::Rgb<double> normal_out;
+            normal_out(0) = rotation(0, 0) * normal(0) + rotation(0, 1) * normal(1) + rotation(0, 2) * normal(2);
+            normal_out(1) = rotation(1, 0) * normal(0) + rotation(1, 1) * normal(1) + rotation(1, 2) * normal(2);
+            normal_out(2) = rotation(2, 0) * normal(0) + rotation(2, 1) * normal(1) + rotation(2, 2) * normal(2);
+            normals(i, j) = image::RGBfColor(normal_out(0), normal_out(1), normal_out(2));
         }
     }
 }

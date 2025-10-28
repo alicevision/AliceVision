@@ -103,11 +103,11 @@ bool prepareDenseScene(const SfMData& sfmData,
     sfmData::Views::const_iterator itViewBegin = sfmData.getViews().begin();
     sfmData::Views::const_iterator itViewEnd = sfmData.getViews().end();
 
-    if (endIndex > 0)
-    {
-        itViewEnd = itViewBegin;
-        std::advance(itViewEnd, endIndex);
-    }
+    // if (endIndex > 0)
+    //{
+    //     itViewEnd = itViewBegin;
+    //     std::advance(itViewEnd, endIndex);
+    // }
 
     std::advance(itViewBegin, (beginIndex < 0) ? 0 : beginIndex);
 

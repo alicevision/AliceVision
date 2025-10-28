@@ -812,8 +812,9 @@ int aliceVision_main(int argc, char** argv)
             for (const IndexT vId : poseGroup.second)
             {
                 const fs::path imagePath = fs::path(sfmData.getView(vId).getImage().getImagePath());
-                if (boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
+                if (boost::algorithm::icontains(imagePath.stem().string(), "led_19"))
                 {
+                    std::cout << "Led_19" << std::endl;
                     hasAmbient = true;
                     for (const auto it : poseGroup.second)
                     {

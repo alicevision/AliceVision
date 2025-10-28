@@ -94,9 +94,9 @@ int aliceVision_main(int argc, char* argv[])
          "Output mesh file type.")
         ("colorMappingFileType", po::value<image::EImageFileType>(&texParams.textureFileType)->default_value(texParams.textureFileType),
          image::EImageFileType_informations().c_str())
-        ("heightFileType", po::value<image::EImageFileType>(&heightFileType)->default_value(image::EImageFileType::NONE),
+        ("heightFileType", po::value<image::EImageFileType>(&heightFileType)->default_value(image::EImageFileType::EXR),
          image::EImageFileType_informations().c_str())
-        ("normalFileType", po::value<image::EImageFileType>(&normalFileType)->default_value(image::EImageFileType::NONE),
+        ("normalFileType", po::value<image::EImageFileType>(&normalFileType)->default_value(image::EImageFileType::EXR),
          image::EImageFileType_informations().c_str())
         ("displacementMappingFileType", po::value<image::EImageFileType>(&bumpMappingParams.displacementFileType)->default_value(bumpMappingParams.displacementFileType),
          image::EImageFileType_informations().c_str())
@@ -130,7 +130,7 @@ int aliceVision_main(int argc, char* argv[])
         ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
          "Option to uniformize images exposure.")
         ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
-         "Triangle visibility is based on the union of vertices visibility.")
+         "Triangle visibility is based on the union of vertices visiblity.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
          "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the "
          "convention changes from one software to another.")
@@ -257,8 +257,8 @@ int aliceVision_main(int argc, char* argv[])
     if (!normalsFolder.empty() && bumpMappingParams.bumpMappingFileType != image::EImageFileType::NONE)
     {
         ALICEVISION_LOG_INFO("Generate normal maps.");
-        mvsUtils::MultiViewParams mpN(sfmData, normalsFolder);
-        mesh.generateTextures(mpN, outputFolder, hwc.getMaxMemory(), texParams.textureFileType, mvsUtils::EFileType::normalMap);
+        mvsUtils::MultiViewParams mpN(sfmData, "", normalsFolder, "", mvsUtils::EFileType::normalMap);
+        mesh.generateTextures(mpN, outputFolder, hwc.getMaxMemory(), bumpMappingParams.bumpMappingFileType, mvsUtils::EFileType::normalMap);
     }
 
     // save final obj file
