@@ -101,6 +101,19 @@ int aliceVision_main(int argc, char** argv)
             continue;
         }
 
+        int swidth = view->getImage().getWidth();
+        int sheight = view->getImage().getHeight();
+        
+        double scaleW = 1.0;
+        double scaleH = 1.0;
+        if (depthImg.width() != swidth || depthImg.height() != sheight)
+        {
+            ALICEVISION_LOG_INFO("Depth image has a different size than the input image");
+            scaleW = double(depthImg.width()) / double(swidth);
+            scaleH = double(depthImg.height()) / double(sheight);
+            ALICEVISION_LOG_INFO("Relative scale : (" << scaleW << ","<< scaleH <<")");
+        }
+
         ALICEVISION_LOG_INFO("Injecting from " << depthPath);
         for (const auto & trackId: tracksPerView.at(idView))
         {
@@ -108,8 +121,8 @@ int aliceVision_main(int argc, char** argv)
 
             auto & feature = track.featPerView.at(idView);
             
-            int ix = int(feature.coords.x());
-            int iy = int(feature.coords.y());
+            int ix = int(scaleW * feature.coords.x());
+            int iy = int(scaleH * feature.coords.y());
 
             if (ix < 0 || ix >= depthImg.width()) continue;
             if (iy < 0 || iy >= depthImg.height()) continue;
