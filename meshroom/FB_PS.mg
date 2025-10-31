@@ -112,6 +112,13 @@
                 2085,
                 -310
             ],
+            "parallelization": {
+                "blockSize": 40,
+                "size": 7,
+                "split": 1
+            },
+            "uid": "a91a496f49031aa7d6ead7f01f7dd1508667651e",
+            "internalFolder": "{cache}/{nodeType}/{uid}",
             "inputs": {
                 "input": "{SfMTransfer_2.output}"
             }
@@ -201,7 +208,18 @@
             ],
             "inputs": {
                 "inputFile": "{SfMFilter_1.outputSfMData_unselected}",
-                "fileMatchingPattern": ".*cam_06.*"
+                "fileMatchingPattern": ".*cam_06.*",
+                "verboseLevel": "info"
+            },
+            "internalInputs": {
+                "invalidation": "",
+                "comment": "",
+                "label": "",
+                "color": ""
+            },
+            "outputs": {
+                "outputSfMData_selected": "{nodeCacheFolder}/selectedSfmData.sfm",
+                "outputSfMData_unselected": "{nodeCacheFolder}/unselectedSfmData.sfm"
             }
         },
         "SfMMerge_3": {
@@ -210,6 +228,13 @@
                 1598,
                 -295
             ],
+            "parallelization": {
+                "blockSize": 0,
+                "size": 7,
+                "split": 1
+            },
+            "uid": "1951f9866218fc218aac1baf903164bc5f98b333",
+            "internalFolder": "{cache}/{nodeType}/{uid}",
             "inputs": {
                 "inputs": [
                     "{PhotometricStereo_1.outputSfmDataAlbedo}",
@@ -240,6 +265,13 @@
                 1836,
                 -181
             ],
+            "parallelization": {
+                "blockSize": 0,
+                "size": 7,
+                "split": 1
+            },
+            "uid": "15a09d284260835737b09320ad135bc8fa6a66b1",
+            "internalFolder": "{cache}/{nodeType}/{uid}",
             "inputs": {
                 "input": "{SfMMerge_3.output}",
                 "reference": "{SfMTransfer_1.output}"
@@ -251,6 +283,13 @@
                 2513,
                 -204
             ],
+            "parallelization": {
+                "blockSize": 0,
+                "size": 1,
+                "split": 1
+            },
+            "uid": "afaec7600d08984ef40280d5139facf8c5440067",
+            "internalFolder": "{cache}/{nodeType}/{uid}",
             "inputs": {
                 "input": "{SfMTransfer_2.output}",
                 "imagesFolder": "{PrepareDenseScene_7.output}",
