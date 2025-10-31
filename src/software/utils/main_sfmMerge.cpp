@@ -338,7 +338,7 @@ bool fromLandmarksMerge(sfmData::SfMData& sfmData1, const sfmData::SfMData& sfmD
         else
         {
             auto& obs1 = landmarks1[l1id].getObservations();
-            const auto& obs2 = pl.second.getObservations();
+            const auto& obs2 = landmark.getObservations();
             obs1.insert(obs2.begin(), obs2.end());
         }
     }
