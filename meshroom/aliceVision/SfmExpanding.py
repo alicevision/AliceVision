@@ -1,4 +1,4 @@
-__version__ = "2.2"
+__version__ = "2.3"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -173,6 +173,12 @@ class SfMExpanding(desc.AVCommandLineNode):
                         "principal point, distortion if any) constant during the reconstruction.\n"
                         "This may be helpful if the input cameras are already fully calibrated.",
             value=False,
+        ),
+        desc.BoolParam(
+            name="enableStructureRefinement",
+            label="Enable Structure Refinement",
+            description="Bundle adjustment will try to optimize the landmarks positions.",
+            value=True,
         ),
         desc.IntParam(
             name="minNbCamerasToRefinePrincipalPoint",

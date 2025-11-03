@@ -22,7 +22,12 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
 
     refineOptions |= BundleAdjustment::REFINE_ROTATION; 
     refineOptions |= BundleAdjustment::REFINE_TRANSLATION;
-    refineOptions |= BundleAdjustment::REFINE_STRUCTURE;
+
+    if (_isStructureRefinementEnabled)
+    {
+        refineOptions |= BundleAdjustment::REFINE_STRUCTURE;
+    }
+
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
     options.setSparseBA();
