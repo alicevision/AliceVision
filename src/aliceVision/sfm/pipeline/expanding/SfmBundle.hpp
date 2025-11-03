@@ -72,6 +72,15 @@ public:
         _minNbCamerasToRefinePrincipalPoint = count;
     }
 
+    /**
+     * @brief Set whether to enable structure refinement in bundle adjustment
+     * @param flag true to enable structure refinement, false to disable it
+    */
+    void setIsStructureRefinementEnabled(bool flag)
+    {
+        _isStructureRefinementEnabled = flag;
+    }
+
 private:
     /**
      * Initialize bundle properties
@@ -105,6 +114,7 @@ private:
     size_t _minNbCamerasLBA = 100;
     size_t _LBAGraphDistanceLimit = 1;
     size_t _LBAMinNbOfMatches = 50;
+    bool _isStructureRefinementEnabled = true;
 };
 
 } // namespace sfm
