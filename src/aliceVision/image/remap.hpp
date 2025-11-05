@@ -131,7 +131,9 @@ void remapInter(const Image<P> & source, const Image<Vec2> & map, const P& fillC
 
                 //Not using sampler as the neigborhood size is dynamic
 
-                P sum(0.0);
+                P sum;
+                sum.fill(0.0);
+
                 double wsum = 0.0;
 
                 for (int by = iy1; by < iy2; by++)
@@ -157,9 +159,16 @@ void remapInter(const Image<P> & source, const Image<Vec2> & map, const P& fillC
                         // (bx + 1) - x1
                         // or x2 - bx
                         double xocc = std::max(0.0, std::min(double(bx + 1), x2) - std::max(double(bx), x1));
+                        
+                        const P & pix = source(by, bx);
                         double weight = yocc * xocc;
+                        
+                        if constexpr (std::is_same<P, RGBAfColor>())
+                        {   
+                            weight *= pix.a();
+                        }
 
-                        sum += source(by, bx) * weight;
+                        sum += pix * weight;
                         wsum += weight;
                     }
                 }
@@ -169,11 +178,6 @@ void remapInter(const Image<P> & source, const Image<Vec2> & map, const P& fillC
                 if (wsum > 0.0)
                 {
                     sum /= wsum;
-
-                    if constexpr (std::is_same<P, RGBAfColor>())
-                    {
-                        sum.a() = 1.0;
-                    }
                 }
 
                 output(i, j) = sum;
