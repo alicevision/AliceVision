@@ -39,6 +39,7 @@ For example, the target intrinsics may be the same without the distortion.
             name="masksFolders",
             label="Masks Folders",
             description="Use masks from specific folder(s). Filename should be the same or the image UID.",
+            exposed=True
         ),
         desc.ChoiceParam(
             name="outputFileType",
