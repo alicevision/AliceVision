@@ -19,6 +19,7 @@ set(image_files_headers
     pixelTypes.hpp
     Rgb.hpp
     Sampler.hpp
+    remap.hpp
     cache.hpp
 )
 
@@ -31,6 +32,7 @@ set(image_files_sources
     io.cpp
     imageAlgo.cpp
     jetColorMap.cpp
+    remap.cpp
     cache.cpp
 )
 
