@@ -1,7 +1,7 @@
 __version__ = "1.1"
 
 from meshroom.core import desc
-from meshroom.core.utils import VERBOSE_LEVEL
+from meshroom.core.utils import COLORSPACES, EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
 
 
 class ExportImages(desc.AVCommandLineNode):
@@ -28,6 +28,17 @@ For example, the target intrinsics may be the same without the distortion.
             label="Target SfMData",
             description="This SfMData file contains the required intrinsics for the output images.",
             value="",
+        ),
+        desc.ListAttribute(
+            elementDesc=desc.File(
+                name="masksFolder",
+                label="Masks Folder",
+                description="",
+                value="",
+            ),
+            name="masksFolders",
+            label="Masks Folders",
+            description="Use masks from specific folder(s). Filename should be the same or the image UID.",
         ),
         desc.ChoiceParam(
             name="outputFileType",
@@ -61,23 +72,24 @@ For example, the target intrinsics may be the same without the distortion.
             value="viewid",
             values=["viewid", "frameid", "keep"],
         ),
-        desc.ListAttribute(
-            elementDesc=desc.File(
-                name="masksFolder",
-                label="Masks Folder",
-                description="",
-                value="",
-            ),
-            name="masksFolders",
-            label="Masks Folders",
-            description="Use masks from specific folder(s). Filename should be the same or the image UID.",
-        ),
         desc.ChoiceParam(
             name="maskExtension",
             label="Mask Extension",
             description="File extension for the masks to use.",
             value="png",
             values=["exr", "jpg", "png"],
+        ),
+        desc.ChoiceParam(
+            name="storageDataType",
+            label="Storage Data Type",
+            description="Storage image data type:\n"
+                        " - float: Use full floating point (32 bits per channel).\n"
+                        " - half: Use half float (16 bits per channel).\n"
+                        " - halfFinite: Use half float, but clamp values to avoid non-finite values.\n"
+                        " - auto: Use half float if all values can fit, else use full float.",
+            values=EXR_STORAGE_DATA_TYPE,
+            value="halfFinite",
+            enabled=lambda node: node.outputFileType.value == "exr"
         ),
         desc.ChoiceParam(
             name="verboseLevel",

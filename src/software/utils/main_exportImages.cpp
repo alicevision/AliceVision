@@ -202,6 +202,7 @@ void ImageRemoveDistortion(const image::Image<T>& imageIn,
  * @param medianCameraExposure median camera exposure for the sfmData
  * @param masksFolders the mask folders list
  * @param maskExtension the mask extension
+ * @param storageDatatype output image storage data type
  * @return false on error
 */
 bool processImage(const std::string& dstFileName,
@@ -214,7 +215,8 @@ bool processImage(const std::string& dstFileName,
              double cameraExposure,
              double medianCameraExposure,
              const std::vector<std::string> & masksFolders,
-             const std::string & maskExtension)
+             const std::string & maskExtension,
+             const image::EStorageDataType & storageDataType)
 {
     image::Image<image::RGBAfColor> image;
     image::Image<image::RGBAfColor> image_ud;
@@ -304,7 +306,9 @@ bool processImage(const std::string& dstFileName,
     //Write the result
     try
     {
-        writeImage(dstFileName, image_ud, image::ImageWriteOptions(), metadata, roi);
+        image::ImageWriteOptions writeOptions;
+        writeOptions.storageDataType(storageDataType);
+        writeImage(dstFileName, image_ud, writeOptions, metadata, roi);
     }
     catch (...)
     {
@@ -324,6 +328,7 @@ bool processImage(const std::string& dstFileName,
  * @param exportFullRod do we export the full rod or not
  * @param masksFolders the mask folders list
  * @param maskExtension the mask extension
+ * @param storageDatatype output image storage data type
  * @param rangeStart the initial view index to process (range selection)
  * @param rangeEnd the last view index to process (range selection)
 */
@@ -334,6 +339,7 @@ bool process(const sfmData::SfMData & input,
              bool exportFullRod,
              const std::vector<std::string> & masksFolders,
              const std::string & maskExtension,
+             const image::EStorageDataType & storageDataType,
              size_t rangeStart,
              size_t rangeEnd)
 {
@@ -391,7 +397,8 @@ bool process(const sfmData::SfMData & input,
                     view.getImage().getCameraExposureSetting().getExposure(),
                     medianCameraExposure,
                     masksFolders,
-                    maskExtension);
+                    maskExtension,
+                    storageDataType);
     }
 
     return true;
@@ -413,6 +420,7 @@ int aliceVision_main(int argc, char* argv[])
     int rangeSize = 1;
     bool evCorrection = false;
     bool exportFullROD = false;
+    image::EStorageDataType storageDataType = image::EStorageDataType::HalfFinite;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -443,7 +451,9 @@ int aliceVision_main(int argc, char* argv[])
          "Use masks from specific folder(s).\n"
          "Filename should be the same or the image UID.")
         ("maskExtension", po::value<std::string>(&maskExtension)->default_value(maskExtension),
-         "File extension of the masks to use.");
+         "File extension of the masks to use.")
+        ("storageDataType", po::value<image::EStorageDataType>(&storageDataType)->default_value(storageDataType),
+         ("Storage data type: " + image::EStorageDataType_informations()).c_str());
     // clang-format on
 
     CmdLine cmdline("AliceVision prepareDenseScene");
@@ -561,6 +571,7 @@ int aliceVision_main(int argc, char* argv[])
                 exportFullROD,
                 masksFolders, 
                 maskExtension,
+                storageDataType,
                 rangeStart, 
                 rangeEnd))
     {
