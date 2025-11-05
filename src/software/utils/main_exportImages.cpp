@@ -12,6 +12,8 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/Sampler.hpp>
+#include <aliceVision/image/remap.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 #include <boost/program_options.hpp>
 
 // These constants define the current software version.
@@ -96,8 +98,7 @@ void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
         yOffset = roi.ybegin;
     }
 
-    image_ud.resize(widthRoi, heightRoi, true, fillcolor);
-    const image::Sampler2d<image::SamplerLinear> sampler;
+    image::Image<Vec2> map(widthRoi, heightRoi);
 
 #pragma omp parallel for
     for (int y = 0; y < heightRoi; ++y)
@@ -108,15 +109,41 @@ void ImageIntrinsicsTransform(const image::Image<T>& imageIn,
 
             // compute coordinates with distortion
             const Vec3 intermediate = intrinsicOutput.backProjectUnit(undisto_pix);
-            const Vec2 disto_pix = intrinsicSource.project(intermediate.homogeneous(), true);
-
-            // pick pixel if it is in the image domain
-            if (imageIn.contains(disto_pix(1), disto_pix(0)))
-            {
-                image_ud(y, x) = sampler(imageIn, disto_pix(1), disto_pix(0));
-            }
+            map(y, x) = intrinsicSource.project(intermediate.homogeneous(), true);
         }
     }
+
+    remapInter(imageIn, map, fillcolor, image_ud);
+}
+
+bool isFullComputeNeeded(const camera::IntrinsicBase & source, const camera::IntrinsicBase & dest)
+{
+    // Is the output undistorted
+    if (dest.hasDistortion())
+    {
+        return true;
+    }
+    
+    // Do we need to cast to a different intrinsic type ?
+    if (source.getType() != dest.getType())
+    {
+        return true;
+    }
+
+    // Are the "non distortion" parameters equal ?
+    try
+    {
+        const auto& isod = dynamic_cast<const camera::IntrinsicScaleOffsetDisto&>(source);
+        if (!isod.equalTo(dest, true))
+        {
+            return true;
+        }
+    }
+    catch (const std::bad_cast& e)
+    {
+    }
+                
+    return false;
 }
 
 template<typename T>
@@ -260,17 +287,18 @@ bool processImage(const std::string& dstFileName,
         roi = convertRodToRoi(outputIntrinsic, rod);
     }
     
-    bool shortCut = (sourceIntrinsic.getType() == outputIntrinsic.getType()) &&
-                    (outputIntrinsic.hasDistortion() == false);
-    if (shortCut)
+    // Guess if we can accelerate stuff
+    if (isFullComputeNeeded(sourceIntrinsic, outputIntrinsic))
     {
-        // undistort the image and save it
-        ImageRemoveDistortion(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0), rod);
+        // Transform the image and save it
+        ALICEVISION_LOG_INFO("Using full complex transform.");
+        ImageIntrinsicsTransform(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0), rod);
     }
     else 
     {
-        // Transform the image and save it
-        ImageIntrinsicsTransform(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0), rod);
+        // undistort the image and save it
+        ALICEVISION_LOG_INFO("Using Simplified undistortion transform.");
+        ImageRemoveDistortion(image, sourceIntrinsic, outputIntrinsic, image_ud, image::RGBAfColor(0.0), rod);
     }
 
     //Write the result

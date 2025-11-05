@@ -63,7 +63,20 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
 
     void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const IntrinsicScaleOffsetDisto&>(other); }
 
+    /**
+    * @brief compare to another intrinsic object
+    * @param otherBase an intrinsic object to compare to.
+    * @return true if both objects are considered equal
+    */
     bool operator==(const IntrinsicBase& otherBase) const override;
+
+    /**
+    * @brief compare to another intrinsic object
+    * @param otherBase an intrinsic object to compare to.
+    * @param ignoreDistortion ignore difference in distortion.
+    * @return true if both objects are considered equal
+    */
+    bool equalTo(const IntrinsicBase& otherBase, bool ignoreDistortion) const;
 
     void setDistortionObject(std::shared_ptr<Distortion> object) { _pDistortion = object; }
 
