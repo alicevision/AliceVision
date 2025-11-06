@@ -16,6 +16,11 @@ std::shared_ptr<IntrinsicScaleOffsetDisto> IntrinsicScaleOffsetDisto::cast(std::
 
 bool IntrinsicScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) const
 {
+    return equalTo(otherBase, false);
+}
+
+bool IntrinsicScaleOffsetDisto::equalTo(const IntrinsicBase& otherBase, bool ignoreDistortion) const
+{
     if (!IntrinsicScaleOffset::operator==(otherBase))
     {
         return false;
@@ -24,6 +29,11 @@ bool IntrinsicScaleOffsetDisto::operator==(const IntrinsicBase& otherBase) const
     if (typeid(*this) != typeid(otherBase))
     {
         return false;
+    }
+
+    if (ignoreDistortion)
+    {
+        return true;
     }
 
     const IntrinsicScaleOffsetDisto& other = static_cast<const IntrinsicScaleOffsetDisto&>(otherBase);
