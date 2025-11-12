@@ -152,6 +152,13 @@ void ExpansionProcess::remapExistingLandmarks(sfmData::SfMData & sfmData, const 
             }
 
             auto landmarkPair = landmarks.find(it->second);
+
+            // This should not happen if each feature is associated to only one track
+            if (landmarkPair == landmarks.end())
+            {
+                continue;
+            }
+
             sfmData::Landmark l = landmarkPair->second;
             landmarks.erase(landmarkPair->first);
 
