@@ -36,6 +36,7 @@ int aliceVision_main(int argc, char** argv)
     double sigmaNoise = 0.0;
     double outlierRatio = 0.0;
     double outlierEpipolarRatio = 0.2;
+    bool randomNoiseVariancePerView = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -49,8 +50,9 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("sigmaNoise", po::value<double>(&sigmaNoise)->default_value(sigmaNoise))
         ("outlierRatio", po::value<double>(&outlierRatio)->default_value(outlierRatio))
-        ("outlierEpipolarRatio", po::value<double>(&outlierEpipolarRatio)->default_value(outlierEpipolarRatio));
-        
+        ("outlierEpipolarRatio", po::value<double>(&outlierEpipolarRatio)->default_value(outlierEpipolarRatio))
+        ("randomNoiseVariancePerView", po::value<bool>(&randomNoiseVariancePerView)->default_value(randomNoiseVariancePerView), "Use different noise variance per view.");
+
     // clang-format on
 
     CmdLine cmdline("AliceVision tracksSimulating");
@@ -78,7 +80,18 @@ int aliceVision_main(int argc, char** argv)
     std::uniform_real_distribution<double> rand(0, 1);
     std::uniform_real_distribution<double> randDepth(0.1, 100.0);
     std::normal_distribution<double> randNoise(0.0, sigmaNoise);
-    
+
+    std::map<IndexT, std::normal_distribution<double>> viewRandNoise;
+    if (randomNoiseVariancePerView)
+    {
+        for (const auto viewId : sfmData.getViewsKeys())
+        {
+            double viewSigma = std::abs(randNoise(generator));
+            viewRandNoise.emplace(viewId, std::normal_distribution<double>(0.0, viewSigma));
+            ALICEVISION_LOG_INFO("View Random Noise Sigma : " << viewSigma);
+        }
+    }
+
     track::TracksMap mapTracks;
 
     for (const auto & [landmarkId, landmark] : sfmData.getLandmarks())
@@ -105,7 +118,7 @@ int aliceVision_main(int argc, char** argv)
                     Vec3 fakePoint = point * randDepth(generator) / point(2);
                     obs = intrinsic.transformProject(pose.getTransform(), fakePoint.homogeneous(), true);
                 }
-                else 
+                else
                 {
                     std::uniform_real_distribution<double> randWidth(0.0, intrinsic.w());
                     std::uniform_real_distribution<double> randHeight(0.0, intrinsic.h());
@@ -114,19 +127,27 @@ int aliceVision_main(int argc, char** argv)
                     obs.y() = randHeight(generator);
                 }
             }
-            else 
+            else
             {
                 obs = intrinsic.transformProject(pose.getTransform(), point.homogeneous(), true);
             }
 
-            obs.x() += randNoise(generator);
-            obs.y() += randNoise(generator);
+            if (randomNoiseVariancePerView)
+            {
+                obs.x() += viewRandNoise.at(viewId)(generator);
+                obs.y() += viewRandNoise.at(viewId)(generator);
+            }
+            else
+            {
+                obs.x() += randNoise(generator);
+                obs.y() += randNoise(generator);
+            }
 
             track::TrackItem item;
             item.coords = obs;
             item.featureId = observation.getFeatureId();
             item.scale = observation.getScale();
-            
+
             track.featPerView[viewId] = item;
         }
 
