@@ -13,24 +13,48 @@ namespace track
 
 bool TracksMerger::addTrackMap(const track::TracksMap & inputTracks)
 {
+    // Loop over the tracks to add 
     for (const auto & [idTrack, track]: inputTracks)
     {
-        IndexT foundTrack = UndefinedIndexT;
-        size_t newSize = track.featPerView.size();
-        
+        std::map<IndexT, size_t> candidates;
+
+        // Find if one of the features already exists in a track
+        // In this case we would like to merge both tracks instead of adding a track
         for (const auto & [idView, feat]: track.featPerView)
         {
             TuplePoint tp = std::make_tuple(track.descType, idView, feat.featureId);
-            auto it = _existingTracks.find(tp);
-            if (it != _existingTracks.end())
+            if (_existingTracks.find(tp) == _existingTracks.end())
             {
-                foundTrack = it->second;
-                break;
+                // This feature is not present in the existing tracks
+                continue;
+            }
+
+            // Compute stats on best target to use
+            IndexT target = _existingTracks[tp];
+            if (candidates.find(target) == candidates.end())
+            {
+                candidates[target] = _tracks[target].featPerView.size();
+            }
+            else 
+            {
+                candidates[target]++;
             }
         }
-        
+
+        // Select the largest track solution
+        size_t bestSize = 0;
+        IndexT foundTrack = UndefinedIndexT;
+        for (const auto [trackId, size] : candidates)
+        {
+            if (size > bestSize)
+            {
+                foundTrack = trackId;
+                bestSize = size;
+            }
+        }
+
         if (foundTrack == UndefinedIndexT)
-        {   
+        {
             //Simply add track
             foundTrack = _lastIndex;
             _lastIndex++;
@@ -40,25 +64,18 @@ bool TracksMerger::addTrackMap(const track::TracksMap & inputTracks)
         auto & outputTrack = _tracks[foundTrack];
         outputTrack.descType = track.descType;
 
-        //Previous Size is either 0 if new track, or the size of the matching track
-        size_t oldSize = outputTrack.featPerView.size();
-        
-        //Append all features from existing track
+        // Merge both tracks
         for (const auto & [idView, feat]: track.featPerView)
         {
             TuplePoint tp = std::make_tuple(track.descType, idView, feat.featureId);
-            _existingTracks[tp] = foundTrack;
-
-            // Replace only if the new tracks is longer than the old one.
-            if (outputTrack.featPerView.find(idView) != outputTrack.featPerView.end())
+            // Ignore any track item that disagrees with the retargeting
+            if (_existingTracks.find(tp) != _existingTracks.end())
             {
-                if (newSize < oldSize)
-                {
-                    continue;
-                }
-            } 
-            
+                continue;
+            }
+
             outputTrack.featPerView[idView] = feat;
+            _existingTracks[tp] = foundTrack;
         }
     }
 

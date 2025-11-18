@@ -20,6 +20,7 @@ class TracksMerger
 public:
     //viewId, featureId is a unique identifier for an observation
     using TuplePoint = std::tuple<feature::EImageDescriberType, IndexT, std::size_t>;
+
 public:
 
     /**
