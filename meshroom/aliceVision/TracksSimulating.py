@@ -43,6 +43,14 @@ class TracksSimulating(desc.AVCommandLineNode):
             invalidate=True,
             advanced=True,
         ),
+        desc.BoolParam(
+            name="randomNoiseVariancePerView",
+            label="Random Variance Per View",
+            description="Use different noise variance per view.",
+            value=False,
+            invalidate=True,
+            advanced=True,
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
