@@ -1,4 +1,4 @@
-ocio_profile_version: 2
+ocio_profile_version: 2.1
 
 description: A config to convert color space in AliceVision. Update Oct. 2023
 name:        OCIOv2-AliceVision
@@ -59,10 +59,9 @@ displays:
   linear:
     - !<View> {name: Lin, colorspace: ACEScg}
   log:
-    - !<View> {name: Log, colorspace: sRGB} # why log is equal to sRGB?
+    - !<View> {name: Log ACEScct, colorspace: ACEScct}
   ACES:
     - !<View> {name: Rec.709, colorspace: Rec709}
-    - !<View> {name: Log ACEScct, colorspace: ACEScct}
   Raw:
     - !<View> {name: Raw, colorspace: Raw}
 #
@@ -486,7 +485,7 @@ colorspaces:
     to_scene_reference: !<MatrixTransform> {matrix: [ 0.439632981919, 0.382988698152, 0.177378319929, 0, 0.089776442959, 0.813439428749, 0.096784128292, 0, 0.017541170383, 0.111546553302, 0.870912276314, 0, 0, 0, 0, 1 ]}
 
   - !<ColorSpace>
-    name: sRGB
+    name: sRGB - Texture
     family: ""
     bitdepth: 32f
     description: |
@@ -503,6 +502,23 @@ colorspaces:
         - !<ExponentWithLinearTransform> {gamma: 2.4, offset: 0.055, direction: inverse}
 
   - !<ColorSpace>
+    name: sRGB
+    family: ""
+    bitdepth: 32f
+    description: |
+      ACES 1.0 Output - sRGB Output Transform
+
+      ACES Transform ID : ODT.Academy.RGBmonitor_100nits_dim.a1.0.3
+    isdata: false
+    categories: [file-io]
+    encoding: sdr-video
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<BuiltinTransform> {style: ACES-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - SDR-VIDEO_1.0}
+        - !<BuiltinTransform> {style: DISPLAY - CIE-XYZ-D65_to_sRGB}
+
+  - !<ColorSpace>
     name: Rec709
     family: Output
     equalitygroup: ""
@@ -513,12 +529,7 @@ colorspaces:
       ACES Transform ID : urn:ampas:aces:transformId:v1.5:ODT.Academy.Rec709_100nits_dim.a1.0.3
     isdata: false
     allocation: uniform
-    allocationvars: [0, 1]
-    to_reference: !<GroupTransform>
+    from_scene_reference: !<GroupTransform>
       children:
-        - !<FileTransform> {src: InvRRT.Rec.709.Log2_48_nits_Shaper.spi3d, interpolation: tetrahedral}
-        - !<FileTransform> {src: Log2_48_nits_Shaper_to_linear.spi1d, interpolation: linear}
-    from_reference: !<GroupTransform>
-      children:
-        - !<FileTransform> {src: Log2_48_nits_Shaper_to_linear.spi1d, interpolation: linear, direction: inverse}
-        - !<FileTransform> {src: Log2_48_nits_Shaper.RRT.Rec.709.spi3d, interpolation: tetrahedral}
+        - !<BuiltinTransform> {style: ACES-OUTPUT - ACES2065-1_to_CIE-XYZ-D65 - SDR-VIDEO_1.0}
+        - !<BuiltinTransform> {style: DISPLAY - CIE-XYZ-D65_to_REC.1886-REC.709}   
