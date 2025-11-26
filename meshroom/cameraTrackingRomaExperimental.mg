@@ -359,7 +359,7 @@
                 "warpFolder": "{RomaSampler_1.warpFolder}",
                 "certaintyFolder": "{RomaSampler_1.certaintyFolder}",
                 "maxMatches": 2500,
-                "minCertainty": 0.0,
+                "minCertainty": 0.2,
                 "filtersFolder": "{GeometricFilterEstimating_1.output}",
                 "describerTypes": "{GeometricFilterEstimating_1.describerTypes}"
             },
