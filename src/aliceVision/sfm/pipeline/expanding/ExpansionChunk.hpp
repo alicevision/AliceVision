@@ -11,8 +11,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionHistory.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmBundle.hpp>
-#include <aliceVision/sfm/pipeline/expanding/PointFetcher.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
+#include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -45,7 +45,7 @@ public:
     }
 
     /**
-     * brief setup the expansion history handler
+     * @brief setup the expansion history handler
      * @param expansionHistory a shared ptr
      */
     void setExpansionHistoryHandler(ExpansionHistory::sptr & expansionHistory)
@@ -54,16 +54,7 @@ public:
     }
 
     /**
-     * brief setup the point fetcher handler
-     * @param pointFetcher a unique ptr. the Ownership will be taken
-    */
-    void setPointFetcherHandler(PointFetcher::uptr & pointFetcherHandler)
-    {
-        _pointFetcherHandler = std::move(pointFetcherHandler);
-    }
-
-    /**
-     * brief setup the point fetcher handler
+     * @brief setup the Resection handler
      * @param resectionHandler a unique ptr. the Ownership will be taken
     */
     void setResectionHandler(SfmResection::uptr & resectionHandler)
@@ -72,21 +63,12 @@ public:
     }
 
     /**
-     * @brief set the minimal number of points to enable triangulation of a track
-     * @param count the number of points
+     * @brief setup the Triangulation handler
+     * @param triangulationHandler a unique ptr. the Ownership will be taken
     */
-    void setTriangulationMinPoints(size_t count)
+    void setTriangulationHandler(SfmTriangulation::uptr & triangulationHandler)
     {
-        _triangulationMinPoints = count;
-    }
-
-    /**
-     * @brief set the maximal reprojection error in the triangulation process.
-     * @param count the number of points
-    */
-    void setTriangulationMaxError(double error)
-    {
-        _maxTriangulationError = error;
+        _triangulationHandler = std::move(triangulationHandler);
     }
 
     /**
@@ -159,16 +141,15 @@ private:
 private:
     SfmBundle::uptr _bundleHandler;
     ExpansionHistory::sptr _historyHandler;
-    PointFetcher::uptr _pointFetcherHandler;
     std::set<IndexT> _ignoredViews;
     SfmResection::uptr _resectionHandler;
+    SfmTriangulation::uptr _triangulationHandler;
 
 private:    
-    size_t _triangulationMinPoints = 2;
     double _minTriangulationAngleDegrees = 3.0;
-    double _maxTriangulationError = 8.0;
     size_t _weakResectionSize = 100;
     bool _enableDepthPrior = true;
+    bool _enableMeshPrior = true;
     bool _ignoreMultiviewOnPrior = false;
 };
 

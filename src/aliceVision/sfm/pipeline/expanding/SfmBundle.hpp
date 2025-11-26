@@ -32,7 +32,7 @@ public:
     bool process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
 
     /**
-     * brief setup the expansion chunk handler
+     * @brief setup the expansion chunk handler
      * @param expansionChunk a unique ptr. Ownership will be taken
      */
     void setLbaPolicyHandler(LbaPolicy::uptr & lbaPolicy)
@@ -106,7 +106,7 @@ private:
     double _maxReprojectionError = 4.0;
     double _minAngleForLandmark = 2.0;
     double _maxConstraintDistance = 1.0;
-    size_t _minTrackLength = 2;
+    size_t _minTrackLength = 1;
     size_t _minPointsPerPose = 30;
     size_t _bundleAdjustmentMaxOutlier = 50;
     size_t _minNbCamerasToRefinePrincipalPoint = 3;

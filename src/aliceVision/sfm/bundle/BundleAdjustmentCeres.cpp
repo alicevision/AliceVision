@@ -630,7 +630,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 problem.AddResidualBlock(costFunction, nullptr, params);
             }
 
-            if (!refineStructure || landmark.state == EEstimatorParameterState::CONSTANT)
+            if (!refineStructure || landmark.state == EEstimatorParameterState::CONSTANT || landmark.isPrecise())
             {
                 // set the whole landmark parameter block as constant.
                 _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::CONSTANT);

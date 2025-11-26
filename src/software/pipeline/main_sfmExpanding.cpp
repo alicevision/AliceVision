@@ -20,6 +20,7 @@
 #include <aliceVision/sfm/pipeline/expanding/LbaPolicyConnexity.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionPostProcessRig.hpp>
 #include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicyLegacy.hpp>
+#include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 
 #include <aliceVision/mesh/MeshIntersection.hpp>
 
@@ -181,7 +182,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if (sfmData.getValidViews().size() < 2)
+    if (sfmData.getValidViews().size() < 1)
     {
         ALICEVISION_LOG_INFO("Expansion requires that some views are already defined.");
         return EXIT_SUCCESS;
@@ -258,16 +259,17 @@ int aliceVision_main(int argc, char** argv)
     sfmResectionHandler->setMaxIterations(localizerEstimatorMaxIterations);
     sfmResectionHandler->setValidationPolicy(resectionValidationPolicy);
 
+    sfm::SfmTriangulation::uptr sfmTriangulationHandler = std::make_unique<sfm::SfmTriangulation>(minNbObservationsForTriangulation, maxTriangulationError);
+    sfmTriangulationHandler->setPointFetcherHandler(pointFetcherHandler);
+
     sfm::ExpansionChunk::uptr expansionChunk = std::make_unique<sfm::ExpansionChunk>();
     expansionChunk->setBundleHandler(sfmBundle);
     expansionChunk->setExpansionHistoryHandler(expansionHistory);
     expansionChunk->setResectionHandler(sfmResectionHandler);
-    expansionChunk->setTriangulationMaxError(maxTriangulationError);
-    expansionChunk->setTriangulationMinPoints(minNbObservationsForTriangulation);
+    expansionChunk->setTriangulationHandler(sfmTriangulationHandler);
     expansionChunk->setEnableDepthPrior(enableDepthPrior);
     expansionChunk->setIgnoreMultiviewOnPrior(ignoreMultiviewOnPrior);
     expansionChunk->setMinAngleTriangulation(minAngleForTriangulation);
-    expansionChunk->setPointFetcherHandler(pointFetcherHandler);
     expansionChunk->setWeakResectionSize(weakResectionSize);
     
     sfm::ExpansionPolicy::uptr expansionPolicy;

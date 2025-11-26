@@ -30,7 +30,7 @@ public:
     virtual bool build(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds) = 0;
 
     /**
-     * brief setup the expansion history handler
+     * @brief setup the expansion history handler
      * @param expansionHistory a shared ptr
      */
     void setExpansionHistoryHandler(ExpansionHistory::sptr & expansionHistory)

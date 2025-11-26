@@ -40,7 +40,7 @@ public:
     }
 
     /**
-     * brief setup the expansion history handler
+     * @brief setup the expansion history handler
      * @param expansionHistory a shared ptr
      */
     void setExpansionHistoryHandler(ExpansionHistory::sptr & expansionHistory)
@@ -49,7 +49,7 @@ public:
     }
     
     /**
-     * brief setup the expansion iteration handler
+     * @brief setup the expansion iteration handler
      * @param expansionIteration a unique ptr. Ownership will be taken
      */
     void setExpansionIterationHandler(ExpansionIteration::uptr & expansionIteration)
@@ -58,7 +58,7 @@ public:
     }
 
     /**
-     * brief setup the expansion iteration post process handler
+     * @brief setup the expansion iteration post process handler
      * @param expansionPostProcess a unique ptr. Ownership will be taken
      */
     void setExpansionIterationPostProcessHandler(ExpansionPostProcess::uptr & expansionPostProcess)
