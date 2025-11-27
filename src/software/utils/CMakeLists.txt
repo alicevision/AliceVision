@@ -340,6 +340,7 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfm
               Boost::program_options
               Boost::json
+              Alembic::Alembic
     )
     
     # SfM Survey Injecting
