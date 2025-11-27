@@ -44,7 +44,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -55,7 +55,8 @@ enum EBOOTSTRAPMETHOD
 {
     CLASSIC = (1u << 0),
     MESH = (1u << 1),
-    DEPTH = (1u << 2)
+    DEPTH = (1u << 2),
+    MESH_SINGLE = (1u << 3),
 };
 
 inline EBOOTSTRAPMETHOD EBOOTSTRAPMETHOD_stringToEnum(const std::string& method)
@@ -71,6 +72,11 @@ inline EBOOTSTRAPMETHOD EBOOTSTRAPMETHOD_stringToEnum(const std::string& method)
     if (type == "mesh")
     {
         return EBOOTSTRAPMETHOD::MESH;
+    }
+
+    if (type == "mesh_single")
+    {
+        return EBOOTSTRAPMETHOD::MESH_SINGLE;
     }
 
     if (type == "depth")
@@ -140,7 +146,9 @@ bool landmarksFromMesh(
             //Create a Landmark with a unique observation
             sfmData::Landmark l;
             l.X = point;
-            l.descType = feature::EImageDescriberType::SIFT;
+            l.descType = track.descType;
+            l.setParallaxRobust(true);
+
             sfmData::Observations & observations = l.getObservations();
             observations[referenceViewId] = sfmData::Observation(refpt, featureId, scale);
             landmarks[trackId] = l;
@@ -234,7 +242,7 @@ bool processMesh(sfmData::SfMData & sfmData,
         return false;
     } 
     
-    if (!firstViewFilters.empty())
+    if (firstViewFilters.empty())
     {        
         ALICEVISION_LOG_ERROR("No known pose for mesh");
         return false;
@@ -280,6 +288,35 @@ bool processMesh(sfmData::SfMData & sfmData,
     ALICEVISION_LOG_INFO(" - " << sfmData.getView(bestPair.reference).getImage().getImagePath());
     ALICEVISION_LOG_INFO(" - " << sfmData.getView(bestPair.next).getImage().getImagePath());
     ALICEVISION_LOG_INFO("Landmarks count : " << sfmData.getLandmarks().size());
+
+    return true;
+}
+
+bool processMeshSingle(sfmData::SfMData & sfmData, 
+                const track::TracksHandler & tracksHandler, 
+                const std::set<IndexT> & firstViewFilters,
+                const std::string & meshFilename)
+{
+    //Load mesh in the mesh intersection object
+    if (meshFilename.empty())
+    {
+        ALICEVISION_LOG_ERROR("No mesh file given");
+        return false;
+    } 
+    
+    if (firstViewFilters.empty())
+    {        
+        ALICEVISION_LOG_ERROR("No known pose for mesh");
+        return false;
+    }
+
+    sfmData::Landmarks landmarks;
+    if (!landmarksFromMesh(landmarks, sfmData, meshFilename, firstViewFilters, tracksHandler))
+    {
+        return false;
+    }
+
+    sfmData.getLandmarks() = landmarks;
 
     return true;
 }
@@ -514,6 +551,9 @@ int aliceVision_main(int argc, char** argv)
         ret = processMesh(sfmData, tracksHandler, reconstructedPairs, 
                         firstViewFilters, meshFilename,
                         minAngleHard, minAngleSoft, maxAngle);
+        break;
+    case MESH_SINGLE:
+        ret = processMeshSingle(sfmData, tracksHandler, firstViewFilters, meshFilename);
         break;
     case DEPTH:
         ret = processDepth(sfmData, tracksHandler, reconstructedPairs,  

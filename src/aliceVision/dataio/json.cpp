@@ -16,6 +16,9 @@ std::vector<boost::json::value> readJsons(std::istream& is, boost::system::error
         while (true)
         {
             totalRead = p.write_some(content, ec);
+            
+            //remove processed string from content
+            content = content.substr(totalRead);
 
             // If the parser did not find a value, then it won't
             // find anything more.
@@ -28,9 +31,6 @@ std::vector<boost::json::value> readJsons(std::istream& is, boost::system::error
             // content
             jvs.push_back(p.release());
             p.reset();
-
-            //remove processed string from content
-            content = content.substr(totalRead);
         }
     }
 

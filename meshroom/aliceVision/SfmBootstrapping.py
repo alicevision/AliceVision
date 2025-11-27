@@ -1,4 +1,4 @@
-__version__ = "4.1"
+__version__ = "4.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -21,8 +21,8 @@ class SfMBootStrapping(desc.AVCommandLineNode):
         desc.ChoiceParam(
             name="method",
             label="Method",
-            description="Bootstrapping method: classic (epipolar geometry), mesh (3D mesh constraints), or depth (depth map information).",
-            values=["classic", "mesh", "depth"],
+            description="Bootstrapping method: classic (epipolar geometry), mesh (3D mesh constraints), mesh_single (mesh without visual parallax), or depth (depth map information).",
+            values=["classic", "mesh", "mesh_single", "depth"],
             value="classic",
         ),
         desc.File(
@@ -36,7 +36,7 @@ class SfMBootStrapping(desc.AVCommandLineNode):
             label="Mesh File",
             description="Mesh file (*.obj).",
             value="",
-            enabled=lambda node: node.method.value == "mesh"
+            enabled=lambda node: node.method.value.startswith("mesh")
         ),
         desc.File(
             name="pairs",

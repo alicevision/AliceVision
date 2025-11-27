@@ -85,9 +85,22 @@ class Landmark
     */
     void setParallaxRobust(bool parallaxRobust) { _parallaxRobust = parallaxRobust; }
 
+    /**
+     * @brief Is this landmark precisely located
+     * @return true if this landmark has this special property
+    */
+    bool isPrecise() const { return _isPrecise; }
+
+    /**
+    * @brief decide if this landmark is robust even if its parallax is low
+    * @param isPrecise True if robust to lack of parallax
+    */
+    void setIsPrecise(bool isPrecise) { _isPrecise = isPrecise; }
+
 private:
     Observations _observations;
     bool _parallaxRobust = false;
+    bool _isPrecise = false;
 };
 
 }  // namespace sfmData

@@ -159,11 +159,6 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
     {
         return false;
     }
-
-    if (_pointFetcherHandler)
-    {
-        setConstraints(sfmData, tracksHandler, validViewIds);
-    }
     
     _historyHandler->saveState(sfmData);
 
@@ -174,18 +169,17 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
 
 bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
 {
-    ALICEVISION_LOG_INFO("ExpansionChunk::triangulate start");
-    SfmTriangulation triangulation(_triangulationMinPoints, _maxTriangulationError);
-
-    
+    ALICEVISION_LOG_INFO("ExpansionChunk::triangulate start");   
     const bool enableMultiviewTriangulation = true;
+
+    const size_t minPoints = _triangulationHandler->getMinObservations();
 
     if (enableMultiviewTriangulation)
     {
         std::set<IndexT> evaluatedTracks;
         std::map<IndexT, sfmData::Landmark> outputLandmarks;
         std::mt19937 randomNumberGenerator;
-        if (!triangulation.process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
+        if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                     randomNumberGenerator, viewIds, 
                                     evaluatedTracks, outputLandmarks, false))
         {
@@ -204,7 +198,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
                 landmarks.erase(pl.first);
             }
 
-            if (landmark.getObservations().size() < _triangulationMinPoints)
+            if (landmark.getObservations().size() < minPoints)
             {
                 continue;
             }
@@ -232,7 +226,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
         std::set<IndexT> evaluatedTracks;
         std::map<IndexT, sfmData::Landmark> outputLandmarks;
         std::mt19937 randomNumberGenerator;
-        if (!triangulation.process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
+        if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                     randomNumberGenerator, viewIds, 
                                     evaluatedTracks, outputLandmarks, true))
         {
@@ -254,7 +248,51 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
                 }
             }
 
-            if (landmark.getObservations().size() < _triangulationMinPoints)
+            if (landmark.getObservations().size() < minPoints)
+            {
+                continue;
+            }
+
+            if (!SfmTriangulation::checkChierality(sfmData, landmark))
+            {
+                continue;
+            }
+
+            landmarks.insert(pl);
+        }
+
+        ALICEVISION_LOG_INFO("New landmarks count : " << landmarks.size());
+        ALICEVISION_LOG_INFO("ExpansionChunk::triangulate end");
+    }
+
+    if (_enableMeshPrior)
+    {
+        std::set<IndexT> evaluatedTracks;
+        std::map<IndexT, sfmData::Landmark> outputLandmarks;
+        std::mt19937 randomNumberGenerator;
+        if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
+                                    randomNumberGenerator, viewIds, 
+                                    evaluatedTracks, outputLandmarks, true))
+        {
+            return false;
+        }
+
+        auto & landmarks = sfmData.getLandmarks();
+        ALICEVISION_LOG_INFO("Existing landmarks : " << landmarks.size());
+
+        for (const auto & pl : outputLandmarks)
+        {
+            const auto & landmark = pl.second;
+
+            if (landmarks.find(pl.first) != landmarks.end())
+            {
+                if (!_ignoreMultiviewOnPrior)
+                {
+                    continue;
+                }
+            }
+
+            if (landmark.getObservations().size() < minPoints)
             {
                 continue;
             }
@@ -285,7 +323,7 @@ void ExpansionChunk::addPose(sfmData::SfMData & sfmData, IndexT viewId, const Ei
 
 void ExpansionChunk::setConstraints(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
 {
-    ALICEVISION_LOG_INFO("ExpansionChunk::setConstraints start");
+    /*ALICEVISION_LOG_INFO("ExpansionChunk::setConstraints start");
     const track::TracksMap & tracks = tracksHandler.getAllTracks();
     const track::TracksPerView & tracksPerView = tracksHandler.getTracksPerView();
 
@@ -399,7 +437,7 @@ void ExpansionChunk::setConstraints(sfmData::SfMData & sfmData, const track::Tra
     }
 
     ALICEVISION_LOG_INFO("ExpansionChunk::setConstraints added " << constraints.size() << " constraints");
-    ALICEVISION_LOG_INFO("ExpansionChunk::setConstraints end");
+    ALICEVISION_LOG_INFO("ExpansionChunk::setConstraints end");*/
 }
 
 } // namespace sfm

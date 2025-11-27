@@ -18,6 +18,7 @@ class PointFetcher
 {
 public:
     using uptr = std::unique_ptr<PointFetcher>;
+    using sptr = std::shared_ptr<PointFetcher>;
 
 public:
     /**
