@@ -163,10 +163,6 @@ void remapInter(const Image<P> & source, const Image<Vec2> & map, const P& fillC
                         const P & pix = source(by, bx);
                         double weight = yocc * xocc;
                         
-                        if constexpr (std::is_same<P, RGBAfColor>())
-                        {   
-                            weight *= pix.a();
-                        }
 
                         sum += pix * weight;
                         wsum += weight;
