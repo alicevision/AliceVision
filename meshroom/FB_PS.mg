@@ -259,6 +259,34 @@
                 "method": "from_filepath"
             }
         },
+		"DepthMapRename_1": {
+			"nodeType": "DepthMapRename",
+			"position" : [
+				1836,
+                20
+			],
+			"parallelization": {
+                "blockSize": 0,
+                "size": 2142,
+                "split": 1
+            },
+            "uid": "696431f45f19245c8a9a02e94363445f53f67e65",
+            "inputs": {
+                "input": "{SfMTransfer_1.output}",
+                "depthMapFolder": "/path/to/depthMapFolder",
+                "verboseLevel": "info"
+            },
+            "internalInputs": {
+                "invalidation": "",
+                "comment": "",
+                "label": "",
+                "nodeDefaultLogLevel": "info",
+                "color": ""
+            },
+            "outputs": {
+                "output": "{nodeCacheFolder}"
+            }
+		},
         "SfMTransfer_2": {
             "nodeType": "SfMTransfer",
             "position": [
@@ -293,6 +321,7 @@
             "inputs": {
                 "input": "{SfMTransfer_2.output}",
                 "imagesFolder": "{PrepareDenseScene_7.output}",
+				"depthMapFolder": "{DepthMapRename_1.output}",
                 "inputMesh": "/path/to/mesh",
                 "textureSide": 4096,
                 "downscale": 1,
@@ -300,7 +329,7 @@
                     "enable": true,
                     "colorMappingFileType": "png"
                 },
-                "visibilityRemappingMethod": "MeshItself",
+                "visibilityRemappingMethod": "DepthMap",
                 "verboseLevel": "debug"
             }
         }

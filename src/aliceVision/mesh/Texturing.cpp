@@ -86,6 +86,8 @@ EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::st
         return EVisibilityRemappingMethod::PullPush;
     if (method == "MeshItself")
         return EVisibilityRemappingMethod::MeshItself;
+    if (method == "DepthMap")
+        return EVisibilityRemappingMethod::DepthMap;
     throw std::out_of_range("Invalid visibilities remapping method " + method);
 }
 
@@ -101,6 +103,8 @@ std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod m
             return "PullPush";
         case EVisibilityRemappingMethod::MeshItself:
             return "MeshItself";
+        case EVisibilityRemappingMethod::DepthMap:
+            return "DepthMap";
     }
     throw std::out_of_range("Unrecognized EVisibilityRemappingMethod");
 }
@@ -843,12 +847,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
 #if TEXTURING_MBB_DEBUG
         {
-            // write each frequency band, for each texture
-            for (std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
-            {
-                AccuImage& atlasLevelTexture = accuPyramid.pyramid[level];
-                writeTexture(atlasLevelTexture, atlasID, outPath, textureFileType, level);
-            }
+        // write each frequency band, for each texture
+        for (std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
+        {
+            AccuImage& atlasLevelTexture = accuPyramid.pyramid[level];
+            writeTexture(atlasLevelTexture, atlasID, outPath, textureFileType, level);
+        }
         }
 #endif
 
@@ -1232,6 +1236,10 @@ void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, co
     if (remappingMethod & EVisibilityRemappingMethod::MeshItself)
     {
         remapMeshVisibilities_meshItself(mp, *mesh);
+    }
+    if (remappingMethod & EVisibilityRemappingMethod::DepthMap)
+    {
+        remapMeshVisibilities_depth(mp, *mesh);
     }
     if (mesh->pointsVisibilities.empty())
     {

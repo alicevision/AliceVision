@@ -145,6 +145,7 @@ unsigned long getNbDepthValuesFromDepthMap(int rc, const MultiViewParams& mp, in
  * @param[in] customSuffix the filename custom suffix
  */
 void deleteMapTiles(int rc, const MultiViewParams& mp, const EFileType fileType, const std::string& customSuffix = "");
+bool checkDepthMapFolder(const MultiViewParams& mp);
 
 }  // namespace mvsUtils
 }  // namespace aliceVision

@@ -9,6 +9,7 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/mvsUtils/mapIO.hpp>
 
 #include <geogram/basic/permutation.h>
 #include <geogram/basic/attributes.h>
@@ -134,6 +135,52 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
     }
 
     ALICEVISION_LOG_INFO("remapMeshVisibility done.");
+}
+
+void remapMeshVisibilities_depth(const mvsUtils::MultiViewParams& mp, Mesh& mesh)
+{
+    ALICEVISION_LOG_INFO("remapMeshVisibility based on depth map start.");
+    const float depthDifferenceThreshold = 0.0001;
+    PointsVisibility& out_ptsVisibilities = mesh.pointsVisibilities;
+
+    if (out_ptsVisibilities.size() != mesh.pts.size())
+    {
+        out_ptsVisibilities.resize(mesh.pts.size());
+    }
+    const std::size_t nbCameras = mp.CArr.size();
+
+    StaticVector<image::Image<float>> depthMapList;
+    for (std::size_t camIndex = 0; camIndex < nbCameras; ++camIndex)
+    {
+        std::cout << camIndex << std::endl;
+        image::Image<float> depthMap;
+        mvsUtils::readMap(camIndex, mp, mvsUtils::EFileType::depthMap, depthMap);
+        depthMapList.push_back(depthMap);
+    }
+
+    ALICEVISION_LOG_INFO("Start checking each vertex: " << mesh.pts.size() << " vertices.");
+
+#pragma omp parallel for
+    for (int vi = 0; vi < mesh.pts.size(); ++vi)
+    {
+        const Point3d& v = mesh.pts[vi];
+        PointVisibility& vertexVisibility = out_ptsVisibilities[vi];
+
+        // Check by which camera the vertex is visible
+        for (std::size_t camIndex = 0; camIndex < nbCameras; ++camIndex)
+        {
+            const Point3d& vTransform = mp.camArr[camIndex] * v;
+            Pixel pix;
+            mp.getPixelFor3DPoint(&pix, v, camIndex);
+
+            float mapValue = depthMapList[camIndex](pix[1], pix[0]);
+            float depthDifference = abs(mapValue - vTransform.z);
+
+            if (depthDifference > depthDifferenceThreshold)
+                continue;
+            vertexVisibility.push_back(camIndex);
+        }
+    }
 }
 
 void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh& mesh)

@@ -46,6 +46,12 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             value="",
         ),
         desc.File(
+            name="depthMapFolder",
+            label="Depth Map Folder",
+            description="Use depth maps from a specific folder to remap mesh visibilities.\nFilename should be: UID_depthMap.",
+            value="",
+        ),
+        desc.File(
             name="inputMesh",
             label="Mesh",
             description="Optional input mesh to texture. By default, it will texture the result of the reconstruction.",
@@ -308,7 +314,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             label="Visibility Remapping Method",
             description="Method to remap visibilities from the reconstruction to the input mesh (Pull, Push, PullPush, MeshItself).",
             value="PullPush",
-            values=["Pull", "Push", "PullPush", "MeshItself"],
+            values=["Pull", "Push", "PullPush", "MeshItself", "DepthMap"],
             advanced=True,
         ),
         desc.FloatParam(

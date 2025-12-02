@@ -14,6 +14,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/sfmMvsUtils/visibility.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -51,6 +52,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string outputFolder;
     std::string imagesFolder;
     std::string normalsFolder;
+    std::string depthMapFolder = "";
 
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::SRGB;
     image::EImageColorSpace outputColorSpace = image::EImageColorSpace::AUTO;
@@ -86,6 +88,9 @@ int aliceVision_main(int argc, char* argv[])
         ("normalsFolder", po::value<std::string>(&normalsFolder),
          "Use normal maps from a specific folder to texture the mesh.\n"
          "Filename should be: UID_normalMap.")
+        ("depthMapFolder", po::value<std::string>(&depthMapFolder),
+         "Use depth maps from a specific folder to remap mesh visibilities.\n"
+         "Filename should be: UID_depthMap.")
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
          "Output texture size.")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
@@ -138,6 +143,7 @@ int aliceVision_main(int argc, char* argv[])
          "Method to remap visibilities from the reconstruction to the input mesh.\n"
          " * Pull: For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.\n"
          " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
+         " * DepthMap: For each vertex of the reconstruction, compare vertex depth in the view with depth map value of the view.\n"
          " * PullPush: Combine results from Pull and Push results.'")
         ("subdivisionTargetRatio", po::value<float>(&texParams.subdivisionTargetRatio)->default_value(texParams.subdivisionTargetRatio),
          "Percentage of the density of the reconstruction as the target for the subdivision "
@@ -188,7 +194,6 @@ int aliceVision_main(int argc, char* argv[])
 
     // initialization
     mvsUtils::MultiViewParams mp(sfmData, imagesFolder);
-
     mesh::Texturing mesh;
     mesh.texParams = texParams;
 
@@ -228,7 +233,25 @@ int aliceVision_main(int argc, char* argv[])
 
     if (mesh.mesh->pointsVisibilities.empty())
     {
-        mesh.remapVisibilities(texParams.visibilityRemappingMethod, mp, refMesh);
+        if (texParams.visibilityRemappingMethod & mesh::EVisibilityRemappingMethod::DepthMap)
+        {
+            mvsUtils::MultiViewParams mpDM(sfmData, "", depthMapFolder, "", mvsUtils::EFileType::depthMap);
+            bool validDepthMapFolder = mvsUtils::checkDepthMapFolder(mpDM);
+            if (validDepthMapFolder)
+            {
+                mesh.remapVisibilities(texParams.visibilityRemappingMethod, mpDM, refMesh);
+            }
+            else
+            {
+                ALICEVISION_LOG_INFO("Unvalid depth map folder (no folder given or depth map missing.");
+                ALICEVISION_LOG_INFO("Remap visibilities using MeshItself method instead.");
+                mesh.remapVisibilities(mesh::EVisibilityRemappingMethod::MeshItself, mp, refMesh);
+            }
+        }
+        else
+        {
+            mesh.remapVisibilities(texParams.visibilityRemappingMethod, mp, refMesh);
+        }
 
         // DEBUG: export subdivided mesh
         // mesh.saveAsOBJ(outputFolder, "subdividedMesh", outputTextureFileType);

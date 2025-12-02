@@ -43,6 +43,7 @@ void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh& mes
 void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh, Mesh& mesh);
 
 void remapMeshVisibilities_meshItself(const mvsUtils::MultiViewParams& mp, Mesh& mesh);
+void remapMeshVisibilities_depth(const mvsUtils::MultiViewParams& mp, Mesh& mesh);
 
 }  // namespace mesh
 }  // namespace aliceVision

@@ -683,5 +683,27 @@ void deleteMapTiles(int rc, const MultiViewParams& mp, const EFileType fileType,
     }
 }
 
+bool checkDepthMapFolder(const MultiViewParams& mp)
+{
+    const std::size_t nbCameras = mp.CArr.size();
+
+    StaticVector<image::Image<float>> depthMapList;
+    std::size_t camIndex = 0;
+    bool allMapsExist = true;
+    while (allMapsExist && (camIndex < nbCameras))
+    {
+        const std::string mapPath = getFileNameFromIndex(mp, camIndex, EFileType::depthMap, "");
+        if (utils::exists(mapPath))
+        {
+            camIndex++;
+        }
+        else
+        {
+            allMapsExist = false;
+        }
+    }
+    return allMapsExist;
+}
+
 }  // namespace mvsUtils
 }  // namespace aliceVision

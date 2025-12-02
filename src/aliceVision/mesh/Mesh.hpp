@@ -34,6 +34,7 @@ enum EVisibilityRemappingMethod
     Pull = 1,               //< For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.
     Push = 2,               //< For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.
     MeshItself = 4,         //< For each vertex of the mesh, test the reprojection in each camera
+    DepthMap = 8,           //< For each vertex of the mesh, test if vertex depth in each camera is coherent with depth map value.
     PullPush = Pull | Push  //< Combine results from Pull and Push results.
 };
 
