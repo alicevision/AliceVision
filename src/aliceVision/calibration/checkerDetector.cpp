@@ -31,14 +31,22 @@ using RowVector = Matrix<Type, 1, Size>;
 namespace aliceVision {
 namespace calibration {
 
-bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool useNestedGrids, bool debug)
+bool CheckerDetector::process(const image::Image<image::RGBColor>& source, size_t maxLevels, size_t minConsensus, bool useNestedGrids, bool debug)
 {
     image::Image<float> grayscale;
     image::ConvertPixelType(source, &grayscale);
 
     const Vec2 center(grayscale.width() / 2, grayscale.height() / 2);
 
-    const double scales[] = {1.0, 0.75, 0.5, 0.25};
+    // Create the scales for multiscale detection
+    // We use a power of 2 pyramid and an additional 0.75 scale
+    std::vector<double> scales;
+    scales.push_back(1.0);
+    scales.push_back(0.75);
+    for (int level = 1; level < maxLevels; level++)
+    {
+        scales.push_back(1.0 / pow(2.0, level));
+    }
 
     std::vector<IntermediateCorner> allCorners;
     for (double scale : scales)
@@ -140,7 +148,7 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, bool 
         sortCheckerBoardsByDistanceToCenter(center);
         filterNestedCheckerBoards(source.rows(), source.cols());
         buildNestedConnectors();
-        groupNestedCheckerboards();
+        groupNestedCheckerboards(minConsensus);
     }
 
     if (debug)
@@ -1703,7 +1711,7 @@ void CheckerDetector::buildNestedConnectors()
     }
 }
 
-bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i& ref_center, const IndexT& other, int scale)
+bool CheckerDetector::groupNestedCheckerboardsPair(size_t minConsensus, Vec2i& ref_center, const IndexT& other, int scale)
 {
     const CheckerBoard ref_board = _boards[0];
     CheckerBoard cur_board = _boards[other];
@@ -1767,8 +1775,7 @@ bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i& ref_center, const Inde
         }
     }
 
-    const int minVotes = 5;
-    if (max_count < minVotes)
+    if (max_count < minConsensus)
     {
         return false;
     }
@@ -1853,7 +1860,7 @@ bool CheckerDetector::groupNestedCheckerboardsPair(Vec2i& ref_center, const Inde
     return true;
 }
 
-void CheckerDetector::groupNestedCheckerboards()
+void CheckerDetector::groupNestedCheckerboards(size_t minConsensus)
 {
     int current_scale = 1;
     bool change = true;
@@ -1872,7 +1879,7 @@ void CheckerDetector::groupNestedCheckerboards()
         // Try to find another checkerboard with the same level
         for (std::size_t idx_compare = 1; idx_compare < _boards.size(); ++idx_compare)
         {
-            if (groupNestedCheckerboardsPair(center, idx_compare, current_scale))
+            if (groupNestedCheckerboardsPair(minConsensus, center, idx_compare, current_scale))
             {
                 change = true;
                 break;
@@ -1887,7 +1894,7 @@ void CheckerDetector::groupNestedCheckerboards()
         // Try to find another checkerboard with the next level
         for (std::size_t idx_compare = 1; idx_compare < _boards.size(); ++idx_compare)
         {
-            if (groupNestedCheckerboardsPair(center, idx_compare, current_scale))
+            if (groupNestedCheckerboardsPair(minConsensus, center, idx_compare, current_scale))
             {
                 change = true;
                 break;

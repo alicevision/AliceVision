@@ -108,12 +108,14 @@ class CheckerDetector
      *     8.2. filter boards to only keep a sequence of nested boards
      *     8.3. connect and group these nested boards
      *
-     * @param source[in] Input image containing checkerboards.
-     * @param useNestedGrid[in] Indicate if the image contains nested calibration grids.
-     * @param debug[in] Indicate if debug images should be drawn.
+     * @param[in] source Input image containing checkerboards.
+     * @param[in] maxLevels maximum number of levels used in multiscale point detection
+     * @param[in] minConsensus minimum number of shared corners to merge checkerboards
+     * @param[in] useNestedGrid Indicate if the image contains nested calibration grids.
+     * @param[in] debug Indicate if debug images should be drawn.
      * @return False if a problem occurred during detection, otherwise true.
      */
-    bool process(const image::Image<image::RGBColor>& source, bool useNestedGrids = false, bool debug = false);
+    bool process(const image::Image<image::RGBColor>& source, size_t maxLevels = 3, size_t minConsensus = 5, bool useNestedGrids = false, bool debug = false);
 
     /// Return a copy of detected checkerboards.
     std::vector<CheckerBoard> getBoards() const { return _boards; }
@@ -423,18 +425,20 @@ class CheckerDetector
 
     /**
      * @brief Merge overlapping nested boards.
+     * @param[in] minConsensus minimum number of shared corners to merge checkerboards
      */
-    void groupNestedCheckerboards();
+    void groupNestedCheckerboards(size_t minConsensus);
 
     /**
      * @brief Merge given board with reference board (first in the nesting sequence).
      *
+     * @param[in] minConsensus minimum number of shared corners to merge checkerboards
      * @param[in] ref_center Center point of reference board.
      * @param[in] other Index of board to merge.
      * @param[in] scale Checkboard scale within nesting sequence (power of 2).
      * @return False if merging failed, otherwise true.
      */
-    bool groupNestedCheckerboardsPair(Vec2i& ref_center, const IndexT& other, int scale);
+    bool groupNestedCheckerboardsPair(size_t minConsensus, Vec2i& ref_center, const IndexT& other, int scale);
 
   private:
     /// Detected checkerboards.

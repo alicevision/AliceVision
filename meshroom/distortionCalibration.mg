@@ -4,7 +4,7 @@
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
-            "CheckerboardDetection": "1.0",
+            "CheckerboardDetection": "2.0",
             "DistortionCalibration": "6.0",
             "ExportDistortion": "2.0",
             "CopyFiles": "1.3"

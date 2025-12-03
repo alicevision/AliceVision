@@ -23,7 +23,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 namespace po = boost::program_options;
@@ -40,6 +40,8 @@ int aliceVision_main(int argc, char* argv[])
     bool doubleSize = false;
     bool useNestedGrids = false;
     bool ignorePixelAspectRatio = false;
+    size_t minConsensus = 5;
+    size_t maxLevels = 2;
 
     // Command line parameters
     // clang-format off
@@ -63,6 +65,10 @@ int aliceVision_main(int argc, char* argv[])
          "Double image size prior to processing.")
         ("ignorePixelAspectRatio", po::value<bool>(&ignorePixelAspectRatio)->default_value(ignorePixelAspectRatio), 
          "Ignore pixel aspect ratio.")
+        ("minConsensus", po::value<size_t>(&minConsensus)->default_value(minConsensus), 
+         "Minimum number of shared corners to merge checkerboards.")
+        ("maxLevels", po::value<size_t>(&maxLevels)->default_value(maxLevels), 
+         "Maximum number of levels used in multiscale point detection.")
         ("useNestedGrids", po::value<bool>(&useNestedGrids)->default_value(useNestedGrids), 
          "Images contain nested calibration grids. These grids must be centered on image center.");
     // clang-format on
@@ -155,7 +161,7 @@ int aliceVision_main(int argc, char* argv[])
         // Lookup checkerboard
         calibration::CheckerDetector detect;
         ALICEVISION_LOG_INFO("Launching checkerboard detection");
-        if (!detect.process(source, useNestedGrids, exportDebugImages))
+        if (!detect.process(source, maxLevels, minConsensus, useNestedGrids, exportDebugImages))
         {
             ALICEVISION_LOG_ERROR("Detection failed");
             continue;
