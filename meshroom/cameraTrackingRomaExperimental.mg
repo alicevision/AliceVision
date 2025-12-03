@@ -5,7 +5,7 @@
         "nodesVersions": {
             "ApplyCalibration": "1.0",
             "CameraInit": "12.0",
-            "CheckerboardDetection": "1.0",
+            "CheckerboardDetection": "2.0",
             "ConvertSfMFormat": "2.0",
             "CopyFiles": "1.3",
             "DistortionCalibration": "6.0",

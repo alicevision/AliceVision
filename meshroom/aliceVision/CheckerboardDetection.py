@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "2.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -40,6 +40,22 @@ The detection method also supports nested calibration grids.
             label="Ignore Pixel Aspect Ratio",
             description="Ignore pixel aspect ratio for detection.",
             value=False,
+        ),
+        desc.IntParam(
+            name="maxLevels",
+            label="Maximal scale for pyramid",
+            description="maximal number of levels used in multiscale point detection.",
+            value=2,
+            range=(1, 10, 1),
+            advanced=True
+        ),
+        desc.IntParam(
+            name="minConsensus",
+            label="Minimal merge consensus",
+            description="minimal number of shared corners to merge checkerboards.",
+            value=5,
+            range=(1, 10, 1),
+            advanced=True
         ),
         desc.BoolParam(
             name="exportDebugImages",
