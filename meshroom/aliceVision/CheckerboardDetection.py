@@ -43,16 +43,16 @@ The detection method also supports nested calibration grids.
         ),
         desc.IntParam(
             name="maxLevels",
-            label="Maximal scale for pyramid",
-            description="maximal number of levels used in multiscale point detection.",
+            label="Maximum scale for pyramid",
+            description="Maximum number of levels used in multiscale point detection.",
             value=2,
             range=(1, 10, 1),
             advanced=True
         ),
         desc.IntParam(
             name="minConsensus",
-            label="Minimal merge consensus",
-            description="minimal number of shared corners to merge checkerboards.",
+            label="Minimum merge consensus",
+            description="Minimum number of shared corners to merge checkerboards.",
             value=5,
             range=(1, 10, 1),
             advanced=True

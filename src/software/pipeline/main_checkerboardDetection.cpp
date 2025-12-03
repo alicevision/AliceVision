@@ -66,9 +66,9 @@ int aliceVision_main(int argc, char* argv[])
         ("ignorePixelAspectRatio", po::value<bool>(&ignorePixelAspectRatio)->default_value(ignorePixelAspectRatio), 
          "Ignore pixel aspect ratio.")
         ("minConsensus", po::value<size_t>(&minConsensus)->default_value(minConsensus), 
-         "minimal number of shared corners to merge checkerboards.")
+         "Minimum number of shared corners to merge checkerboards.")
         ("maxLevels", po::value<size_t>(&maxLevels)->default_value(maxLevels), 
-         "maximal number of levels used in multiscale point detection.")
+         "Maximum number of levels used in multiscale point detection.")
         ("useNestedGrids", po::value<bool>(&useNestedGrids)->default_value(useNestedGrids), 
          "Images contain nested calibration grids. These grids must be centered on image center.");
     // clang-format on

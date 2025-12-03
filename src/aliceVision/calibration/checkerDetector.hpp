@@ -109,8 +109,8 @@ class CheckerDetector
      *     8.3. connect and group these nested boards
      *
      * @param[in] source Input image containing checkerboards.
-     * @param[in] maxLevels maximal number of levels used in multiscale point detection
-     * @param[in] minConsensus minimal number of shared corners to merge checkerboards
+     * @param[in] maxLevels maximum number of levels used in multiscale point detection
+     * @param[in] minConsensus minimum number of shared corners to merge checkerboards
      * @param[in] useNestedGrid Indicate if the image contains nested calibration grids.
      * @param[in] debug Indicate if debug images should be drawn.
      * @return False if a problem occurred during detection, otherwise true.
@@ -425,14 +425,14 @@ class CheckerDetector
 
     /**
      * @brief Merge overlapping nested boards.
-     * @param[in] minConsensus minimal number of shared corners to merge checkerboards
+     * @param[in] minConsensus minimum number of shared corners to merge checkerboards
      */
     void groupNestedCheckerboards(size_t minConsensus);
 
     /**
      * @brief Merge given board with reference board (first in the nesting sequence).
      *
-     * @param[in] minConsensus minimal number of shared corners to merge checkerboards
+     * @param[in] minConsensus minimum number of shared corners to merge checkerboards
      * @param[in] ref_center Center point of reference board.
      * @param[in] other Index of board to merge.
      * @param[in] scale Checkboard scale within nesting sequence (power of 2).
