@@ -55,7 +55,7 @@
     },
     {
       "name": "opencv4",
-      "features": ["eigen", "contrib", "nonfree", "cuda"],
+      "features": ["eigen", "contrib", "nonfree", "cuda", "dnn"],
       "default-features": false
     }
   ],
