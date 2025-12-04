@@ -537,7 +537,17 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
         std::array<double, 3>& landmarkBlock = _landmarksBlocks[landmarkId];
         for (std::size_t i = 0; i < 3; ++i)
+        {
             landmarkBlock.at(i) = landmark.X(Eigen::Index(i));
+        }
+
+        //If the landmark has a referenceViewIndex set, then retrieve the reference pose
+        double * referencePoseBlockPtr = nullptr;
+        if (landmark.referenceViewIndex != UndefinedIndexT)
+        {
+            const sfmData::View& refview = sfmData.getView(landmark.referenceViewIndex);
+            referencePoseBlockPtr = _posesBlocks.at(refview.getPoseId()).data();
+        }
 
         double* landmarkBlockPtr = landmarkBlock.data();
         problem.AddParameterBlock(landmarkBlockPtr, 3);
@@ -601,6 +611,23 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(distortionBlockPtr);
                 params.push_back(poseBlockPtr);
                 params.push_back(rigBlockPtr);
+                params.push_back(landmarkBlockPtr);
+
+                problem.AddResidualBlock(costFunction, lossFunction, params);
+            }
+            else if (referencePoseBlockPtr != nullptr)
+            {
+                bool samePose = (referencePoseBlockPtr == poseBlockPtr);
+                ceres::CostFunction* costFunction = ProjectionRelativeErrorFunctor::createCostFunction(intrinsic, observation, samePose);
+ 
+                std::vector<double*> params;
+                params.push_back(intrinsicBlockPtr);
+                params.push_back(distortionBlockPtr);
+                if (!samePose)
+                {
+                    params.push_back(poseBlockPtr);
+                    params.push_back(referencePoseBlockPtr);
+                }
                 params.push_back(landmarkBlockPtr);
 
                 problem.AddResidualBlock(costFunction, lossFunction, params);

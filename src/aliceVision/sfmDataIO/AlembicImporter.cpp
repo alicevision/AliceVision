@@ -200,6 +200,18 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
             sampleIsParallaxRobust->reset();
         }
     }
+    
+    AV_UInt32ArraySamplePtr sampleReferenceViewIndices;
+    if (userProps && userProps.getPropertyHeader("mvg_referenceViewIndices"))
+    {
+        sampleReferenceViewIndices.read(userProps, "mvg_referenceViewIndices");
+        if (sampleReferenceViewIndices.size() != positions->size())
+        {
+            ALICEVISION_LOG_WARNING("[Alembic Importer] Reference views will be ignored. Vector size: "
+                                    << sampleReferenceViewIndices.size() << ", positions vector size: " << positions->size());
+            sampleReferenceViewIndices.reset();
+        }
+    }
 
     // Number of points before adding the Alembic data
     const std::size_t nbPointsInit = sfmdata.getLandmarks().size();
@@ -237,6 +249,11 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         {
             const bool isParallaxRobust = sampleIsParallaxRobust->get()[point3d_i];
             landmark.setParallaxRobust(isParallaxRobust);
+        }
+
+        if (sampleReferenceViewIndices)
+        {
+            landmark.referenceViewIndex = sampleReferenceViewIndices[point3d_i];
         }
     }
 
