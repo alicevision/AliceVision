@@ -61,6 +61,8 @@ struct NViewDatasetConfigurator
     double _jitter_amount;
 
     NViewDatasetConfigurator(int fx = 1000, int fy = 1000, int cx = 500, int cy = 500, double distance = 1.5, double jitter_amount = 0.01);
+
+    bool _useRelative = false;
 };
 
 /**
