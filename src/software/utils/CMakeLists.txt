@@ -282,19 +282,6 @@ if (ALICEVISION_BUILD_SFM)
         )
     endif()
 
-    # SfM filter
-    alicevision_add_software(aliceVision_sfmFilter
-        SOURCE main_sfmFilter.cpp
-        FOLDER ${FOLDER_SOFTWARE_UTILS}
-        LINKS aliceVision_system
-            aliceVision_cmdline
-            aliceVision_feature
-            aliceVision_sfm
-            aliceVision_sfmData
-            aliceVision_sfmDataIO
-            Boost::program_options
-    )
-
     # SfM to rig
     alicevision_add_software(aliceVision_sfmToRig
         SOURCE main_sfmToRig.cpp
