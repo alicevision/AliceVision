@@ -503,6 +503,7 @@ void saveLandmark(const std::string& name,
     bpt::ptree landmarkTree;
 
     landmarkTree.put("landmarkId", landmarkId);
+    landmarkTree.put("referenceViewIndex", landmark.referenceViewIndex);
     landmarkTree.put("descType", feature::EImageDescriberType_enumToString(landmark.descType));
     landmarkTree.put("isParallaxRobust", landmark.isParallaxRobust());
     
@@ -544,7 +545,7 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
     landmarkId = landmarkTree.get<IndexT>("landmarkId");
     landmark.descType = feature::EImageDescriberType_stringToEnum(landmarkTree.get<std::string>("descType"));
     landmark.setParallaxRobust(landmarkTree.get<bool>("isParallaxRobust", false));
-    
+    landmark.referenceViewIndex = landmarkTree.get<IndexT>("referenceViewIndex", UndefinedIndexT);
     loadMatrix("color", landmark.rgb, landmarkTree);
     loadMatrix("X", landmark.X, landmarkTree);
 

@@ -507,6 +507,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
         return;
 
     // Fill vector with the values taken from AliceVision
+    std::vector<IndexT> referenceViewIndices;
     std::vector<V3f> positions;
     std::vector<Imath::C3f> colors;
     std::vector<Alembic::Util::uint32_t> descTypes;
@@ -514,6 +515,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
     positions.reserve(landmarks.size());
     descTypes.reserve(landmarks.size());
     isParallaxRobust.reserve(landmarks.size());
+    referenceViewIndices.reserve(landmarks.size());
 
     // For all the 3d points in the hash_map
     for (const auto& landmark : landmarks)
@@ -525,6 +527,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
         colors.emplace_back(color.r() / 255.f, color.g() / 255.f, color.b() / 255.f);
         descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
         isParallaxRobust.emplace_back(static_cast<Alembic::Util::bool_t>(landmark.second.isParallaxRobust()));
+        referenceViewIndices.emplace_back(landmark.second.referenceViewIndex);
     }
 
     std::vector<Alembic::Util::uint64_t> ids(positions.size());
@@ -548,6 +551,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
 
     OUInt32ArrayProperty(userProps, "mvg_describerType").set(descTypes);
     OBoolArrayProperty(userProps, "mvg_isParallaxRobust").set(isParallaxRobust);
+    OUInt32ArrayProperty(userProps, "mvg_referenceViewIndices").set(referenceViewIndices);
 
     if (withVisibility)
     {
