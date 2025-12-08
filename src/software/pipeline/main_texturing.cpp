@@ -145,6 +145,8 @@ int aliceVision_main(int argc, char* argv[])
          " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
          " * DepthMap: For each vertex of the reconstruction, compare vertex depth in the view with depth map value of the view.\n"
          " * PullPush: Combine results from Pull and Push results.'")
+        ("depthDifferenceVisibilityThreshold", po::value<float>(&texParams.depthDifferenceVisibilityThreshold)->default_value(texParams.depthDifferenceVisibilityThreshold),
+         "Max distance threshold between depth map and Z point value to decide if point is visible or not.\n")
         ("subdivisionTargetRatio", po::value<float>(&texParams.subdivisionTargetRatio)->default_value(texParams.subdivisionTargetRatio),
          "Percentage of the density of the reconstruction as the target for the subdivision "
          "(0: disable subdivision, 0.5: half density of the reconstruction, 1: full density of the reconstruction).");
@@ -243,7 +245,7 @@ int aliceVision_main(int argc, char* argv[])
             }
             else
             {
-                ALICEVISION_LOG_INFO("Unvalid depth map folder (no folder given or depth map missing.");
+                ALICEVISION_LOG_INFO("Unvalid depth map folder (no folder given or depth map missing).");
                 ALICEVISION_LOG_INFO("Remap visibilities using MeshItself method instead.");
                 mesh.remapVisibilities(mesh::EVisibilityRemappingMethod::MeshItself, mp, refMesh);
             }

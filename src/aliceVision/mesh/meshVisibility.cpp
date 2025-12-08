@@ -137,10 +137,9 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
     ALICEVISION_LOG_INFO("remapMeshVisibility done.");
 }
 
-void remapMeshVisibilities_depth(const mvsUtils::MultiViewParams& mp, Mesh& mesh)
+void remapMeshVisibilities_depth(const mvsUtils::MultiViewParams& mp, Mesh& mesh, float depthDifferenceThreshold)
 {
     ALICEVISION_LOG_INFO("remapMeshVisibility based on depth map start.");
-    const float depthDifferenceThreshold = 0.0001;
     PointsVisibility& out_ptsVisibilities = mesh.pointsVisibilities;
 
     if (out_ptsVisibilities.size() != mesh.pts.size())
@@ -152,7 +151,6 @@ void remapMeshVisibilities_depth(const mvsUtils::MultiViewParams& mp, Mesh& mesh
     StaticVector<image::Image<float>> depthMapList;
     for (std::size_t camIndex = 0; camIndex < nbCameras; ++camIndex)
     {
-        std::cout << camIndex << std::endl;
         image::Image<float> depthMap;
         mvsUtils::readMap(camIndex, mp, mvsUtils::EFileType::depthMap, depthMap);
         depthMapList.push_back(depthMap);
@@ -172,6 +170,10 @@ void remapMeshVisibilities_depth(const mvsUtils::MultiViewParams& mp, Mesh& mesh
             const Point3d& vTransform = mp.camArr[camIndex] * v;
             Pixel pix;
             mp.getPixelFor3DPoint(&pix, v, camIndex);
+            if (!mp.isPixelInImage(pix, camIndex))
+            {
+                continue;
+            }
 
             float mapValue = depthMapList[camIndex](pix[1], pix[0]);
             float depthDifference = abs(mapValue - vTransform.z);

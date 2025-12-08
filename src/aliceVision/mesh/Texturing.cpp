@@ -1239,7 +1239,7 @@ void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, co
     }
     if (remappingMethod & EVisibilityRemappingMethod::DepthMap)
     {
-        remapMeshVisibilities_depth(mp, *mesh);
+        remapMeshVisibilities_depth(mp, *mesh, texParams.depthDifferenceVisibilityThreshold);
     }
     if (mesh->pointsVisibilities.empty())
     {
