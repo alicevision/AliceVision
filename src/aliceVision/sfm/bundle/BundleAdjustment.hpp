@@ -119,7 +119,9 @@ class BundleAdjustment
     // TODO: Use filter to say which parameter is const or not (allow to refine only a subpart of the intrinsics or the poses)
 };
 
+#ifndef SWIG
 BOOST_BITMASK(BundleAdjustment::ERefineOptions)
+#endif
 
 }  // namespace sfm
 }  // namespace aliceVision
