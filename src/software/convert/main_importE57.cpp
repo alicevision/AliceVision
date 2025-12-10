@@ -342,7 +342,7 @@ int aliceVision_main(int argc, char** argv)
     fuseCut::SimpleNode octree(bbmin, bbmax);
     for (const auto& pt : sfmData.getLandmarks())
     {
-        octree.store(pt.second.X);
+        octree.store(pt.second.getX());
     }
 
     // Now regroup cells as much as we can

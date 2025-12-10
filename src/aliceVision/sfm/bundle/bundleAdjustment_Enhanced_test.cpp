@@ -108,7 +108,7 @@ void createScene(sfmData::SfMData& sfmData, const camera::IntrinsicBase& intrins
         int count = 0;
         for (auto& pl : sfmData.getLandmarks())
         {
-            const auto& pt = pl.second.X;
+            const auto& pt = pl.second.getX();
 
             Vec3 cpt = pose(pt);
             Vec3 dir = (cpt - origin).normalized();
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(test_landmarks)
         srand(0);
         for (auto& lpt : sfmData.getLandmarks())
         {
-            lpt.second.X += Eigen::Vector3d::Random() * 0.1;
+            lpt.second.setX(lpt.second.getX() + Eigen::Vector3d::Random() * 0.1);
         }
 
         sfm::BundleAdjustmentCeres::CeresOptions options;

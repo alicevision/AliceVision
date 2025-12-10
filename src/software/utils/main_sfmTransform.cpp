@@ -348,7 +348,7 @@ bool computeNewScaleFromDepths(const std::string & tracksFilename, sfmData::SfMD
             const sfmData::View & v = sfmData.getView(viewId);
             const sfmData::CameraPose cp = sfmData.getPose(v);
 
-            Vec3 pt = cp.getTransform()(landmark.X);
+            Vec3 pt = cp.getTransform()(landmark.getX());
             if (pt.z() < 1e-12)
             {
                 continue;
@@ -484,7 +484,7 @@ bool parseLineUp(const std::string & lineUpFilename, const std::string & tracksF
             continue;
         }
 
-        landmarkCoordinates.push_back(landmarks.at(trackId).X);
+        landmarkCoordinates.push_back(landmarks.at(trackId).getX());
         meshCoordinates.push_back(pt3d);
     }
 

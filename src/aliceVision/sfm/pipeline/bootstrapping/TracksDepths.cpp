@@ -52,11 +52,11 @@ bool buildSfmDataFromDepthMap(sfmData::SfMData & output,
         const Vec2 meters = intrinsic.removeDistortion(intrinsic.ima2cam(feat.coords.cast<double>()));
         
         sfmData::Landmark & landmark = landmarks[trackId];
-        landmark.X.x() = meters.x() * Z;
-        landmark.X.y() = meters.y() * Z;
-        landmark.X.z() = Z;
+        landmark.getX().x() = meters.x() * Z;
+        landmark.getX().y() = meters.y() * Z;
+        landmark.getX().z() = Z;
 
-        landmark.descType = track.descType;
+        landmark.setDescType(track.descType);
 
         for (const auto & [otherViewId, otherFeat] : track.featPerView)
         {

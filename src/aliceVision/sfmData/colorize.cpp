@@ -114,7 +114,7 @@ void colorizeTracks(SfMData& sfmData)
                 // clamp the pixel position if the feature/marker center is outside the image.
                 pt.x() = clamp(pt.x(), 0.0, static_cast<double>(image.width() - 1));
                 pt.y() = clamp(pt.y(), 0.0, static_cast<double>(image.height() - 1));
-                landmark.rgb = image(pt.y(), pt.x());
+                landmark.setRgb(image(pt.y(), pt.x()));
             }
 
             progressDisplay += viewCardinal.landmarks.size();

@@ -170,7 +170,7 @@ void FrustumFilter::init_z_near_z_far_depth(const sfmData::SfMData& sfmData, con
         for (sfmData::Landmarks::const_iterator itL = sfmData.getLandmarks().begin(); itL != sfmData.getLandmarks().end(); ++itL)
         {
             const sfmData::Landmark& landmark = itL->second;
-            const Vec3& X = landmark.X;
+            const Vec3& X = landmark.getX();
             for (sfmData::Observations::const_iterator iterO = landmark.getObservations().begin(); iterO != landmark.getObservations().end(); ++iterO)
             {
                 const IndexT id_view = iterO->first;

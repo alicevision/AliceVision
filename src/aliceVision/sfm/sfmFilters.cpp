@@ -35,7 +35,7 @@ IndexT removeOutliersWithPixelResidualError(sfmData::SfMData& sfmData,
             const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
             const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
 
-            Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates());
+            Vec2 residual = intrinsic->residual(pose, iterTracks->second.getX().homogeneous(), itObs->second.getCoordinates());
             if (featureConstraint == EFeatureConstraint::SCALE && itObs->second.getScale() > 0.0)
             {
                 // Apply the scale of the feature to get a residual value
@@ -43,7 +43,7 @@ IndexT removeOutliersWithPixelResidualError(sfmData::SfMData& sfmData,
                 residual /= itObs->second.getScale();
             }
 
-            if ((pose.depth(iterTracks->second.X) < 0) || (residual.norm() > dThresholdPixel))
+            if ((pose.depth(iterTracks->second.getX()) < 0) || (residual.norm() > dThresholdPixel))
             {
                 ++outlierCount;
                 itObs = observations.erase(itObs);
@@ -321,7 +321,7 @@ IndexT removeConstraints(sfmData::SfMData& sfmData, double maxDist)
             continue;
         }
     
-        const Vec3 & lpt = landmarkIt->second.X;
+        const Vec3 & lpt = landmarkIt->second.getX();
         double dist = (itConstraints->second.point - lpt).norm();
 
         //Remove if the landmark is too far away

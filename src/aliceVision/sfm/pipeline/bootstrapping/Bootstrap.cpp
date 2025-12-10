@@ -65,8 +65,8 @@ bool bootstrapBase(sfmData::SfMData & sfmData,
         }
 
         sfmData::Landmark landmark;
-        landmark.descType = track.descType;
-        landmark.X = X;
+        landmark.setDescType(track.descType);
+        landmark.setX(X);
         
         sfmData::Observation refObs;
         refObs.setFeatureId(refItem.featureId);
@@ -151,7 +151,7 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
         //Compute error
         const track::TrackItem & item = track.featPerView.at(viewId);
         const Vec2 pt = item.coords;
-        const Vec2 estpt = intrinsics->transformProject(pose3, landmark.X.homogeneous(), true);
+        const Vec2 estpt = intrinsics->transformProject(pose3, landmark.getX().homogeneous(), true);
         double err = (pt - estpt).norm();
 
         //If error is ok, then we add it to the sfmData
@@ -242,7 +242,7 @@ bool bootstrapDepth(sfmData::SfMData & sfmData,
         //Compute error
         const track::TrackItem & item = track.featPerView.at(nextViewId);
         const Vec2 pt = item.coords;
-        const Vec2 estpt = camNext->transformProject(pose3, landmark.X.homogeneous(), true);
+        const Vec2 estpt = camNext->transformProject(pose3, landmark.getX().homogeneous(), true);
         double err = (pt - estpt).norm();
 
         //If error is ok, then we add it to the sfmData

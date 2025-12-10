@@ -21,7 +21,7 @@ def test_landmark_default_constructor():
     """ Test creating a default Landmark object and checking its values are
     correctly initialized. """
     landmark = av.Landmark()
-    assert landmark.state == av.EEstimatorParameterState_REFINED
+    assert landmark.getState() == av.EEstimatorParameterState_REFINED
 
 
 @pytest.mark.skip(reason="feature::EImageDescriberType not binded")
@@ -46,7 +46,7 @@ def test_landmark_compare():
     assert landmark1 == landmark2
 
     # The "state" value is not taken into account when comparing Landmark objects
-    landmark1.state = av.EEstimatorParameterState_CONSTANT
+    landmark1.setState(av.EEstimatorParameterState_CONSTANT)
     assert landmark1 == landmark2, \
         "The two Landmark objects should be equal despite their different 'state' values"
 

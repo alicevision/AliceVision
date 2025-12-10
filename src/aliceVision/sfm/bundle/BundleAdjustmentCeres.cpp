@@ -529,7 +529,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
         // do not create a residual block if the landmark
         // have been set as Ignored by the Local BA strategy
-        if (landmark.state == EEstimatorParameterState::IGNORED)
+        if (landmark.getState() == EEstimatorParameterState::IGNORED)
         {
             _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::IGNORED);
             continue;
@@ -538,14 +538,14 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
         std::array<double, 3>& landmarkBlock = _landmarksBlocks[landmarkId];
         for (std::size_t i = 0; i < 3; ++i)
         {
-            landmarkBlock.at(i) = landmark.X(Eigen::Index(i));
+            landmarkBlock.at(i) = landmark.getX()(Eigen::Index(i));
         }
 
         //If the landmark has a referenceViewIndex set, then retrieve the reference pose
         double * referencePoseBlockPtr = nullptr;
-        if (landmark.referenceViewIndex != UndefinedIndexT)
+        if (landmark.getReferenceViewIndex() != UndefinedIndexT)
         {
-            const sfmData::View& refview = sfmData.getView(landmark.referenceViewIndex);
+            const sfmData::View& refview = sfmData.getView(landmark.getReferenceViewIndex());
             referencePoseBlockPtr = _posesBlocks.at(refview.getPoseId()).data();
         }
 
@@ -657,7 +657,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 problem.AddResidualBlock(costFunction, nullptr, params);
             }
 
-            if (!refineStructure || landmark.state == EEstimatorParameterState::CONSTANT || landmark.isPrecise())
+            if (!refineStructure || landmark.getState() == EEstimatorParameterState::CONSTANT || landmark.isPrecise())
             {
                 // set the whole landmark parameter block as constant.
                 _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::CONSTANT);

@@ -1537,7 +1537,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
          ++iterfeatId, ++iterTrackId, ++cpt)
     {
         const feature::EImageDescriberType descType = iterfeatId->first;
-        resectionData.pt3D.col(cpt) = _sfmData.getLandmarks().at(*iterTrackId).X;
+        resectionData.pt3D.col(cpt) = _sfmData.getLandmarks().at(*iterTrackId).getX();
         resectionData.pt2D.col(cpt) = _featuresPerView->getFeatures(viewId, descType)[iterfeatId->second].coords().cast<double>();
         resectionData.vec_descType.at(cpt) = descType;
     }
@@ -1619,7 +1619,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
             const IndexT idFeat = resectionData.featuresId[i].second;
             const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC)
                                    ? 0.0
-                                   : _featuresPerView->getFeatures(viewIndex, landmark.descType)[idFeat].scale();
+                                   : _featuresPerView->getFeatures(viewIndex, landmark.getDescType())[idFeat].scale();
             // Inlier, add the point to the reconstructed track
             landmark.getObservations()[viewIndex] = Observation(x, idFeat, scale);
         }
@@ -1863,8 +1863,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViewsLORANSAC(SfMData& 
         if (isValidTrack)
         {
             Landmark landmark;
-            landmark.X = X_euclidean;
-            landmark.descType = track.descType;
+            landmark.setX(X_euclidean);
+            landmark.setDescType(track.descType);
             for (const IndexT& viewId : inliers)  // add inliers as observations
             {
                 const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId).featureId].coords().cast<double>();
@@ -1974,12 +1974,12 @@ void ReconstructionEngine_sequentialSfM::triangulate2Views(SfMData& scene,
                         Landmark& landmark = scene.getLandmarks().at(trackId);
                         if (landmark.getObservations().count(I) == 0)
                         {
-                            const Vec2 residual = camI->residual(poseI, landmark.X.homogeneous(), xI);
+                            const Vec2 residual = camI->residual(poseI, landmark.getX().homogeneous(), xI);
                             // TODO: scale in residual
                             const auto& acThresholdIt = _map_ACThreshold.find(I);
                             // TODO assert(acThresholdIt != _map_ACThreshold.end());
                             const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
-                            if (poseI.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
+                            if (poseI.depth(landmark.getX()) > 0 && residual.norm() < std::max(4.0, acThreshold))
                             {
                                 const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featI.scale();
                                 landmark.getObservations()[I] = Observation(xI, track.featPerView.at(I).featureId, scale);
@@ -1988,11 +1988,11 @@ void ReconstructionEngine_sequentialSfM::triangulate2Views(SfMData& scene,
                         }
                         if (landmark.getObservations().count(J) == 0)
                         {
-                            const Vec2 residual = camJ->residual(poseJ, landmark.X.homogeneous(), xJ);
+                            const Vec2 residual = camJ->residual(poseJ, landmark.getX().homogeneous(), xJ);
                             const auto& acThresholdIt = _map_ACThreshold.find(J);
                             // TODO assert(acThresholdIt != _map_ACThreshold.end());
                             const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
-                            if (poseJ.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
+                            if (poseJ.depth(landmark.getX()) > 0 && residual.norm() < std::max(4.0, acThreshold))
                             {
                                 const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featJ.scale();
                                 landmark.getObservations()[J] = Observation(xJ, track.featPerView.at(J).featureId, scale);
@@ -2040,8 +2040,8 @@ void ReconstructionEngine_sequentialSfM::triangulate2Views(SfMData& scene,
                         {
                             // Add a new track
                             Landmark& landmark = scene.getLandmarks()[trackId];
-                            landmark.X = X_euclidean;
-                            landmark.descType = track.descType;
+                            landmark.setX(X_euclidean);
+                            landmark.setDescType(track.descType);
 
                             const double scaleI = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featI.scale();
                             const double scaleJ = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featJ.scale();

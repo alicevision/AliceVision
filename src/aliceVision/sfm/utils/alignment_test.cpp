@@ -180,7 +180,7 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
     {
         // Collect the image of point i in each frame.
         Landmark landmark;
-        landmark.X = d._X.col(i);
+        landmark.setX(d._X.col(i));
         for (int j = 0; j < nviews; ++j)
         {
             Vec2 pt = d._x[j].col(i);

@@ -439,12 +439,12 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
         if (!states.at(static_cast<std::size_t>(EEstimatorParameterState::REFINED)) ||
             states.at(static_cast<std::size_t>(EEstimatorParameterState::IGNORED)))
         {
-            itLandmark.second.state = EEstimatorParameterState::IGNORED;
+            itLandmark.second.setState(EEstimatorParameterState::IGNORED);
             _statePerLandmarkId[landmarkId] = EEstimatorParameterState::IGNORED;
         }
         else
         {
-            itLandmark.second.state = EEstimatorParameterState::REFINED;
+            itLandmark.second.setState(EEstimatorParameterState::REFINED);
             _statePerLandmarkId[landmarkId] = EEstimatorParameterState::REFINED;
         }
     }

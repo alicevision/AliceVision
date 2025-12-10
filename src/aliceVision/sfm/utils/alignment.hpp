@@ -164,7 +164,7 @@ inline void applyTransform(sfmData::SfMData& sfmData, const double S, const Mat3
 
     for (auto& landmark : sfmData.getLandmarks())
     {
-        landmark.second.X = S * R * landmark.second.X + t;
+        landmark.second.setX(S * R * landmark.second.getX() + t);
     }
 }
 

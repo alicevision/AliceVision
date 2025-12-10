@@ -52,7 +52,7 @@ bool exportToMatlab(const SfMData& sfm_data, const std::string& outDirectory)
         {
             const IndexT landmarkId = s.first;
             const Landmark& landmark = s.second;
-            landmarksFile << landmarkId << " " << landmark.X[0] << " " << landmark.X[1] << " " << landmark.X[2] << "\n";
+            landmarksFile << landmarkId << " " << landmark.getX()[0] << " " << landmark.getX()[1] << " " << landmark.getX()[2] << "\n";
             for (const auto& obs : landmark.getObservations())
             {
                 const IndexT obsView = obs.first;  // The ID of the view that provides this 2D observation.

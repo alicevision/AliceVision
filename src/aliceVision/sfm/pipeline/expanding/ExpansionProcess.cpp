@@ -126,7 +126,7 @@ void ExpansionProcess::remapExistingLandmarks(sfmData::SfMData & sfmData, const 
 
         const IndexT firstViewId = landmarkPair.second.getObservations().begin()->first;
         const IndexT firstFeatureId = landmarkPair.second.getObservations().begin()->second.getFeatureId();
-        const feature::EImageDescriberType descType = landmarkPair.second.descType;
+        const feature::EImageDescriberType descType = landmarkPair.second.getDescType();
 
         obsToLandmark.emplace(ObsKey(firstViewId, firstFeatureId, descType), landmarkId);
     }

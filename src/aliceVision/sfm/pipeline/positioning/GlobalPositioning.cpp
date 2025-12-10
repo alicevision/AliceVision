@@ -129,7 +129,7 @@ bool GlobalPositioning::createStructure(const sfmData::SfMData & sfmData, std::m
             //Initialize all scales to 1
             Pair pair = std::make_pair(idLandmark, poseId);
 
-            double norm = (landmark.X - pose.center()).norm();
+            double norm = (landmark.getX() - pose.center()).norm();
             if (norm < 1e-12) norm = 1.0;
             _scales[pair] = 1.0 /  norm;
 
@@ -211,7 +211,7 @@ void GlobalPositioning::updateSfmData(sfmData::SfMData & sfmData)
     sfmData::Landmarks & landmarks = sfmData.getLandmarks();
     for (auto & [idLandmark, vec] : _landmarks)
     {
-        landmarks[idLandmark].X = vec;
+        landmarks[idLandmark].setX(vec);
     }
 
 

@@ -280,7 +280,7 @@ bool exportToBundlerFormat(const SfMData& sfm_data,
         {
             const Landmark& landmark = iter->second;
             const Observations& observations = landmark.getObservations();
-            const Vec3& X = landmark.X;
+            const Vec3& X = landmark.getX();
             // X, color, obsCount
             os << X[0] << " " << X[1] << " " << X[2] << os.widen('\n') << "255 255 255" << os.widen('\n') << observations.size() << " ";
             for (Observations::const_iterator iterObs = observations.begin(); iterObs != observations.end(); ++iterObs)

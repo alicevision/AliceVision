@@ -89,13 +89,13 @@ bool savePLY(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
                 const auto& landmark = iterLandmarks->second;
                 if (b_binary)
                 {
-                    Vec3f point = landmark.X.cast<float>();
+                    Vec3f point = landmark.getX().cast<float>();
                     stream.write(reinterpret_cast<const char*>(&point), sizeof(float) * 3);
-                    stream.write(reinterpret_cast<const char*>(&landmark.rgb), sizeof(uint8_t) * 3);
+                    stream.write(reinterpret_cast<const char*>(&landmark.getRgb()), sizeof(uint8_t) * 3);
                 }
                 else
                 {
-                    stream << landmark.X.transpose() << " " << (int)landmark.rgb.r() << " " << (int)landmark.rgb.g() << " " << (int)landmark.rgb.b()
+                    stream << landmark.getX().transpose() << " " << (int)landmark.getRgb().r() << " " << (int)landmark.getRgb().g() << " " << (int)landmark.getRgb().b()
                            << "\n";
                 }
             }
@@ -140,16 +140,16 @@ bool loadPLY(sfmData::SfMData& sfmData, const std::string& filename)
 
                 sfmData::Landmark l;
 
-                l.X.x() = v.x;
-                l.X.y() = -v.y;
-                l.X.z() = -v.z;
+                l.getX().x() = v.x;
+                l.getX().y() = -v.y;
+                l.getX().z() = -v.z;
 
                 if (mesh->HasVertexColors(0))
                 {
                     const aiColor4D c = mesh->mColors[0][idPoint];
-                    l.rgb.r() = c.r * 255.0;
-                    l.rgb.g() = c.g * 255.0;
-                    l.rgb.b() = c.b * 255.0;
+                    l.getRgb().r() = c.r * 255.0;
+                    l.getRgb().g() = c.g * 255.0;
+                    l.getRgb().b() = c.b * 255.0;
                 }
 
                 landmarks[landmarks.size()] = l;
