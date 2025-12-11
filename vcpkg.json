@@ -65,6 +65,10 @@
       "version": "3.0.9.1#1"
     },
     {
+      "name": "opencolorio",
+      "version": "2.4.2"
+    },
+    {
       "name": "suitesparse",
       "version": "5.8.0"
     },
