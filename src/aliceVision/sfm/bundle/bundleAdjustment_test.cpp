@@ -343,7 +343,8 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
 
         if (config._useRelative)
         {
-            landmark.setReferenceViewIndex(nviews / 2);
+            sfmData::View::sptr refView = sfm_data.getViews().at(nviews / 2);
+            landmark.setReferenceView(refView);
             geometry::Pose3 p = sfm_data.getAbsolutePose(landmark.getReferenceViewIndex()).getTransform();
             landmark.setX(p(landmark.getX()));
         }

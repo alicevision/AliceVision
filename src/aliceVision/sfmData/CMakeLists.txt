@@ -24,6 +24,7 @@ set(sfmData_files_sources
     colorize.cpp
     exif.cpp
     ImageInfo.cpp
+    Landmark.cpp
     Observation.cpp
 )
 

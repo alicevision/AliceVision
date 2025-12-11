@@ -14,8 +14,12 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/sfmData/Observation.hpp>
 
+#include <memory>
+
 namespace aliceVision {
 namespace sfmData {
+
+class View;
 
 /**
  * @brief Landmark is a 3D point with its 2d observations.
@@ -59,18 +63,18 @@ class Landmark
      * 
      * @return The index of the reference view, or UndefinedIndexT if not set
      */
-    IndexT getReferenceViewIndex() const { return _referenceViewIndex; }
+    IndexT getReferenceViewIndex() const;
 
     /**
-     * @brief Set the reference view index.
+     * @brief Set the reference view.
      * 
      * Sets the view that serves as the reference frame for this landmark's 3D position.
      * This is used in relative pose parameterization during bundle adjustment.
-     * Set to UndefinedIndexT to use absolute world coordinates.
+     * Set to nullptr to use absolute world coordinates.
      * 
-     * @param viewIndex The index of the reference view, or UndefinedIndexT for absolute coordinates
+     * @param view The reference view, or nullptr for absolute coordinates
      */
-    void setReferenceViewIndex(IndexT viewIndex) { _referenceViewIndex = viewIndex; }
+    void setReferenceView(std::shared_ptr<View> view) { _referenceView = view; }
 
     /**
      * @brief Equality operator
@@ -83,7 +87,7 @@ class Landmark
         && AreVecNearEqual(_rgb, other._rgb, 1e-3) 
         && _observations == other._observations 
         && _descType == other._descType
-        && _referenceViewIndex == other._referenceViewIndex;
+        && getReferenceViewIndex() == other.getReferenceViewIndex();
     }
 
     /**
@@ -225,7 +229,7 @@ private:
     bool _parallaxRobust = false;
     bool _isPrecise = false;
     image::RGBColor _rgb = image::WHITE;  //!> the color associated to the point
-    IndexT _referenceViewIndex = UndefinedIndexT;  //!> the index of the reference view for relative pose parameterization
+    std::shared_ptr<View> _referenceView;  //!> Reference view for relative pose parameterization
 };
 
 }  // namespace sfmData

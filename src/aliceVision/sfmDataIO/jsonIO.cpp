@@ -540,12 +540,19 @@ void saveLandmark(const std::string& name,
     parentTree.push_back(std::make_pair(name, landmarkTree));
 }
 
-void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations, bool loadFeatures)
+void loadLandmark(sfmData::SfMData& sfmData, IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations, bool loadFeatures)
 {
     landmarkId = landmarkTree.get<IndexT>("landmarkId");
     landmark.setDescType(feature::EImageDescriberType_stringToEnum(landmarkTree.get<std::string>("descType")));
     landmark.setParallaxRobust(landmarkTree.get<bool>("isParallaxRobust", false));
-    landmark.setReferenceViewIndex(landmarkTree.get<IndexT>("referenceViewIndex", UndefinedIndexT));
+
+    IndexT referenceViewIndex = landmarkTree.get<IndexT>("referenceViewIndex", UndefinedIndexT);
+    if (referenceViewIndex != UndefinedIndexT)
+    {
+        sfmData::View::sptr view = sfmData.getViews().at(referenceViewIndex);
+        landmark.setReferenceView(view);
+    }
+
     loadMatrix("color", landmark.getRgb(), landmarkTree);
     loadMatrix("X", landmark.getX(), landmarkTree);
 
@@ -944,7 +951,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
             IndexT landmarkId;
             sfmData::Landmark landmark;
 
-            loadLandmark(landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
+            loadLandmark(sfmData, landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
 
             structure.emplace(landmarkId, landmark);
         }

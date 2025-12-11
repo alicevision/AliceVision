@@ -253,7 +253,12 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
 
         if (sampleReferenceViewIndices)
         {
-            landmark.setReferenceViewIndex(sampleReferenceViewIndices[point3d_i]);
+            IndexT referenceViewIndex = sampleReferenceViewIndices[point3d_i];
+            if (referenceViewIndex != UndefinedIndexT)
+            {
+                sfmData::View::sptr view = sfmdata.getViews().at(referenceViewIndex);
+                landmark.setReferenceView(view);
+            }
         }
     }
 
