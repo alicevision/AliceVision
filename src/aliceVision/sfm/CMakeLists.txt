@@ -176,3 +176,20 @@ alicevision_add_test(utils/poseFilter_test.cpp
 )
 
 add_subdirectory(pipeline)
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(sfm
+        SOURCES sfm.i
+        PUBLIC_LINKS
+            aliceVision_sfmData
+            aliceVision_sfm
+            aliceVision_sfm_bundle
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
+    )
+endif()

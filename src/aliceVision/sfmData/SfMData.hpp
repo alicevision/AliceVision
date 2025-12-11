@@ -664,7 +664,35 @@ class SfMData
      */
     void combine(const SfMData& sfmData);
 
+    /**
+    * @brief Remove everything in this sfmData
+    */
     void clear();
+
+    /**
+    * @brief Remove intrinsics which are unused
+    */
+    void removeUnusedIntrinsics();
+
+    /**
+    * @brief Remove poses which are unused
+    */
+    void removeUnusedCameraPoses();
+
+    /**
+    * @brief Remove observations pointing to invalid views
+    */
+    void removeInvalidObservations();
+
+    /**
+    * @brief Remove landmarks without any observations
+    */
+    void removeUnusedLandmarks();
+
+    /**
+    * @brief repair the sfmData by removing everything that is unused or invalid
+    */
+    void repair();
 
     /**
      * @Brief For all required items, update the

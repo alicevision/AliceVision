@@ -15,7 +15,7 @@
             "Meshing": "7.0",
             "PhotometricStereo": "1.0",
             "PrepareDenseScene": "3.1",
-            "SfMFilter": "1.0",
+            "SfMFilter": "2.0",
             "SfMTransfer": "2.1",
             "SphereDetection": "1.0",
             "StructureFromMotion": "3.3",
@@ -194,7 +194,7 @@
             ],
             "inputs": {
                 "inputFile": "{CameraInit_1.output}",
-                "fileMatchingPattern": ".*/.*ambient.*"
+                "expression": "contains(path, \"ambient\")"
             }
         },
         "SfMTransfer_1": {

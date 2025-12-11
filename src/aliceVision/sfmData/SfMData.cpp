@@ -406,6 +406,77 @@ IndexT SfMData::findView(const std::string & imageName) const
     return out_viewId;
 }
 
+void SfMData::removeUnusedIntrinsics()
+{
+    std::set<IndexT> usedIds;
+
+    for (const auto [_, view] : getViews().valueRange())
+    {
+        usedIds.insert(view.getIntrinsicId());
+    }
+
+    std::erase_if(_intrinsics, [usedIds](const auto & item)
+    {
+        //If current intrinsicId not found in usedIds
+        return (usedIds.find(item.first) == usedIds.end());
+    });
+}
+
+void SfMData::removeUnusedCameraPoses()
+{
+    std::set<IndexT> usedIds;
+
+    for (const auto [_, view] : getViews().valueRange())
+    {
+        usedIds.insert(view.getPoseId());
+    }
+
+    std::erase_if(_poses, [usedIds](const auto & item)
+    {
+        //If current poseId not found in usedIds
+        return (usedIds.find(item.first) == usedIds.end());
+    });
+}
+
+void SfMData::removeInvalidObservations()
+{
+    const std::set<IndexT> validViews = getValidViews();
+
+    // Erase all observations whose key (viewId) is not in the valid set
+    for (auto & [lid, landmark] : getLandmarks())
+    {
+        // observations is a flat_map, can't use erase_if
+        auto & observations = landmark.getObservations();
+
+        sfmData::Observations keptObservations;
+        for (const auto [idView, observation] : observations)
+        {
+            if (validViews.find(idView) != validViews.end())
+            {
+                keptObservations.emplace(idView, observation);
+            }
+        }
+
+        observations = std::move(keptObservations);
+    }
+}
+
+void SfMData::removeUnusedLandmarks()
+{
+    // Erase all landmarks with no observations
+    std::erase_if(getLandmarks(), [](const auto & pair) {
+        return pair.second.getObservations().empty();
+    });
+}
+
+void SfMData::repair()
+{
+    removeUnusedIntrinsics();
+    removeUnusedCameraPoses();
+    removeInvalidObservations();
+    removeUnusedLandmarks();
+}
+
 LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
 {
     LandmarksPerView landmarksPerView;

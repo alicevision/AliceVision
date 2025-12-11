@@ -45,6 +45,11 @@ using namespace aliceVision::camera;
     int __len__() {
         return self->size();
     }
+
+    void clone(const aliceVision::sfmData::SharedPtrMap<VALUETYPE> & other)
+    {
+        *self = other;
+    }
     
     bool __contains__(const IndexT& key) {
         return (self->find(key) != self->end());

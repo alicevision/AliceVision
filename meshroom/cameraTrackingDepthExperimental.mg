@@ -32,7 +32,7 @@
             "SfMBootStrapping": "4.1",
             "SfMColorizing": "1.0",
             "SfMExpanding": "2.2",
-            "SfMFilter": "1.0",
+            "SfMFilter": "2.0",
             "SfMTransfer": "2.1",
             "SfMTransform": "3.2",
             "SfMTriangulation": "1.0",
