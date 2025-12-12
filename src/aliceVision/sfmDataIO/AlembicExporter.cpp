@@ -520,14 +520,14 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
     // For all the 3d points in the hash_map
     for (const auto& landmark : landmarks)
     {
-        const Vec3& pt = landmark.second.X;
-        const image::RGBColor& color = landmark.second.rgb;
+        const Vec3& pt = landmark.second.getX();
+        const image::RGBColor& color = landmark.second.getRgb();
         // convert position from computer vision convention to computer graphics (opengl-like)
         positions.emplace_back(pt[0], -pt[1], -pt[2]);
         colors.emplace_back(color.r() / 255.f, color.g() / 255.f, color.b() / 255.f);
-        descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
+        descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.getDescType()));
         isParallaxRobust.emplace_back(static_cast<Alembic::Util::bool_t>(landmark.second.isParallaxRobust()));
-        referenceViewIndices.emplace_back(landmark.second.referenceViewIndex);
+        referenceViewIndices.emplace_back(landmark.second.getReferenceViewIndex());
     }
 
     std::vector<Alembic::Util::uint64_t> ids(positions.size());

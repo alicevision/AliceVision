@@ -178,8 +178,8 @@ bool SfmTriangulation::processTrack(
     homogeneousToEuclidean(X, X_euclidean); 
 
     //Create landmark from result
-    result.X = X_euclidean;
-    result.descType = track.descType;
+    result.setX(X_euclidean);
+    result.setDescType(track.descType);
 
     for (const std::size_t & i : inliers)
     {   
@@ -241,8 +241,8 @@ bool SfmTriangulation::processTrackWithPrior(
         //As it does not need parallax to estimate its depth
         sfmData::Landmark landmark;
         landmark.setParallaxRobust(true);
-        landmark.X = oX;
-        landmark.descType = track.descType;
+        landmark.setX(oX);
+        landmark.setDescType(track.descType);
 
         //Compute consensus for this depth
         for (auto viewId : viewIds)
@@ -342,8 +342,8 @@ bool SfmTriangulation::processTrackWithPointFetcher(
         //As it does not need parallax to estimate its depth
         sfmData::Landmark landmark;
         landmark.setParallaxRobust(true);
-        landmark.X = refpt;
-        landmark.descType = track.descType;
+        landmark.setX(refpt);
+        landmark.setDescType(track.descType);
         landmark.setIsPrecise(true);
 
         //For each observed view in the track
@@ -408,7 +408,7 @@ bool SfmTriangulation::checkChierality(const sfmData::SfMData & sfmData, const s
         const geometry::Pose3 & refPose = refCameraPose.getTransform();
 
         const Vec3 dir = intrinsic->toUnitSphere(intrinsic->removeDistortion(intrinsic->ima2cam(obs.getCoordinates())));
-        const Vec3 ldir = refPose(landmark.X).normalized();
+        const Vec3 ldir = refPose(landmark.getX()).normalized();
 
         if (dir.dot(ldir) < 0.0)
         {
@@ -442,7 +442,7 @@ double SfmTriangulation::getMaximalAngle(const sfmData::SfMData & sfmData, const
             const sfmData::View & nextView = sfmData.getView(nextViewId);
             const sfmData::CameraPose & nextCameraPose = sfmData.getAbsolutePose(nextView.getPoseId());
             const geometry::Pose3 & nextPose = nextCameraPose.getTransform();
-            double angle_deg = camera::angleBetweenRays(refPose, nextPose, landmark.X);
+            double angle_deg = camera::angleBetweenRays(refPose, nextPose, landmark.getX());
 
             max = std::max(max, angle_deg);
         }

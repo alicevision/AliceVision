@@ -234,15 +234,15 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         if (sampleColors)
         {
             const P3fArraySamplePtr::element_type::value_type& color_i = sampleColors->get()[point3d_i];
-            landmark.rgb = image::RGBColor(static_cast<unsigned char>(color_i[0] * 255.0f),
-                                           static_cast<unsigned char>(color_i[1] * 255.0f),
-                                           static_cast<unsigned char>(color_i[2] * 255.0f));
+            landmark.setRgb(image::RGBColor(static_cast<unsigned char>(color_i[0] * 255.0f),
+                                            static_cast<unsigned char>(color_i[1] * 255.0f),
+                                            static_cast<unsigned char>(color_i[2] * 255.0f)));
         }
 
         if (sampleDescs)
         {
             const std::size_t descType_i = sampleDescs[point3d_i];
-            landmark.descType = static_cast<feature::EImageDescriberType>(descType_i);
+            landmark.setDescType(static_cast<feature::EImageDescriberType>(descType_i));
         }
 
         if (sampleIsParallaxRobust)
@@ -253,7 +253,12 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
 
         if (sampleReferenceViewIndices)
         {
-            landmark.referenceViewIndex = sampleReferenceViewIndices[point3d_i];
+            IndexT referenceViewIndex = sampleReferenceViewIndices[point3d_i];
+            if (referenceViewIndex != UndefinedIndexT)
+            {
+                sfmData::View::sptr view = sfmdata.getViews().at(referenceViewIndex);
+                landmark.setReferenceView(view);
+            }
         }
     }
 

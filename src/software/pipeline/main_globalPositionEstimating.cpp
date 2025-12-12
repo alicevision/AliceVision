@@ -111,7 +111,7 @@ int aliceVision_main(int argc, char** argv)
             const track::TrackItem & trackItem = track.featPerView.at(idView);
             
             sfmData::Landmark & landmark = landmarks[idTrack];
-            landmark.descType = track.descType;
+            landmark.setDescType(track.descType);
             
             sfmData::Observation & obs = landmark.getObservations()[idView];
             obs.setCoordinates(trackItem.coords);

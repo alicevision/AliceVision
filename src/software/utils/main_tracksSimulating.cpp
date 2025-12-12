@@ -83,10 +83,10 @@ int aliceVision_main(int argc, char** argv)
 
     for (const auto & [landmarkId, landmark] : sfmData.getLandmarks())
     {
-        const Vec3 point = landmark.X;
+        const Vec3 point = landmark.getX();
 
         track::Track track;
-        track.descType = landmark.descType;
+        track.descType = landmark.getDescType();
 
         for (const auto & [viewId, observation] : landmark.getObservations())
         {

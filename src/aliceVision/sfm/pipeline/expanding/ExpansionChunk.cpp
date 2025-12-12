@@ -421,7 +421,7 @@ void ExpansionChunk::setConstraints(sfmData::SfMData & sfmData, const track::Tra
         const Vec3 point = vecInfo[idBest].first;
         const Vec3 normal = vecInfo[idBest].second;
 
-        double dist = (point - landmark.X).norm();
+        double dist = (point - landmark.getX()).norm();
         if (dist > maxDistLandmark)
         {
             continue;

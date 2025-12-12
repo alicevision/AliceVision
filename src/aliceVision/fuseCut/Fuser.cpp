@@ -360,7 +360,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, const sfmData::
     for (const auto& landmarkPair : sfmData.getLandmarks())
     {
         const sfmData::Landmark& landmark = landmarkPair.second;
-        const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
+        const Point3d p(landmark.getX()(0), landmark.getX()(1), landmark.getX()(2));
 
         for (const auto& observationPair : landmark.getObservations())
         {
@@ -571,9 +571,9 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
         if (!checkLandmarkMinObservationAngle(sfmData, landmark, minObservationAngle))
             continue;
 
-        const double x = landmark.X(0);
-        const double y = landmark.X(1);
-        const double z = landmark.X(2);
+        const double x = landmark.getX()(0);
+        const double y = landmark.getX()(1);
+        const double z = landmark.getX()(2);
 
         accMinX(x);
         accMinY(y);

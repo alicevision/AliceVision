@@ -78,7 +78,7 @@ bool SfmResection::processView(
         const auto & track = tracks.at(trackId);
 
         const feature::EImageDescriberType descType = track.descType;        
-        const Eigen::Vector3d X = sfmData.getLandmarks().at(trackId).X;
+        const Eigen::Vector3d X = sfmData.getLandmarks().at(trackId).getX();
         const Eigen::Vector2d x = track.featPerView.at(viewId).coords;
 
         structure.push_back(X);
@@ -174,7 +174,7 @@ bool SfmResection::internalRefinement(
         const std::size_t idx = inliers[i];
 
         sfmData::Landmark landmark;
-        landmark.X = structure[idx];
+        landmark.setX(structure[idx]);
         landmark.getObservations()[0] = sfmData::Observation(observations[idx], UndefinedIndexT, unknownScale);
         tinyScene.getLandmarks()[i] = std::move(landmark);
     }

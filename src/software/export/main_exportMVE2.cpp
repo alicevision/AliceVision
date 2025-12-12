@@ -209,7 +209,7 @@ bool exportToMVE2Format(const SfMData& sfm_data,
 
         for (Landmarks::const_iterator iterLandmarks = landmarks.begin(); iterLandmarks != landmarks.end(); ++iterLandmarks)
         {
-            const Vec3 exportPoint = iterLandmarks->second.X;
+            const Vec3 exportPoint = iterLandmarks->second.getX();
             out << exportPoint.x() << " " << exportPoint.y() << " " << exportPoint.z() << "\n";
             out << 250 << " " << 100 << " " << 150 << "\n";  // Write arbitrary RGB color, see above note
 

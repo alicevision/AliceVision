@@ -200,7 +200,7 @@ SfMData generateSfm(const NViewDatasetConfigurator& config, const size_t size, c
     for (size_t i = 0; i < ptsSize; ++i)
     {
         Landmark landmark;
-        landmark.X = matPts.col(i);
+        landmark.setX(matPts.col(i));
         for (int j = 0; j < camsPts.size(); ++j)
         {
             const Vec2 pt = projectedPtsPerCam[j].col(i);

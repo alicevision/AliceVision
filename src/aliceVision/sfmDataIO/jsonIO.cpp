@@ -503,12 +503,12 @@ void saveLandmark(const std::string& name,
     bpt::ptree landmarkTree;
 
     landmarkTree.put("landmarkId", landmarkId);
-    landmarkTree.put("referenceViewIndex", landmark.referenceViewIndex);
-    landmarkTree.put("descType", feature::EImageDescriberType_enumToString(landmark.descType));
+    landmarkTree.put("referenceViewIndex", landmark.getReferenceViewIndex());
+    landmarkTree.put("descType", feature::EImageDescriberType_enumToString(landmark.getDescType()));
     landmarkTree.put("isParallaxRobust", landmark.isParallaxRobust());
     
-    saveMatrix("color", landmark.rgb, landmarkTree);
-    saveMatrix("X", landmark.X, landmarkTree);
+    saveMatrix("color", landmark.getRgb(), landmarkTree);
+    saveMatrix("X", landmark.getX(), landmarkTree);
 
     // observations
     if (saveObservations)
@@ -540,14 +540,21 @@ void saveLandmark(const std::string& name,
     parentTree.push_back(std::make_pair(name, landmarkTree));
 }
 
-void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations, bool loadFeatures)
+void loadLandmark(sfmData::SfMData& sfmData, IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations, bool loadFeatures)
 {
     landmarkId = landmarkTree.get<IndexT>("landmarkId");
-    landmark.descType = feature::EImageDescriberType_stringToEnum(landmarkTree.get<std::string>("descType"));
+    landmark.setDescType(feature::EImageDescriberType_stringToEnum(landmarkTree.get<std::string>("descType")));
     landmark.setParallaxRobust(landmarkTree.get<bool>("isParallaxRobust", false));
-    landmark.referenceViewIndex = landmarkTree.get<IndexT>("referenceViewIndex", UndefinedIndexT);
-    loadMatrix("color", landmark.rgb, landmarkTree);
-    loadMatrix("X", landmark.X, landmarkTree);
+
+    IndexT referenceViewIndex = landmarkTree.get<IndexT>("referenceViewIndex", UndefinedIndexT);
+    if (referenceViewIndex != UndefinedIndexT)
+    {
+        sfmData::View::sptr view = sfmData.getViews().at(referenceViewIndex);
+        landmark.setReferenceView(view);
+    }
+
+    loadMatrix("color", landmark.getRgb(), landmarkTree);
+    loadMatrix("X", landmark.getX(), landmarkTree);
 
     // observations
     if (loadObservations)
@@ -944,7 +951,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
             IndexT landmarkId;
             sfmData::Landmark landmark;
 
-            loadLandmark(landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
+            loadLandmark(sfmData, landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
 
             structure.emplace(landmarkId, landmark);
         }

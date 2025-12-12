@@ -491,7 +491,7 @@ class SfMData
         std::set<feature::EImageDescriberType> output;
         for (auto s : getLandmarks())
         {
-            output.insert(s.second.descType);
+            output.insert(s.second.getDescType());
         }
         return output;
     }
@@ -501,13 +501,13 @@ class SfMData
         std::map<feature::EImageDescriberType, int> output;
         for (auto s : getLandmarks())
         {
-            if (output.find(s.second.descType) == output.end())
+            if (output.find(s.second.getDescType()) == output.end())
             {
-                output[s.second.descType] = 1;
+                output[s.second.getDescType()] = 1;
             }
             else
             {
-                ++output[s.second.descType];
+                ++output[s.second.getDescType()];
             }
         }
         return output;

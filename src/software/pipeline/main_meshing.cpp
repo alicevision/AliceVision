@@ -462,7 +462,7 @@ int aliceVision_main(int argc, char* argv[])
         colors.resize(mesh->pts.size(), {0, 0, 0});
         for (std::size_t i = 0; i < mesh->pts.size(); ++i)
         {
-            const auto& c = landmarks.at(i).rgb;
+            const auto& c = landmarks.at(i).getRgb();
             colors[i] = {c.r(), c.g(), c.b()};
         }
     }

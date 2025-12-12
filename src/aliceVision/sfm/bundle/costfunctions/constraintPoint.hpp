@@ -39,7 +39,7 @@ struct ConstraintPointErrorFunctor
     inline static ceres::CostFunction* createCostFunction(const sfmData::Landmark & landmark, const Vec3 & normal)
     {
         const double weight = 100.0;
-        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ConstraintPointErrorFunctor>(new ConstraintPointErrorFunctor(weight, normal, landmark.X));
+        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ConstraintPointErrorFunctor>(new ConstraintPointErrorFunctor(weight, normal, landmark.getX()));
 
         costFunction->AddParameterBlock(3);
         costFunction->SetNumResiduals(1);

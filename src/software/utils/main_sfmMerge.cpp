@@ -290,8 +290,8 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
     int count = 0;
     for (auto & pair : landmarkPairs)
     {
-        xA.col(count) = sfmData1.getLandmarks().at(pair.first).X;
-        xB.col(count) = sfmData2.getLandmarks().at(pair.second).X;
+        xA.col(count) = sfmData1.getLandmarks().at(pair.first).getX();
+        xB.col(count) = sfmData2.getLandmarks().at(pair.second).getX();
         count++;
     }
 

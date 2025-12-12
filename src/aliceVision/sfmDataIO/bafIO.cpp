@@ -64,7 +64,7 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         {
             // Export visibility information
             // X Y Z #observations id_cam id_pose x y ...
-            const double* X = iterLandmarks->second.X.data();
+            const double* X = iterLandmarks->second.getX().data();
             std::copy(X, X + 3, std::ostream_iterator<double>(stream, " "));
             const sfmData::Observations& observations = iterLandmarks->second.getObservations();
             stream << observations.size() << " ";

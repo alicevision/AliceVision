@@ -57,7 +57,7 @@ SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eig
 
     for (const auto & pl : other._landmarks)
     {
-        const auto & pt = pl.second.X;
+        const auto & pt = pl.second.getX();
 
         if (pt.x() < bbMin.x()) continue;
         if (pt.y() < bbMin.y()) continue;
@@ -358,7 +358,7 @@ void SfMData::resetParameterStates()
 
     for (auto& pl : _landmarks)
     {
-        pl.second.state = EEstimatorParameterState::REFINED;
+        pl.second.setState(EEstimatorParameterState::REFINED);
     }
 
     for (auto& pi : _intrinsics)
@@ -374,7 +374,7 @@ void SfMData::getBoundingBox(Eigen::Vector3d & bbMin, Eigen::Vector3d & bbMax)
 
     for (const auto & pl : _landmarks)
     {
-        const auto & pt = pl.second.X;
+        const auto & pt = pl.second.getX();
 
         bbMin.x() = std::min(bbMin.x(), pt.x());
         bbMin.y() = std::min(bbMin.y(), pt.y());

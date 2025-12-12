@@ -145,8 +145,8 @@ bool landmarksFromMesh(
 
             //Create a Landmark with a unique observation
             sfmData::Landmark l;
-            l.X = point;
-            l.descType = track.descType;
+            l.setX(point);
+            l.setDescType(track.descType);
             l.setParallaxRobust(true);
 
             sfmData::Observations & observations = l.getObservations();

@@ -102,13 +102,13 @@ void extractLandmarksPositions(std::vector<std::pair<std::string, Vec3>>& output
 
     for (const auto& landmarkIt : sfmData.getLandmarks())
     {
-        if (descTypes.count(landmarkIt.second.descType))
+        if (descTypes.count(landmarkIt.second.getDescType()))
         {
-            bool isMarker = isCCTag.count(landmarkIt.second.descType);
-            if (searchIdx.empty() || (isMarker ? searchIdx.count(landmarkIt.second.rgb.r()) : searchIdx.count(landmarkIt.first)))
+            bool isMarker = isCCTag.count(landmarkIt.second.getDescType());
+            if (searchIdx.empty() || (isMarker ? searchIdx.count(landmarkIt.second.getRgb().r()) : searchIdx.count(landmarkIt.first)))
             {
                 outputPositions.push_back(
-                  std::make_pair(std::to_string(isMarker ? landmarkIt.second.rgb.r() : landmarkIt.first), landmarkIt.second.X));
+                  std::make_pair(std::to_string(isMarker ? landmarkIt.second.getRgb().r() : landmarkIt.first), landmarkIt.second.getX()));
             }
         }
     }

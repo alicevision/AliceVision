@@ -89,7 +89,7 @@ void LbaPolicyConnexity::upgradeSfmData(sfmData::SfMData & sfmData)
         //then obviously we want to ignore it (should be implicit in the bundle though)
         if ((!hasEstimated) || hasIgnored)
         {
-            landmark.state = EEstimatorParameterState::IGNORED;
+            landmark.setState(EEstimatorParameterState::IGNORED);
         }
     }
 }

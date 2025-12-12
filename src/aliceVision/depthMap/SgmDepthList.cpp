@@ -295,7 +295,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min, float& out_max, fl
     for (const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
     {
         const sfmData::Landmark& landmark = landmarkPair.second;
-        const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
+        const Point3d point(landmark.getX()(0), landmark.getX()(1), landmark.getX()(2));
 
         // find rc observation
         const auto it = landmark.getObservations().find(viewId);
@@ -367,7 +367,7 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc, double& out_zmin, double& ou
     for (const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
     {
         const sfmData::Landmark& landmark = landmarkPair.second;
-        const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
+        const Point3d point(landmark.getX()(0), landmark.getX()(1), landmark.getX()(2));
 
         // no tc observation
         if (landmark.getObservations().find(tcViewId) == landmark.getObservations().end())

@@ -81,7 +81,7 @@ void StructureComputationBlind::triangulate(sfmData::SfMData& sfmData, std::mt19
                 const Vec3 X = trianObj.compute();
                 if (trianObj.minDepth() > 0)  // Keep the point only if it have a positive depth
                 {
-                    iterTracks->second.X = X;
+                    iterTracks->second.setX(X);
                 }
                 else
                 {
@@ -132,11 +132,11 @@ void StructureComputationRobust::robustTriangulation(sfmData::SfMData& sfmData, 
             Vec3 X;
             if (robustTriangulation(sfmData, iterTracks->second.getObservations(), randomNumberGenerator, X))
             {
-                iterTracks->second.X = X;
+                iterTracks->second.setX(X);
             }
             else
             {
-                iterTracks->second.X = Vec3::Zero();
+                iterTracks->second.setX(Vec3::Zero());
 #pragma omp critical
                 {
                     rejectedId.push_front(iterTracks->first);

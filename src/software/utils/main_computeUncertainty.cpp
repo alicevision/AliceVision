@@ -105,7 +105,7 @@ int aliceVision_main(int argc, char** argv)
         points3D.reserve(sfmData.getLandmarks().size() * 3);
         for (auto& landmarkIt : sfmData.getLandmarks())
         {
-            double* p = landmarkIt.second.X.data();
+            double* p = landmarkIt.second.getX().data();
             points3D.push_back(p[0]);
             points3D.push_back(p[1]);
             points3D.push_back(p[2]);

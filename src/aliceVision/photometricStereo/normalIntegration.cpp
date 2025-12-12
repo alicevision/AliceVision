@@ -541,7 +541,7 @@ void adjustScale(const sfmData::SfMData& sfmData, image::Image<float>& initDepth
     {
         size_t currentLandmarkIndex = visibleLandmarks.at(i);
         const sfmData::Landmark& currentLandmark = landmarks.at(currentLandmarkIndex);
-        knownDepths(i) = pose.depth(currentLandmark.X);
+        knownDepths(i) = pose.depth(currentLandmark.getX());
 
         sfmData::Observation observationInCurrentPicture = currentLandmark.getObservations().at(viewID);
 
@@ -583,7 +583,7 @@ void getZ0FromLandmarks(const sfmData::SfMData& sfmData,
 
         if (mask(rowInd, colInd) > 0.7)
         {
-            z0(rowInd, colInd) = pose.depth(currentLandmark.X);
+            z0(rowInd, colInd) = pose.depth(currentLandmark.getX());
             maskZ0(rowInd, colInd) = 1.0;
         }
     }

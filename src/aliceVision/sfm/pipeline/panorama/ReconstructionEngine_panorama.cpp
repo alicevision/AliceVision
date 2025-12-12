@@ -928,10 +928,10 @@ bool ReconstructionEngine_panorama::buildLandmarks()
 
         // Store landmark
         Landmark l;
-        l.descType = c.descType;
+        l.setDescType(c.descType);
         l.getObservations()[c.ViewFirst] = c.ObservationFirst;
         l.getObservations()[c.ViewSecond] = c.ObservationSecond;
-        l.X = (wpt1 + wpt2) * 0.5;
+        l.setX((wpt1 + wpt2) * 0.5);
 
         _sfmData.getLandmarks()[count++] = l;
     }
