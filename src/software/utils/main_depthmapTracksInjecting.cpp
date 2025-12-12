@@ -127,7 +127,10 @@ int aliceVision_main(int argc, char** argv)
             if (ix < 0 || ix >= depthImg.width()) continue;
             if (iy < 0 || iy >= depthImg.height()) continue;
 
-            feature.depth = depthImg(iy, ix);
+            double Z = depthImg(iy, ix);
+            if (!std::isfinite(Z)) continue;
+	
+            feature.depth = Z;
         }
     }
 
