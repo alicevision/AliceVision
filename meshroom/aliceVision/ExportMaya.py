@@ -154,7 +154,11 @@ This script, executed inside Maya, will gather the Meshroom computed elements.
         abcString = f'AbcImport -mode open -fitTimeRange "{alembic}";'
 
         mesh = chunk.node.mesh.value
-        objString = f'file -import -type "OBJ"  -ignoreVersion -ra true -mbl true -mergeNamespacesOnClash false -namespace "mesh" -options "mo=1"  -pr  -importTimeRange "combine" "{mesh}";'
+        if mesh != '':
+            objString = f'file -import -type "OBJ"  -ignoreVersion -ra true -mbl true -mergeNamespacesOnClash false -namespace "mesh" -options "mo=1"  -pr  -importTimeRange "combine" "{mesh}";'
+        else:
+            objString = f'AbcImport -mode import -filterObjects "mvgRoot/mvgCloud" "{chunk.node.input.value}";
+'
 
         framePath = chunk.node.images.value.replace('<INTRINSIC_ID>', str(minIntrinsicId)).replace('<FILESTEM>', minFrameName)
 
