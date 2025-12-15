@@ -238,16 +238,19 @@ class SfMFilter(desc.Node):
         unselectedViews = avsfmdata.Views()
         
         #Now we filter out the views using the parser result
-        for id, v in views.items():
+        for vid, v in views.items():
             found = False
             #Is it kept by the filter ?
+            
             for item in result:
-                if id == item.id:
+                if vid == item.id:
                     found = True
                     break
-                selectedViews[id] = v
+
+            if found:
+                selectedViews[vid] = v
             else:
-                unselectedViews[id] = v
+                unselectedViews[vid] = v
 
         chunk.logger.info(f"{len(selectedViews)}/{len(views)} views selected.")
 
