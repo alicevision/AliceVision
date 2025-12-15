@@ -154,7 +154,13 @@ This script, executed inside Maya, will gather the Meshroom computed elements.
         abcString = f'AbcImport -mode open -fitTimeRange "{alembic}";'
 
         mesh = chunk.node.mesh.value
-        objString = f'file -import -type "OBJ"  -ignoreVersion -ra true -mbl true -mergeNamespacesOnClash false -namespace "mesh" -options "mo=1"  -pr  -importTimeRange "combine" "{mesh}";'
+        objString = ''
+        if len(mesh) > 0:
+            if mesh.lower().endswith('.obj'):
+                objString = f'file -import -type "OBJ"  -ignoreVersion -ra true -mbl true -mergeNamespacesOnClash false -namespace "mesh" -options "mo=1"  -pr  -importTimeRange "combine" "{mesh}";'
+            else:
+                chunk.logger.error("Undefined mesh format for maya import")
+            
 
         framePath = chunk.node.images.value.replace('<INTRINSIC_ID>', str(minIntrinsicId)).replace('<FILESTEM>', minFrameName)
 
