@@ -34,6 +34,7 @@ int aliceVision_main(int argc, char** argv)
 
     // User optional parameters
     double frameRate = 24.0;
+    bool exportLandmarks = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -46,7 +47,9 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("frameRate", po::value<double>(&frameRate)->default_value(frameRate),
-         "Define the camera's Frames per seconds.");
+         "Define the camera's Frames per seconds.")
+        ("exportLandmarks", po::value<bool>(&exportLandmarks)->default_value(exportLandmarks),
+         "Are the landmarks exported ?.");
     // clang-format on
 
     CmdLine cmdline("AliceVision exportAnimatedCamera");
@@ -178,6 +181,12 @@ int aliceVision_main(int argc, char** argv)
 
             exporter.addCameraKeyframe(pose.getTransform(), cam, imagePath, view.getViewId(), view.getIntrinsicId());
         }
+    }
+
+    if (exportLandmarks)
+    {
+        sfmData::LandmarksUncertainty emptyUncertainty;
+        exporter.addLandmarks(sfmData.getLandmarks(), emptyUncertainty, false, false);
     }
 
     return EXIT_SUCCESS;
