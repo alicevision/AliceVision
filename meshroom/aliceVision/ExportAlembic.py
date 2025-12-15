@@ -28,6 +28,12 @@ Based on the input image filenames, it will recognize the input video sequence t
             value=24.0,
             range=(1.0, 60.0, 1.0),
         ),
+        desc.BoolParam(
+            name="exportLandmarks",
+            label="Export Landmarks",
+            description="If true, export SfM landmarks.",
+            value=False,
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
