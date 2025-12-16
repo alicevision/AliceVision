@@ -46,6 +46,7 @@ class View
      * @param[in] height The image height
      * @param[in] rigId The rig id (or undefined)
      * @param[in] subPoseId The sub-pose id (or undefined)
+     * @param[in] lightId The light id
      * @param[in] metadata The image metadata
      */
     View(const std::string& imagePath = "",
@@ -56,12 +57,14 @@ class View
          std::size_t height = 0,
          IndexT rigId = UndefinedIndexT,
          IndexT subPoseId = UndefinedIndexT,
+         IndexT lightId = UndefinedIndexT,
          const std::map<std::string, std::string>& metadata = std::map<std::string, std::string>())
       : _viewId(viewId),
         _intrinsicId(intrinsicId),
         _poseId(poseId),
         _rigId(rigId),
         _subPoseId(subPoseId),
+        _lightId(lightId),
         _image(new ImageInfo(imagePath, width, height, metadata))
     {}
 
@@ -89,7 +92,7 @@ class View
     {
         // image paths can be different
         return _viewId == other._viewId && _intrinsicId == other._intrinsicId && _poseId == other._poseId && _rigId == other._rigId &&
-               _subPoseId == other._subPoseId;
+               _subPoseId == other._subPoseId && _lightId == other._lightId;
     }
 
     inline bool operator!=(const View& other) const { return !(*this == other); }
@@ -141,6 +144,12 @@ class View
      * @return sup-pose id or undefined
      */
     IndexT getSubPoseId() const { return _subPoseId; }
+
+    /**
+     * @brief Get the light id
+     * @return light id or undefined
+     */
+    IndexT getLightId() const { return _lightId; }
 
     /**
      * @brief Get the frame id
@@ -204,6 +213,12 @@ class View
     }
 
     /**
+     * @brief Set the given light id
+     * @param[in] lightId The given light id
+     */
+    void setLightId(IndexT lightId) { _lightId = lightId; }
+
+    /**
      * @brief Set the given frame id
      * @param[in] frame The given frame id
      */
@@ -248,6 +263,8 @@ class View
     IndexT _rigId;
     /// corresponding sub-pose id or undefined
     IndexT _subPoseId;
+    /// corresponding light id or undefined
+    IndexT _lightId;
     /// corresponding frame id for synchronized views
     IndexT _frameId = UndefinedIndexT;
     /// resection id

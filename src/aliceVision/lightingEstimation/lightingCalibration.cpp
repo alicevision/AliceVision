@@ -61,12 +61,18 @@ void lightCalibration(const sfmData::SfMData& sfmData,
             viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
         }
     }
-
-    std::vector<std::array<float, 3>> allSpheresParams;
+    
+    // for each view, store spheres, image dimensions, intrinsics, poses and lightIds
+    std::vector<std::array<float, 4>> allSpheresParams;
+    std::vector<std::array<unsigned int, 2>> imageDims;
     std::vector<Eigen::Matrix3f> KMatrices;
+    std::vector<Eigen::Matrix4f> RTMatrices;
+    std::vector<unsigned int> lightIds;
 
-    int nbCols = 0;
-    int nbRows = 0;
+    std::set<unsigned int> setLightIds;
+    Eigen::Matrix4f av_to_vis = Eigen::Matrix4f::Identity();
+    av_to_vis(1, 1) = -1.;
+    av_to_vis(2, 2) = -1.;
 
     // Main tree
     bpt::ptree fileTree;
@@ -86,30 +92,40 @@ void lightCalibration(const sfmData::SfMData& sfmData,
             {
                 ALICEVISION_LOG_INFO("  - " << imagePath.string());
                 imageList.push_back(imagePath.string());
-
-                std::array<float, 3> currentSphereParams;
+                
+                // get sphere center and radius
+                std::array<float, 4> currentSphereParams;
                 for (auto& currentSphere : fileTree.get_child(sphereName))
                 {
                     currentSphereParams[0] = currentSphere.second.get_child("").get("x", 0.0);
                     currentSphereParams[1] = currentSphere.second.get_child("").get("y", 0.0);
-                    currentSphereParams[2] = currentSphere.second.get_child("").get("r", 0.0);
+                    currentSphereParams[2] = currentSphere.second.get_child("").get("z", 0.0);
+                    currentSphereParams[3] = currentSphere.second.get_child("").get("r", 0.0);
                 }
-                allSpheresParams.push_back(currentSphereParams);
-
+                   
+                // fill intrinsics
                 IndexT intrinsicId = currentView.getIntrinsicId();
                 focals.push_back(sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(0));
 
                 float focalPx = sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(0);
-                nbCols = sfmData.getIntrinsics().at(intrinsicId)->w();
-                nbRows = sfmData.getIntrinsics().at(intrinsicId)->h();
-                float x_p = (nbCols) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(2);
-                float y_p = (nbRows) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(3);
-
-                Eigen::MatrixXf currentK = Eigen::MatrixXf::Zero(3, 3);
+                std::array<unsigned int, 2> imageDim = {sfmData.getIntrinsics().at(intrinsicId)->w(), sfmData.getIntrinsics().at(intrinsicId)->h()};
+                float x_p = (imageDim[0]) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(2);
+                float y_p = (imageDim[1]) / 2 + sfmData.getIntrinsics().at(intrinsicId)->getParameters().at(3);
+                
                 // Create K matrix
+                Eigen::MatrixXf currentK = Eigen::MatrixXf::Zero(3, 3);
                 currentK << focalPx, 0.0, x_p, 0.0, focalPx, y_p, 0.0, 0.0, 1.0;
+                
+                // get pose
+                IndexT poseId = currentView.getPoseId();
+                Eigen::Matrix4f RT = sfmData.getPoses().at(poseId)->getTransform().getHomogeneous().cast<float>() * av_to_vis;
 
+                allSpheresParams.push_back(currentSphereParams);
+                imageDims.push_back(imageDim);
                 KMatrices.push_back(currentK);
+                RTMatrices.push_back(RT);
+                lightIds.push_back(currentView.getLightId());
+                setLightIds.insert(currentView.getLightId());
             }
             else
             {
@@ -123,45 +139,94 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         lightSize = 9;
 
     Eigen::MatrixXf lightMat(imageList.size(), lightSize);
-    std::vector<std::array<float, 3>> intList;
-
+    std::vector<float> intList(imageList.size());
+    std::vector<Eigen::MatrixX3f> pointsList;
+    std::vector<Eigen::MatrixX3f> normalsList;
+    std::vector<Eigen::VectorXf> pixelsIntensityList;
+    
+    // get data
     for (size_t i = 0; i < imageList.size(); ++i)
     {
         std::string picturePath = imageList.at(i);
-        Eigen::VectorXf lightingDirection = Eigen::VectorXf::Zero(lightSize);
-        float intensity;
-        std::array<float, 3> intensities;
 
-        float focal = focals.at(i);
-        std::array<float, 3> sphereParam = allSpheresParams.at(i);
-        if (ellipticEstimation)
+        Eigen::MatrixX2<unsigned int> pixels;
+        Eigen::MatrixX3f points;
+        Eigen::MatrixX3f normals;
+        Eigen::VectorXf pixelsIntensity;
+        
+        // sphere geometry
+        std::array<float, 4> sphereParam = allSpheresParams.at(i);
+        Eigen::Vector3f sphereCenterWorld = Eigen::Vector3f(sphereParam[0], sphereParam[1], sphereParam[2]);
+        Eigen::Vector3f sphereCenterCam = RTMatrices[i].block<3,3>(0,0) * sphereCenterWorld + RTMatrices[i].block<3,1>(0,3);
+        float sphereRadius = sphereParam[3];
+        spherePositionAndNormalsOnImage(imageDims[i], KMatrices[i], sphereCenterCam, sphereRadius, pixels, points, normals, 4);
+        // back on world coordinates
+        points = (points.rowwise() - RTMatrices[i].block<3, 1>(0, 3).transpose()) * RTMatrices[i].block<3, 3>(0, 0);
+        normals = normals * RTMatrices[i].block<3, 3>(0, 0);
+        
+        // pixels intensity
+        image::Image<float> imageFloat;
+        image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
+        pixelsIntensity = Eigen::VectorXf(pixels.rows());
+        std::vector<unsigned int> nonZeroIntensities;
+        for (unsigned int ind = 0; ind < pixels.rows(); ind++)
         {
-            Eigen::Matrix3f K = KMatrices.at(i);
-            float sphereRadius = 1.0;
-            std::array<float, 5> ellipseParam;
-
-            cv::Mat maskCV = cv::Mat::zeros(nbRows, nbCols, CV_8UC1);
-
-            image::Image<float> imageFloat;
-            image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
-            getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam);
-            calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity); // TODO : modifier intensity en itensities (float -> array)
+            pixelsIntensity(ind) = imageFloat(pixels(ind, 1), pixels(ind, 0));
+            if (pixelsIntensity(ind) > 10.0/255.0) // remove dark pixels
+                nonZeroIntensities.push_back(ind);
         }
-        else
+
+        pointsList.push_back(points(nonZeroIntensities, Eigen::placeholders::all));
+        normalsList.push_back(normals(nonZeroIntensities, Eigen::placeholders::all));
+        pixelsIntensityList.push_back(pixelsIntensity(nonZeroIntensities));
+    }
+    
+    // computation
+    for (std::set<unsigned int>::iterator lightIdIt = setLightIds.begin(); lightIdIt != setLightIds.end(); lightIdIt++)
+    {
+        unsigned int lightId = *lightIdIt;
+        
+        // count number of pixels
+        unsigned int nb_pix = 0;
+        for (size_t i = 0; i < imageList.size(); ++i)
         {
-            lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection, intensities);
+            if (lightIds[i] != lightId)
+                continue;
+            nb_pix += pixelsIntensityList[i].rows();
         }
 
-        lightMat.row(i) = lightingDirection;
-        intList.push_back(intensities);
-
-        if (doDebug)
+        // concatenate matrices
+        Eigen::MatrixX3f pointsFull(nb_pix, 3);
+        Eigen::MatrixX3f normalsFull(nb_pix, 3);
+        Eigen::VectorXf pixelsIntensityFull(nb_pix);
+        
+        unsigned int startAt = 0;
+        for (size_t i = 0; i < imageList.size(); ++i)
         {
-            int outputSize = 1024;
-            std::string outputFileName =
-              fs::path(outputPath).parent_path().string() + "/" + fs::path(picturePath).stem().string() + "_" + method + ".png";
-            sphereFromLighting(lightingDirection, intensities, outputFileName, outputSize);
+            if (lightIds[i] != lightId)
+                continue;
+            pointsFull.block(startAt, 0, pointsList[i].rows(), 3) = pointsList[i];
+            normalsFull.block(startAt, 0, normalsList[i].rows(), 3) = normalsList[i];
+            pixelsIntensityFull.block(startAt, 0, pixelsIntensityList[i].rows(), 1) = pixelsIntensityList[i];
+            startAt += pointsList[i].rows();
         }
+
+        Eigen::Vector3f lightingDirection = normalsFull.colPivHouseholderQr().solve(pixelsIntensityFull);
+
+        float intensity = lightingDirection.norm();
+        lightingDirection = lightingDirection / intensity;
+
+        for (size_t i = 0; i < imageList.size(); ++i)
+		{
+			if (lightIds[i] != lightId)
+				continue;
+            // set light direction
+			Eigen::Vector3f lightingDirectionCamera = RTMatrices[i].block<3, 3>(0, 0) * lightingDirection;
+			lightMat(i, 0) = lightingDirectionCamera(0);
+			lightMat(i, 1) = lightingDirectionCamera(1);
+			lightMat(i, 2) = lightingDirectionCamera(2);
+			intList[i] = intensity;
+		}
     }
 
     // Write in JSON file

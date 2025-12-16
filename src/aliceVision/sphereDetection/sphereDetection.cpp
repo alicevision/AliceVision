@@ -114,7 +114,7 @@ Prediction predict(Ort::Session& session, const fs::path imagePath, const float 
     imageOpencv.convertTo(imageOpencv, CV_32FC3, 1 / 255.0);
 
     // HWC to CHW
-    cv::dnn::blobFromImage(imageOpencv, imageOpencv);
+    //cv::dnn::blobFromImage(imageOpencv, imageOpencv);
 
     // Inference on CPU
     // TODO: use GPU

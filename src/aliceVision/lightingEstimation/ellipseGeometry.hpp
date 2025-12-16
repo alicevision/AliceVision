@@ -30,6 +30,15 @@ void estimateSphereCenter(const std::array<float, 5>& ellipseParameters,
                           const Eigen::Matrix3f& K,
                           std::array<float, 3>& sphereCenter);
 
+void spherePositionAndNormalsOnImage(const std::array<unsigned int, 2>& imageDim,
+                                     const Eigen::Matrix3f& K,
+                                     const Eigen::Vector3f& sphereCenter,
+                                     const float sphereRadius,
+                                     Eigen::MatrixX2<unsigned int>& pixels,
+                                     Eigen::MatrixX3f& points,
+                                     Eigen::MatrixX3f& normals,
+                                     const unsigned int resolution = 1);
+
 void sphereRayIntersection(const Eigen::Vector3f& direction,
                            const std::array<float, 3>& sphereCenter,
                            const float sphereRadius,

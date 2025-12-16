@@ -83,6 +83,7 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
 {
     view.setViewId(viewTree.get<IndexT>("viewId", UndefinedIndexT));
     view.setPoseId(viewTree.get<IndexT>("poseId", UndefinedIndexT));
+    view.setLightId(viewTree.get<IndexT>("lightId", UndefinedIndexT));
 
     if (viewTree.count("rigId"))
     {

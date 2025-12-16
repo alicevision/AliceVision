@@ -98,6 +98,55 @@ void estimateSphereCenter(const std::array<float, 5>& ellipseParameters,
     sphereCenter[2] = C[2];
 }
 
+void spherePositionAndNormalsOnImage(const std::array<unsigned int, 2>& imageDim,
+                                     const Eigen::Matrix3f& K,
+                                     const Eigen::Vector3f& sphereCenter,
+                                     const float sphereRadius,
+                                     Eigen::MatrixX2<unsigned int>& pixels,
+                                     Eigen::MatrixX3f& points,
+                                     Eigen::MatrixX3f& normals,
+                                     const unsigned int resolution)
+{
+    std::array<unsigned int, 2> imageSubDim = {(unsigned int)(imageDim[0] / resolution), (unsigned int)(imageDim[1] / resolution)};
+
+    Eigen::MatrixX3f directionsFull(imageSubDim[0] * imageSubDim[1], 3);
+    Eigen::MatrixX2<unsigned int> pixelsFull(imageSubDim[0] * imageSubDim[1], 2);
+    for (unsigned int subU = 0; subU < imageSubDim[0]; subU++)
+        for (unsigned int subV = 0; subV < imageSubDim[1]; subV++)
+        {
+            unsigned int ind = subU * imageSubDim[1] + subV;
+            directionsFull(ind, 0) = (subU * resolution - K(0,2)) / K(0,0);
+            directionsFull(ind, 1) = (subV * resolution - K(1,2)) / K(1,1);
+            directionsFull(ind, 2) = 1.0;
+            pixelsFull(ind, 0) = subU * resolution;
+            pixelsFull(ind, 1) = subV * resolution;
+        }
+
+    Eigen::VectorXf aFull = directionsFull.cwiseProduct(directionsFull).rowwise().sum();
+    Eigen::VectorXf bFull = -2. * directionsFull * sphereCenter;
+    float c = sphereCenter.dot(sphereCenter) - sphereRadius * sphereRadius;
+
+    Eigen::VectorXf deltaFull = bFull.cwiseProduct(bFull) - 4.0 * aFull * c;
+
+    std::vector<unsigned int> subIndices(0);
+    subIndices.reserve(deltaFull.rows());
+    for (unsigned int ind = 0; ind < deltaFull.rows(); ind++)
+        if (deltaFull(ind) >= 0.)
+            subIndices.push_back(ind);
+
+    Eigen::VectorXf delta = deltaFull(subIndices);
+    Eigen::VectorXf a = aFull(subIndices);
+    Eigen::VectorXf b = bFull(subIndices);
+    Eigen::MatrixX3f directions = directionsFull(subIndices, Eigen::placeholders::all);
+
+    Eigen::VectorXf factors = (-b - delta.cwiseSqrt()).cwiseQuotient(2.0 * a);
+    
+    pixels = pixelsFull(subIndices, Eigen::placeholders::all);
+    points = directions.array().colwise() * factors.array();
+    normals = (points.rowwise() - sphereCenter.transpose()) / sphereRadius;
+}
+
+
 void sphereRayIntersection(const Eigen::Vector3f& direction,
                            const std::array<float, 3>& sphereCenter,
                            const float sphereRadius,
