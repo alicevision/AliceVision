@@ -16,10 +16,9 @@
             "ExportImages": "1.1",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
-            "ImageDetectionPrompt": "0.2",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.0",
-            "ImageSegmentationBox": "0.3",
+            "ImageSegmentationSam3": "0.1",
             "IntrinsicsTransforming": "1.1",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",
@@ -27,9 +26,9 @@
             "Meshing": "7.0",
             "RelativePoseEstimating": "3.1",
             "ScenePreview": "2.0",
-            "SfMBootStrapping": "4.1",
+            "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.2",
+            "SfMExpanding": "2.3",
             "SfMTransfer": "2.1",
             "SfMTransform": "3.2",
             "Texturing": "6.0",
@@ -243,7 +242,7 @@
             ],
             "inputs": {
                 "input": "{ApplyCalibration_1.output}",
-                "masksFolder": "{ImageSegmentationBox_2.output}",
+                "masksFolder": "{ImageSegmentationSam3_1.output}",
                 "maskExtension": "exr"
             },
             "internalInputs": {
@@ -345,19 +344,6 @@
                 "color": "#575963"
             }
         },
-        "ImageDetectionPrompt_1": {
-            "nodeType": "ImageDetectionPrompt",
-            "position": [
-                0,
-                200
-            ],
-            "inputs": {
-                "input": "{CameraInit_1.output}"
-            },
-            "internalInputs": {
-                "color": "#575963"
-            }
-        },
         "ImageMatchingMultiSfM_1": {
             "nodeType": "ImageMatchingMultiSfM",
             "position": [
@@ -448,15 +434,14 @@
                 "color": "#384a55"
             }
         },
-        "ImageSegmentationBox_2": {
-            "nodeType": "ImageSegmentationBox",
+        "ImageSegmentationSam3_1": {
+            "nodeType": "ImageSegmentationSam3",
             "position": [
-                200,
-                200
+                200.0,
+                200.0
             ],
             "inputs": {
-                "input": "{ImageDetectionPrompt_1.input}",
-                "bboxFolder": "{ImageDetectionPrompt_1.output}",
+                "input": "{CameraInit_1.output}",
                 "maskInvert": true,
                 "keepFilename": true
             },
@@ -572,7 +557,7 @@
                 "cameras": "{ConvertSfMFormat_1.output}",
                 "model": "{MeshDecimate_1.output}",
                 "undistortedImages": "{ExportImages_2.output}",
-                "masks": "{ImageSegmentationBox_2.output}"
+                "masks": "{ImageSegmentationSam3_1.output}"
             },
             "internalInputs": {
                 "color": "#4c594c"
