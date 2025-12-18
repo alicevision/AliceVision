@@ -12,9 +12,8 @@
             "ExportImages": "1.1",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
-            "ImageDetectionPrompt": "0.2",
             "ImageMatching": "2.0",
-            "ImageSegmentationBox": "0.3",
+            "ImageSegmentationSam3": "0.1",
             "IntrinsicsTransforming": "1.1",
             "NodalSfM": "2.0",
             "RelativePoseEstimating": "3.1",
@@ -27,8 +26,8 @@
         "CameraInit_1": {
             "nodeType": "CameraInit",
             "position": [
-                -400,
-                0
+                -220,
+                2
             ],
             "inputs": {},
             "internalInputs": {
@@ -126,11 +125,11 @@
             "nodeType": "FeatureExtraction",
             "position": [
                 200,
-                0
+                2
             ],
             "inputs": {
-                "input": "{ImageSegmentationBox_1.input}",
-                "masksFolder": "{ImageSegmentationBox_1.output}"
+                "input": "{ImageSegmentationSam3_1.input}",
+                "masksFolder": "{ImageSegmentationSam3_1.output}"
             },
             "internalInputs": {
                 "color": "#80766f"
@@ -152,19 +151,6 @@
                 "color": "#80766f"
             }
         },
-        "ImageDetectionPrompt_1": {
-            "nodeType": "ImageDetectionPrompt",
-            "position": [
-                -200,
-                0
-            ],
-            "inputs": {
-                "input": "{CameraInit_1.output}"
-            },
-            "internalInputs": {
-                "color": "#80766f"
-            }
-        },
         "ImageMatching_1": {
             "nodeType": "ImageMatching",
             "position": [
@@ -181,15 +167,14 @@
                 "color": "#80766f"
             }
         },
-        "ImageSegmentationBox_1": {
-            "nodeType": "ImageSegmentationBox",
+        "ImageSegmentationSam3_1": {
+            "nodeType": "ImageSegmentationSam3",
             "position": [
-                0,
-                0
+                -10,
+                2
             ],
             "inputs": {
-                "input": "{ImageDetectionPrompt_1.input}",
-                "bboxFolder": "{ImageDetectionPrompt_1.output}",
+                "input": "{CameraInit_1.output}",
                 "maskInvert": true,
                 "keepFilename": true
             },
@@ -251,7 +236,7 @@
                 "cameras": "{ConvertSfMFormat_1.output}",
                 "model": "{NodalSfM_1.output}",
                 "undistortedImages": "{ExportImages_1.output}",
-                "masks": "{ImageSegmentationBox_1.output}",
+                "masks": "{ImageSegmentationSam3_1.output}",
                 "pointCloudParams": {
                     "particleSize": 0.001,
                     "particleColor": "Red"

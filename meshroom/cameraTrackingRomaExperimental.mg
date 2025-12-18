@@ -13,8 +13,7 @@
             "ExportDistortion": "2.0",
             "ExportImages": "1.1",
             "GeometricFilterEstimating": "1.0",
-            "ImageDetectionPrompt": "0.2",
-            "ImageSegmentationBox": "0.3",
+            "ImageSegmentationSam3": "0.1",
             "IntrinsicsTransforming": "1.1",
             "KeyframeSelection": "5.0",
             "MatchMasking": "1.0",
@@ -23,9 +22,9 @@
             "RomaReducer": "1.0",
             "RomaSampler": "1.0",
             "ScenePreview": "2.0",
-            "SfMBootStrapping": "4.1",
+            "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.2",
+            "SfMExpanding": "2.3",
             "SfMTransform": "3.2",
             "StarListing": "1.0",
             "TracksBuilding": "1.0"
@@ -192,28 +191,14 @@
                 "color": "#575963"
             }
         },
-        "ImageDetectionPrompt_1": {
-            "nodeType": "ImageDetectionPrompt",
+        "ImageSegmentationSam3_1": {
+            "nodeType": "ImageSegmentationSam3",
             "position": [
-                0,
-                200
+                205.0,
+                210.0
             ],
             "inputs": {
-                "input": "{CameraInit_1.output}"
-            },
-            "internalInputs": {
-                "color": "#575963"
-            }
-        },
-        "ImageSegmentationBox_1": {
-            "nodeType": "ImageSegmentationBox",
-            "position": [
-                200,
-                200
-            ],
-            "inputs": {
-                "input": "{ImageDetectionPrompt_1.input}",
-                "bboxFolder": "{ImageDetectionPrompt_1.output}",
+                "input": "{CameraInit_1.output}",
                 "maskInvert": true,
                 "keepFilename": true
             },
@@ -260,7 +245,7 @@
                 "imagePairsList": "{RomaMatcher_1.imagePairsList}",
                 "warpFolder": "{RomaMatcher_1.outputWarpFolder}",
                 "certaintyFolder": "{RomaMatcher_1.outputCertaintyFolder}",
-                "masksFolder": "{ImageSegmentationBox_1.output}"
+                "masksFolder": "{ImageSegmentationSam3_1.output}"
             },
             "internalInputs": {
                 "color": "#575963"
@@ -377,7 +362,7 @@
                 "cameras": "{ConvertSfMFormat_1.output}",
                 "model": "{ConvertSfMFormat_1.input}",
                 "undistortedImages": "{ExportImages_1.output}",
-                "masks": "{ImageSegmentationBox_1.output}"
+                "masks": "{ImageSegmentationSam3_1.output}"
             },
             "internalInputs": {
                 "color": "#4c594c"
