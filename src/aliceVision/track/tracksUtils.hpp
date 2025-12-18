@@ -7,6 +7,7 @@
 
 #pragma once
 #include <aliceVision/track/Track.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
 namespace aliceVision {
 namespace track {
@@ -147,6 +148,17 @@ void imageIdInTracks(const TracksMap& tracks, std::set<std::size_t>& imagesId);
  * @param mapTracks the input tracks map
  */
 void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track::TracksMap& mapTracks);
+
+/**
+ * @brief Generate noisy tracks
+ * @param[in] sfmData the input SfMData file
+ * @param[in] sigmaNoise the variance (in pixels) of the Gaussian noise added to the observation coordinates
+ * @param[in] outlierRatio the ratio of outliers with respect to the observations count
+ * @param[in] outlierEpipolarRatio the proportion of outliers which are still respecting the epipolar constraint
+ * @param[in] randomNoiseVariancePerView specify whether to use different noise variance per view
+ * @param[out] mapTracks the output tracks map
+ */
+void simulateTracks(const sfmData::SfMData& sfmData, double sigmaNoise, double outlierRatio, double outlierEpipolarRatio, bool randomNoiseVariancePerView, TracksMap& mapTracks);
 
 }  // namespace track
 }  // namespace aliceVision
