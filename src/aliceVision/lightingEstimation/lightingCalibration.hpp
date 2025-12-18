@@ -13,6 +13,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
+#include <aliceVision/lightingEstimation/sphereData.hpp>
+
 namespace cv
 {
     class Mat;
@@ -21,10 +23,42 @@ namespace cv
 namespace aliceVision {
 namespace lightingEstimation {
 
+enum class LightType
+{
+    Directionnal,
+    Ponctual
+};
+
+class CalibrationData
+{
+  public:
+    CalibrationData();
+
+    bool prepareView(const aliceVision::IndexT viewId, const sfmData::SfMData& sfmData, const CalibrationSpheres& calibrationSpheres, bool usePose=false, unsigned int resolution=4);
+
+    unsigned int nbPixels() const;
+
+    const Eigen::MatrixX3f& getPoints();
+
+    const Eigen::MatrixX3f& getNormals();
+
+    const Eigen::MatrixX2<unsigned int>& getPixels();
+
+    const Eigen::VectorXf& getPixelsIntensity();
+
+  private:
+    Eigen::MatrixX3f points;
+    Eigen::MatrixX3f normals;
+    Eigen::MatrixX2<unsigned int> pixels;
+    Eigen::VectorXf pixelsIntensity;
+};
+
+using CalibrationDatas = sfmData::SharedPtrMap<CalibrationData>;
+
 /**
  * @brief Calibrate lighting direction for a set of images from a .sfm file
  * @param[in] sfmData Input .sfm file to calibrate from
- * @param[in] inputJSON Path to the JSON file containing the spheres parameters (see sphereDetection)
+ * @param[in] calibrationSpheres Input spheres parameters
  * @param[out] outputPath Path to the JSON file in which lights' directions are written
  * @param[in] method Method used for calibration ("brightestPoint" or "whiteSphere")
  * @param[in] doDebug True to save debug images
@@ -32,7 +66,7 @@ namespace lightingEstimation {
  * @param[in] ellipticEstimation True to use elliptic estimation of the lighting
  */
 void lightCalibration(const sfmData::SfMData& sfmData,
-                      const std::string& inputJSON,
+                      const CalibrationSpheres& calibrationSpheres,
                       const std::string& outputPath,
                       const std::string& method,
                       const bool doDebug,

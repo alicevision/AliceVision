@@ -4,6 +4,7 @@ set(lightingEstimation_files_headers
     lightingEstimation.hpp
     lightingCalibration.hpp
     ellipseGeometry.hpp
+    sphereData.hpp
 )
 
 # Sources
@@ -12,6 +13,7 @@ set(lightingEstimation_files_sources
     lightingEstimation.cpp
     lightingCalibration.cpp
     ellipseGeometry.cpp
+    sphereData.cpp
 )
 
 alicevision_add_library(aliceVision_lightingEstimation

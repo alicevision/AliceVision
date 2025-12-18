@@ -14,6 +14,7 @@
 // Lighting calibration
 #include <aliceVision/lightingEstimation/lightingCalibration.hpp>
 #include <aliceVision/lightingEstimation/ellipseGeometry.hpp>
+#include <aliceVision/lightingEstimation/sphereData.hpp>
 
 // Command line parameters
 #include <aliceVision/cmdline/cmdline.hpp>
@@ -105,7 +106,14 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        lightingEstimation::lightCalibration(sfmData, inputDetection, outputJSON, method, doDebug, saveAsModel, ellipticEstimation);
+        lightingEstimation::CalibrationSpheres calibrationSpheres;
+        if (!lightingEstimation::CalibrationSphereIO::load(calibrationSpheres, inputDetection))
+        {
+            ALICEVISION_LOG_ERROR("The input file '" + inputDetection + "' cannot be read.");
+            return EXIT_FAILURE;
+        }
+
+        lightingEstimation::lightCalibration(sfmData, calibrationSpheres, outputJSON, method, doDebug, saveAsModel, ellipticEstimation);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
