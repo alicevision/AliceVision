@@ -7,14 +7,20 @@
             "CopyFiles": "1.3",
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
+            "ExportImages": "1.0",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageMatching": "2.0",
+            "IntrinsicsTransforming": "1.0",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",
-            "PrepareDenseScene": "3.1",
-            "StructureFromMotion": "3.3",
-            "Texturing": "6.0"
+            "RelativePoseEstimating": "3.0",
+            "SfMBootStrapping": "4.1",
+            "SfMColorizing": "1.0",
+            "SfMExpanding": "2.1",
+            "SfMTransform": "3.1",
+            "Texturing": "6.0",
+            "TracksBuilding": "1.0"
         },
         "template": true
     },
@@ -30,8 +36,8 @@
         "DepthMapFilter_1": {
             "nodeType": "DepthMapFilter",
             "position": [
-                1400,
-                0
+                2605,
+                -12
             ],
             "inputs": {
                 "input": "{DepthMap_1.input}",
@@ -41,12 +47,24 @@
         "DepthMap_1": {
             "nodeType": "DepthMap",
             "position": [
-                1200,
-                0
+                2405,
+                -12
             ],
             "inputs": {
-                "input": "{PrepareDenseScene_1.input}",
-                "imagesFolder": "{PrepareDenseScene_1.output}"
+                "input": "{IntrinsicsTransforming_1.output}",
+                "imagesFolder": "{ExportImages_1.output}"
+            }
+        },
+        "ExportImages_1": {
+            "nodeType": "ExportImages",
+            "position": [
+                2208.5,
+                -10.0
+            ],
+            "inputs": {
+                "input": "{IntrinsicsTransforming_1.input}",
+                "target": "{IntrinsicsTransforming_1.output}",
+                "maskExtension": "exr"
             }
         },
         "FeatureExtraction_1": {
@@ -85,11 +103,21 @@
                 ]
             }
         },
+        "IntrinsicsTransforming_1": {
+            "nodeType": "IntrinsicsTransforming",
+            "position": [
+                2007.5,
+                -10.0
+            ],
+            "inputs": {
+                "input": "{SfMColorizing_2.output}"
+            }
+        },
         "MeshFiltering_1": {
             "nodeType": "MeshFiltering",
             "position": [
-                1800,
-                0
+                3005,
+                -12
             ],
             "inputs": {
                 "inputMesh": "{Meshing_1.outputMesh}"
@@ -98,29 +126,19 @@
         "Meshing_1": {
             "nodeType": "Meshing",
             "position": [
-                1600,
-                0
+                2805,
+                -12
             ],
             "inputs": {
                 "input": "{DepthMapFilter_1.input}",
                 "depthMapsFolder": "{DepthMapFilter_1.output}"
             }
         },
-        "PrepareDenseScene_1": {
-            "nodeType": "PrepareDenseScene",
-            "position": [
-                1000,
-                0
-            ],
-            "inputs": {
-                "input": "{StructureFromMotion_1.output}"
-            }
-        },
         "CopyFiles_1": {
             "nodeType": "CopyFiles",
             "position": [
-                2200,
-                0
+                3405,
+                -12
             ],
             "inputs": {
                 "inputFiles": [
@@ -130,8 +148,77 @@
                 ]
             }
         },
-        "StructureFromMotion_1": {
-            "nodeType": "StructureFromMotion",
+        "RelativePoseEstimating_1": {
+            "nodeType": "RelativePoseEstimating",
+            "position": [
+                1000,
+                0
+            ],
+            "inputs": {
+                "input": "{TracksBuilding_1.input}",
+                "tracksFilename": "{TracksBuilding_1.output}",
+                "minInliers": 100,
+                "imagePairsList": "{FeatureMatching_1.imagePairsList}"
+            }
+        },
+        "SfMBootStrapping_1": {
+            "nodeType": "SfMBootStrapping",
+            "position": [
+                1200,
+                0
+            ],
+            "inputs": {
+                "input": "{RelativePoseEstimating_1.input}",
+                "tracksFilename": "{RelativePoseEstimating_1.tracksFilename}",
+                "pairs": "{RelativePoseEstimating_1.output}"
+            }
+        },
+        "SfMColorizing_2": {
+            "nodeType": "SfMColorizing",
+            "position": [
+                1800,
+                0
+            ],
+            "inputs": {
+                "input": "{SfMTransform_1.output}"
+            }
+        },
+        "SfMExpanding_1": {
+            "nodeType": "SfMExpanding",
+            "position": [
+                1400,
+                0
+            ],
+            "inputs": {
+                "input": "{SfMBootStrapping_1.output}",
+                "tracksFilename": "{SfMBootStrapping_1.tracksFilename}",
+                "meshFilename": "{SfMBootStrapping_1.meshFilename}"
+            }
+        },
+        "SfMTransform_1": {
+            "nodeType": "SfMTransform",
+            "position": [
+                1600,
+                0
+            ],
+            "inputs": {
+                "input": "{SfMExpanding_1.output}"
+            }
+        },
+        "Texturing_1": {
+            "nodeType": "Texturing",
+            "position": [
+                3205,
+                -12
+            ],
+            "inputs": {
+                "input": "{Meshing_1.output}",
+                "imagesFolder": "{DepthMap_1.imagesFolder}",
+                "inputMesh": "{MeshFiltering_1.outputMesh}"
+            }
+        },
+        "TracksBuilding_1": {
+            "nodeType": "TracksBuilding",
             "position": [
                 800,
                 0
@@ -143,18 +230,6 @@
                     "{FeatureMatching_1.output}"
                 ],
                 "describerTypes": "{FeatureMatching_1.describerTypes}"
-            }
-        },
-        "Texturing_1": {
-            "nodeType": "Texturing",
-            "position": [
-                2000,
-                0
-            ],
-            "inputs": {
-                "input": "{Meshing_1.output}",
-                "imagesFolder": "{DepthMap_1.imagesFolder}",
-                "inputMesh": "{MeshFiltering_1.outputMesh}"
             }
         }
     }
