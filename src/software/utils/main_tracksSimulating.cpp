@@ -14,6 +14,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/track/trackIO.hpp>
+#include <aliceVision/track/tracksUtils.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -76,83 +77,8 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    std::mt19937 generator;
-    std::uniform_real_distribution<double> rand(0, 1);
-    std::uniform_real_distribution<double> randDepth(0.1, 100.0);
-    std::normal_distribution<double> randNoise(0.0, sigmaNoise);
-
-    std::map<IndexT, std::normal_distribution<double>> viewRandNoise;
-    if (randomNoiseVariancePerView)
-    {
-        for (const auto viewId : sfmData.getViewsKeys())
-        {
-            double viewSigma = std::abs(randNoise(generator));
-            viewRandNoise.emplace(viewId, std::normal_distribution<double>(0.0, viewSigma));
-            ALICEVISION_LOG_INFO("View Random Noise Sigma : " << viewSigma);
-        }
-    }
-
     track::TracksMap mapTracks;
-
-    for (const auto & [landmarkId, landmark] : sfmData.getLandmarks())
-    {
-        const Vec3 point = landmark.getX();
-
-        track::Track track;
-        track.descType = landmark.getDescType();
-
-        for (const auto & [viewId, observation] : landmark.getObservations())
-        {
-            const auto & view = sfmData.getView(viewId);
-            const auto & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
-            const auto & pose = sfmData.getAbsolutePose(view.getPoseId());
-
-            Vec2 obs;
-
-            if (rand(generator) < outlierRatio)
-            {
-                //This is an outlier
-                if (rand(generator) < outlierEpipolarRatio)
-                {
-                    //Outlier but on the epipolar line
-                    Vec3 fakePoint = point * randDepth(generator) / point(2);
-                    obs = intrinsic.transformProject(pose.getTransform(), fakePoint.homogeneous(), true);
-                }
-                else
-                {
-                    std::uniform_real_distribution<double> randWidth(0.0, intrinsic.w());
-                    std::uniform_real_distribution<double> randHeight(0.0, intrinsic.h());
-
-                    obs.x() = randWidth(generator);
-                    obs.y() = randHeight(generator);
-                }
-            }
-            else
-            {
-                obs = intrinsic.transformProject(pose.getTransform(), point.homogeneous(), true);
-            }
-
-            if (randomNoiseVariancePerView)
-            {
-                obs.x() += viewRandNoise.at(viewId)(generator);
-                obs.y() += viewRandNoise.at(viewId)(generator);
-            }
-            else
-            {
-                obs.x() += randNoise(generator);
-                obs.y() += randNoise(generator);
-            }
-
-            track::TrackItem item;
-            item.coords = obs;
-            item.featureId = observation.getFeatureId();
-            item.scale = observation.getScale();
-
-            track.featPerView[viewId] = item;
-        }
-
-        mapTracks[landmarkId] = track;
-    }
+    track::simulateTracks(sfmData, sigmaNoise, outlierRatio, outlierEpipolarRatio, randomNoiseVariancePerView, mapTracks);
 
      // write the json file
     ALICEVISION_LOG_INFO("Export to file");
