@@ -160,6 +160,12 @@ alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
           ${LEMON_LIBRARY}
 )
 
+alicevision_add_test(bundle/bundleAdjustment_temporalConstraint_test.cpp
+    NAME "sfm_bundleAdjustment_temporalConstraint"
+    LINKS aliceVision_sfm
+          aliceVision_track
+)
+
 alicevision_add_test(utils/alignment_test.cpp
     NAME "sfm_alignment"
     LINKS
