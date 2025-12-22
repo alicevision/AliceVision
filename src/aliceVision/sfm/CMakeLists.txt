@@ -2,11 +2,15 @@
 set(sfm_bundle_files_headers
     bundle/BundleAdjustment.hpp
     bundle/BundleAdjustmentCeres.hpp
+    utils/statistics.hpp
+    utils/poseFilter.hpp
 )
 
 # Sources
 set(sfm_bundle_files_sources
     bundle/BundleAdjustmentCeres.cpp
+    utils/statistics.cpp
+    utils/poseFilter.cpp
 )
 
 set(sfm_files_headers
@@ -45,8 +49,6 @@ set(sfm_files_headers
     pipeline/positioning/GlobalPositioning.hpp
     pipeline/regionsIO.hpp
     utils/alignment.hpp
-    utils/statistics.hpp
-    utils/poseFilter.hpp
     utils/poseNoise.hpp
     utils/preprocess.hpp
     utils/syntheticScene.hpp
@@ -91,10 +93,8 @@ set(sfm_files_sources
     pipeline/positioning/GlobalPositioning.cpp
     pipeline/regionsIO.cpp
     utils/alignment.cpp
-    utils/poseFilter.cpp
     utils/poseNoise.cpp
     utils/preprocess.cpp
-    utils/statistics.cpp
     utils/syntheticScene.cpp
     LocalBundleAdjustmentGraph.cpp
     FrustumFilter.cpp

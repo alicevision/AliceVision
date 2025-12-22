@@ -75,6 +75,20 @@ inline std::istream& operator>>(std::istream& in, EFeatureConstraint& m)
     return in;
 }
 
+struct TemporalConstraintParams
+{
+    double positionWeight = 10.0;
+    double orientationWeight = 10.0;
+    double c0positionWeight = 0.0;
+    double c1positionWeight = 1.0;
+    double c2positionWeight = 1.0;
+    double c0orientationWeight = 0.0;
+    double c1orientationWeight = 1.0;
+    double c2orientationWeight = 1.0;
+    double land2ViewsRegWeight = 0.0;
+    double trajLengthRegWeight = 0.0;
+};
+
 class BundleAdjustment
 {
   public:
@@ -102,6 +116,7 @@ class BundleAdjustment
         REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA = 32,  //< refine the optical offset only if we have a minimum number of cameras
         REFINE_INTRINSICS_DISTORTION = 64,                    //< refine the distortion parameters
         REFINE_STRUCTURE_AS_NORMALS = 128,                    //< Structure lies on a sphere (Pure rotation)
+        REFINE_TEMPORAL_SMOOTHNESS_CONSTRAINT = 256,          //< add a temporal constraint to smooth camera positions/orientation
         /// Refine all intrinsics parameters
         REFINE_INTRINSICS_ALL = REFINE_INTRINSICS_FOCAL | REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA | REFINE_INTRINSICS_DISTORTION,
         /// Refine all parameters

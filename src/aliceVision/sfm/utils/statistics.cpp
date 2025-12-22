@@ -8,6 +8,8 @@
 #include "statistics.hpp"
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
+
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
 
@@ -67,6 +69,78 @@ double computeAreaScore(const std::vector<Eigen::Vector2d>& refPts, const std::v
     const double score = (area1 + area2) / (refArea + nextArea);
 
     return score;
+}
+
+const double meanFocalLength(const sfmData::SfMData& sfmData)
+{
+    std::vector<double> focalLengths;
+
+    for (const auto& [intrinsicId, intrinsic] : sfmData.getIntrinsics())
+    {
+        const auto& iso = std::dynamic_pointer_cast<const camera::IntrinsicScaleOffset>(intrinsic);
+        focalLengths.push_back(iso->getFocalLength());
+    }
+
+    if (focalLengths.empty())
+    {
+        return 1.;
+    }
+
+    return std::accumulate(focalLengths.begin(), focalLengths.end(), 0.) / focalLengths.size();
+}
+
+
+const double cameraTrajectoryLength(const std::vector<double*> poses)
+{
+    double trajectoryLength = 0.;
+
+    const int viewCount = poses.size();
+
+    for (int frameIdx = 1; frameIdx < viewCount; frameIdx++)
+    {
+        trajectoryLength += sqrt( (poses[frameIdx][3] - poses[frameIdx-1][3]) * (poses[frameIdx][3] - poses[frameIdx-1][3])
+                           + (poses[frameIdx][4] - poses[frameIdx-1][4]) * (poses[frameIdx][4] - poses[frameIdx-1][4])
+                           + (poses[frameIdx][5] - poses[frameIdx-1][5]) * (poses[frameIdx][5] - poses[frameIdx-1][5]) );
+    }
+
+    return trajectoryLength;
+}
+
+void meanLandmarks2viewsPose(const std::vector<double*> landmarks, const std::vector<double*> poses, std::vector<double>& meanL2V)
+{
+    const double landmarksCount = double(landmarks.size());
+
+    std::vector<double> landmarksMean(3, 0.);
+
+    for (double* landmark : landmarks)
+    {
+        landmarksMean[0] += landmark[0];
+        landmarksMean[1] += landmark[1];
+        landmarksMean[2] += landmark[2];
+    }
+
+    landmarksMean[0] /= landmarksCount;
+    landmarksMean[1] /= landmarksCount;
+    landmarksMean[2] /= landmarksCount;
+
+    const double posesCount = double(poses.size());
+
+    std::vector<double> posesMean(3, 0.);
+
+    for (double* pose : poses)
+    {
+        posesMean[0] += pose[3];
+        posesMean[1] += pose[4];
+        posesMean[2] += pose[5];
+    }
+
+    posesMean[0] /= posesCount;
+    posesMean[1] /= posesCount;
+    posesMean[2] /= posesCount;
+
+    meanL2V[0] = posesMean[0] - landmarksMean[0];
+    meanL2V[1] = posesMean[1] - landmarksMean[1];
+    meanL2V[2] = posesMean[2] - landmarksMean[2];
 }
 
 }  // namespace sfm

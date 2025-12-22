@@ -35,7 +35,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-//This intermediate class is used as a proxy to not link 
+//This intermediate class is used as a proxy to not link
 //sfm with mesh library
 class MeshPointFetcher : public sfm::PointFetcher
 {
@@ -64,11 +64,11 @@ public:
      * @param normal result normal in some global coordinates frame
      * @param intrinsic the camera intrinsic object
      * @param imageCoords the input image pixel coordinates in 2D.
-     * @return false on error 
+     * @return false on error
     */
-    bool pickPointAndNormal(Vec3 & point, 
-                                Vec3 & normal, 
-                                const camera::IntrinsicBase & intrinsic, 
+    bool pickPointAndNormal(Vec3 & point,
+                                Vec3 & normal,
+                                const camera::IntrinsicBase & intrinsic,
                                 const Vec2 & imageCoords) override
     {
         return _mi.pickPointAndNormal(point, normal, intrinsic, imageCoords);
@@ -91,6 +91,7 @@ int aliceVision_main(int argc, char** argv)
     double localizerEstimatorError = 0.0;
     bool lockScenePreviouslyReconstructed = false;
     bool useLocalBA = true;
+    bool useTemporalConstraint = false;
     int lbaDistanceLimit = 1;
     std::size_t nbFirstUnstableCameras = 30;
     std::size_t maxImagesPerGroup = 30;
@@ -111,6 +112,8 @@ int aliceVision_main(int argc, char** argv)
 
     int randomSeed = std::mt19937::default_seed;
 
+    aliceVision::sfm::TemporalConstraintParams tempConstrParams;
+
      // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -127,6 +130,17 @@ int aliceVision_main(int argc, char** argv)
     ("ignoreMultiviewOnPrior", po::value<bool>(&ignoreMultiviewOnPrior)->default_value(ignoreMultiviewOnPrior),"Favour the prior based 3d reconstruction over the multiview reconstruction.")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),"Lock/Unlock scene previously reconstructed.")
     ("useLocalBA,l", po::value<bool>(&useLocalBA)->default_value(useLocalBA), "Enable/Disable the Local bundle adjustment strategy.\n It reduces the reconstruction time, especially for big datasets (500+ images).")
+    ("useTemporalConstraint", po::value<bool>(&useTemporalConstraint)->default_value(useTemporalConstraint), "Enable/Disable the temporal smoothness constraint to the bundle adjustment.")
+    ("tscPositionWeight", po::value<double>(&tempConstrParams.positionWeight)->default_value(tempConstrParams.positionWeight), "Temporal Constraint Position Weight. Controls the weight of the temporal constraint applied to camera positions. Higher values enforce smoother camera path.")
+    ("tscOrientationWeight", po::value<double>(&tempConstrParams.orientationWeight)->default_value(tempConstrParams.orientationWeight), "Temporal Constraint Orientation Weight. Controls the weight of the temporal constraint applied to camera orientations. Higher values enforce smoother camera rotation.")
+    ("tscC0positionWeight", po::value<double>(&tempConstrParams.c0positionWeight)->default_value(tempConstrParams.c0positionWeight), "Temporal Constraint C0 Position Weight. Controls the weight of the continuity constraint on camera positions in the temporal constraint. Higher values enforce smoother transitions in position, reducing abrupt changes of position.")
+    ("tscC1positionWeight", po::value<double>(&tempConstrParams.c1positionWeight)->default_value(tempConstrParams.c1positionWeight), "Temporal Constraint C1 Position Weight. Controls the weight of the first derivative of camera position in the temporal constraint. Higher values enforce continuity of the camera velocity, reducing abrupt changes of velocity.")
+    ("tscC2positionWeight", po::value<double>(&tempConstrParams.c2positionWeight)->default_value(tempConstrParams.c2positionWeight), "Temporal Constraint C2 Position Weight: Controls the weight of the second derivative of camera position in the temporal constraint. Higher values enforce continuity of the camera acceleration, reducing abrupt changes of acceleration.")
+    ("tscC0orientationWeight", po::value<double>(&tempConstrParams.c0orientationWeight)->default_value(tempConstrParams.c0orientationWeight), "Temporal Constraint C0 Orientation Weight. Controls the weight of the continuity constraint on camera orientation in the temporal constraint. Higher values enforce smoother transitions, reducing abrupt changes of the camera orientation.")
+    ("tscC1orientationWeight", po::value<double>(&tempConstrParams.c1orientationWeight)->default_value(tempConstrParams.c1orientationWeight), "Temporal Constraint C1 Orientation Weight. Controls the weight of the first derivative of camera orientation in the temporal constraint. Higher values enforce continuity of the rotation velocity, reducing abrupt changes of rotation velocity.")
+    ("tscC2orientationWeight", po::value<double>(&tempConstrParams.c2orientationWeight)->default_value(tempConstrParams.c2orientationWeight), "Temporal Constraint C2 Orientation Weight. Controls the weight of the second derivative of camera orientation in the temporal constraint. Higher values enforce continuity of the rotation acceleration, reducing abrupt changes of rotation acceleration.")
+    ("tscLand2ViewsRegWeight", po::value<double>(&tempConstrParams.land2ViewsRegWeight)->default_value(tempConstrParams.land2ViewsRegWeight), "Scene Scale Based Regularization Weight. Controls the strength of a regularization applied to the temporal constraint, encouraging the mean distance between the landmarks and the views to remain constant.")
+    ("tscTrajLengthRegWeight", po::value<double>(&tempConstrParams.trajLengthRegWeight)->default_value(tempConstrParams.trajLengthRegWeight), "Trajectory Length Based Regularization Weight. Controls the strength of a regularization applied to the temporal constraint, encouraging the trajectory length to remain constant.")
     ("localBAGraphDistance", po::value<int>(&lbaDistanceLimit)->default_value(lbaDistanceLimit), "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
     ("nbFirstUnstableCameras", po::value<std::size_t>(&nbFirstUnstableCameras)->default_value(nbFirstUnstableCameras),
          "Number of cameras for which the bundle adjustment is performed every single time a camera is added, leading to more stable "
@@ -138,7 +152,7 @@ int aliceVision_main(int argc, char** argv)
     ("bundleAdjustmentMaxOutliers", po::value<int>(&bundleAdjustmentMaxOutliers)->default_value(bundleAdjustmentMaxOutliers),
          "Threshold for the maximum number of outliers allowed at the end of a bundle adjustment iteration."
          "Using a negative value for this threshold will disable BA iterations.")
-    ("weakResectionSize", po::value<int>(&weakResectionSize)->default_value(weakResectionSize), 
+    ("weakResectionSize", po::value<int>(&weakResectionSize)->default_value(weakResectionSize),
         "When adding a view during the expansion process, we compute the pose. If the inliers count"
         "Is less than this value, the resection is considered weak. If not all views in the batch"
         "are weak, then the weak views are put back in the list of views to estimate again.")
@@ -159,7 +173,7 @@ int aliceVision_main(int argc, char** argv)
     ("meshFilename,t", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh file.");
     ;
      // clang-format on
-   
+
     CmdLine cmdline("AliceVision SfM Expanding");
 
     cmdline.add(requiredParams);
@@ -173,7 +187,7 @@ int aliceVision_main(int argc, char** argv)
     HardwareContext hwc = cmdline.getHardwareContext();
     hwc.setUserCoresLimit(100);
     omp_set_num_threads(hwc.getMaxThreads());
-    
+
     // load input SfMData scene
     sfmData::SfMData sfmData;
     if(!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -222,14 +236,14 @@ int aliceVision_main(int argc, char** argv)
     sfm::ExpansionHistory::sptr expansionHistory = std::make_shared<sfm::ExpansionHistory>();
 
     sfm::LbaPolicy::uptr sfmPolicy;
-    if (useLocalBA) 
+    if (useLocalBA)
     {
         sfm::LbaPolicyConnexity::uptr sfmPolicyTyped = std::make_unique<sfm::LbaPolicyConnexity>();
         sfmPolicyTyped->setExpansionHistoryHandler(expansionHistory);
         sfmPolicyTyped->setDistanceLimit(lbaDistanceLimit);
         sfmPolicy = std::move(sfmPolicyTyped);
     }
-    
+
     sfm::SfmBundle::uptr sfmBundle = std::make_unique<sfm::SfmBundle>();
     sfmBundle->setLbaPolicyHandler(sfmPolicy);
     sfmBundle->setBundleAdjustmentMaxOutlier(bundleAdjustmentMaxOutliers);
@@ -237,13 +251,14 @@ int aliceVision_main(int argc, char** argv)
     sfmBundle->setMaxReprojectionError(maxReprojectionError);
     sfmBundle->setMinNbCamerasToRefinePrincipalPoint(minNbCamerasToRefinePrincipalPoint);
     sfmBundle->setIsStructureRefinementEnabled(enableStructureRefinement);
+    sfmBundle->setTemporalConstraintParams(tempConstrParams, useTemporalConstraint);
 
     sfm::PointFetcher::uptr pointFetcherHandler;
     if (!meshFilename.empty())
     {
         ALICEVISION_LOG_INFO("Load mesh");
         std::unique_ptr<MeshPointFetcher> handler = std::make_unique<MeshPointFetcher>();
-        
+
         if (!handler->initialize(meshFilename))
         {
             return EXIT_FAILURE;
@@ -271,14 +286,14 @@ int aliceVision_main(int argc, char** argv)
     expansionChunk->setIgnoreMultiviewOnPrior(ignoreMultiviewOnPrior);
     expansionChunk->setMinAngleTriangulation(minAngleForTriangulation);
     expansionChunk->setWeakResectionSize(weakResectionSize);
-    
+
     sfm::ExpansionPolicy::uptr expansionPolicy;
     {
         sfm::ExpansionPolicyLegacy::uptr expansionPolicyTyped = std::make_unique<sfm::ExpansionPolicyLegacy>();
         expansionPolicyTyped->setNbFirstUnstableViews(nbFirstUnstableCameras);
         expansionPolicyTyped->setMaxViewsPerGroup(maxImagesPerGroup);
         expansionPolicy = std::move(expansionPolicyTyped);
-    } 
+    }
 
     sfm::ExpansionIteration::uptr expansionIteration = std::make_unique<sfm::ExpansionIteration>();
     expansionIteration->setExpansionHistoryHandler(expansionHistory);
@@ -308,8 +323,8 @@ int aliceVision_main(int argc, char** argv)
     sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
 
     if (!outputSfMViewsAndPoses.empty())
-    {   
-        sfmDataIO::save(sfmData, outputSfMViewsAndPoses, 
+    {
+        sfmDataIO::save(sfmData, outputSfMViewsAndPoses,
             sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::EXTRINSICS | sfmDataIO::INTRINSICS)
         );
     }
