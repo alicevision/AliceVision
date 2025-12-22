@@ -13,8 +13,11 @@
 #include <aliceVision/sfm/bundle/costfunctions/constraintPoint.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/projection.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/rotationPrior.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/temporalConstraint.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/depth.hpp>
 #include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
+#include <aliceVision/sfm/utils/poseFilter.hpp>
+#include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
@@ -109,14 +112,14 @@ bool BundleAdjustmentCeres::Statistics::exportToFile(const std::string& folder, 
             posesWithDistUpperThanTen += it.second;
 
     os << time << ";" << states[EParameter::POSE][EEstimatorParameterState::REFINED] << ";"
-       << states[EParameter::POSE][EEstimatorParameterState::CONSTANT] << ";" 
+       << states[EParameter::POSE][EEstimatorParameterState::CONSTANT] << ";"
        << states[EParameter::POSE][EEstimatorParameterState::IGNORED] << ";"
-       << states[EParameter::LANDMARK][EEstimatorParameterState::REFINED] << ";" 
-       << states[EParameter::LANDMARK][EEstimatorParameterState::CONSTANT] << ";" 
+       << states[EParameter::LANDMARK][EEstimatorParameterState::REFINED] << ";"
+       << states[EParameter::LANDMARK][EEstimatorParameterState::CONSTANT] << ";"
        << states[EParameter::LANDMARK][EEstimatorParameterState::IGNORED] << ";"
-       << states[EParameter::INTRINSIC][EEstimatorParameterState::REFINED] << ";" 
-       << states[EParameter::INTRINSIC][EEstimatorParameterState::CONSTANT] << ";" 
-       << states[EParameter::INTRINSIC][EEstimatorParameterState::IGNORED] << ";" 
+       << states[EParameter::INTRINSIC][EEstimatorParameterState::REFINED] << ";"
+       << states[EParameter::INTRINSIC][EEstimatorParameterState::CONSTANT] << ";"
+       << states[EParameter::INTRINSIC][EEstimatorParameterState::IGNORED] << ";"
        << nbResidualBlocks << ";" << nbSuccessfullIterations << ";"
        << nbUnsuccessfullIterations << ";" << RMSEinitial << ";" << RMSEfinal << ";";
 
@@ -322,7 +325,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
                                                    ceres::Problem& problem)
 {
     const bool refineIntrinsicsOpticalCenter =
-      (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) 
+      (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS)
       || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
     const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
     const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
@@ -397,8 +400,8 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
             _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::CONSTANT);
             problem.SetParameterBlockConstant(intrinsicBlockPtr);
         }
-        else 
-        {   
+        else
+        {
             // constant parameters
             bool lockCenter = false;
             bool lockFocal = false;
@@ -410,8 +413,8 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
             // refine the focal length
             if (!lockFocal)
             {
-                if (intrinsicScaleOffset->getInitialScale().x() > 0 
-                    && intrinsicScaleOffset->getInitialScale().y() > 0 
+                if (intrinsicScaleOffset->getInitialScale().x() > 0
+                    && intrinsicScaleOffset->getInitialScale().y() > 0
                     && _ceresOptions.useFocalPrior)
                 {
                     const double maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h());
@@ -443,11 +446,11 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
 
             // optical center
             lockCenter = intrinsicScaleOffset->isOffsetLocked();
-            
-            bool validRefineCenter = (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) 
+
+            bool validRefineCenter = (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS)
                             || (
-                                (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA) 
-                                && _minNbImagesToRefineOpticalCenter > 0 
+                                (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA)
+                                && _minNbImagesToRefineOpticalCenter > 0
                                 && usageCount >= _minNbImagesToRefineOpticalCenter
                             );
 
@@ -470,12 +473,12 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
                 problem.SetParameterLowerBound(intrinsicBlockPtr, 3, opticalCenterMinPercent * intrinsicPtr->h());
                 problem.SetParameterUpperBound(intrinsicBlockPtr, 3, opticalCenterMaxPercent * intrinsicPtr->h());
             }
-            
+
             auto * subsetManifold = new IntrinsicsManifold(
-                                        intrinsicBlock.size(), 
-                                        focalRatio, 
-                                        lockFocal, 
-                                        lockRatio, 
+                                        intrinsicBlock.size(),
+                                        focalRatio,
+                                        lockFocal,
+                                        lockRatio,
                                         lockCenter
                                     );
 
@@ -495,11 +498,11 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
                 distortionBlock = distortion->getParameters();
                 double* distortionBlockPtr = distortionBlock.data();
                 problem.AddParameterBlock(distortionBlockPtr, distortionBlock.size());
-                
-                if (!refineIntrinsicsDistortion 
+
+                if (!refineIntrinsicsDistortion
                     || isod->getDistortionInitializationMode() == camera::EInitMode::CALIBRATED
                     || distortion->isLocked()
-                    || !refineIntrinsics 
+                    || !refineIntrinsics
                     || intrinsicPtr->getState() == EEstimatorParameterState::CONSTANT
                     )
                 {
@@ -508,12 +511,11 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
             }
         }
 
-       
         _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::REFINED);
     }
 }
 
-void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem, std::vector<ceres::ResidualBlockId>& blockIds)
 {
     const bool refineStructure = refineOptions & REFINE_STRUCTURE;
 
@@ -613,13 +615,14 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(rigBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                blockIds.push_back(blockId);
             }
             else if (referencePoseBlockPtr != nullptr)
             {
                 bool samePose = (referencePoseBlockPtr == poseBlockPtr);
                 ceres::CostFunction* costFunction = ProjectionRelativeErrorFunctor::createCostFunction(intrinsic, observation, samePose);
- 
+
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
                 params.push_back(distortionBlockPtr);
@@ -635,26 +638,28 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             else
             {
                 ceres::CostFunction* costFunction = ProjectionSimpleErrorFunctor::createCostFunction(intrinsic, observation);
- 
+
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
                 params.push_back(distortionBlockPtr);
                 params.push_back(poseBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                blockIds.push_back(blockId);
             }
 
             if (observation.getDepth() > 0.0)
             {
                 const double depthVariance = 0.1; //10 cm ?
                 ceres::CostFunction* costFunction = DepthErrorFunctor::createCostFunction(observation, depthVariance);
- 
+
                 std::vector<double*> params;
                 params.push_back(poseBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                problem.AddResidualBlock(costFunction, nullptr, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, nullptr, params);
+                blockIds.push_back(blockId);
             }
 
             if (!refineStructure || landmark.getState() == EEstimatorParameterState::CONSTANT || landmark.isPrecise())
@@ -673,7 +678,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
 void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
 {
-   
+
     // build the residual blocks corresponding to the track observations
     for (const auto& [idView, vspoints] : sfmData.getSurveyPoints())
     {
@@ -710,9 +715,9 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         for (const auto & spoint: vspoints)
         {
             sfmData::Observation observation(spoint.survey, 0, 1.0);
-            ceres::CostFunction* costFunction = 
+            ceres::CostFunction* costFunction =
                     ProjectionSurveyErrorFunctor::createCostFunction(intrinsic, spoint.point3d, observation);
-            
+
             std::vector<double*> params;
             params.push_back(intrinsicBlockPtr);
             params.push_back(distortionBlockPtr);
@@ -729,7 +734,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
     // note: set it to NULL if you don't want use a lossFunction.
     ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
     double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
-    
+
     for (const auto& constraint : sfmData.getConstraints2D())
     {
         const sfmData::View& view_1 = sfmData.getView(constraint.ViewFirst);
@@ -764,7 +769,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
         ceres::CostFunction* costFunction = Constraint2dErrorFunctor::createCostFunction(intrinsicObject1,
                                                                                         constraint.ObservationFirst,
                                                                                         constraint.ObservationSecond);
-        
+
         problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, distortionBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
     }
 }
@@ -791,7 +796,7 @@ void BundleAdjustmentCeres::addConstraintsPointToProblem(const sfmData::SfMData&
         double * ldata = _landmarksBlocks.at(landmarkId).data();
 
         ceres::CostFunction* costFunction = ConstraintPointErrorFunctor::createCostFunction(l, constraint.normal);
-        
+
         problem.AddResidualBlock(costFunction, lossFunction, ldata);
     }
 }
@@ -819,7 +824,115 @@ void BundleAdjustmentCeres::addRotationPriorsToProblem(const sfmData::SfMData& s
     }
 }
 
-void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+void BundleAdjustmentCeres::addTemporalSmoothnessToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem, std::vector<ceres::ResidualBlockId>& blockIds)
+{
+    const bool temporalSmoothness = refineOptions & BundleAdjustment::REFINE_TEMPORAL_SMOOTHNESS_CONSTRAINT;
+
+    if (!temporalSmoothness)
+    {
+        return;
+    }
+
+    // set a LossFunction to be less penalized by false measurements.
+    // note: set it to NULL if you don't want use a lossFunction.
+    ceres::LossFunction* lossFunction = nullptr;
+
+    double focalScale = meanFocalLength(sfmData);
+
+    TemporalConstraintParams tempConstrParams = _ceresOptions.temporalConstraintParams;
+
+    double positionWeight = focalScale * tempConstrParams.positionWeight;
+    double orientationWeight = focalScale * tempConstrParams.orientationWeight;
+
+    const double c0pWeight = tempConstrParams.c0positionWeight;
+    const double c1pWeight = tempConstrParams.c1positionWeight;
+    const double c2pWeight = tempConstrParams.c2positionWeight;
+    const double c0oWeight = tempConstrParams.c0orientationWeight;
+    const double c1oWeight = tempConstrParams.c1orientationWeight;
+    const double c2oWeight = tempConstrParams.c2orientationWeight;
+
+    double land2ViewsRegWeight = tempConstrParams.land2ViewsRegWeight;
+    double trajLengthRegWeight = tempConstrParams.trajLengthRegWeight;
+
+    std::vector<IndexT> poseIdsVec;
+    IndexT firstViewWithPose;
+    IndexT lastViewWithPose;
+    if (!getOrderedPoseIds(sfmData, poseIdsVec, firstViewWithPose, lastViewWithPose))
+    {
+        ALICEVISION_THROW_ERROR("Unable to get ordered frameIDs.");
+    }
+
+    std::vector<double*> poseBlockPtrs;
+
+    for (IndexT frameIdx = firstViewWithPose; frameIdx <= lastViewWithPose; frameIdx++)
+    {
+        poseBlockPtrs.push_back(_posesBlocks.at(poseIdsVec.at(frameIdx)).data());
+        _linearSolverOrdering.AddElementToGroup(poseBlockPtrs[frameIdx-firstViewWithPose], 1);
+    }
+
+    double trajectoryLength = cameraTrajectoryLength(poseBlockPtrs);
+
+    // The camera track length is equal to zero in case all cameras are at a same position
+    // In this case, the temporal constraint is disabled for the positions
+    if (trajectoryLength == 0)
+        positionWeight = 0;
+
+    ceres::ResidualBlockId blockId;
+
+    for (IndexT frameIdx = firstViewWithPose + 3; frameIdx <= lastViewWithPose; frameIdx++)
+    {
+        std::vector<double*> posesParams(poseBlockPtrs.begin()+frameIdx-firstViewWithPose-3,
+                                         poseBlockPtrs.begin()+frameIdx-firstViewWithPose+1);
+
+        // Add constraint for the first views
+        if (frameIdx == firstViewWithPose+3)
+        {
+            ceres::CostFunction* costFunction1 = TemporalConstraintFunctor::createCostFunction(
+                positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 1);
+            blockId = problem.AddResidualBlock(costFunction1, lossFunction, posesParams);
+            blockIds.push_back(blockId);
+
+            ceres::CostFunction* costFunction2 = TemporalConstraintFunctor::createCostFunction(
+                positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 2);
+            blockId = problem.AddResidualBlock(costFunction2, lossFunction, posesParams);
+            blockIds.push_back(blockId);
+        }
+
+        ceres::CostFunction* costFunction = TemporalConstraintFunctor::createCostFunction(
+            positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 0);
+        blockId = problem.AddResidualBlock(costFunction, lossFunction, posesParams);
+        blockIds.push_back(blockId);
+    }
+
+    if (land2ViewsRegWeight != 0.)
+    {
+        std::vector<double*> landmarks;
+
+        for (auto& [landmarkID, landmarkPtr] : _landmarksBlocks)
+            landmarks.push_back(landmarkPtr.data());
+
+        std::vector<double> meanLandmarks2viewsVector(3);
+
+        meanLandmarks2viewsPose(landmarks, poseBlockPtrs, meanLandmarks2viewsVector);
+
+        ceres::CostFunction* regFunction = Landmarks2viewsRegularizationFunctor::createCostFunction
+                        (land2ViewsRegWeight, landmarks, meanLandmarks2viewsVector, poseBlockPtrs.size());
+        ceres::LossFunction* reg_loss_function = nullptr;
+        problem.AddResidualBlock(regFunction, reg_loss_function, poseBlockPtrs);
+    }
+
+    if (trajLengthRegWeight != 0.)
+    {
+        ceres::CostFunction* regFunction = TrajectoryLengthRegularizationFunctor::createCostFunction
+                                                (trajLengthRegWeight, trajectoryLength, poseBlockPtrs.size());
+        ceres::LossFunction* reg_loss_function = nullptr;
+        problem.AddResidualBlock(regFunction, reg_loss_function, poseBlockPtrs);
+    }
+
+    ALICEVISION_LOG_INFO("SfmBundle::Temporal Smoothness added to problem");
+}
+
+void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem, std::vector<ceres::ResidualBlockId>& landmarksBlockIds, std::vector<ceres::ResidualBlockId>& temporalConstraintBlockIds)
 {
     // clear previously computed data
     resetProblem();
@@ -835,7 +948,7 @@ void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData, ERefi
     addIntrinsicsToProblem(sfmData, refineOptions, problem);
 
     // add SfM landmarks to the Ceres problem
-    addLandmarksToProblem(sfmData, refineOptions, problem);
+    addLandmarksToProblem(sfmData, refineOptions, problem, landmarksBlockIds);
 
     // add SfM landmarks to the Ceres problem
     addSurveyPointsToProblem(sfmData, refineOptions, problem);
@@ -848,6 +961,9 @@ void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData, ERefi
 
     // add rotation priors to the Ceres problem
     addRotationPriorsToProblem(sfmData, refineOptions, problem);
+
+    // add temporal smoothness constraint to the Ceres problem
+    addTemporalSmoothnessToProblem(sfmData, refineOptions, problem, temporalConstraintBlockIds);
 }
 
 void BundleAdjustmentCeres::resetProblem()
@@ -960,11 +1076,14 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
 
 void BundleAdjustmentCeres::createJacobian(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::CRSMatrix& jacobian)
 {
+    std::vector<ceres::ResidualBlockId> landmarksBlockIds;
+    std::vector<ceres::ResidualBlockId> temporalConstraintBlockIds;
+
     // create problem
     ceres::Problem::Options problemOptions;
     problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     ceres::Problem problem(problemOptions);
-    createProblem(sfmData, refineOptions, problem);
+    createProblem(sfmData, refineOptions, problem, landmarksBlockIds, temporalConstraintBlockIds);
 
     // configure Jacobian engine
     double cost = 0.0;
@@ -981,12 +1100,29 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
 {
     ALICEVISION_LOG_INFO("BundleAdjustmentCeres::adjust start");
 
+    std::vector<ceres::ResidualBlockId> landmarksBlockIds;
+    std::vector<ceres::ResidualBlockId> temporalConstraintBlockIds;
+
     // create problem
     ceres::Problem::Options problemOptions;
     problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     problemOptions.evaluation_callback = this;
     ceres::Problem problem(problemOptions);
-    createProblem(sfmData, refineOptions, problem);
+    createProblem(sfmData, refineOptions, problem, landmarksBlockIds, temporalConstraintBlockIds);
+
+    ALICEVISION_LOG_INFO("landmarksBlockIds : " << landmarksBlockIds.size());
+    ceres::Problem::EvaluateOptions evaluateOptions;
+    evaluateOptions.residual_blocks = landmarksBlockIds;
+    double cost;
+    problem.Evaluate(evaluateOptions, &cost, NULL, NULL, NULL);
+    ALICEVISION_LOG_INFO("landmarksBlocks cost : " << cost);
+
+    if (temporalConstraintBlockIds.size() != 0)
+    {
+        evaluateOptions.residual_blocks = temporalConstraintBlockIds;
+        problem.Evaluate(evaluateOptions, &cost, NULL, NULL, NULL);
+        ALICEVISION_LOG_INFO("temporalConstraintBlocks cost : " << cost);
+    }
 
     // configure a Bundle Adjustment engine and run it
     // make Ceres automatically detect the bundle structure.
@@ -996,6 +1132,18 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
     // solve BA
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+
+    ALICEVISION_LOG_INFO("landmarksBlockIds : " << landmarksBlockIds.size());
+    evaluateOptions.residual_blocks = landmarksBlockIds;
+    problem.Evaluate(evaluateOptions, &cost, NULL, NULL, NULL);
+    ALICEVISION_LOG_INFO("landmarksBlocks cost : " << cost);
+
+    if (temporalConstraintBlockIds.size() != 0)
+    {
+        evaluateOptions.residual_blocks = temporalConstraintBlockIds;
+        problem.Evaluate(evaluateOptions, &cost, NULL, NULL, NULL);
+        ALICEVISION_LOG_INFO("temporalConstraintBlocks cost : " << cost);
+    }
 
     // print summary
     if (_ceresOptions.summary)
