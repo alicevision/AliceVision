@@ -76,6 +76,7 @@ if(APPLE)
 else()
     trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 endif()
+trilean_option(ALICEVISION_USE_SYCL "Enable SYCL (incompatible with CUDA)" AUTO)
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
 trilean_option(ALICEVISION_USE_USD "Enable USD" AUTO)
@@ -777,6 +778,30 @@ if (ALICEVISION_HAVE_CUDA)
             message(WARNING "NVTX profiling requested but no NVTX CMake target was found in CUDAToolkit.")
         endif()
     endif()
+endif()
+
+# ==============================================================================
+# SYCL/AdaptiveCpp
+# ==============================================================================
+
+if (NOT ALICEVISION_USE_SYCL STREQUAL OFF)
+  if (NOT ALICEVISION_HAVE_CUDA)
+    set(ACPP_TARGETS generic) # Use runtime compilation for selected hardware device. Supports host CPU and GPUs from NVIDIA, AMD and Intel
+    find_package(AdaptiveCpp)
+    if (AdaptiveCpp_FOUND)
+      set(ALICEVISION_HAVE_SYCL 1)
+      message(STATUS "AdaptiveCpp found.")
+    elseif(ALICEVISION_USE_SYCL STREQUAL ON)
+      message(SEND_ERROR "Failed to find AdaptiveCpp, required for SYCL compilation.")
+    endif()
+  elseif (ALICEVISION_USE_SYCL STREQUAL ON)
+    message(SEND_ERROR "Building with CUDA and SYCL simultaneously is unsupported. Please explicitly disable building with CUDA.")
+  endif()
+endif()
+
+if(ALICEVISION_HAVE_SYCL)
+  set(SYCL_INCLUDE_DIRS "${ACPP_COMPILER}/../../include/AdaptiveCpp/")
+  message(STATUS "${SYCL_INCLUDE_DIRS}")
 endif()
 
 # ==============================================================================

@@ -57,6 +57,8 @@ if (ALICEVISION_BUILD_MVS)
 
     if (ALICEVISION_HAVE_CUDA)
         add_subdirectory(depthMap)
+    elseif(ALICEVISION_HAVE_SYCL)
+        add_subdirectory(depthMap_sycl)
     endif()
 endif()
 

@@ -4,6 +4,7 @@
 # Add library function
 function(alicevision_add_library library_name)
     set(options USE_CUDA)
+    set(options USE_SYCL)
     set(singleValues "")
     set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_LINKS PUBLIC_INCLUDE_DIRS PRIVATE_INCLUDE_DIRS PUBLIC_DEFINITIONS PRIVATE_DEFINITIONS RESOURCES)
 
@@ -45,6 +46,10 @@ function(alicevision_add_library library_name)
                 CUDA_RESOLVE_DEVICE_SYMBOLS ON
                 POSITION_INDEPENDENT_CODE ON
         )
+    endif()
+
+    if (LIBRARY_USE_SYCL)
+        add_sycl_to_target(TARGET ${library_name} SOURCES ${LIBRARY_SOURCES})
     endif()
 
     if (ALICEVISION_REMOVE_ABSOLUTE)
