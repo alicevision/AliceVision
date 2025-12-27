@@ -17,6 +17,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/depthMap_sycl/BufPtr.hpp>
+#include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -25,7 +26,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
+void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                                 const std::vector<float>& in_depths,
                                 const std::string& name,
                                 const SgmParams& sgmParams,
@@ -85,7 +86,7 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_
         file << ss.str();
 }
 
-void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
+void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
                                 const std::string& name,
                                 const RefineParams& refineParams,
                                 const std::string& filepath,
@@ -145,7 +146,7 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& in_volu
         file << ss.str();
 }
 
-void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
+void exportSimilarityVolume(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                             const std::vector<float>& in_depths,
                             const mvsUtils::MultiViewParams& mp,
                             int camIndex,
@@ -193,7 +194,7 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
     sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
+void exportSimilarityVolumeCross(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                                  const std::vector<float>& in_depths,
                                  const mvsUtils::MultiViewParams& mp,
                                  int camIndex,
@@ -245,8 +246,8 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim
     sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
-                                 const CudaHostMemoryHeap<float2, 2>& in_depthSimMapSgmUpscale_hmh,
+void exportSimilarityVolumeCross(const SyclHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
+                                 const SyclHostMemoryHeap<sycl::float2, 2>& in_depthSimMapSgmUpscale_hmh,
                                  const mvsUtils::MultiViewParams& mp,
                                  int camIndex,
                                  const RefineParams& refineParams,
@@ -273,9 +274,9 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
             const int y = roi.y.begin + (double(vy) * refineParams.scale * refineParams.stepXY);
             const Point2d pix(x, y);
 
-            const float2 depthPixSizeMap = in_depthSimMapSgmUpscale_hmh(vx, vy);
+            const sycl::float2 depthPixSizeMap = in_depthSimMapSgmUpscale_hmh(vx, vy);
 
-            if (depthPixSizeMap.x < 0.0f)  // original depth invalid or masked
+            if (depthPixSizeMap.x() < 0.0f)  // original depth invalid or masked
                 continue;
 
             for (int vz = 0; vz < volDim[2]; ++vz)
@@ -287,7 +288,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
                     continue;
 
                 const int relativeDepthIndexOffset = vz - refineParams.halfNbDepths;
-                const double depth = depthPixSizeMap.x + (relativeDepthIndexOffset * depthPixSizeMap.y);  // original depth + z based pixSize offset
+                const double depth = depthPixSizeMap.x() + (relativeDepthIndexOffset * depthPixSizeMap.y());  // original depth + z based pixSize offset
 
                 const Point3d p = mp.CArr[camIndex] + (mp.iCamArr[camIndex] * pix).normalize() * depth;
 
@@ -303,7 +304,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
     sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
+void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                                           const std::vector<float>& in_depths,
                                           const mvsUtils::MultiViewParams& mp,
                                           int camIndex,
@@ -375,8 +376,8 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim, 3>& in_
     sfmDataIO::save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
-                                          const CudaHostMemoryHeap<float2, 2>& in_depthSimMapSgmUpscale_hmh,
+void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
+                                          const SyclHostMemoryHeap<sycl::float2, 2>& in_depthSimMapSgmUpscale_hmh,
                                           const mvsUtils::MultiViewParams& mp,
                                           int camIndex,
                                           const RefineParams& refineParams,
@@ -412,9 +413,9 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3
         const double y = roi.y.begin + (vy * refineParams.scale * refineParams.stepXY);
         const Point2d pix(x, y);
 
-        const float2 depthPixSizeMap = in_depthSimMapSgmUpscale_hmh(vx, vy);
+        const sycl::float2 depthPixSizeMap = in_depthSimMapSgmUpscale_hmh(vx, vy);
 
-        if (depthPixSizeMap.x < 0.0f)  // middle depth (SGM) invalid or masked
+        if (depthPixSizeMap.x() < 0.0f)  // middle depth (SGM) invalid or masked
             continue;
 
         for (size_t vz = 0; vz < volDim.z(); ++vz)
@@ -424,7 +425,7 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3
             const float simValueColor = 1 - simValueNorm;  // best similarity value is 0, worst value is 1
 
             const int relativeDepthIndexOffset = vz - refineParams.halfNbDepths;
-            const double depth = depthPixSizeMap.x + (relativeDepthIndexOffset * depthPixSizeMap.y);  // original depth + z based pixSize offset
+            const double depth = depthPixSizeMap.x() + (relativeDepthIndexOffset * depthPixSizeMap.y());  // original depth + z based pixSize offset
 
             const Point3d p = mp.CArr[camIndex] + (mp.iCamArr[camIndex] * (pix + Point2d(0.0, -simValueNorm * 15.0))).normalize() * depth;
 
@@ -448,9 +449,9 @@ inline unsigned char float_to_uchar(float v)
     return out;
 }
 
-inline rgb float4_to_rgb(const float4& v) { return {float_to_uchar(v.x), float_to_uchar(v.y), float_to_uchar(v.z)}; }
+inline rgb float4_to_rgb(const sycl::float4& v) { return {float_to_uchar(v.x()), float_to_uchar(v.y()), float_to_uchar(v.z())}; }
 
-void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& in_volumeSim_hmh,
+void exportColorVolume(const SyclHostMemoryHeap<sycl::float4, 3>& in_volumeSim_hmh,
                        const std::vector<float>& in_depths,
                        int startDepth,
                        int nbDepths,
@@ -488,7 +489,7 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& in_volumeSim_hmh,
                 const Point3d v = (mp.iCamArr[camIndex] * Point2d(x, y)).normalize();
                 const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
 
-                float4 colorValue = *get3DBufferAt_h<float4>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
+                sycl::float4 colorValue = *get3DBufferAt_h<sycl::float4>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
                 const rgb c = float4_to_rgb(colorValue);  // TODO: convert Lab color into sRGB color
                 pointCloud.getLandmarks()[landmarkId] =
                   sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));

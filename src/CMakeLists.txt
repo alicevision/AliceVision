@@ -799,11 +799,6 @@ if (NOT ALICEVISION_USE_SYCL STREQUAL OFF)
   endif()
 endif()
 
-if(ALICEVISION_HAVE_SYCL)
-  set(SYCL_INCLUDE_DIRS "${ACPP_COMPILER}/../../include/AdaptiveCpp/")
-  message(STATUS "${SYCL_INCLUDE_DIRS}")
-endif()
-
 # ==============================================================================
 # SWIG
 # ==============================================================================

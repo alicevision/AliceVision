@@ -12,6 +12,8 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/depthMap_sycl/depthMapUtils.hpp>
+#include <aliceVision/depthMap_sycl/sycl/DeviceCache.hpp>
+#include <aliceVision/depthMap_sycl/sycl/planeSweeping/deviceDepthSimilarityMap.hpp>
 
 #include <filesystem>
 
@@ -24,15 +26,8 @@ NormalMapEstimator::NormalMapEstimator(const mvsUtils::MultiViewParams& mp)
   : _mp(mp)
 {}
 
-void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
+void NormalMapEstimator::compute(sycl::queue queue, const std::vector<int>& cams)
 {
-    // set the device to use for GPU executions
-    // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device
-    setCudaDeviceId(cudaDeviceId);
-
-    DeviceCache& deviceCache = DeviceCache::getInstance();
-    deviceCache.build(0, 1);  // 0 mipmap image, 1 camera parameters
-
     for (const int rc : cams)
     {
         const std::string normalMapFilepath = getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::normalMapFiltered);
@@ -42,13 +37,6 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             const system::Timer timer;
 
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ")");
-
-            // add R camera parameters to the device cache (device constant memory)
-            // no additional downscale applied, we are working at input depth map resolution
-            deviceCache.addCameraParams(rc, 1 /*downscale*/, _mp);
-
-            // get R camera parameters id in device constant memory array
-            const int rcDeviceCameraParamsId = deviceCache.requestCameraParamsId(rc, 1 /*downscale*/, _mp);
 
             // read input depth map
             image::Image<float> in_depthMap;
@@ -67,33 +55,29 @@ void NormalMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
             // copy input depth map into depth/sim map in device memory
             // note: we don't need similarity for normal map computation
             //       we use depth/sim map in order to avoid code duplication
-            CudaDeviceMemoryPitched<float2, 2> in_depthSimMap_dmp({size_t(width), size_t(height)});
+            SyclDeviceMemoryPitched<sycl::float2, 2> in_depthSimMap_dmp({size_t(width), size_t(height)}, queue);
             {
-                CudaHostMemoryHeap<float2, 2> in_depthSimMap_hmh(in_depthSimMap_dmp.getSize());
+                SyclHostMemoryHeap<sycl::float2, 2> in_depthSimMap_hmh(in_depthSimMap_dmp.getSize(), queue);
 
                 for (int x = 0; x < width; ++x)
                     for (int y = 0; y < height; ++y)
-                        in_depthSimMap_hmh(size_t(x), size_t(y)) = make_float2(in_depthMap(y, x), 1.f);
+                        in_depthSimMap_hmh(size_t(x), size_t(y)) = sycl::float2(in_depthMap(y, x), 1.f);
 
-                in_depthSimMap_dmp.copyFrom(in_depthSimMap_hmh);
+                in_depthSimMap_dmp.copyFrom(in_depthSimMap_hmh, sycl::event()).wait();
             }
 
             // allocate normal map buffer in device memory
-            CudaDeviceMemoryPitched<float3, 2> out_normalMap_dmp(in_depthSimMap_dmp.getSize());
+            SyclDeviceMemoryPitched<sycl::float3, 2> out_normalMap_dmp(in_depthSimMap_dmp.getSize(), queue);
 
-            // compute normal map
-            cuda_depthSimMapComputeNormal(out_normalMap_dmp, in_depthSimMap_dmp, rcDeviceCameraParamsId, 1 /*step*/, roi, 0 /*stream*/);
+            // compute normal map synchronosly
+            sycl_depthSimMapComputeNormal(out_normalMap_dmp, in_depthSimMap_dmp, rc, _mp, 1 /*step*/, roi, queue, sycl::event()).wait();
 
             // write output normal map
-            writeNormalMapFiltered(rc, _mp, tileParams, roi, out_normalMap_dmp);
+            writeNormalMapFiltered(rc, _mp, tileParams, roi, out_normalMap_dmp, queue);
 
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ") done in: " << timer.elapsedMs() << " ms.");
         }
     }
-
-    // device cache contains CUDA objects
-    // this objects should be destroyed before the end of the program (i.e. the end of the CUDA context)
-    DeviceCache::getInstance().clear();
 }
 
 }  // namespace depthMap

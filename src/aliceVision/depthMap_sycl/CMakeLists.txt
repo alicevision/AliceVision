@@ -1,7 +1,7 @@
 # Headers
 set(depthMap_files_headers
     BufPtr.hpp
-    computeOnMultiGPUs.hpp
+    computeOnMultiDevices.hpp
     CustomPatchPatternParams.hpp
     DepthMapEstimator.hpp
     DepthMapParams.hpp
@@ -18,7 +18,7 @@ set(depthMap_files_headers
 
 # Sources
 set(depthMap_files_sources
-    computeOnMultiGPUs.cpp
+    computeOnMultiDevices.cpp
     CustomPatchPatternParams.cpp
     DepthMapEstimator.cpp
     depthMapUtils.cpp

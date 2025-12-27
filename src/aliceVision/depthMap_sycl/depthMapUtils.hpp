@@ -11,6 +11,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap_sycl/Tile.hpp>
+#include <aliceVision/depthMap_sycl/sycl/memory.hpp>
 
 #include <vector>
 #include <string>
@@ -24,7 +25,7 @@ namespace depthMap {
  * @param[in] in_img_dmp the image in device memory
  * @param[in] path the path of the output image on disk
  */
-void writeDeviceImage(const CudaDeviceMemoryPitched<CudaRGBA, 2>& in_img_dmp, const std::string& path);
+void writeDeviceImage(const SyclDeviceMemoryPitched<SyclRGBA, 2>& in_img_dmp, sycl::queue queue, const std::string& path);
 
 /**
  * @brief Write a normal map (depth map estimation) on disk from device memory.
@@ -41,7 +42,8 @@ void writeNormalMap(int rc,
                     const mvsUtils::MultiViewParams& mp,
                     const mvsUtils::TileParams& tileParams,
                     const ROI& roi,
-                    const CudaDeviceMemoryPitched<float3, 2>& in_normalMap_dmp,
+                    const SyclDeviceMemoryPitched<sycl::float3, 2>& in_normalMap_dmp,
+                    sycl::queue queue,
                     int scale,
                     int step,
                     const std::string& name = "");
@@ -61,7 +63,8 @@ void writeNormalMapFiltered(int rc,
                             const mvsUtils::MultiViewParams& mp,
                             const mvsUtils::TileParams& tileParams,
                             const ROI& roi,
-                            const CudaDeviceMemoryPitched<float3, 2>& in_normalMap_dmp,
+                            const SyclDeviceMemoryPitched<sycl::float3, 2>& in_normalMap_dmp,
+                            sycl::queue queue,
                             int scale = 1,
                             int step = 1,
                             const std::string& name = "");
@@ -81,7 +84,8 @@ void writeDepthThicknessMap(int rc,
                             const mvsUtils::MultiViewParams& mp,
                             const mvsUtils::TileParams& tileParams,
                             const ROI& roi,
-                            const CudaDeviceMemoryPitched<float2, 2>& in_depthThicknessMap_dmp,
+                            const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthThicknessMap_dmp,
+                            sycl::queue queue,
                             int scale,
                             int step,
                             const std::string& name = "");
@@ -101,7 +105,8 @@ void writeDepthPixSizeMap(int rc,
                           const mvsUtils::MultiViewParams& mp,
                           const mvsUtils::TileParams& tileParams,
                           const ROI& roi,
-                          const CudaDeviceMemoryPitched<float2, 2>& in_depthPixSize_dmp,
+                          const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthPixSize_dmp,
+                          sycl::queue queue,
                           int scale,
                           int step,
                           const std::string& name = "");
@@ -121,7 +126,8 @@ void writeDepthSimMap(int rc,
                       const mvsUtils::MultiViewParams& mp,
                       const mvsUtils::TileParams& tileParams,
                       const ROI& roi,
-                      const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp,
+                      const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthSimMap_dmp,
+                      sycl::queue queue,
                       int scale,
                       int step,
                       const std::string& name = "");
@@ -141,7 +147,7 @@ void writeDepthSimMapFromTileList(int rc,
                                   const mvsUtils::MultiViewParams& mp,
                                   const mvsUtils::TileParams& tileParams,
                                   const std::vector<ROI>& tileRoiList,
-                                  const std::vector<CudaHostMemoryHeap<float2, 2>>& in_depthSimMapTiles_hmh,
+                                  const std::vector<SyclHostMemoryHeap<sycl::float2, 2>>& in_depthSimMapTiles_hmh,
                                   int scale,
                                   int step,
                                   const std::string& name = "");
@@ -152,7 +158,7 @@ void writeDepthSimMapFromTileList(int rc,
  * @param[in] depth the depth reset value
  * @param[in] sim the sim reset value
  */
-void resetDepthSimMap(CudaHostMemoryHeap<float2, 2>& inout_depthSimMap_hmh, float depth = -1.f, float sim = 1.f);
+void resetDepthSimMap(SyclHostMemoryHeap<sycl::float2, 2>& inout_depthSimMap_hmh, float depth = -1.f, float sim = 1.f);
 
 /**
  * @brief Merge normal map tiles on disk.

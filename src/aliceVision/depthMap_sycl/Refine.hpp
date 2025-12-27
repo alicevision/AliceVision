@@ -11,6 +11,8 @@
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap_sycl/Tile.hpp>
 #include <aliceVision/depthMap_sycl/RefineParams.hpp>
+#include <aliceVision/depthMap_sycl/sycl/memory.hpp>
+#include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
 #include <vector>
 #include <string>
@@ -30,9 +32,10 @@ class Refine
      * @param[in] mp the multi-view parameters
      * @param[in] tileParams tile workflow parameters
      * @param[in] refineParams the Refine parameters
-     * @param[in] stream the stream for gpu execution
+     * @param[in,out] allocationSuccess whether we successfully allocate memory
+     * @param[in] queue the queue for device execution
      */
-    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, cudaStream_t stream);
+    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, bool& allocationSuccess, sycl::queue queue);
 
     // no default constructor
     Refine() = delete;
@@ -41,7 +44,7 @@ class Refine
     ~Refine() = default;
 
     // final depth/similarity map getter
-    inline const CudaDeviceMemoryPitched<float2, 2>& getDeviceDepthSimMap() const { return _optimizedDepthSimMap_dmp; }
+    inline const SyclDeviceMemoryPitched<sycl::float2, 2>& getDeviceDepthSimMap() const { return _optimizedDepthSimMap_dmp; }
 
     /**
      * @brief Get memory consumpyion in device memory.
@@ -61,9 +64,10 @@ class Refine
      * @param[in] in_sgmDepthThicknessMap_dmp the SGM result depth/thickness map in device memory
      * @param[in] in_sgmNormalMap_dmp the SGM result normal map in device memory (or empty)
      */
-    void refineRc(const Tile& tile,
-                  const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp,
-                  const CudaDeviceMemoryPitched<float3, 2>& in_sgmNormalMap_dmp);
+    sycl::event refineRc(const Tile& tile,
+                         const SyclDeviceMemoryPitched<sycl::float2, 2>& in_sgmDepthThicknessMap_dmp,
+                         const SyclDeviceMemoryPitched<sycl::float3, 2>& in_sgmNormalMap_dmp,
+                         sycl::event prerequisite);
 
   private:
     // private methods
@@ -72,13 +76,13 @@ class Refine
      * @brief Refine and fuse the given depth/sim map using volume strategy.
      * @param[in] tile The given tile for Refine computation
      */
-    void refineAndFuseDepthSimMap(const Tile& tile);
+    sycl::event refineAndFuseDepthSimMap(const Tile& tile, sycl::event prerequisite);
 
     /**
      * @brief Optimize the refined depth/sim maps.
      * @param[in] tile The given tile for Refine computation
      */
-    void optimizeDepthSimMap(const Tile& tile);
+    sycl::event optimizeDepthSimMap(const Tile& tile, sycl::event prerequisite);
 
     /**
      * @brief Compute and write the normal map from the input depth/sim map.
@@ -86,7 +90,7 @@ class Refine
      * @param[in] in_depthSimMap_dmp the input depth/sim map in device memory
      * @param[in] name the export filename
      */
-    void computeAndWriteNormalMap(const Tile& tile, const CudaDeviceMemoryPitched<float2, 2>& in_depthSimMap_dmp, const std::string& name = "");
+    void computeAndWriteNormalMap(const Tile& tile, const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthSimMap_dmp, sycl::event prerequisite, const std::string& name = "");
 
     /**
      * @brief Export volume cross alembic file and 9 points csv file.
@@ -103,15 +107,15 @@ class Refine
 
     // private members in device memory
 
-    CudaDeviceMemoryPitched<float2, 2> _sgmDepthPixSizeMap_dmp;    //< rc upscaled SGM depth/pixSize map
-    CudaDeviceMemoryPitched<float2, 2> _refinedDepthSimMap_dmp;    //< rc refined and fused depth/sim map
-    CudaDeviceMemoryPitched<float2, 2> _optimizedDepthSimMap_dmp;  //< rc optimized depth/sim map
-    CudaDeviceMemoryPitched<float3, 2> _sgmNormalMap_dmp;          //< rc upscaled SGM normal map (for experimentation purposes)
-    CudaDeviceMemoryPitched<float3, 2> _normalMap_dmp;             //< rc normal map (for debug / intermediate results purposes)
-    CudaDeviceMemoryPitched<TSimRefine, 3> _volumeRefineSim_dmp;   //< rc refine similarity volume
-    CudaDeviceMemoryPitched<float, 2> _optTmpDepthMap_dmp;         //< for color optimization: temporary depth map buffer
-    CudaDeviceMemoryPitched<float, 2> _optImgVariance_dmp;         //< for color optimization: image variance buffer
-    cudaStream_t _stream;                                          //< stream for gpu execution
+    SyclDeviceMemoryPitched<sycl::float2, 2> _sgmDepthPixSizeMap_dmp;    //< rc upscaled SGM depth/pixSize map
+    SyclDeviceMemoryPitched<sycl::float2, 2> _refinedDepthSimMap_dmp;    //< rc refined and fused depth/sim map
+    SyclDeviceMemoryPitched<sycl::float2, 2> _optimizedDepthSimMap_dmp;  //< rc optimized depth/sim map
+    SyclDeviceMemoryPitched<sycl::float3, 2> _sgmNormalMap_dmp;          //< rc upscaled SGM normal map (for experimentation purposes)
+    SyclDeviceMemoryPitched<sycl::float3, 2> _normalMap_dmp;             //< rc normal map (for debug / intermediate results purposes)
+    SyclDeviceMemoryPitched<TSimRefine, 3> _volumeRefineSim_dmp;   //< rc refine similarity volume
+    SyclDeviceMemoryPitched<float, 2> _optTmpDepthMap_dmp;         //< for color optimization: temporary depth map buffer
+    SyclDeviceMemoryPitched<float, 2> _optImgVariance_dmp;         //< for color optimization: image variance buffer
+    sycl::queue _queue;                                            //< queue for device execution
 };
 
 }  // namespace depthMap

@@ -8,10 +8,11 @@
 
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap_sycl/DepthMapParams.hpp>
 #include <aliceVision/depthMap_sycl/SgmParams.hpp>
 #include <aliceVision/depthMap_sycl/RefineParams.hpp>
-#include <aliceVision/depthMap_sycl/computeOnMultiGPUs.hpp>
+#include <aliceVision/depthMap_sycl/computeOnMultiDevices.hpp>
 #include <aliceVision/depthMap_sycl/Tile.hpp>
 
 #include <vector>
@@ -24,7 +25,7 @@ namespace depthMap {
  * @brief Wrap depth maps estimation computation.
  * @note Allows muli-GPUs computation (interface IGPUJob)
  */
-class DepthMapEstimator : public IGPUJob
+class DepthMapEstimator : public IDeviceJob
 {
   public:
     /**
@@ -52,20 +53,13 @@ class DepthMapEstimator : public IGPUJob
 
     /**
      * @brief Compute depth/similarity maps of the given cameras.
-     * @param[in] cudaDeviceId the CUDA device id
+     * @param[in] queue the SYCL queue
      * @param[in] cams the list of cameras
      */
-    void compute(int cudaDeviceId, const std::vector<int>& cams) override;
+    void compute(sycl::queue queue, const std::vector<int>& cams) override;
 
   private:
     // private methods
-
-    /**
-     * @brief Compute the maximum number of tiles (volumes, buffer, images, ...)
-     *        that fit in GPU memory and can be computed simultaneously.
-     * @return number of tiles
-     */
-    int getNbSimultaneousTiles() const;
 
     /**
      * @brief Build tile list from the given cameras.
@@ -76,12 +70,13 @@ class DepthMapEstimator : public IGPUJob
 
     // private members
 
-    const mvsUtils::MultiViewParams& _mp;     //< multi-view parameters
-    const mvsUtils::TileParams& _tileParams;  //< tiling parameters
-    const DepthMapParams& _depthMapParams;    //< depth map estimation parameters
-    const SgmParams& _sgmParams;              //< parameters of Sgm process
-    const RefineParams& _refineParams;        //< parameters of Refine process
-    std::vector<ROI> _tileRoiList;            //< depth maps region-of-interest list
+    const mvsUtils::MultiViewParams& _mp;                       //< multi-view parameters
+    const mvsUtils::TileParams& _tileParams;                    //< tiling parameters
+    const DepthMapParams& _depthMapParams;                      //< depth map estimation parameters
+    const SgmParams& _sgmParams;                                //< parameters of Sgm process
+    const RefineParams& _refineParams;                          //< parameters of Refine process
+    std::vector<ROI> _tileRoiList;                              //< depth maps region-of-interest list
+    mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> _ic; //< host cache for loading images
 };
 
 }  // namespace depthMap

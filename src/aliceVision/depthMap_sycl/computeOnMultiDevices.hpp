@@ -7,32 +7,33 @@
 #pragma once
 
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <sycl/sycl.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
 /**
- * @class IGPUJob
+ * @class IDeviceJob
  * @brief Interface for multi-GPUs computation.
  */
-class IGPUJob
+class IDeviceJob
 {
   public:
     /**
      * @brief Perform computation from the given cameras.
-     * @param[in] cudaDeviceId the CUDA device id
+     * @param[in] queue the SYCL queue on which to execute
      * @param[in] cams the list of cameras
      */
-    virtual void compute(int cudaDeviceId, const std::vector<int>& cams) = 0;
+    virtual void compute(sycl::queue queue, const std::vector<int>& cams) = 0;
 };
 
 /**
- * @brief Perform computation from the given cameras on multiple GPUs.
+ * @brief Perform computation from the given cameras on multiple SYCL devices.
  * @param[in] cams the given list of cameras
- * @param[in,out] gpujob the object that wrap computation (should use IGPUJob interface)
- * @param[in] nbGPUsToUse the number of GPUs to use
+ * @param[in,out] devicejob the object that wraps computation (should use IDeviceJob interface)
+ * @param[in] nbDevicesToUse the number of devices to use
  */
-void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPUsToUse);
+void computeOnMultiDevices(const std::vector<int>& cams, IDeviceJob& devicejob, int nbDevicesToUse);
 
 }  // namespace depthMap
 }  // namespace aliceVision

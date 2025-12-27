@@ -13,6 +13,8 @@
 #include <aliceVision/depthMap_sycl/RefineParams.hpp>
 #include <aliceVision/depthMap_sycl/SgmParams.hpp>
 #include <aliceVision/depthMap_sycl/SgmDepthList.hpp>
+#include <aliceVision/depthMap_sycl/sycl/memory.hpp>
+#include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
 #include <vector>
 #include <string>
@@ -34,6 +36,7 @@ class Sgm
      * @param[in] sgmParams the Semi Global Matching parameters
      * @param[in] computeDepthSimMap Enable final depth/sim map computation
      * @param[in] computeNormalMap Enable final normal map computation
+     * @param[in,out] allocationSuccess whether we successfully allocate memory
      * @param[in] stream the stream for gpu execution
      */
     Sgm(const mvsUtils::MultiViewParams& mp,
@@ -41,7 +44,8 @@ class Sgm
         const SgmParams& sgmParams,
         bool computeDepthSimMap,
         bool computeNormalMap,
-        cudaStream_t stream);
+        bool& allocationSuccess,
+        sycl::queue queue);
 
     // no default constructor
     Sgm() = delete;
@@ -50,13 +54,13 @@ class Sgm
     ~Sgm() = default;
 
     // final depth/thickness map getter
-    inline const CudaDeviceMemoryPitched<float2, 2>& getDeviceDepthThicknessMap() const { return _depthThicknessMap_dmp; }
+    inline const SyclDeviceMemoryPitched<sycl::float2, 2>& getDeviceDepthThicknessMap() const { return _depthThicknessMap_dmp; }
 
     // final depth/similarity map getter (optional: could be empty)
-    inline const CudaDeviceMemoryPitched<float2, 2>& getDeviceDepthSimMap() const { return _depthSimMap_dmp; }
+    inline const SyclDeviceMemoryPitched<sycl::float2, 2>& getDeviceDepthSimMap() const { return _depthSimMap_dmp; }
 
     // final normal map getter (optional: could be empty)
-    inline const CudaDeviceMemoryPitched<float3, 2>& getDeviceNormalMap() const { return _normalMap_dmp; }
+    inline const SyclDeviceMemoryPitched<sycl::float3, 2>& getDeviceNormalMap() const { return _normalMap_dmp; }
 
     /**
      * @brief Get memory consumpyion in device memory.
@@ -75,7 +79,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] tileDepthList the tile SGM depth list
      */
-    void sgmRc(const Tile& tile, const SgmDepthList& tileDepthList);
+    sycl::event sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite);
 
     /**
      * @brief Smooth SGM result thickness map
@@ -83,7 +87,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] refineParams the Refine parameters
      */
-    void smoothThicknessMap(const Tile& tile, const RefineParams& refineParams);
+    sycl::event smoothThicknessMap(const Tile& tile, const RefineParams& refineParams, sycl::event prerequisite);
 
   private:
     // private methods
@@ -93,7 +97,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] tileDepthList the tile SGM depth list
      */
-    void computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDepthList);
+    sycl::event computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite);
 
     /**
      * @brief Optimize the given similarity volume.
@@ -102,7 +106,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] tileDepthList the tile SGM depth list
      */
-    void optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDepthList);
+    sycl::event optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite);
 
     /**
      * @brief Retrieve the best depths in the given similarity volume.
@@ -110,7 +114,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] tileDepthList the tile SGM depth list
      */
-    void retrieveBestDepth(const Tile& tile, const SgmDepthList& tileDepthList);
+    sycl::event retrieveBestDepth(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite);
 
     /**
      * @brief Export volume alembic files and 9 points csv file.
@@ -121,8 +125,9 @@ class Sgm
      */
     void exportVolumeInformation(const Tile& tile,
                                  const SgmDepthList& tileDepthList,
-                                 const CudaDeviceMemoryPitched<TSim, 3>& in_volume_dmp,
-                                 const std::string& name) const;
+                                 const SyclDeviceMemoryPitched<TSim, 3>& in_volume_dmp,
+                                 const std::string& name,
+                                 sycl::event prerequisite) const;
 
     // private members
 
@@ -134,17 +139,17 @@ class Sgm
 
     // private members in device memory
 
-    CudaHostMemoryHeap<float, 2> _depths_hmh;                   //< rc depth data host memory
-    CudaDeviceMemoryPitched<float, 2> _depths_dmp;              //< rc depth data device memory
-    CudaDeviceMemoryPitched<float2, 2> _depthThicknessMap_dmp;  //< rc result depth thickness map
-    CudaDeviceMemoryPitched<float2, 2> _depthSimMap_dmp;        //< rc result depth/sim map
-    CudaDeviceMemoryPitched<float3, 2> _normalMap_dmp;          //< rc normal map
-    CudaDeviceMemoryPitched<TSim, 3> _volumeBestSim_dmp;        //< rc best similarity volume
-    CudaDeviceMemoryPitched<TSim, 3> _volumeSecBestSim_dmp;     //< rc second best similarity volume
-    CudaDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccA_dmp;   //< for optimization: volume accumulation slice A
-    CudaDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccB_dmp;   //< for optimization: volume accumulation slice B
-    CudaDeviceMemoryPitched<TSimAcc, 2> _volumeAxisAcc_dmp;     //< for optimization: volume accumulation axis
-    cudaStream_t _stream;                                       //< stream for gpu execution
+    SyclHostMemoryHeap<float, 2> _depths_hmh;                   //< rc depth data host memory
+    SyclDeviceMemoryPitched<float, 2> _depths_dmp;              //< rc depth data device memory
+    SyclDeviceMemoryPitched<sycl::float2, 2> _depthThicknessMap_dmp;  //< rc result depth thickness map
+    SyclDeviceMemoryPitched<sycl::float2, 2> _depthSimMap_dmp;        //< rc result depth/sim map
+    SyclDeviceMemoryPitched<sycl::float3, 2> _normalMap_dmp;          //< rc normal map
+    SyclDeviceMemoryPitched<TSim, 3> _volumeBestSim_dmp;        //< rc best similarity volume
+    SyclDeviceMemoryPitched<TSim, 3> _volumeSecBestSim_dmp;     //< rc second best similarity volume
+    SyclDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccA_dmp;   //< for optimization: volume accumulation slice A
+    SyclDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccB_dmp;   //< for optimization: volume accumulation slice B
+    SyclDeviceMemoryPitched<TSimAcc, 2> _volumeAxisAcc_dmp;     //< for optimization: volume accumulation axis
+    sycl::queue _queue;                                       //< queue for device execution
 };
 
 }  // namespace depthMap

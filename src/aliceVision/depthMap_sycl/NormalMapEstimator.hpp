@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/depthMap_sycl/computeOnMultiGPUs.hpp>
+#include <aliceVision/depthMap_sycl/computeOnMultiDevices.hpp>
 
 #include <vector>
 
@@ -19,7 +19,7 @@ namespace depthMap {
  * @brief Wrap normal maps estimation computation.
  * @note Allows muli-GPUs computation (interface IGPUJob)
  */
-class NormalMapEstimator : public IGPUJob
+class NormalMapEstimator : public IDeviceJob
 {
   public:
     /**
@@ -39,10 +39,10 @@ class NormalMapEstimator : public IGPUJob
 
     /**
      * @brief Compute normal maps of the given cameras.
-     * @param[in] cudaDeviceId the CUDA device id
+     * @param[in] queue the SYCL queue to dispatch to
      * @param[in] cams the list of cameras
      */
-    void compute(int cudaDeviceId, const std::vector<int>& cams) override;
+    void compute(sycl::queue queue, const std::vector<int>& cams) override;
 
   private:
     // private members
