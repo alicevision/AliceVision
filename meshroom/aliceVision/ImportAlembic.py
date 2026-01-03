@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -19,18 +19,20 @@ Import an external Alembic file that does not follow the SfMData convention, and
             description="The external Alembic file to import.",
             value="",
         ),
-        desc.File(
-            name="imagesDir",
-            label="Images Directory",
-            description="Directory containing the images.",
-            value="",
+        desc.FloatParam(
+            name="framerate",
+            label="Frame rate",
+            description="Alembic frame rate to compute frame id from time",
+            value=24.0,
+            range=(10.0, 50.0, 1.0),
         ),
-        desc.ChoiceParam(
-            name="extension",
-            label="Images Extension",
-            description="File extension for the images in the directory to be taken into account.",
-            value="exr",
-            values=["exr", "jpg", "png"],
+        desc.IntParam(
+            name="imageWidth",
+            label="Image(s) Width",
+            description="Alembic does not export the camera resolutions. \n"
+                        "Setup the image width for all images, the height will depend on the sensor size ratio.",
+            value=1920,
+            range=(640, 10000, 10),
         ),
         desc.ChoiceParam(
             name="verboseLevel",
@@ -46,6 +48,6 @@ Import an external Alembic file that does not follow the SfMData convention, and
             name="output",
             label="SfMData",
             description="SfMData file populated with the camera poses from the external Alembic file.",
-            value="{nodeCacheFolder}/importedAbc.sfm",
+            value="{nodeCacheFolder}/importedAbc.abc",
         ),
     ]

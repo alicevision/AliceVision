@@ -665,13 +665,13 @@ The needed metadata are:
                     view['metadata'] = json.loads(view['metadata'])
 
             sfmData = {
-                "version": [1, 2, 12],
+                "version": [1, 2, 13],
                 "views": views + newViews,
                 "intrinsics": intrinsics,
                 "featureFolder": "",
                 "matchingFolder": "",
             }
-            node.viewpointsFile = os.path.join(node.internalFolder, 'viewpoints.sfm').format(**node._cmdVars)
+            node.viewpointsFile = os.path.join(node.internalFolder, 'viewpoints.sfm')
             with open(node.viewpointsFile, 'w') as f:
                 json.dump(sfmData, f, indent=4)
 

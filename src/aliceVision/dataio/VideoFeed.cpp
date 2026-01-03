@@ -9,6 +9,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/conversion.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>

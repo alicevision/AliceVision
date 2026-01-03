@@ -7,11 +7,13 @@
 #define BOOST_TEST_MODULE colmap
 
 #include <aliceVision/camera/cameraCommon.hpp>
-
 #include <aliceVision/sfmDataIO/colmap.hpp>
+#include <aliceVision/unitTest.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
+
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
-#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 
@@ -118,7 +120,7 @@ BOOST_AUTO_TEST_CASE(colmap_convertIntrinsicsToColmapString)
             {
                 const auto camID = intrID * 10 + cam;
                 sfmTest.getViews().emplace(camID, std::make_shared<sfmData::View>("", cam, intrID, camID));
-                sfmTest.getPoses().emplace(camID, sfmData::CameraPose());
+                sfmTest.getPoses().assign(camID, sfmData::CameraPose());
             }
         }
 

@@ -5,13 +5,11 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ImportE57(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_importE57 {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_importE57 {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Utils'
-    documentation = '''
-Import an E57 file and generate an SfMData.
-'''
+    category = "Utils"
+    documentation = """Import an E57 file and generate an SfMData."""
 
     inputs = [
         desc.ListAttribute(

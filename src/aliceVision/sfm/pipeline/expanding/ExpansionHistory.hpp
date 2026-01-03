@@ -52,6 +52,10 @@ public:
         return _epoch;
     }
 
+    /**
+     * Save the state after a chunk
+     * @param sfmData the current sfmData
+    */
     void saveState(const sfmData::SfMData & sfmData);
 
     /**
@@ -64,9 +68,21 @@ public:
         return _focalHistory[intrinsicId];
     }
 
+    /**
+     * Print statistics of the sfmData computed so far
+     * @param sfmData the input sfmData to analyze
+    */
+    void debrief(const sfmData::SfMData & sfmData) const;
+
 private:
     // History of focals per intrinsics
     std::map<IndexT, std::vector<std::pair<size_t, double>>> _focalHistory;
+
+    // History of added views
+    std::vector<std::set<IndexT>> _addedViews;
+
+    // History of removed views
+    std::vector<std::set<IndexT>> _removedViews;
     
     // epoch ID
     std::size_t _epoch = 0;

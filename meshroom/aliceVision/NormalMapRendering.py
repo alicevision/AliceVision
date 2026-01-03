@@ -8,9 +8,7 @@ class NormalMapRendering(desc.AVCommandLineNode):
     commandLine = "aliceVision_normalMapRendering {allParams}"
 
     category = "Utils"
-    documentation = """
-    Using camera parameters and mesh, render normalmaps for each view
-    """
+    documentation = """Using camera parameters and mesh, render normalmaps for each view."""
 
     inputs = [
         desc.File(

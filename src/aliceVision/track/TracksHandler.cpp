@@ -8,6 +8,7 @@
 
 #include <aliceVision/track/trackIO.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 #include <fstream>
 
@@ -16,18 +17,11 @@ namespace track {
 
 bool TracksHandler::load(const std::string& pathJson, const std::set<IndexT>& viewIds)
 {
-    std::ifstream tracksFile(pathJson);
-    if (tracksFile.is_open() == false)
+    _mapTracks.clear();
+    if (!loadTracks(_mapTracks, pathJson))
     {
         return false;
     }
-
-    std::stringstream buffer;
-    buffer << tracksFile.rdbuf();
-
-    // Parse json
-    boost::json::value jv = boost::json::parse(buffer.str());
-    _mapTracks = track::TracksMap(track::flat_map_value_to<track::Track>(jv));
 
     // Compute tracks per view
     _mapTracksPerView.clear();

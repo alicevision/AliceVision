@@ -51,9 +51,9 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
             else
             {
                 // [Rotation col major 3x3; camera center 3x1]
-                const double* rotation = poses.at(view->getPoseId()).getTransform().rotation().data();
+                const double* rotation = sfmData.getAbsolutePose(view->getPoseId()).getTransform().rotation().data();
                 std::copy(rotation, rotation + 9, std::ostream_iterator<double>(stream, " "));
-                const double* center = poses.at(view->getPoseId()).getTransform().center().data();
+                const double* center = sfmData.getAbsolutePose(view->getPoseId()).getTransform().center().data();
                 std::copy(center, center + 3, std::ostream_iterator<double>(stream, " "));
                 stream << '\n';
             }
@@ -64,7 +64,7 @@ bool saveBAF(const sfmData::SfMData& sfmData, const std::string& filename, ESfMD
         {
             // Export visibility information
             // X Y Z #observations id_cam id_pose x y ...
-            const double* X = iterLandmarks->second.X.data();
+            const double* X = iterLandmarks->second.getX().data();
             std::copy(X, X + 3, std::ostream_iterator<double>(stream, " "));
             const sfmData::Observations& observations = iterLandmarks->second.getObservations();
             stream << observations.size() << " ";

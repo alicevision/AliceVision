@@ -27,13 +27,16 @@ namespace po = boost::program_options;
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
-    std::string sfmOutputDataFilepath;  // output folder for split images
+    std::string sfmOutputDataFilepath;  // output file path for SfM Data
+    sfmDataIO::ESceneType sceneSample = sfmDataIO::ESceneType::SCENE_SPHERE;  // scene type to generate ('cube' or 'sphere')
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("output,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
-         "Output sfm file to generate.");
+         "Output sfm file to generate.")
+        ("scene,s", po::value<sfmDataIO::ESceneType>(&sceneSample)->default_value(sceneSample),
+         "Scene sample to generate. ['cube', 'sphere']");
     // clang-format on
 
     CmdLine cmdline("This program is used to generate a sample scene and save it to a given file path.\n"
@@ -45,7 +48,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     sfmData::SfMData sfmData;
-    sfmDataIO::generateSampleScene(sfmData);
+    sfmDataIO::generateSampleScene(sfmData, sceneSample);
 
     ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
     if (!sfmDataIO::save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))

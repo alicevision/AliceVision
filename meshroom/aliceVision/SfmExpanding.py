@@ -1,19 +1,18 @@
-__version__ = "2.0"
+__version__ = "2.3"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMExpanding(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmExpanding {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_sfmExpanding {allParams}"
+    size = desc.DynamicNodeSize("input")
 
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
-'''
+    category = "Sparse Reconstruction"
+    documentation = """ """
 
     inputs = [
         desc.File(
@@ -52,7 +51,19 @@ class SfMExpanding(desc.AVCommandLineNode):
             range=(0.0, 100.0, 0.1),
             advanced=True,
         ),
-       desc.BoolParam(
+        desc.BoolParam(
+            name="enableDepthPrior",
+            label="Use Depth Prior",
+            description="If available in the tracks, use the depth prior to help the structure estimation.",
+            value=True,
+        ),
+        desc.BoolParam(
+            name="ignoreMultiviewOnPrior",
+            label="Ignore Multiview On Prior",
+            description="Favour the prior based 3d reconstruction over the multiview reconstruction.",
+            value=False,
+        ),
+        desc.BoolParam(
             name="lockScenePreviouslyReconstructed",
             label="Lock Previously Reconstructed Scene",
             description="Lock previously reconstructed poses and intrinsics.\n"
@@ -65,6 +76,102 @@ class SfMExpanding(desc.AVCommandLineNode):
             description="It reduces the reconstruction time, especially for large datasets (500+ images),\n"
                         "by avoiding computation of the Bundle Adjustment on areas that are not changing.",
             value=True,
+        ),
+        desc.BoolParam(
+            name="useTemporalConstraint",
+            label="Temporal Constraint",
+            description="Adds a temporal smoothness constraint to the bundle adjustment.",
+            value=False,
+        ),
+        desc.FloatParam(
+            name="tscPositionWeight",
+            label="Temporal Constraint Position Weight",
+            description="Controls the weight of the temporal constraint applied to camera positions. Higher values enforce smoother camera path.",
+            value=10.0,
+            range=(0.0, 100.0, 0.1),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscOrientationWeight",
+            label="Temporal Constraint Orientation Weight",
+            description="Controls the weight of the temporal constraint applied to camera orientations. Higher values enforce smoother camera rotation.",
+            value=10.0,
+            range=(0.0, 100.0, 0.1),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscC0positionWeight",
+            label="Temporal Constraint C0 Position Weight",
+            description="Controls the weight of the continuity constraint on camera positions in the temporal constraint. Higher values enforce smoother transitions in position, reducing abrupt changes of position.",
+            value=0.0,
+            range=(0.0, 1.0, 0.01),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscC1positionWeight",
+            label="Temporal Constraint C1 Position Weight",
+            description="Controls the weight of the first derivative of camera position in the temporal constraint. Higher values enforce continuity of the camera velocity, reducing abrupt changes of velocity.",
+            value=1.0,
+            range=(0.0, 1.0, 0.01),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscC2positionWeight",
+            label="Temporal Constraint C2 Position Weight",
+            description="Controls the weight of the second derivative of camera position in the temporal constraint. Higher values enforce continuity of the camera acceleration, reducing abrupt changes of acceleration.",
+            value=1.0,
+            range=(0.0, 1.0, 0.01),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscC0orientationWeight",
+            label="Temporal Constraint C0 Orientation Weight",
+            description="Controls the weight of the continuity constraint on camera orientation in the temporal constraint. Higher values enforce smoother transitions, reducing abrupt changes of the camera orientation.",
+            value=0.0,
+            range=(0.0, 1.0, 0.01),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscC1orientationWeight",
+            label="Temporal Constraint C1 Orientation Weight",
+            description="Controls the weight of the first derivative of camera orientation in the temporal constraint. Higher values enforce continuity of the rotation velocity, reducing abrupt changes of rotation velocity.",
+            value=1.0,
+            range=(0.0, 1.0, 0.01),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscC2orientationWeight",
+            label="Temporal Constraint C2 Orientation Weight",
+            description="Controls the weight of the second derivative of camera orientation in the temporal constraint. Higher values enforce continuity of the rotation acceleration, reducing abrupt changes of rotation acceleration.",
+            value=1.0,
+            range=(0.0, 1.0, 0.01),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscLand2ViewsRegWeight",
+            label="Scene Scale Based Regularization Weight",
+            description="Controls the strength of a regularization applied to the temporal constraint, encouraging the mean distance between the landmarks and the views to remain constant.",
+            value=0.0,
+            range=(0.0, 100.0, 0.1),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
+        ),
+        desc.FloatParam(
+            name="tscTrajLengthRegWeight",
+            label="Trajectory Length Based Regularization Weight",
+            description="Controls the strength of a regularization applied to the temporal constraint, encouraging the trajectory length to remain constant.",
+            value=0.0,
+            range=(0.0, 100.0, 0.1),
+            advanced=True,
+            enabled=lambda node: node.useTemporalConstraint.value,
         ),
         desc.IntParam(
             name="localBAGraphDistance",
@@ -103,6 +210,16 @@ class SfMExpanding(desc.AVCommandLineNode):
             advanced=True,
         ),
         desc.IntParam(
+            name="weakResectionSize",
+            label="Weak resection inliers count",
+            description="When adding a view during the expansion process, we compute the pose. If the inliers count\n"
+                        "Is less than this value, the resection is considered weak. If not all views in the batch \n"
+                        "are weak, then the weak views are put back in the list of views to estimate again",
+            value=100,
+            range=(1, 1000, 1),
+            advanced=True,
+        ),
+        desc.IntParam(
             name="minNumberOfObservationsForTriangulation",
             label="Min Observations For Triangulation",
             description="Minimum number of observations to triangulate a point.\n"
@@ -132,8 +249,16 @@ class SfMExpanding(desc.AVCommandLineNode):
         desc.FloatParam(
             name="maxReprojectionError",
             label="Max Reprojection Error",
-            description="Maximum reprojection error.",
+            description="Maximum reprojection error in the bundle verification step.",
             value=4.0,
+            range=(0.1, 10.0, 0.1),
+            advanced=True,
+        ),
+        desc.FloatParam(
+            name="maxTriangulationError",
+            label="Max Triangulation Error",
+            description="Maximum reprojection error in the triangulation process.",
+            value=8.0,
             range=(0.1, 10.0, 0.1),
             advanced=True,
         ),
@@ -145,6 +270,12 @@ class SfMExpanding(desc.AVCommandLineNode):
                         "This may be helpful if the input cameras are already fully calibrated.",
             value=False,
         ),
+        desc.BoolParam(
+            name="enableStructureRefinement",
+            label="Enable Structure Refinement",
+            description="Bundle adjustment will try to optimize the landmarks positions.",
+            value=True,
+        ),
         desc.IntParam(
             name="minNbCamerasToRefinePrincipalPoint",
             label="Min Nb Cameras To Refine Principal Point",
@@ -154,6 +285,21 @@ class SfMExpanding(desc.AVCommandLineNode):
                         "If minNbCamerasToRefinePrincipalPoint is set to 1, the principal point is always refined.",
             value=3,
             range=(0, 20, 1),
+            advanced=True,
+        ),
+        desc.BoolParam(
+            name="useRigConstraint",
+            label="Use Rig Constraint",
+            description="Enable/Disable rig constraint.",
+            value=True,
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="rigMinNbCamerasForCalibration",
+            label="Min Nb Cameras For Rig Calibration",
+            description="Minimum number of cameras to start the calibration of the rig.",
+            value=20,
+            range=(1, 50, 1),
             advanced=True,
         ),
         desc.ChoiceParam(

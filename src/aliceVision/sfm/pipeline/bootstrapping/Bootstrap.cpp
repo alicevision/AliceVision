@@ -4,10 +4,13 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
+#include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicyLegacy.hpp>
+#include <aliceVision/sfm/pipeline/bootstrapping/TracksDepths.hpp>
 #include <vector>
 #include <random>
 
@@ -28,8 +31,8 @@ bool bootstrapBase(sfmData::SfMData & sfmData,
     std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
 
     sfmData::CameraPose cposeNext(otherTreference, false);
-    sfmData.getPoses()[refView.getPoseId()] = sfmData::CameraPose();
-    sfmData.getPoses()[nextView.getPoseId()] = cposeNext;
+    sfmData.getPoses().assign(refView.getPoseId(), sfmData::CameraPose());
+    sfmData.getPoses().assign(nextView.getPoseId(), cposeNext);
 
     const Mat4 T1 = Eigen::Matrix4d::Identity();
     Mat4 T2 = otherTreference.getHomogeneous();
@@ -62,8 +65,8 @@ bool bootstrapBase(sfmData::SfMData & sfmData,
         }
 
         sfmData::Landmark landmark;
-        landmark.descType = track.descType;
-        landmark.X = X;
+        landmark.setDescType(track.descType);
+        landmark.setX(X);
         
         sfmData::Observation refObs;
         refObs.setFeatureId(refItem.featureId);
@@ -107,7 +110,13 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
     size_t countInliers;
 
     //Compute resection for selected view
-    SfmResection resection(50000, std::numeric_limits<double>::infinity());
+    sfm::LocalizationValidationPolicy::uptr resectionValidationPolicy = std::make_unique<sfm::LocalizationValidationPolicyLegacy>();
+
+    SfmResection resection;
+    resection.setMaxIterations(50000);
+    resection.setResectionMaxError(std::numeric_limits<double>::infinity());
+    resection.setValidationPolicy(resectionValidationPolicy);
+    
     if (!resection.processView(sfmData, tracksMap, tracksPerView, randomNumberGenerator, viewId, pose, threshold, countInliers))
     {
         return false;
@@ -122,7 +131,7 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
 
     geometry::Pose3 pose3(pose);
     sfmData::CameraPose cpose(pose3, false);
-    sfmData.getPoses()[viewId] = cpose;
+    sfmData.getPoses().assign(viewId, cpose);
     
     // Cleanup output
     sfmData::Landmarks & outLandmarks = sfmData.getLandmarks();
@@ -142,7 +151,7 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
         //Compute error
         const track::TrackItem & item = track.featPerView.at(viewId);
         const Vec2 pt = item.coords;
-        const Vec2 estpt = intrinsics->transformProject(pose3, landmark.X.homogeneous(), true);
+        const Vec2 estpt = intrinsics->transformProject(pose3, landmark.getX().homogeneous(), true);
         double err = (pt - estpt).norm();
 
         //If error is ok, then we add it to the sfmData
@@ -159,6 +168,103 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
 
             //Add observation to landmark
             sfmData::Observations & observations = outLandmarks[landmarkId].getObservations();
+            observations[nextViewId] = obs;
+        }
+    }
+
+    return true;
+}
+
+bool bootstrapDepth(sfmData::SfMData & sfmData, 
+                    const IndexT referenceViewId,
+                    const IndexT nextViewId,
+                    const track::TracksMap& tracksMap, 
+                    const track::TracksPerView & tracksPerView)
+{
+    std::mt19937 randomNumberGenerator;
+
+    const sfmData::View & viewReference = sfmData.getView(referenceViewId);
+    const sfmData::View & viewNext = sfmData.getView(nextViewId);
+
+    camera::IntrinsicBase::sptr camReference = sfmData.getIntrinsicSharedPtr(viewReference.getIntrinsicId());
+    camera::IntrinsicBase::sptr camNext = sfmData.getIntrinsicSharedPtr(viewNext.getIntrinsicId());
+
+    sfmData::CameraPose & poseReference = sfmData.getPoses()[viewReference.getPoseId()];
+    sfmData::CameraPose & poseNext = sfmData.getPoses()[viewNext.getPoseId()];
+
+
+    sfmData::SfMData miniSfm;
+    if (!buildSfmDataFromDepthMap(miniSfm, sfmData, tracksMap, tracksPerView, referenceViewId))
+    {
+        return false;
+    }
+
+    //Compute resection for selected view
+    sfm::LocalizationValidationPolicy::uptr resectionValidationPolicy = std::make_unique<sfm::LocalizationValidationPolicyLegacy>();
+
+    sfm::SfmResection resection;
+    resection.setMaxIterations(50000);
+    resection.setResectionMaxError(std::numeric_limits<double>::infinity());
+    resection.setValidationPolicy(resectionValidationPolicy);
+
+    Eigen::Matrix4d pose;
+    double newThreshold;
+    size_t inliersCount;
+
+    if (!resection.processView(miniSfm, 
+                            tracksMap, tracksPerView, 
+                            randomNumberGenerator,
+                            nextViewId, pose, newThreshold, inliersCount))
+    {
+        return false;
+    }
+
+
+    geometry::Pose3 pose3(pose);
+    poseNext.setTransform(pose3);
+
+    const auto & landmarks = miniSfm.getLandmarks();
+    auto & outLandmarks = sfmData.getLandmarks();
+
+    for (const auto & [landmarkId, landmark] : landmarks)
+    {
+        //Retrieve track object
+        const auto & track = tracksMap.at(landmarkId);
+
+        const track::TrackItem & itemReference = track.featPerView.at(referenceViewId);
+
+        //Maybe this track is not observed in the next view
+        if (track.featPerView.find(nextViewId) == track.featPerView.end())
+        {
+            continue;
+        }
+
+        //Compute error
+        const track::TrackItem & item = track.featPerView.at(nextViewId);
+        const Vec2 pt = item.coords;
+        const Vec2 estpt = camNext->transformProject(pose3, landmark.getX().homogeneous(), true);
+        double err = (pt - estpt).norm();
+
+        //If error is ok, then we add it to the sfmData
+        if (err <= newThreshold)
+        {
+            sfmData::Observation obs;
+            obs.setFeatureId(item.featureId);
+            obs.setScale(item.scale);
+            obs.setCoordinates(item.coords);
+
+            sfmData::Observation obsReference;
+            obsReference.setFeatureId(itemReference.featureId);
+            obsReference.setScale(itemReference.scale);
+            obsReference.setCoordinates(itemReference.coords);
+
+            //Add landmark to sfmData
+            outLandmarks[landmarkId] = landmark;
+            outLandmarks[landmarkId].setParallaxRobust(true);
+
+            //Add observation to landmark
+            sfmData::Observations & observations = outLandmarks[landmarkId].getObservations();
+            observations[referenceViewId] = obsReference;
             observations[nextViewId] = obs;
         }
     }

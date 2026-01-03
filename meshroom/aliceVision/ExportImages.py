@@ -1,34 +1,45 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
-from meshroom.core.utils import VERBOSE_LEVEL
+from meshroom.core.utils import COLORSPACES, EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
 
 
 class ExportImages(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_exportImages {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_exportImages {allParams}"
+    size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=40)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Export'
-    documentation = '''
-    Export images referenced in the input sfmData by transforming 
-    them to adapt to the required target intrinsics. For example, the target
-    intrinsics may be the same without the distortion.
-    '''
+    category = "Export"
+    documentation = """
+Export images referenced in the input sfmData by transforming them to adapt to the required target intrinsics.
+For example, the target intrinsics may be the same without the distortion.
+"""
 
     inputs = [
         desc.File(
             name="input",
-            label="SfMData",
+            label="Source SfMData",
             description="Input SfMData file. Contains the original intrinsics of the images.",
             value="",
         ),
         desc.File(
             name="target",
-            label="Target",
-            description="This sfmData file contains the required intrinsics for the output images.",
+            label="Target SfMData",
+            description="This SfMData file contains the required intrinsics for the output images.",
             value="",
+        ),
+        desc.ListAttribute(
+            elementDesc=desc.File(
+                name="masksFolder",
+                label="Masks Folder",
+                description="",
+                value="",
+            ),
+            name="masksFolders",
+            label="Masks Folders",
+            description="Use masks from specific folder(s). Filename should be the same or the image UID.",
+            exposed=True
         ),
         desc.ChoiceParam(
             name="outputFileType",
@@ -45,26 +56,22 @@ class ExportImages(desc.AVCommandLineNode):
             value=False,
             advanced=True,
         ),
+        desc.BoolParam(
+            name="exportFullROD",
+            label="Export Full ROD",
+            description="Export images with the full Region of Definition (ROD). Only supported by the EXR file format.",
+            value=False,
+            enabled=lambda node: node.outputFileType.value == "exr"
+        ),
         desc.ChoiceParam(
             name="namingMode",
-            label="Naming mode",
+            label="Naming Mode",
             description="image naming mode :\n"
                         " - viewid: viewid.ext.\n"
                         " - frameid: Frameid.ext.\n"
                         " - keep: Keep original name.\n",
-            value="frameid",
+            value="viewid",
             values=["viewid", "frameid", "keep"],
-        ),
-        desc.ListAttribute(
-            elementDesc=desc.File(
-                name="masksFolder",
-                label="Masks Folder",
-                description="",
-                value="",
-            ),
-            name="masksFolders",
-            label="Masks Folders",
-            description="Use masks from specific folder(s). Filename should be the same or the image UID.",
         ),
         desc.ChoiceParam(
             name="maskExtension",
@@ -72,6 +79,18 @@ class ExportImages(desc.AVCommandLineNode):
             description="File extension for the masks to use.",
             value="png",
             values=["exr", "jpg", "png"],
+        ),
+        desc.ChoiceParam(
+            name="storageDataType",
+            label="Storage Data Type",
+            description="Storage image data type:\n"
+                        " - float: Use full floating point (32 bits per channel).\n"
+                        " - half: Use half float (16 bits per channel).\n"
+                        " - halfFinite: Use half float, but clamp values to avoid non-finite values.\n"
+                        " - auto: Use half float if all values can fit, else use full float.",
+            values=EXR_STORAGE_DATA_TYPE,
+            value="halfFinite",
+            enabled=lambda node: node.outputFileType.value == "exr"
         ),
         desc.ChoiceParam(
             name="verboseLevel",
@@ -94,8 +113,25 @@ class ExportImages(desc.AVCommandLineNode):
             label="Undistorted Images",
             description="List of undistorted images.",
             semantic="image",
-            value="{nodeCacheFolder}/<VIEW_ID>.{outputFileTypeValue}",
+            value=lambda attr: getUndistortedPath(attr.node.namingMode.value),
             group="",
             advanced=True,
         ),
+         desc.File(
+            name="outputSfMData",
+            label="Output SfMData",
+            description="Path to the target SfMData file updated with transformed images.",
+            value="{nodeCacheFolder}/sfm.abc",
+        ),
     ]
+
+def getUndistortedPath(namingMode):
+    
+    replacement = "<FILESTEM>"
+    if (namingMode == "viewid"):
+        replacement = "<VIEW_ID>"
+    elif (namingMode == "frameid"):
+        replacement = "<FRAME_ID>"
+
+    return "{nodeCacheFolder}/" + replacement + ".{outputFileTypeValue}"
+                    

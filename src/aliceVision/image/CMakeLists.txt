@@ -6,7 +6,6 @@ set(image_files_headers
     Image.hpp
     imageAlgo.hpp
     colorspace.hpp
-    concat.hpp
     conversion.hpp
     convolutionBase.hpp
     convolution.hpp
@@ -17,10 +16,10 @@ set(image_files_headers
     io.hpp
     jetColorMap.cpp
     resampling.hpp
-    warping.hpp
     pixelTypes.hpp
     Rgb.hpp
     Sampler.hpp
+    remap.hpp
     cache.hpp
 )
 
@@ -33,6 +32,7 @@ set(image_files_sources
     io.cpp
     imageAlgo.cpp
     jetColorMap.cpp
+    remap.cpp
     cache.cpp
 )
 
@@ -42,11 +42,10 @@ alicevision_add_library(aliceVision_image
         aliceVision_numeric
         OpenImageIO::OpenImageIO
         OpenImageIO::OpenImageIO_Util
+        Imath::Imath
     PRIVATE_LINKS
         aliceVision_system
-        ${OPENEXR_LIBRARIES}
-    PRIVATE_INCLUDE_DIRS
-        ${OPENEXR_INCLUDE_DIR}
+        OpenEXR::OpenEXR
 )
 
 # Install config.ocio
@@ -59,3 +58,18 @@ alicevision_add_test(io_test.cpp           NAME "image_io"         LINKS aliceVi
 alicevision_add_test(drawing_test.cpp      NAME "image_drawing"    LINKS aliceVision_image)
 alicevision_add_test(filtering_test.cpp    NAME "image_filtering"  LINKS aliceVision_image)
 alicevision_add_test(resampling_test.cpp   NAME "image_resampling" LINKS aliceVision_image)
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(image
+        SOURCES image.i
+        PUBLIC_LINKS
+            aliceVision_image
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
+    )
+endif()

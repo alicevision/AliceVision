@@ -6,6 +6,9 @@
 
 #include <aliceVision/camera/camera.hpp>
 
+#include <aliceVision/camera/Equidistant.hpp>
+#include <aliceVision/camera/DistortionRadial.hpp>
+
 #define BOOST_TEST_MODULE equidistant
 
 #include <boost/test/unit_test.hpp>

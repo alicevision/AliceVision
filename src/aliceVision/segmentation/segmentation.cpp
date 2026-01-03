@@ -10,7 +10,8 @@
     #include <cuda_runtime.h>
 #endif
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 

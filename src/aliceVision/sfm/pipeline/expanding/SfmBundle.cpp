@@ -5,35 +5,57 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SfmBundle.hpp"
+
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
+#include <aliceVision/sfm/utils/poseFilter.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 
 namespace aliceVision {
 namespace sfm {
 
 bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
-{   
+{
     ALICEVISION_LOG_INFO("SfmBundle::process start");
 
     BundleAdjustmentCeres::CeresOptions options;
     BundleAdjustment::ERefineOptions refineOptions;
 
-    refineOptions |= BundleAdjustment::REFINE_ROTATION; 
+    refineOptions |= BundleAdjustment::REFINE_ROTATION;
     refineOptions |= BundleAdjustment::REFINE_TRANSLATION;
-    refineOptions |= BundleAdjustment::REFINE_STRUCTURE;
+
+    if (_isStructureRefinementEnabled)
+    {
+        refineOptions |= BundleAdjustment::REFINE_STRUCTURE;
+    }
+
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
-    if (!initialize(sfmData, tracksHandler, viewIds))
+    if (_bundleTemporalConstraint)
     {
-        return false;
+        refineOptions |= BundleAdjustment::REFINE_TEMPORAL_SMOOTHNESS_CONSTRAINT;
+        options.temporalConstraintParams = _tempConstrParams;
+
+        // Fill in the blanks in the views by interpolating new poses (position and orientation)
+
+        sfm::poseFilter poseFilter;
+        if (!poseFilter.interpolateMissingPoses(sfmData, false))
+        {
+            return false;
+        }
     }
 
     options.setSparseBA();
     BundleAdjustmentCeres bundleObject(options, _minNbCamerasToRefinePrincipalPoint);
 
     //Repeat until nothing change
-    do 
+    do
     {
+        if (!initializeIteration(sfmData, tracksHandler, viewIds))
+        {
+            return false;
+        }
+
         const bool success = bundleObject.adjust(sfmData, refineOptions);
         if (!success)
         {
@@ -60,7 +82,11 @@ bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
     // Remove poses without enough observations in an interactive fashion
     const std::size_t nbOutliers = nbOutliersResidualErr + nbOutliersAngleErr;
     std::set<IndexT> removedViewsIdIteration;
-    bool somethingErased = eraseUnstablePosesAndObservations(sfmData, _minPointsPerPose, _minTrackLength, &removedViewsIdIteration);
+    bool somethingErased = false;
+    if (!_bundleTemporalConstraint)
+    {
+        somethingErased = eraseUnstablePosesAndObservations(sfmData, _minPointsPerPose, _minTrackLength, &removedViewsIdIteration);
+    }
 
     bool somethingChanged = /*somethingErased || */(nbOutliers > _bundleAdjustmentMaxOutlier) || (nbOutliersConstraints > 0);
 
@@ -74,7 +100,7 @@ bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
     return somethingChanged;
 }
 
-bool SfmBundle::initialize(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
+bool SfmBundle::initializeIteration(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
 {
     bool enableLocalStrategy = _useLBA;
 
@@ -89,6 +115,10 @@ bool SfmBundle::initialize(sfmData::SfMData & sfmData, const track::TracksHandle
         {
             _lbaPolicy->build(sfmData, tracksHandler, viewIds);
         }
+    }
+    else
+    {
+        sfmData.resetParameterStates();
     }
 
     return true;

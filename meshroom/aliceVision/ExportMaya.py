@@ -5,11 +5,11 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 class ExportMaya(desc.Node):
 
-    category = 'Export'
-    documentation = '''
-    Export a Maya script.
-    This script executed inside Maya, will gather the Meshroom computed elements.
-    '''
+    category = "Export"
+    documentation = """
+Export a Maya script.
+This script, executed inside Maya, will gather the Meshroom computed elements.
+"""
 
     inputs = [
         desc.File(
@@ -69,7 +69,11 @@ class ExportMaya(desc.Node):
 
     def processChunk(self, chunk):
         
-        import pyalicevision
+        from pyalicevision import sfmData as avsfmdata
+        from pyalicevision import sfmDataIO as avsfmdataio
+        from pyalicevision import numeric as avnumeric
+        from pyalicevision import camera as avcamera
+
         import pathlib
         import inspect
         import subprocess
@@ -77,8 +81,8 @@ class ExportMaya(desc.Node):
         chunk.logManager.start(chunk.node.verboseLevel.value)
         
         chunk.logger.info("Open input file")
-        data = pyalicevision.sfmData.SfMData()
-        ret = pyalicevision.sfmDataIO.load(data, chunk.node.input.value, pyalicevision.sfmDataIO.ALL)
+        data = avsfmdata.SfMData()
+        ret = avsfmdataio.load(data, chunk.node.input.value, avsfmdataio.ALL)
         if not ret:
             chunk.logger.error("Cannot open input")
             chunk.logManager.end()
@@ -96,7 +100,7 @@ class ExportMaya(desc.Node):
         w = intrinsic.w()
         h = intrinsic.h()
 
-        cam = pyalicevision.camera.Pinhole.cast(intrinsic)
+        cam = avcamera.Pinhole.cast(intrinsic)
         if cam == None:
             chunk.logger.error("Intrinsic is not a required pinhole model")
             chunk.logManager.end()
@@ -104,12 +108,12 @@ class ExportMaya(desc.Node):
 
         offset = cam.getOffset()
         pix2inches = cam.sensorWidth() / (25.4 * max(w, h));
-        ox = -pyalicevision.numeric.getX(offset) * pix2inches
-        oy = pyalicevision.numeric.getY(offset) * pix2inches
+        ox = -avnumeric.getX(offset) * pix2inches
+        oy = avnumeric.getY(offset) * pix2inches
 
         scale = cam.getScale()
-        fx = pyalicevision.numeric.getX(scale)
-        fy = pyalicevision.numeric.getY(scale)
+        fx = avnumeric.getX(scale)
+        fy = avnumeric.getY(scale)
 
 
         #Retrieve the first frame
@@ -150,7 +154,13 @@ class ExportMaya(desc.Node):
         abcString = f'AbcImport -mode open -fitTimeRange "{alembic}";'
 
         mesh = chunk.node.mesh.value
-        objString = f'file -import -type "OBJ"  -ignoreVersion -ra true -mbl true -mergeNamespacesOnClash false -namespace "mesh" -options "mo=1"  -pr  -importTimeRange "combine" "{mesh}";'
+        objString = ''
+        if len(mesh) > 0:
+            if mesh.lower().endswith('.obj'):
+                objString = f'file -import -type "OBJ"  -ignoreVersion -ra true -mbl true -mergeNamespacesOnClash false -namespace "mesh" -options "mo=1"  -pr  -importTimeRange "combine" "{mesh}";'
+            else:
+                chunk.logger.error("Undefined mesh format for maya import")
+            
 
         framePath = chunk.node.images.value.replace('<INTRINSIC_ID>', str(minIntrinsicId)).replace('<FILESTEM>', minFrameName)
 

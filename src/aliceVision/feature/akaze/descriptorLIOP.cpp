@@ -6,6 +6,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/feature/akaze/descriptorLIOP.hpp>
+#include <aliceVision/image/Sampler.hpp>
+#include <aliceVision/image/filtering.hpp>
 
 #include <float.h>
 #include <algorithm>

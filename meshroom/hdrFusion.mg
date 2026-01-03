@@ -1,14 +1,14 @@
 {
     "header": {
+        "releaseVersion": "2025.1.0",
+        "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
+            "CopyFiles": "1.3",
             "LdrToHdrCalibration": "3.1",
             "LdrToHdrMerge": "4.1",
-            "LdrToHdrSampling": "4.0",
-            "Publish": "1.3"
+            "LdrToHdrSampling": "4.0"
         },
-        "releaseVersion": "2025.1.0-develop",
-        "fileVersion": "2.0",
         "template": true
     },
     "graph": {
@@ -61,8 +61,8 @@
                 "input": "{CameraInit_1.output}"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 800,
                 0

@@ -2,11 +2,15 @@
 set(sfm_bundle_files_headers
     bundle/BundleAdjustment.hpp
     bundle/BundleAdjustmentCeres.hpp
+    utils/statistics.hpp
+    utils/poseFilter.hpp
 )
 
 # Sources
 set(sfm_bundle_files_sources
     bundle/BundleAdjustmentCeres.cpp
+    utils/statistics.cpp
+    utils/poseFilter.cpp
 )
 
 set(sfm_files_headers
@@ -27,6 +31,7 @@ set(sfm_files_headers
     pipeline/bootstrapping/EstimateAngle.hpp
     pipeline/bootstrapping/PairsScoring.hpp
     pipeline/bootstrapping/Bootstrap.hpp
+    pipeline/bootstrapping/TracksDepths.hpp
     pipeline/expanding/SfmTriangulation.hpp
     pipeline/expanding/SfmResection.hpp
     pipeline/expanding/SfmBundle.hpp
@@ -41,9 +46,10 @@ set(sfm_files_headers
     pipeline/expanding/ConnexityGraph.hpp
     pipeline/expanding/LbaPolicy.hpp
     pipeline/expanding/LbaPolicyConnexity.hpp
+    pipeline/positioning/GlobalPositioning.hpp
     pipeline/regionsIO.hpp
     utils/alignment.hpp
-    utils/statistics.hpp
+    utils/poseNoise.hpp
     utils/preprocess.hpp
     utils/syntheticScene.hpp
     LocalBundleAdjustmentGraph.hpp
@@ -71,6 +77,7 @@ set(sfm_files_sources
     pipeline/bootstrapping/EstimateAngle.cpp
     pipeline/bootstrapping/PairsScoring.cpp
     pipeline/bootstrapping/Bootstrap.cpp
+    pipeline/bootstrapping/TracksDepths.cpp
     pipeline/expanding/SfmTriangulation.cpp
     pipeline/expanding/SfmResection.cpp
     pipeline/expanding/SfmBundle.cpp
@@ -82,10 +89,12 @@ set(sfm_files_sources
     pipeline/expanding/ExpansionProcess.cpp
     pipeline/expanding/ConnexityGraph.cpp
     pipeline/expanding/LbaPolicyConnexity.cpp
+    pipeline/expanding/LocalizationValidationPolicyLegacy.cpp
+    pipeline/positioning/GlobalPositioning.cpp
     pipeline/regionsIO.cpp
     utils/alignment.cpp
+    utils/poseNoise.cpp
     utils/preprocess.cpp
-    utils/statistics.cpp
     utils/syntheticScene.cpp
     LocalBundleAdjustmentGraph.cpp
     FrustumFilter.cpp
@@ -160,4 +169,27 @@ alicevision_add_test(utils/alignment_test.cpp
         ${LEMON_LIBRARY}
 )
 
+alicevision_add_test(utils/poseFilter_test.cpp
+    NAME "sfm_poseFilter"
+    LINKS
+        aliceVision_sfm
+)
+
 add_subdirectory(pipeline)
+
+# SWIG Binding
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    alicevision_swig_add_library(sfm
+        SOURCES sfm.i
+        PUBLIC_LINKS
+            aliceVision_sfmData
+            aliceVision_sfm
+            aliceVision_sfm_bundle
+            ${Python3_LIBRARIES}
+        PRIVATE_INCLUDE_DIRS
+            ../include
+            ${ALICEVISION_ROOT}/include
+            ${Python3_INCLUDE_DIRS}
+            ${Python3_NumPy_INCLUDE_DIRS}
+    )
+endif()

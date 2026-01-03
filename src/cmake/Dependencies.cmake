@@ -16,7 +16,6 @@ option(AV_BUILD_LIBRAW "Enable building an embedded libraw" ON)
 option(AV_BUILD_POPSIFT "Enable building an embedded PopSift" ON)
 option(AV_BUILD_CCTAG "Enable building an embedded CCTag" ON)
 option(AV_BUILD_APRILTAG "Enable building an embedded AprilTag" ON)
-option(AV_BUILD_OPENGV "Enable building an embedded OpenGV" ON)
 option(AV_BUILD_OPENCV "Enable building an embedded OpenCV" ON)
 option(AV_BUILD_ONNXRUNTIME "Enable building an embedded ONNX runtime" ON)
 option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
@@ -38,10 +37,12 @@ option(AV_BUILD_EIGEN "Enable building an embedded Eigen library" ON)
 option(AV_BUILD_EXPAT "Enable building an embedded Expat library" ON)
 option(AV_BUILD_OPENEXR "Enable building an embedded OpenExr library" ON)
 option(AV_BUILD_ALEMBIC "Enable building an embedded Alembic library" ON)
+option(AV_BUILD_OPENCOLORIO "Enable building an embedded OpenColorIO library" ON)
 option(AV_BUILD_OPENIMAGEIO "Enable building an embedded OpenImageIO library" ON)
 option(AV_BUILD_BOOST "Enable building an embedded Boost library" ON)
 option(AV_BUILD_CERES "Enable building an embedded Ceres library" ON)
 option(AV_BUILD_SWIG "Enable building an embedded SWIG library" ON)
+option(AV_BUILD_PYBIND11 "Enable building of pybind11 library" OFF)
 option(AV_BUILD_OPENMESH "Enable building an embedded OpenMesh library" ON)
 
 if(AV_BUILD_DEPENDENCIES_PARALLEL EQUAL 0)
@@ -60,7 +61,6 @@ message(STATUS "AV_BUILD_LIBRAW: ${AV_BUILD_LIBRAW}")
 message(STATUS "AV_BUILD_CCTAG: ${AV_BUILD_CCTAG}")
 message(STATUS "AV_BUILD_APRILTAG: ${AV_BUILD_APRILTAG}")
 message(STATUS "AV_BUILD_POPSIFT: ${AV_BUILD_POPSIFT}")
-message(STATUS "AV_BUILD_OPENGV: ${AV_BUILD_OPENGV}")
 message(STATUS "AV_BUILD_OPENCV: ${AV_BUILD_OPENCV}")
 message(STATUS "AV_BUILD_ONNXRUNTIME: ${AV_BUILD_ONNXRUNTIME}")
 if(APPLE)
@@ -103,7 +103,7 @@ set(CMAKE_CORE_BUILD_FLAGS
         -DCMAKE_INSTALL_DO_STRIP:BOOL=${CMAKE_INSTALL_DO_STRIP} 
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} 
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} 
-        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD=20
 )
 
 
@@ -135,12 +135,10 @@ endif()
 if(AV_USE_CUDA AND AV_BUILD_CUDA)
     # Add Cuda
     set(CUDA_TARGET cuda)
-    set(CUDA_EXE cuda_12.0.0_525.60.13_linux.run)
+    set(CUDA_EXE cuda_12.1.1_530.30.02_linux.run)
 
     ExternalProject_Add(${CUDA_TARGET}
-        # URL https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
-        # URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
-        URL https://developer.download.nvidia.com/compute/cuda/12.0.0/local_installers/${CUDA_EXE}
+        URL https://developer.download.nvidia.com/compute/cuda/12.1.1/local_installers/${CUDA_EXE}
         DOWNLOAD_NO_EXTRACT 1
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -153,7 +151,7 @@ if(AV_USE_CUDA AND AV_BUILD_CUDA)
         BUILD_COMMAND ""
         INSTALL_COMMAND sh ${BUILD_DIR}/src/${CUDA_EXE} --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
     )
-    
+
     set(CUDA_CUDART_LIBRARY "")
     set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${CMAKE_INSTALL_PREFIX})
 else()
@@ -163,21 +161,54 @@ else()
     endif()
 endif()
 
+if(AV_BUILD_PYBIND11)
+    set(PYBIND11_TARGET pybind11)
+
+    ExternalProject_Add(${PYBIND11_TARGET}
+        GIT_REPOSITORY https://github.com/pybind/pybind11.git
+        GIT_TAG v2.13.6
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/pybind11
+        BINARY_DIR ${BUILD_DIR}/pybind11_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
+            -DPython_EXECUTABLE=${Python_EXECUTABLE}
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+            <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+    )
+endif()
+
 if(AV_BUILD_GEOGRAM)
     # Add Geogram
     if(WIN32)
-        set(VORPALINE_PLATFORM Win-vs-dynamic-generic)
+        set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Win-vs-dynamic-generic)
     elseif(APPLE)
-        set(VORPALINE_PLATFORM Darwin-clang-dynamic)
-    elseif(UNIX)
-        set(VORPALINE_PLATFORM Linux64-gcc-dynamic)
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+            set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Darwin-clang-dynamic)
+        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+            set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Darwin-aarch64-clang-dynamic)
+        else()
+            message(FATAL_ERROR "Encountered unsupported CMAKE_SYSTEM_PROCESSOR value when trying to set VORPALINE_PLATFORM for Geogram! Supported architectures are x86_64 and aarch64/arm64.")
+        endif()
+    elseif(UNIX) # Assumes Linux
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+            set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Linux64-gcc-dynamic)
+        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+            set(VORPALINE_PLATFORM_FLAGS -DVORPALINE_PLATFORM=Linux64-gcc-aarch64 -DVORPALINE_BUILD_DYNAMIC=ON) # Manually request dynamic build (via VORPALINE_BUILD_DYNAMIC)
+        else()
+            message(FATAL_ERROR "Encountered unsupported CMAKE_SYSTEM_PROCESSOR value when trying to set VORPALINE_PLATFORM for Geogram! Supported architectures are x86_64 and aarch64/arm64.")
+        endif()
     endif()
 
     set(GEOGRAM_TARGET geogram)
 
     ExternalProject_Add(${GEOGRAM_TARGET}
-        URL https://github.com/BrunoLevy/geogram/releases/download/v1.8.8/geogram_1.8.8.tar.gz
-        URL_HASH MD5=e66563683fad771ef19fdf8b42c8b2a4
+        URL https://github.com/BrunoLevy/geogram/releases/download/v1.9.6/geogram_1.9.6.tar.gz
+        URL_HASH MD5=ca4f42cbda64d8fb386708150dac7057
         DOWNLOAD_DIR ${BUILD_DIR}/download/geogram
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -188,7 +219,7 @@ if(AV_BUILD_GEOGRAM)
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
         CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS}
             ${ZLIB_CMAKE_FLAGS}
-            -DVORPALINE_PLATFORM=${VORPALINE_PLATFORM}
+            ${VORPALINE_PLATFORM_FLAGS}
             -DGEOGRAM_WITH_HLBFGS=OFF
             -DGEOGRAM_WITH_TETGEN=OFF
             -DGEOGRAM_WITH_GRAPHICS=OFF
@@ -286,7 +317,7 @@ if(AV_BUILD_EIGEN)
         BINARY_DIR ${BUILD_DIR}/eigen_build
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
         CONFIGURE_COMMAND ${CMAKE_COMMAND} 
-            -DCMAKE_CXX_STANDARD=17
+            -DCMAKE_CXX_STANDARD=20
             ${EIGEN_CMAKE_ALIGNMENT_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
             <SOURCE_DIR>
@@ -341,13 +372,13 @@ if (AV_BUILD_ONNXRUNTIME)
     #     url="${BASE_URL}/${AV_ONNX_FILENAME}"; curl -sLO "$url" && checksum=$(sha256sum "${AV_ONNX_FILENAME}" | awk '{ print $1 }') && echo "SHA256 Checksum: $checksum" && rm "${AV_ONNX_FILENAME}"
     # done
 
-    set(AV_ONNX_VERSION "1.12.0")
+    set(AV_ONNX_VERSION "1.17.0")
     if(APPLE)
         set(AV_ONNX_FILENAME_PREFIX "onnxruntime-osx-${AV_ONNX_APPLE_ARCH}")
         if(AV_ONNX_APPLE_ARCH STREQUAL "arm64")
-            set(AV_ONNX_HASH "23117b6f5d7324d4a7c51184e5f808dd952aec411a6b99a1b6fd1011de06e300")
+            set(AV_ONNX_HASH "f72a2bcca40e2650756c6b96c69ef031236aaab1b98673e744da4eef0c4bddbd")
         elseif(AV_ONNX_APPLE_ARCH STREQUAL "x86_64")
-            set(AV_ONNX_HASH "09b17f712f8c6f19bb63da35d508815b443cbb473e16c6192abfaa297c02f600")
+            set(AV_ONNX_HASH "b87b2febef24e5645e13859d176e76473124325a0b1526baf7f68b4aa1eb1b49")
         else()
             message(FATAL_ERROR "Unsupported arch version ${AV_ONNX_APPLE_ARCH} for Apple")
         endif()
@@ -355,17 +386,17 @@ if (AV_BUILD_ONNXRUNTIME)
         string(FIND "${CMAKE_HOST_SYSTEM_PROCESSOR}" "aarch64" POSITION)
         if(NOT POSITION EQUAL -1)
             set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-aarch64")
-            set(AV_ONNX_HASH "5820d9f343df73c63b6b2b174a1ff62575032e171c9564bcf92060f46827d0ac")
-        else()        
+            set(AV_ONNX_HASH "ee5069252f549ef94759b6b60bdf10b2dc2cd71d064a7045dd66a052f956a68b")
+        else()
             set(AV_ONNX_FILENAME_PREFIX "onnxruntime-linux-x64")
-            set(AV_ONNX_HASH "5d503ce8540358b59be26c675e42081be14a3e833a5301926f555451046929c5")
+            set(AV_ONNX_HASH "efc344d54d1969446ff5d3e55b54e205c6579c06333ecf1d34a04215eefae7c6")
         endif()
     endif()
 
     set(AV_ONNX_FILENAME "${AV_ONNX_FILENAME_PREFIX}-${AV_ONNX_VERSION}.tgz")
 
     set(ONNXRUNTIME_TARGET onnxruntime)
-    
+
     ExternalProject_Add(${ONNXRUNTIME_TARGET}
         URL https://github.com/microsoft/onnxruntime/releases/download/v${AV_ONNX_VERSION}/${AV_ONNX_FILENAME}
         URL_HASH SHA256=${AV_ONNX_HASH}
@@ -382,34 +413,6 @@ if (AV_BUILD_ONNXRUNTIME)
     )
 endif()
 
-if(AV_BUILD_OPENGV)
-    set(OPENGV_TARGET opengv)
-
-    ExternalProject_Add(${OPENGV_TARGET}
-        # Official repository
-        # GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
-        # Our fork, with a fix:
-        GIT_REPOSITORY https://github.com/alicevision/opengv.git
-        # Use a custom commit with a fix to override the cxx standard from cmake command line
-        GIT_TAG 65f7edccf5044d445d305580f79c50c2efcbd438
-        PREFIX ${BUILD_DIR}
-        BUILD_IN_SOURCE 0
-        BUILD_ALWAYS 0
-        UPDATE_COMMAND ""
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opengv
-        BINARY_DIR ${BUILD_DIR}/opengv_build
-        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-        CONFIGURE_COMMAND 
-            ${CMAKE_COMMAND} 
-            ${CMAKE_CORE_BUILD_FLAGS}
-            ${EIGEN_CMAKE_FLAGS}
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-            <SOURCE_DIR>
-        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-        DEPENDS ${EIGEN_TARGET}
-    )
-    set(OPENGV_CMAKE_FLAGS -DOPENGV_DIR=${CMAKE_INSTALL_PREFIX})
-endif()
 
 if(AV_BUILD_OPENEXR)
     # Add OpenEXR
@@ -620,8 +623,8 @@ if(AV_BUILD_BOOST)
     endif()
     
     ExternalProject_Add(${BOOST_TARGET}
-        URL https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.bz2
-        URL_HASH MD5=9dcd632441e4da04a461082ebbafd337
+        URL https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.bz2
+        URL_HASH MD5=2d098ba2e1457708a02de996857c2b10
         DOWNLOAD_DIR ${BUILD_DIR}/download/boost
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -635,10 +638,10 @@ if(AV_BUILD_BOOST)
             ./bootstrap.${SCRIPT_EXTENSION} --prefix=<INSTALL_DIR> --with-libraries=atomic,container,date_time,exception,graph,iostreams,json,log,math,program_options,regex,serialization,system,test,thread,stacktrace,timer
         BUILD_COMMAND
             cd <SOURCE_DIR> &&
-            ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=17 link=shared threading=multi -j8
+            ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=20 link=shared threading=multi -j8
         INSTALL_COMMAND
             cd <SOURCE_DIR> &&
-            ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=17 link=shared threading=multi install
+            ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} cxxstd=20 link=shared threading=multi install
         DEPENDS ${ZLIB_TARGET}
     )
 
@@ -982,8 +985,8 @@ if(AV_BUILD_OPENCV)
     set(OPENCV_TARGET opencv)
 
     ExternalProject_Add(opencv_contrib
-        URL https://github.com/opencv/opencv_contrib/archive/refs/tags/4.11.0.tar.gz
-        URL_HASH MD5=7dd4bc67eb67faff96ce71745a5e3abe
+        URL https://github.com/opencv/opencv_contrib/archive/refs/tags/4.12.0.tar.gz
+        URL_HASH MD5=55603c033cc5f3d5e307b699ad72e25a
         DOWNLOAD_DIR ${BUILD_DIR}/download/opencv_contrib
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
         BUILD_ALWAYS 0
@@ -994,8 +997,8 @@ if(AV_BUILD_OPENCV)
     )
 
     ExternalProject_Add(${OPENCV_TARGET}
-        URL https://github.com/opencv/opencv/archive/refs/tags/4.11.0.tar.gz
-        URL_HASH MD5=f35fbd46350cc677af13e198805b58f7
+        URL https://github.com/opencv/opencv/archive/refs/tags/4.12.0.tar.gz
+        URL_HASH MD5=eb6f8ff4f4cd16ef1b97bc21edc74de9
         DOWNLOAD_DIR ${BUILD_DIR}/download/opencv
         UPDATE_COMMAND ""
         BUILD_IN_SOURCE 0
@@ -1012,7 +1015,7 @@ if(AV_BUILD_OPENCV)
             -DWITH_TBB=ON
             -DWITH_FFMPEG=${AV_BUILD_FFMPEG}
             -DBUILD_opencv_python2=OFF
-            -DBUILD_opencv_python3=OFF
+            -DBUILD_opencv_python3=ON
             -DWITH_GTK_2_X=OFF
             -DWITH_V4L=OFF
             -DINSTALL_C_EXAMPLES=OFF
@@ -1070,7 +1073,7 @@ if(AV_BUILD_CCTAG)
             -DCCTAG_BUILD_TESTS=OFF
             -DCCTAG_BUILD_APPS=OFF
             -DCCTAG_EIGEN_MEMORY_ALIGNMENT=ON
-            -DCCTAG_CXX_STANDARD=17
+            -DCCTAG_CXX_STANDARD=20
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
             <SOURCE_DIR>
         BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
@@ -1111,13 +1114,47 @@ if(AV_BUILD_ALEMBIC)
     set(ALEMBIC_CMAKE_FLAGS -DAlembic_DIR:PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake/Alembic)
 endif()
 
+if(AV_BUILD_OPENCOLORIO)
+    set(OPENCOLORIO_TARGET opencolorio)
+
+
+    ExternalProject_Add(${OPENCOLORIO_TARGET}
+        GIT_REPOSITORY https://github.com/AcademySoftwareFoundation/OpenColorIO.git
+        GIT_TAG v2.4.2
+        PREFIX ${BUILD_DIR}
+        BUILD_IN_SOURCE 0
+        BUILD_ALWAYS 0
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/OpenColorIO
+        BINARY_DIR ${BUILD_DIR}/OpenColorIO_build
+        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+        CONFIGURE_COMMAND
+            ${CMAKE_COMMAND}
+            ${CMAKE_CORE_BUILD_FLAGS}
+            -DCMAKE_PREFIX_PATH=${CMAKE_INSTALL_PREFIX}
+            -DOCIO_BUILD_NUKE=OFF
+            -DOCIO_BUILD_DOCS=OFF
+            -DOCIO_BUILD_TESTS=OFF
+            -DOCIO_BUILD_GPU_TESTS=OFF
+            -DOCIO_BUILD_PYTHON=OFF
+            -DOCIO_INSTALL_EXT_PACKAGES=MISSING
+            -DCMAKE_CXX_STANDARD=17
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+
+        # TODO: build with libheif
+        BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
+    )
+
+    set(OPENCOLORIO_CMAKE_FLAGS -DOpenColorIO_DIR=${CMAKE_INSTALL_PREFIX})
+endif()
+
 if(AV_BUILD_OPENIMAGEIO)
     # Add OpenImageIO
     set(OPENIMAGEIO_TARGET openimageio)
 
     ExternalProject_Add(${OPENIMAGEIO_TARGET}
-        URL https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.5.8.0.tar.gz
-        URL_HASH MD5=1da1065711ad29fb123d2f21a12f72cc
+        URL https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v3.0.9.1.tar.gz
+        URL_HASH MD5=5a3490d405615f48d7340ba4af41380d
         DOWNLOAD_DIR ${BUILD_DIR}/download/oiio
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
@@ -1126,8 +1163,8 @@ if(AV_BUILD_OPENIMAGEIO)
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
         BINARY_DIR ${BUILD_DIR}/openimageio_build
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-        CONFIGURE_COMMAND 
-            ${CMAKE_COMMAND} 
+        CONFIGURE_COMMAND
+            ${CMAKE_COMMAND}
             ${CMAKE_CORE_BUILD_FLAGS}
             -DCMAKE_PREFIX_PATH=${CMAKE_INSTALL_PREFIX}
             -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX}
@@ -1135,7 +1172,13 @@ if(AV_BUILD_OPENIMAGEIO)
             -DOIIO_BUILD_TOOLS:BOOL=OFF
             -DILMBASE_HOME=${CMAKE_INSTALL_PREFIX}
             -DOPENEXR_HOME=${CMAKE_INSTALL_PREFIX}
-            ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS}
+            ${TIFF_CMAKE_FLAGS} 
+            ${ZLIB_CMAKE_FLAGS} 
+            ${PNG_CMAKE_FLAGS} 
+            ${JPEG_CMAKE_FLAGS} 
+            ${LIBRAW_CMAKE_FLAGS} 
+            ${OPENEXR_CMAKE_FLAGS}
+            ${OPENCOLORIO_CMAKE_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
             -DSTOP_ON_WARNING=OFF
             -DUSE_FFMPEG=${AV_BUILD_FFMPEG}
@@ -1144,10 +1187,19 @@ if(AV_BUILD_OPENIMAGEIO)
             -DUSE_OPENEXR=${AV_BUILD_OPENEXR}
             -DUSE_TIFF=${AV_BUILD_TIFF}
             -DUSE_PNG=${AV_BUILD_PNG}
-            -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF -DUSE_NUKE=OFF -DUSE_PTEX=OFF -DBUILD_DOCS=OFF -DBUILD_TESTING=OFF
+            -DPython3_EXECUTABLE=${Python_EXECUTABLE}
+            -DUSE_PYTHON=ON 
+            -DUSE_OPENCV=OFF 
+            -DUSE_OPENGL=OFF 
+            -DUSE_NUKE=OFF 
+            -DUSE_PTEX=OFF 
+            -DUSE_FREETYPE=OFF
+            -DUSE_JXL=OFF
+            -DBUILD_DOCS=OFF 
+            -DBUILD_TESTING=OFF
             # TODO: build with libheif
         BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-        DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET}
+        DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET} ${FFMPEG_TARGET} ${PYBIND11_TARGET} ${EXPAT_TARGET} ${OPENCOLORIO_TARGET}
     )
 
     set(OPENIMAGEIO_CMAKE_FLAGS -DOpenImageIO_DIR=${CMAKE_INSTALL_PREFIX})
@@ -1330,6 +1382,8 @@ if(AV_BUILD_E57FORMAT)
         BINARY_DIR ${BUILD_DIR}/${E57FORMAT_TARGET}_build
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
         CONFIGURE_COMMAND ${CMAKE_COMMAND}
+            -DE57_BUILD_TEST:BOOL=OFF
+            -DBUILD_SHARED_LIBS:BOOL=ON
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
         BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
     )
@@ -1371,7 +1425,6 @@ set(AV_DEPS
     ${TBB_TARGET}
     ${EIGEN_TARGET}
     ${ONNXRUNTIME_TARGET}
-    ${OPENGV_TARGET}
     ${OPENCV_TARGET}
     ${LAPACK_TARGET}
     ${SUITESPARSE_TARGET}
@@ -1418,7 +1471,6 @@ if(AV_BUILD_ALICEVISION)
         -DALICEVISION_USE_CCTAG=${AV_BUILD_CCTAG}
         -DALICEVISION_USE_APRILTAG=${AV_BUILD_APRILTAG}
         -DALICEVISION_USE_OPENCV=${AV_BUILD_OPENCV}
-        -DALICEVISION_USE_OPENGV=${AV_BUILD_OPENGV}
         -DALICEVISION_USE_POPSIFT=${AV_BUILD_POPSIFT}
         -DALICEVISION_USE_CUDA=${AV_USE_CUDA}
         -DALICEVISION_BUILD_SWIG_BINDING=${AV_USE_SWIG}
@@ -1436,7 +1488,6 @@ if(AV_BUILD_ALICEVISION)
         ${CERES_CMAKE_FLAGS}
         ${CUDA_CMAKE_FLAGS}
         ${POPSIFT_CMAKE_FLAGS}
-        ${OPENGV_CMAKE_FLAGS}
         ${OPENCV_CMAKE_FLAGS}
         ${CCTAG_CMAKE_FLAGS}
         ${APRILTAG_CMAKE_FLAGS}

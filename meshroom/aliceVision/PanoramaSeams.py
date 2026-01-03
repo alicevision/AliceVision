@@ -8,15 +8,15 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class PanoramaSeams(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_panoramaSeams {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_panoramaSeams {allParams}"
+    size = desc.DynamicNodeSize("input")
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 
-    category = 'Panorama HDR'
-    documentation = '''
-Estimate the seams lines between the inputs to provide an optimal compositing in a further node
-'''
+    category = "Panorama HDR"
+    documentation = """
+Estimate the seams lines between the inputs to provide an optimal compositing in a further node.
+"""
 
     inputs = [
         desc.File(

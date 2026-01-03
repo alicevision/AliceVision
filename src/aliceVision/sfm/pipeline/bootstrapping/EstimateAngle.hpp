@@ -18,6 +18,7 @@ namespace sfm {
  * @param referenceViewId the reference view id
  * @param otherViewId the other view id
  * @param otherTreference the relative pose
+ * @param errorMax the maximal tolerated error
  * @param tracksMap the input map of tracks
  * @param tracksPerView tracks grouped by views
  * @param resultAngle the output median angle
@@ -28,6 +29,7 @@ bool estimatePairAngle(const sfmData::SfMData & sfmData,
                        const IndexT referenceViewId,
                        const IndexT otherViewId,
                        const geometry::Pose3 & otherTreference,
+                       const double & errorMax,
                        const track::TracksMap& tracksMap, 
                        const track::TracksPerView & tracksPerView, 
                        double & resultAngle, 

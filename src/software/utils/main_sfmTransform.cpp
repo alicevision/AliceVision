@@ -14,6 +14,7 @@
 #include <aliceVision/track/TracksHandler.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/mesh/MeshIntersection.hpp>
+#include <aliceVision/sfm/pipeline/expanding/ExpansionProcess.hpp>
 #include <aliceVision/config.hpp>
 #include <fstream>
 
@@ -30,10 +31,11 @@
 
 
 
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -57,7 +59,8 @@ enum class EAlignmentMethod : unsigned char
     FROM_MARKERS,
     FROM_GPS,
     FROM_LINEUP,
-    ALIGN_GROUND
+    ALIGN_GROUND,
+    FROM_DEPTHMAPS
 };
 
 /**
@@ -93,6 +96,8 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
             return "from_lineup";
         case EAlignmentMethod::ALIGN_GROUND:
             return "align_ground";
+        case EAlignmentMethod::FROM_DEPTHMAPS:
+            return "from_depthmaps";
     }
     throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -131,6 +136,8 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
         return EAlignmentMethod::FROM_LINEUP;
     if (method == "align_ground")
         return EAlignmentMethod::ALIGN_GROUND;
+    if (method == "from_depthmaps")
+        return EAlignmentMethod::FROM_DEPTHMAPS;
     throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -217,6 +224,13 @@ static void parseManualTransform(const std::string& manualTransform, double& S, 
         rotateMat = quaternion.matrix();
     }
     R = rotateMat;  // Assign Rotation
+
+    Eigen::Matrix3d M = Eigen::Matrix3d::Identity();
+    M(1, 1) = -1;
+    M(2, 2) = -1;
+
+    R = M * R * M;
+    t = M * t;
 }
 
 }  // namespace
@@ -305,6 +319,62 @@ bool getPoseFromJson(const std::string & lineUpFilename, Eigen::Matrix4d & T, In
     T = Eigen::Matrix4d::Identity();
     T.block<3, 3>(0, 0) = R;
     T.block<3, 1>(0, 3) = t;
+
+    return true;
+}
+
+bool computeNewScaleFromDepths(const std::string & tracksFilename, sfmData::SfMData& sfmData, double & S)
+{
+    // Load tracks
+    ALICEVISION_LOG_INFO("Load tracks");
+    track::TracksHandler tracksHandler;
+    if (!tracksHandler.load(tracksFilename, sfmData.getValidViews()))
+    {
+        ALICEVISION_LOG_ERROR("The input tracks file '" + tracksFilename + "' cannot be read.");
+        return false;
+    }
+
+    sfm::ExpansionProcess::remapExistingLandmarks(sfmData, tracksHandler);
+
+    const track::TracksMap & tracks = tracksHandler.getAllTracks();
+
+    std::vector<double> ratios;
+    for (const auto & [lid, landmark] : sfmData.getLandmarks())
+    {
+        const track::Track & track = tracks.at(lid);
+
+        for (const auto & [viewId, observation] : landmark.getObservations())
+        {
+            const sfmData::View & v = sfmData.getView(viewId);
+            const sfmData::CameraPose cp = sfmData.getPose(v);
+
+            Vec3 pt = cp.getTransform()(landmark.getX());
+            if (pt.z() < 1e-12)
+            {
+                continue;
+            }
+
+            double fz = track.featPerView.at(viewId).depth;
+            if (fz < 1e-12)
+            {
+                continue;
+            }
+            
+            //Ratio between the depth from sfm, and the depth from depthmap
+            double ratio = fz / pt.z();
+            ratios.push_back(ratio);
+        }
+    }
+
+    if (ratios.size() == 0)
+    {
+        return false;
+    }
+
+    // Compute median
+    const auto medianIterator = ratios.begin() + ratios.size() / 2 - 1;
+    std::nth_element(ratios.begin(), medianIterator, ratios.end());
+    S = *medianIterator;
 
     return true;
 }
@@ -414,7 +484,7 @@ bool parseLineUp(const std::string & lineUpFilename, const std::string & tracksF
             continue;
         }
 
-        landmarkCoordinates.push_back(landmarks.at(trackId).X);
+        landmarkCoordinates.push_back(landmarks.at(trackId).getX());
         meshCoordinates.push_back(pt3d);
     }
 
@@ -471,7 +541,8 @@ int aliceVision_main(int argc, char** argv)
          "\t- from_single_camera: Refines the coordinate system from the camera specified by --tranformation.\n"
          "\t- from_markers: Refines the coordinate system from markers specified by --markers.\n"
          "\t- from_gps: Redefines coordinate system from GPS metadata.\n"
-         "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n")
+         "\t- align_ground: defines ground level from the point cloud density. It assumes that the scene is oriented.\n"
+         "\t- from_depthmaps: Scale given injected depthmaps.\n")
         ("transformation", po::value<std::string>(&transform)->default_value(transform),
          "Required only for 'transformation' and 'single camera' methods:\n"
          "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S.\n"
@@ -676,6 +747,18 @@ int aliceVision_main(int argc, char** argv)
             if (!parseLineUp(lineUpFilename, tracksFilename, objectFilename, sfmData, S, R, t))
             {
                 ALICEVISION_LOG_ERROR("Failed to use given lineup");
+                return EXIT_FAILURE;
+            }
+            break;
+        }
+        case EAlignmentMethod::FROM_DEPTHMAPS:
+        {
+            R.setIdentity();
+            t.fill(0.0);
+
+            if (!computeNewScaleFromDepths(tracksFilename, sfmData, S))
+            {
+                ALICEVISION_LOG_ERROR("Failed to use depths");
                 return EXIT_FAILURE;
             }
             break;

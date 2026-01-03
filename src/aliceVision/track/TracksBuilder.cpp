@@ -7,8 +7,12 @@
 
 #include "TracksBuilder.hpp"
 
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/utils/Histogram.hpp>
+
 #include <lemon/list_graph.h>
 #include <lemon/unionfind.h>
+
 
 namespace aliceVision {
 namespace track {
@@ -42,7 +46,7 @@ TracksBuilder::TracksBuilder() { _d.reset(new TracksBuilderData()); }
 
 TracksBuilder::~TracksBuilder() = default;
 
-void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
+void TracksBuilder::build(const matching::PairwiseMatches& pairwiseMatches)
 {
     typedef std::set<IndexedFeaturePair> SetIndexedPair;
 
@@ -54,14 +58,14 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
     {
         const std::size_t& I = matchesPerDescIt.first.first;
         const std::size_t& J = matchesPerDescIt.first.second;
-        const MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
+        const matching::MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
 
         for (const auto& matchesIt : matchesPerDesc)
         {
             const feature::EImageDescriberType descType = matchesIt.first;
-            const IndMatches& matches = matchesIt.second;
+            const matching::IndMatches& matches = matchesIt.second;
             // we have correspondences between I and J image index.
-            for (const IndMatch& m : matches)
+            for (const matching::IndMatch& m : matches)
             {
                 IndexedFeaturePair pairI(I, KeypointId(descType, m._i));
                 IndexedFeaturePair pairJ(J, KeypointId(descType, m._j));
@@ -97,14 +101,14 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
     {
         const std::size_t& I = matchesPerDescIt.first.first;
         const std::size_t& J = matchesPerDescIt.first.second;
-        const MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
+        const matching::MatchesPerDescType& matchesPerDesc = matchesPerDescIt.second;
 
         for (const auto& matchesIt : matchesPerDesc)
         {
             const feature::EImageDescriberType descType = matchesIt.first;
-            const IndMatches& matches = matchesIt.second;
+            const matching::IndMatches& matches = matchesIt.second;
             // we have correspondences between I and J image index.
-            for (const IndMatch& m : matches)
+            for (const matching::IndMatch& m : matches)
             {
                 IndexedFeaturePair pairI(I, KeypointId(descType, m._i));
                 IndexedFeaturePair pairJ(J, KeypointId(descType, m._j));
@@ -143,6 +147,8 @@ void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool mul
             }
         }
     }
+
+    _filteredCounter = set_classToErase.size();
 
     std::for_each(set_classToErase.begin(), set_classToErase.end(), [&](int toErase) { _d->tracksUF->eraseClass(toErase); });
 }
@@ -208,6 +214,7 @@ void TracksBuilder::exportToSTL(TracksMap& allTracks, const feature::FeaturesPer
 
                 item.coords = feature.coords().cast<double>();
                 item.scale = feature.scale();
+                item.depth = -1.0;
             }
         }
     }
@@ -219,6 +226,21 @@ std::size_t TracksBuilder::nbTracks() const
     for (lemon::UnionFindEnum<IndexMap>::ClassIt cit(*_d->tracksUF); cit != lemon::INVALID; ++cit)
         ++cpt;
     return cpt;
+}
+
+void TracksBuilder::displayStats(const TracksMap & allTracks) const
+{
+    const size_t maxLength = 25;
+    utils::Histogram<double> histo(0, maxLength, maxLength);
+
+    ALICEVISION_LOG_INFO("Tracks lengths histogram (Clamped to 25) : ");
+    for (const auto & [id, track] : allTracks)
+    {
+        histo.Add(std::min(maxLength, track.featPerView.size()));
+    }
+
+    ALICEVISION_LOG_INFO(histo.ToString("", 5, true));
+    ALICEVISION_LOG_INFO("Filtered out tracks : " << _filteredCounter);
 }
 
 }  // namespace track

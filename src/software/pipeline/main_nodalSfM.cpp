@@ -127,7 +127,7 @@ void buildInitialWorld(sfmData::SfMData& sfmData,
         }
 
         sfmData::Landmark l(track.descType);
-        l.X = refP;
+        l.setX(refP);
         l.getObservations()[pair.reference] = sfmData::Observation(refV, refTrackItem.featureId, refTrackItem.scale);
         l.getObservations()[pair.next] = sfmData::Observation(nextV, nextTrackItem.featureId, nextTrackItem.scale);
 
@@ -208,7 +208,7 @@ bool localizeNext(sfmData::SfMData& sfmData,
         Vec2 nvV = trackItem.coords;
         Vec3 camP = newViewIntrinsics->toUnitSphere(newViewIntrinsics->ima2cam(newViewIntrinsics->getUndistortedPixel(nvV)));
 
-        refX.col(pos) = landmarks.at(trackId).X;
+        refX.col(pos) = landmarks.at(trackId).getX();
         newX.col(pos) = camP;
 
         pos++;
@@ -308,7 +308,7 @@ bool addPoints(sfmData::SfMData& sfmData,
             }
 
             sfmData::Landmark l(track.descType);
-            l.X = world_R_new * newP;
+            l.setX(world_R_new * newP);
             l.getObservations()[newViewId] = sfmData::Observation(newV, newTrackItem.featureId, newTrackItem.scale);
             l.getObservations()[pV.first] = sfmData::Observation(refV, refTrackItem.featureId, refTrackItem.scale);
 
@@ -381,7 +381,7 @@ int aliceVision_main(int argc, char** argv)
     std::stringstream buffer;
     buffer << tracksFile.rdbuf();
     boost::json::value jv = boost::json::parse(buffer.str());
-    track::TracksMap mapTracks(track::flat_map_value_to<track::Track>(jv));
+    track::TracksMap mapTracks(map_value_to<std::size_t, track::Track>(jv));
 
     // We have loaded a list of tracks
     // A track is a list of observations per view of (we think) a same point.

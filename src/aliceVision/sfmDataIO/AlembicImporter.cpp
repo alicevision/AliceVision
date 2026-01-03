@@ -14,6 +14,8 @@
 #include <aliceVision/version.hpp>
 #include <aliceVision/system/Logger.hpp>
 
+#include <aliceVision/camera/Equidistant.hpp>
+
 namespace aliceVision {
 namespace sfmDataIO {
 
@@ -186,6 +188,31 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         }
     }
 
+    BoolArraySamplePtr sampleIsParallaxRobust;
+    if (userProps && userProps.getPropertyHeader("mvg_isParallaxRobust"))
+    {
+        IBoolArrayProperty propIsParallaxRobust(userProps, "mvg_isParallaxRobust");
+        propIsParallaxRobust.get(sampleIsParallaxRobust);
+
+        if (sampleIsParallaxRobust->size() != positions->size())
+        {
+            ALICEVISION_LOG_WARNING("[Alembic Importer] isParallaxRobust property will be ignored.");
+            sampleIsParallaxRobust->reset();
+        }
+    }
+    
+    AV_UInt32ArraySamplePtr sampleReferenceViewIndices;
+    if (userProps && userProps.getPropertyHeader("mvg_referenceViewIndices"))
+    {
+        sampleReferenceViewIndices.read(userProps, "mvg_referenceViewIndices");
+        if (sampleReferenceViewIndices.size() != positions->size())
+        {
+            ALICEVISION_LOG_WARNING("[Alembic Importer] Reference views will be ignored. Vector size: "
+                                    << sampleReferenceViewIndices.size() << ", positions vector size: " << positions->size());
+            sampleReferenceViewIndices.reset();
+        }
+    }
+
     // Number of points before adding the Alembic data
     const std::size_t nbPointsInit = sfmdata.getLandmarks().size();
     for (std::size_t point3d_i = 0; point3d_i < positions->size(); ++point3d_i)
@@ -207,15 +234,31 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         if (sampleColors)
         {
             const P3fArraySamplePtr::element_type::value_type& color_i = sampleColors->get()[point3d_i];
-            landmark.rgb = image::RGBColor(static_cast<unsigned char>(color_i[0] * 255.0f),
-                                           static_cast<unsigned char>(color_i[1] * 255.0f),
-                                           static_cast<unsigned char>(color_i[2] * 255.0f));
+            landmark.setRgb(image::RGBColor(static_cast<unsigned char>(color_i[0] * 255.0f),
+                                            static_cast<unsigned char>(color_i[1] * 255.0f),
+                                            static_cast<unsigned char>(color_i[2] * 255.0f)));
         }
 
         if (sampleDescs)
         {
             const std::size_t descType_i = sampleDescs[point3d_i];
-            landmark.descType = static_cast<feature::EImageDescriberType>(descType_i);
+            landmark.setDescType(static_cast<feature::EImageDescriberType>(descType_i));
+        }
+
+        if (sampleIsParallaxRobust)
+        {
+            const bool isParallaxRobust = sampleIsParallaxRobust->get()[point3d_i];
+            landmark.setParallaxRobust(isParallaxRobust);
+        }
+
+        if (sampleReferenceViewIndices)
+        {
+            IndexT referenceViewIndex = sampleReferenceViewIndices[point3d_i];
+            if (referenceViewIndex != UndefinedIndexT)
+            {
+                sfmData::View::sptr view = sfmdata.getViews().at(referenceViewIndex);
+                landmark.setReferenceView(view);
+            }
         }
     }
 
@@ -293,6 +336,7 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         AV_UInt32ArraySamplePtr sampleVisibilityFeatId;
         FloatArraySamplePtr sampleVisibilityFeatPos;
         FloatArraySamplePtr sampleVisibilityFeatScale;
+        FloatArraySamplePtr sampleVisibilityFeatDepth;
 
         if (userProps.getPropertyHeader("mvg_visibilityFeatId") && userProps.getPropertyHeader("mvg_visibilityFeatPos") &&
             flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES)
@@ -306,6 +350,12 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
             {
                 IFloatArrayProperty propVisibilityFeatScale(userProps, "mvg_visibilityFeatScale");
                 propVisibilityFeatScale.get(sampleVisibilityFeatScale);
+            }
+
+            if (userProps && userProps.getPropertyHeader("mvg_visibilityFeatDepth"))
+            {
+                IFloatArrayProperty propVisibilityFeatDepth(userProps, "mvg_visibilityFeatDepth");
+                propVisibilityFeatDepth.get(sampleVisibilityFeatDepth);
             }
 
             if (sampleVisibilityViewId.size() != sampleVisibilityFeatId.size() ||
@@ -360,6 +410,11 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
                     if (sampleVisibilityFeatScale)
                     {
                         observation.setScale((*sampleVisibilityFeatScale)[obsGlobalIndex]);
+                    }
+
+                    if (sampleVisibilityFeatDepth)
+                    {
+                        observation.setDepth((*sampleVisibilityFeatDepth)[obsGlobalIndex]);
                     }
                 }
                 else
@@ -1033,7 +1088,7 @@ bool readXform(const Version& abcVersion, IXform& xform, M44d& mat, sfmData::SfM
 
         if (sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
         {
-            sfmData.getPoses().emplace(poseId, sfmData::CameraPose(pose, rigPoseLocked));
+            sfmData.getPoses().assign(poseId, sfmData::CameraPose(pose, rigPoseLocked));
         }
     }
 

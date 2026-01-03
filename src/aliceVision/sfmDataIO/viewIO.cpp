@@ -9,8 +9,10 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/uid.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <stdexcept>
 #include <regex>
@@ -225,11 +227,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
         }
     }
 
-    if (cameraBrand == "Custom")
-    {
-        intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
-    }
-    else if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN))
+    if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN))
     {
         intrinsicType = lcpIntrinsicType;
     }

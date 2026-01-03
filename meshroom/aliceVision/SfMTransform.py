@@ -1,4 +1,4 @@
-__version__ = "3.1"
+__version__ = "3.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -7,11 +7,11 @@ import os.path
 
 
 class SfMTransform(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmTransform {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_sfmTransform {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Utils'
-    documentation = '''
+    category = "Utils"
+    documentation = """
 This node allows to change the coordinate system of one SfM scene.
 
 The transformation can be based on:
@@ -23,7 +23,8 @@ The transformation can be based on:
  * from_gps: Align with the gps positions from the image metadata
  * align_ground: Detect ground level and align to it
  * from_lineup: Align using a camera pose (json line up file), tracks and a mesh
-'''
+ * from_depthmaps: Rescale scene to match metric depth in tracks
+"""
 
     inputs = [
         desc.File(
@@ -47,9 +48,10 @@ The transformation can be based on:
                         " - from_markers: Defines the coordinate system from markers specified by --markers.\n"
                         " - from_gps: Defines coordinate system from GPS metadata.\n"
                         " - from_lineup: Defines coordinate system using lineup json file.\n"
-                        " - align_ground: Defines ground level from the point cloud density. It assumes that the scene is oriented.",
+                        " - align_ground: Defines ground level from the point cloud density. It assumes that the scene is oriented.\n"
+                        " - from_depthmaps: Scale given depthmaps\n",
             value="auto",
-            values=["transformation", "manual", "auto", "auto_from_cameras", "auto_from_cameras_x_axis", "auto_from_landmarks", "from_single_camera", "from_center_camera", "from_markers", "from_gps", "from_lineup", "align_ground"],
+            values=["transformation", "manual", "auto", "auto_from_cameras", "auto_from_cameras_x_axis", "auto_from_landmarks", "from_single_camera", "from_center_camera", "from_markers", "from_gps", "from_lineup", "align_ground", "from_depthmaps"],
         ),
         desc.File(
             name="lineUp",
@@ -63,7 +65,7 @@ The transformation can be based on:
             label="Tracks File",
             description="Tracks file for lineup.",
             value="",
-            enabled=lambda node: node.method.value == "from_lineup"
+            enabled=lambda node: node.method.value in ["from_lineup", "from_depthmaps"]
         ),
         desc.File(
             name="objectFile",

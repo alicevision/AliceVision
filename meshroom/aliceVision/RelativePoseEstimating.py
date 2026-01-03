@@ -1,19 +1,17 @@
-__version__ = "3.0"
+__version__ = "3.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 class RelativePoseEstimating(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_relativePoseEstimating {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_relativePoseEstimating {allParams}"
+    size = desc.DynamicNodeSize("input")
     
     parallelization = desc.Parallelization(blockSize=25)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
 
-    category = 'Sparse Reconstruction'
-    documentation = '''
-Estimate relative pose between each pair of views that share tracks.
-'''
+    category = "Sparse Reconstruction"
+    documentation = """Estimate relative pose between each pair of views that share tracks."""
 
     inputs = [
         desc.File(
@@ -49,6 +47,20 @@ Estimate relative pose between each pair of views that share tracks.
             value=35,
             range=(1, 1000, 1),
             advanced=True,
+        ),
+        desc.FloatParam(
+            name="distanceThreshold",
+            label="Distance Threshold",
+            description="Threshold on geometric distance (epipolar distance or reprojection distance for pure rotation)",
+            value=4.0,
+            range=(0.0, 50.0, 1.0),
+            advanced=True,
+        ),
+        desc.File(
+            name="imagePairsList",
+            label="Image Pairs",
+            description="Path to a file which contains the list of image pairs to match.",
+            value="",
         ),
         desc.ChoiceParam(
             name="verboseLevel",

@@ -21,11 +21,9 @@ if (ALICEVISION_BUILD_SFM)
     add_subdirectory(imageMatching)
     add_subdirectory(linearProgramming)
     add_subdirectory(lensCorrectionProfile)
-    add_subdirectory(localization)
     add_subdirectory(matching)
     add_subdirectory(matchingImageCollection)
     add_subdirectory(multiview)
-    add_subdirectory(rig)
     add_subdirectory(robustEstimation)
     add_subdirectory(sensorDB)
     add_subdirectory(sfm)
@@ -48,7 +46,7 @@ if (ALICEVISION_BUILD_HDR)
     add_subdirectory(hdr)
 endif()
 
-# MVS modules
+# # MVS modules
 
 if (ALICEVISION_BUILD_MVS)
     add_subdirectory(mesh)
@@ -77,21 +75,6 @@ if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
         endif()
         add_subdirectory(lightingEstimation)
     endif()
-endif()
-
-
-if (ALICEVISION_BUILD_SWIG_BINDING)
-    alicevision_swig_add_library(pyalicevision
-        SOURCES aliceVision.i
-        PUBLIC_LINKS
-            aliceVision_numeric
-            ${Python3_LIBRARIES}
-        PRIVATE_INCLUDE_DIRS
-            ../include
-            ${ALICEVISION_ROOT}/include
-            ${Python3_INCLUDE_DIRS}
-            ${Python3_NumPy_INCLUDE_DIRS}
-    )
 endif()
 
 # Install rules

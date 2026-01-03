@@ -14,7 +14,7 @@
 namespace aliceVision {
 namespace matchingImageCollection {
 
-bool loadPairs(std::istream& stream, PairSet& pairs, int rangeStart, int rangeSize)
+bool loadPairs(std::istream& stream, PairSet& pairs, int rangeStart, int rangeSize, bool useSymmetry)
 {
     std::size_t nbLine = 0;
     std::string sValue;
@@ -49,19 +49,25 @@ bool loadPairs(std::istream& stream, PairSet& pairs, int rangeStart, int rangeSi
             oss.clear();
             oss.str(vec_str[i]);
             oss >> J;
-            if (I == J)
+
+            Pair pairToInsert;
+
+            if (useSymmetry)
             {
-                ALICEVISION_LOG_WARNING("loadPairs: Invalid input file. Image " << I << " sees itself.");
-                return false;
+                pairToInsert = (I < J) ? std::make_pair(I, J) : std::make_pair(J, I);
             }
-            Pair pairToInsert = (I < J) ? std::make_pair(I, J) : std::make_pair(J, I);
+            else
+            {
+                pairToInsert = std::make_pair(I, J);
+            }
+
             if (pairs.find(pairToInsert) != pairs.end())
             {
                 // There is no reason to have the same image pair twice in the list of image pairs
                 // to match.
                 ALICEVISION_LOG_WARNING("loadPairs: image pair (" << I << ", " << J << ") already added.");
             }
-            ALICEVISION_LOG_INFO("loadPairs: image pair (" << I << ", " << J << ") added.");
+            ALICEVISION_LOG_TRACE("loadPairs: image pair (" << I << ", " << J << ") added.");
             pairs.insert(pairToInsert);
         }
     }
@@ -97,7 +103,8 @@ void savePairs(std::ostream& stream, const PairSet& pairs)
 bool loadPairsFromFile(const std::string& sFileName,  // filename of the list file,
                        PairSet& pairs,
                        int rangeStart,
-                       int rangeSize)
+                       int rangeSize,
+                       bool useSymmetry)
 {
     std::ifstream in(sFileName);
     if (!in.is_open())
@@ -106,7 +113,7 @@ bool loadPairsFromFile(const std::string& sFileName,  // filename of the list fi
         return false;
     }
 
-    if (!loadPairs(in, pairs, rangeStart, rangeSize))
+    if (!loadPairs(in, pairs, rangeStart, rangeSize, useSymmetry))
     {
         ALICEVISION_LOG_WARNING("loadPairsFromFile: Failed to read file: \"" << sFileName << "\".");
         return false;

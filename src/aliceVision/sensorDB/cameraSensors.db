@@ -3861,6 +3861,7 @@ Nikon;Nikon Z50;23.5;digicamdb
 Nikon;Nikon Z6;35.9;digicamdb,dpreview,imaging-resource
 Nikon;Nikon Z6 II;35.9;digicamdb
 Nikon;Nikon Z6II;35.9;dxomark
+Nikon;Nikon Z 6_2;35.9;dpreview,digicamdb,imaging-resource
 Nikon;Nikon Z7;35.9;digicamdb,dpreview,imaging-resource
 Nikon;Nikon Z7 II;35.9;digicamdb
 Nikon;Nikon Z7II;35.9;dxomark
@@ -5341,9 +5342,20 @@ Qmobile;Qmobile Noir S6;4.69;devicespecifications
 Ramos;Ramos M7;4.82;devicespecifications
 Ramos;Ramos MOS1 Max;4.69;devicespecifications
 Ramos;Ramos R9;4.69;devicespecifications
+RaspberryPi;RP_arducam-64mp;7.3216;devicespecifications
 RaspberryPi;RP_imx219;3.6736;devicespecifications
+RaspberryPi;RP_imx296;4.896;devicespecifications
+RaspberryPi;RP_imx298;5.21472;devicespecifications
+RaspberryPi;RP_imx335;5.184;devicespecifications
+RaspberryPi;RP_imx378;6.2868;devicespecifications
+RaspberryPi;RP_imx415;5.568;devicespecifications
 RaspberryPi;RP_imx477;6.287;devicespecifications
+RaspberryPi;RP_imx519;5.68032;devicespecifications
+RaspberryPi;RP_imx708;6.4512;devicespecifications
 RaspberryPi;RP_OV5647;3.6288;devicespecifications
+RaspberryPi;RP_OV64A40;9.225216;devicespecifications
+RaspberryPi;RP_OV7251;1.92;devicespecifications
+RaspberryPi;RP_OV9281;3.84;devicespecifications
 Realme;Realme 2 Pro;5.22;devicespecifications
 Realme;Realme 5 Pro;6.4;kimovil
 Realme;Realme 7 Pro;7.4;usercontribution

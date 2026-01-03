@@ -9,7 +9,7 @@
 
 #include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/matching/matcherType.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 #include "aliceVision/matchingImageCollection/pairBuilder.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 

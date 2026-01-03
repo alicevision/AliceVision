@@ -5,7 +5,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "remapBbox.hpp"
+
 #include "sphericalMapping.hpp"
+#include <aliceVision/camera/Equidistant.hpp>
 
 namespace aliceVision {
 

@@ -7,6 +7,9 @@
 
 #include "supportEstimation.hpp"
 
+#include <cassert>
+
+
 namespace aliceVision {
 namespace matching {
 

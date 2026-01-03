@@ -22,7 +22,8 @@ namespace sfm {
 * @param tracksPerView tracks grouped by views
 * @param filterIn pair must contains one of the views inside this set (if non empty)
 * @param filterout pair must NOT contains one of the views inside this set (if non empty)
-* @param minAngle minimal angle allowed
+* @param hardMinAngle minimal angle allowed (rejected)
+* @param softMinAngle minimal angle allowed (tolerated, but heavily downgraded)
 * @param maxAngle maximal angle allowed
 * @return index in "pairs" of the best pair or UndefinedIndexT if no pair found
 */
@@ -32,8 +33,24 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
                     const track::TracksPerView & tracksPerView, 
                     const std::set<IndexT> & filterIn,
                     const std::set<IndexT> & filterOut,
-                    double minAngle,
+                    double hardMinAngle,
+                    double softMinAngle,
                     double maxAngle);
+
+/**
+* @brief Get best pair from track Depths with highest score
+* @param sfmData the input sfmData which contains camera information
+* @param pairs the input list of reconstructed pairs
+* @param tracksMap the input map of tracks
+* @param tracksPerView tracks grouped by views
+* @param randomNumberGenerator the random number generator used for drawing numbers
+* @return The best pair (pair.reference is UndefinedIndexT if nothing found)
+*/
+sfm::ReconstructedPair findBestPairFromTrackDepths(const sfmData::SfMData & sfmData, 
+                            const std::vector<sfm::ReconstructedPair> & pairs,
+                            const track::TracksMap& tracksMap, 
+                            const track::TracksPerView & tracksPerView,
+                            std::mt19937 & randomNumberGenerator);
 
 }
 }

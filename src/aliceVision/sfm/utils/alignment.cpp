@@ -5,6 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/geometry/lie.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
@@ -445,9 +446,9 @@ std::map<std::pair<feature::EImageDescriberType, int>, IndexT> getUniqueMarkers(
 
     for (const auto& landmarkIt : sfmDataA.getLandmarks())
     {
-        if (isMarker(landmarkIt.second.descType))
+        if (isMarker(landmarkIt.second.getDescType()))
         {
-            const auto p = std::make_pair(landmarkIt.second.descType, landmarkIt.second.rgb.r());
+            const auto p = std::make_pair(landmarkIt.second.getDescType(), landmarkIt.second.getRgb().r());
             if (markers.find(p) == markers.end())
             {
                 markers[p] = landmarkIt.first;
@@ -510,8 +511,8 @@ bool computeSimilarityFromCommonMarkers(const sfmData::SfMData& sfmDataA,
     for (std::size_t i = 0; i < commonLandmarks.size(); ++i, ++it)
     {
         const std::pair<IndexT, IndexT>& commonLandmark = it->second;
-        xA.col(i) = sfmDataA.getLandmarks().at(commonLandmark.first).X;
-        xB.col(i) = sfmDataB.getLandmarks().at(commonLandmark.second).X;
+        xA.col(i) = sfmDataA.getLandmarks().at(commonLandmark.first).getX();
+        xB.col(i) = sfmDataB.getLandmarks().at(commonLandmark.second).getX();
     }
 
     if (commonLandmarks.size() == 1)
@@ -583,8 +584,8 @@ bool computeSimilarityFromCommonLandmarks(const sfmData::SfMData& sfmDataA,
     int count = 0;
     for (auto & pair : mapLandmarkAtoLandmarkB)
     {
-        xA.col(count) = sfmDataA.getLandmarks().at(pair.first).X;
-        xB.col(count) = sfmDataB.getLandmarks().at(pair.second).X;
+        xA.col(count) = sfmDataA.getLandmarks().at(pair.first).getX();
+        xB.col(count) = sfmDataB.getLandmarks().at(pair.second).getX();
         count++;
     }
 
@@ -699,8 +700,8 @@ bool computeNewCoordinateSystemFromPairs(const sfmData::SfMData& sfmDataA,
     int count = 0;
     for (auto & pair : mapLandmarkAtoLandmarkB)
     {
-        xA.col(count) = sfmDataA.getLandmarks().at(pair.first).X;
-        xB.col(count) = sfmDataB.getLandmarks().at(pair.second).X;
+        xA.col(count) = sfmDataA.getLandmarks().at(pair.first).getX();
+        xB.col(count) = sfmDataB.getLandmarks().at(pair.second).getX();
         count++;
     }
 
@@ -883,9 +884,9 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData, doub
     Vec3 meanCameraCenter = Vec3::Zero();
 
     Vec3::Index ncol = 0;
-    for (const auto& pose : sfmData.getPoses())
+    for (const auto& [_, pose] : sfmData.getPoses().valueRange())
     {
-        const Vec3 center = pose.second.getTransform().center();
+        const Vec3 center = pose.getTransform().center();
         vCamCenter.col(ncol) = center;
         meanCameraCenter += center;
         ++ncol;
@@ -996,9 +997,9 @@ IndexT getCenterCameraView(const sfmData::SfMData& sfmData)
     using namespace boost::accumulators;
     accumulator_set<double, stats<tag::mean>> accX, accY, accZ;
 
-    for (auto& pose : sfmData.getPoses())
+    for (auto& [_, pose] : sfmData.getPoses().valueRange())
     {
-        const auto& c = pose.second.getTransform().center();
+        const auto& c = pose.getTransform().center();
         accX(c(0));
         accY(c(1));
         accZ(c(2));
@@ -1053,11 +1054,11 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
     for (const auto& landmark : sfmData.getLandmarks())
     {
         if (!imageDescriberTypes.empty() &&
-            std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(), landmark.second.descType) == imageDescriberTypes.end())
+            std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(), landmark.second.getDescType()) == imageDescriberTypes.end())
         {
             continue;
         }
-        const Vec3& position = landmark.second.X;
+        const Vec3& position = landmark.second.getX();
         vX.col(landmarksCount++) = position;
         meanPoints += position;
     }
@@ -1112,11 +1113,11 @@ bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmDa
     {
         if (landmarkIt.first > maxLandmarkIdx)
             maxLandmarkIdx = landmarkIt.first;
-        if (landmarkIt.second.descType != imageDescriberType)
+        if (landmarkIt.second.getDescType() != imageDescriberType)
             continue;
         for (int i = 0; i < markers.size(); ++i)
         {
-            if (landmarkIt.second.rgb.r() == markers[i].id)
+            if (landmarkIt.second.getRgb().r() == markers[i].id)
             {
                 landmarksIds[i] = landmarkIt.first;
             }
@@ -1137,7 +1138,7 @@ bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmDa
     Mat ptsDst = Mat3X(3, markers.size());
     for (std::size_t i = 0; i < markers.size(); ++i)
     {
-        ptsSrc.col(i) = sfmData.getLandmarks().at(landmarksIds[i]).X;
+        ptsSrc.col(i) = sfmData.getLandmarks().at(landmarksIds[i]).getX();
         ptsDst.col(i) = markers[i].coord;
     }
 
@@ -1232,7 +1233,6 @@ Vec3 computeCameraCentersMean(const sfmData::SfMData& sfmData)
     // Compute the mean of the point cloud
     Vec3 center = Vec3::Zero();
     size_t count = 0;
-    const auto& poses = sfmData.getPoses();
 
     for (auto v : sfmData.getViews())
     {
@@ -1242,7 +1242,7 @@ Vec3 computeCameraCentersMean(const sfmData::SfMData& sfmData)
         }
 
         const IndexT poseId = v.second->getPoseId();
-        const auto& pose = poses.at(poseId);
+        const auto& pose = sfmData.getAbsolutePose(poseId);
 
         center += pose.getTransform().center();
         count++;
@@ -1267,7 +1267,7 @@ void computeCentersVarCov(const sfmData::SfMData& sfmData, const Vec3& mean, Eig
         }
 
         const IndexT poseId = v.second->getPoseId();
-        const auto& pose = poses.at(poseId);
+        const auto& pose = sfmData.getAbsolutePose(poseId);
 
         Vec3 centered = pose.getTransform().center() - mean;
         varCov += centered * centered.transpose();
@@ -1293,7 +1293,7 @@ void computeNewCoordinateSystemGroundAuto(const sfmData::SfMData& sfmData, Vec3&
 
         // Filter out landmarks that lie above all the cameras that observe them
         // This filtering step assumes that cameras should not be underneath the ground level
-        const Vec3 X = plandmark.second.X;
+        const Vec3 X = plandmark.second.getX();
         bool foundUnder = false;
         for (const auto& pObs : plandmark.second.getObservations())
         {
@@ -1368,7 +1368,6 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
     const double gpsVariance = 4.0;
     const double distVariance = gpsVariance * 2.0;
 
-    const auto& poses = sfmData.getPoses();
     std::list<std::pair<Vec3, Vec3>> list_pairs;
     for (const auto v : sfmData.getViews())
     {
@@ -1383,7 +1382,7 @@ void computeNewCoordinateSystemAuto(const sfmData::SfMData& sfmData, double& out
         }
 
         const IndexT poseId = v.second->getPoseId();
-        const auto& pose = poses.at(poseId);
+        const auto& pose = sfmData.getAbsolutePose(poseId);
 
         const Vec3 camCoordinates = pose.getTransform().center();
         const Vec3 gpsCoordinates = v.second->getImage().getGpsPositionFromMetadata();

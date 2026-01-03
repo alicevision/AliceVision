@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/Regions.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>

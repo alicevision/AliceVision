@@ -8,12 +8,8 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/feature/imageDescriberCommon.hpp>
-
 #include <iostream>
 #include <vector>
-#include <set>
-#include <map>
 
 #define ALICEVISION_DEBUG_MATCHING
 
@@ -69,41 +65,6 @@ inline std::ostream& operator<<(std::ostream& out, const IndMatch& obj) { return
 inline std::istream& operator>>(std::istream& in, IndMatch& obj) { return in >> obj._i >> obj._j; }
 
 typedef std::vector<matching::IndMatch> IndMatches;
-
-struct MatchesPerDescType : public std::map<feature::EImageDescriberType, IndMatches>
-{
-    int getNbMatches(feature::EImageDescriberType descType) const
-    {
-        const auto& it = this->find(descType);
-        if (it == this->end())
-            return 0;
-        return it->second.size();
-    }
-    int getNbAllMatches() const
-    {
-        int nbMatches = 0;
-        for (const auto& matches : *this)
-        {
-            nbMatches += matches.second.size();
-        }
-        return nbMatches;
-    }
-};
-
-/// Pairwise matches (indexed matches for a pair <I,J>)
-/// The structure used to store corresponding point indexes per images pairs
-
-typedef std::map<Pair, MatchesPerDescType> PairwiseMatches;
-
-typedef std::map<Pair, IndMatches> PairwiseSimpleMatches;
-
-inline PairSet getImagePairs(const PairwiseMatches& matches)
-{
-    PairSet pairs;
-    for (PairwiseMatches::const_iterator it = matches.begin(); it != matches.end(); ++it)
-        pairs.insert(it->first);
-    return pairs;
-}
 
 }  // namespace matching
 }  // namespace aliceVision

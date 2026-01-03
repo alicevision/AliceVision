@@ -7,7 +7,6 @@ import glob
 import os
 import json
 import zipfile
-import requests
 import io
 
 
@@ -52,12 +51,10 @@ def progressUpdate(size=None, progress=None, logManager=None):
     logManager.updateProgressBar(progress)
 
 class SketchfabUpload(desc.Node):
-    size = desc.DynamicNodeSize('inputFiles')
+    size = desc.DynamicNodeSize("inputFiles")
 
-    category = 'Export'
-    documentation = '''
-Upload a textured mesh on Sketchfab.
-'''
+    category = "Export"
+    documentation = """Upload a textured mesh on Sketchfab."""
 
     inputs = [
         desc.ListAttribute(
@@ -173,6 +170,7 @@ Upload a textured mesh on Sketchfab.
     ]
     
     def upload(self, apiToken, modelFile, data, chunk):
+        import requests
         modelEndpoint = 'https://api.sketchfab.com/v3/models'
         f = open(modelFile, 'rb')
         file = {'modelFile': (os.path.basename(modelFile), f.read())}

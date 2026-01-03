@@ -11,9 +11,7 @@ class SfMSurveyInjecting(desc.AVCommandLineNode):
     size = desc.DynamicNodeSize("input")
     
     category = "Utils"
-    documentation = """
-Use a JSON file to inject survey measurements inside the SfMData.
-"""
+    documentation = """Use a JSON file to inject survey measurements inside the SfMData."""
 
     inputs = [
         desc.File(

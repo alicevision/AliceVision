@@ -103,13 +103,21 @@ class Histogram
 
     // Text display of the histogram
     template<typename KeyDataType = T, typename ValueDataType = T>
-    std::string ToString(const std::string& sTitle = "", int precision = 3) const
+    std::string ToString(const std::string& sTitle = "", int precision = 3, bool removeEmpty=false) const
     {
         std::ostringstream os;
         os << std::endl << sTitle << std::endl;
         const size_t n = freq.size();
         for (size_t i = 0; i < n; ++i)
         {
+            if (removeEmpty)
+            {
+                if (i < n -1 && freq[i] == 0)
+                {
+                    continue;
+                }
+            }
+
             os << std::setprecision(precision) << KeyDataType(Start + static_cast<float>(End - Start) / n * static_cast<float>(i)) << "\t|\t"
                << ValueDataType(freq[i]) << "\n";
         }

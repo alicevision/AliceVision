@@ -25,7 +25,7 @@ Tags
      - Push updates to https://hub.docker.com/r/alicevision/alicevision-deps/tags
    - Check vcpkg
      - Update https://github.com/alicevision/vcpkg branch: alicevision_master
-     - Upload result on gdrive and update INSTALL.md
+     - Release result on GitHub repo and update INSTALL.md
    - Update INSTALL.md
      - Update minimal versions if needed
      - Update vcpkg install command if needed

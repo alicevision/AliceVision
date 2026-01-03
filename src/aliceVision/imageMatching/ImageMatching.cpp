@@ -40,6 +40,8 @@ std::string EImageMatchingMethod_enumToString(EImageMatchingMethod m)
             return "Frustum";
         case EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE:
             return "FrustumOrVocabularyTree";
+        case EImageMatchingMethod::MIRROR:
+            return "Mirror";
     }
     throw std::out_of_range("Invalid EImageMatchingMethod enum: " + std::to_string(int(m)));
 }
@@ -61,6 +63,8 @@ EImageMatchingMethod EImageMatchingMethod_stringToEnum(const std::string& m)
         return EImageMatchingMethod::FRUSTUM;
     if (mode == "frustumorvocabularytree")
         return EImageMatchingMethod::FRUSTUM_OR_VOCABULARYTREE;
+    if (mode == "mirror")
+        return EImageMatchingMethod::MIRROR;
 
     throw std::out_of_range("Invalid EImageMatchingMethod: " + m);
 }
@@ -182,6 +186,14 @@ void generateSequentialMatches(const sfmData::SfMData& sfmData, size_t nbMatches
             size_t b = sortedImagePaths[n].second;
             outPairList[std::min(a, b)].insert(std::max(a, b));
         }
+    }
+}
+
+void generateMirrorsMatches(const sfmData::SfMData& sfmData, OrderedPairList& outPairList)
+{
+    for (const auto& [index, _] : sfmData.getViews())
+    {
+        outPairList[index].insert(index);
     }
 }
 

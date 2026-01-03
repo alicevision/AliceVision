@@ -10,7 +10,7 @@
 #include <aliceVision/feature/Regions.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/feature.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 
 namespace aliceVision {
 namespace matching {

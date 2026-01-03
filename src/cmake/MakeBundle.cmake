@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.25)
 # Perform bundle fixup on all executables of an install directory
 # and generates a standalone bundle with all required runtime dependencies.
 #
@@ -123,7 +123,14 @@ get_bundle_all_executables(${CMAKE_INSTALL_FULL_BINDIR} BUNDLE_APPS)
 file(COPY
      ${CMAKE_INSTALL_FULL_BINDIR}
      DESTINATION ${BUNDLE_INSTALL_PREFIX}
-     USE_SOURCE_PERMISSIONS)
+     USE_SOURCE_PERMISSIONS
+     )
+
+file(COPY
+     ${CMAKE_INSTALL_FULL_LIBDIR}
+     DESTINATION ${BUNDLE_INSTALL_PREFIX}
+     USE_SOURCE_PERMISSIONS
+     )
 
 file(COPY
     ${CMAKE_INSTALL_FULL_DATADIR}

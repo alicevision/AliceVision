@@ -16,7 +16,6 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
-#include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -155,7 +154,7 @@ int aliceVision_main(int argc, char** argv)
     Eigen::Matrix3d c1_R_oprior = Eigen::Matrix3d::Identity();
     if (!initial_poses.empty())
     {
-        c1_R_oprior = initial_poses.begin()->second.getTransform().rotation();
+        c1_R_oprior = initial_poses.begin()->second->getTransform().rotation();
     }
 
     // get describerTypes
@@ -260,23 +259,23 @@ int aliceVision_main(int argc, char** argv)
                 IndexT poseId = sorted_views[median].second;
 
                 // Set as reference
-                ocur_R_oprior = final_poses[poseId].getTransform().rotation().transpose();
+                ocur_R_oprior = final_poses.at(poseId)->getTransform().rotation().transpose();
             }
         }
         else
         {
-            Eigen::Matrix3d c1_R_ocur = final_poses.begin()->second.getTransform().rotation();
+            Eigen::Matrix3d c1_R_ocur = final_poses.begin()->second->getTransform().rotation();
             ocur_R_oprior = c1_R_ocur.transpose() * c1_R_oprior;
         }
 
-        for (auto& pose : final_poses)
+        for (auto& [_, pose] : final_poses.valueRange())
         {
-            geometry::Pose3 p = pose.second.getTransform();
+            geometry::Pose3 p = pose.getTransform();
 
             Eigen::Matrix3d c_R_oprior = p.rotation() * ocur_R_oprior;
 
             p.setRotation(c_R_oprior);
-            pose.second.setTransform(p);
+            pose.setTransform(p);
         }
     }
 
@@ -286,14 +285,14 @@ int aliceVision_main(int argc, char** argv)
     sfm::generateSfMReport(outSfmData, (fs::path(outDirectory) / "sfm_report.html").string());
 
     // Add offsets to rotations
-    for (auto& pose : outSfmData.getPoses())
+    for (auto& [posId, pose] : outSfmData.getPoses().valueRange())
     {
-        geometry::Pose3 p = pose.second.getTransform();
+        geometry::Pose3 p = pose.getTransform();
         Eigen::Matrix3d matLongitude = Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0, 1, 0)).toRotationMatrix();
         Eigen::Matrix3d matLatitude = Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1, 0, 0)).toRotationMatrix();
         Eigen::Matrix3d newR = p.rotation() * matLongitude * matLatitude;
         p.setRotation(newR);
-        pose.second.setTransform(p);
+        pose.setTransform(p);
     }
 
     sfmEngine.buildLandmarks();

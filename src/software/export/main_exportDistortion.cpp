@@ -11,6 +11,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/program_options.hpp>
 

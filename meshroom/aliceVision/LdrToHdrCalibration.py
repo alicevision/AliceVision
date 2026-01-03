@@ -25,15 +25,13 @@ def findMetadata(d, keys, defaultValue):
 
 
 class LdrToHdrCalibration(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_LdrToHdrCalibration {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_LdrToHdrCalibration {allParams}"
+    size = desc.DynamicNodeSize("input")
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.NORMAL
 
-    category = 'Panorama HDR'
-    documentation = '''
-Calibrate LDR to HDR response curve from samples.
-'''
+    category = "Panorama HDR"
+    documentation = """Calibrate LDR to HDR response curve from samples."""
 
     inputs = [
         desc.File(
@@ -46,7 +44,7 @@ Calibrate LDR to HDR response curve from samples.
             name="samples",
             label="Samples Folder",
             description="Samples folder.",
-            value="{nodeCacheFolder}",
+            value="",
         ),
         desc.IntParam(
             name="userNbBrackets",
@@ -178,7 +176,7 @@ Calibrate LDR to HDR response curve from samples.
             return
         node.userNbBrackets.validValue = True  # Reset the status of "userNbBrackets"
 
-        cameraInitOutput = node.input.getLinkParam(recursive=True)
+        cameraInitOutput = node.input.inputRootLink
         if not cameraInitOutput:
             node.nbBrackets.value = 0
             return
@@ -196,7 +194,7 @@ Calibrate LDR to HDR response curve from samples.
 
         if not cameraInitOutput.node.hasAttribute("viewpoints"):
             if cameraInitOutput.node.hasAttribute("input"):
-                cameraInitOutput = cameraInitOutput.node.input.getLinkParam(recursive=True)
+                cameraInitOutput = cameraInitOutput.node.input.inputRootLink
         if cameraInitOutput and cameraInitOutput.node and cameraInitOutput.node.hasAttribute("viewpoints"):
             viewpoints = cameraInitOutput.node.viewpoints.value
         else:

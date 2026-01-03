@@ -11,9 +11,7 @@ class SfMColorizing(desc.AVCommandLineNode):
     size = desc.DynamicNodeSize("input")
     
     category = "Utils"
-    documentation = """
-    Colorize the pointcloud of a sfmData
-    """
+    documentation = """Colorize the pointcloud of an SfMData."""
 
     inputs = [
         desc.File(

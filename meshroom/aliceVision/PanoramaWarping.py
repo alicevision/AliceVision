@@ -8,15 +8,13 @@ from meshroom.core.utils import COLORSPACES, EXR_STORAGE_DATA_TYPE, VERBOSE_LEVE
 
 
 class PanoramaWarping(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_panoramaWarping {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_panoramaWarping {allParams}"
+    size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=5)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Panorama HDR'
-    documentation = '''
-Compute the image warping for each input image in the panorama coordinate system.
-'''
+    category = "Panorama HDR"
+    documentation = """Compute the image warping for each input image in the panorama coordinate system."""
 
     inputs = [
         desc.File(

@@ -10,6 +10,7 @@
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
+#include <aliceVision/sfm/pipeline/expanding/PointFetcher.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -19,6 +20,9 @@ namespace sfm {
 */
 class SfmTriangulation
 {
+public:
+    using uptr = std::unique_ptr<SfmTriangulation>;
+    
 public:
     SfmTriangulation(size_t minObservations, double maxError)
     : _minObservations(minObservations),
@@ -36,6 +40,7 @@ public:
      * @param viewIds the set of view ids to process. Only tracks observed in these views will be considered
      * @param evaluatedTracks output list of track ids which were evaluated (Not necessarily with success)
      * @param outputLandmarks a set of generated landmarks indexed by their landmark id (the associated track id)
+     * @param useDepthPrior use depth prior found in tracks
      * @return false if a critical error occurred
     */
     bool process(
@@ -45,9 +50,28 @@ public:
             std::mt19937 &randomNumberGenerator,
             const std::set<IndexT> & viewIds,
             std::set<IndexT> & evaluatedTracks,
-            std::map<IndexT, sfmData::Landmark> & outputLandmarks
+            std::map<IndexT, sfmData::Landmark> & outputLandmarks,
+            bool useDepthPrior
         );
 
+    /**
+     * @brief setup the point fetcher handler
+     * @param pointFetcher a unique ptr. the Ownership will be taken
+    */
+    void setPointFetcherHandler(PointFetcher::uptr & pointFetcherHandler)
+    {
+        _pointFetcherHandler = std::move(pointFetcherHandler);
+    }
+
+    /**
+    * @brief Retrieve the requested minimal number of observations per triangulation
+    * @return a positive number which is the minimal number of observations per point.
+    */
+    size_t getMinObservations() const
+    {
+        return _minObservations;
+    }
+    
 public:
     /**
      * Check that all observation of a given landmark are physically possible
@@ -82,8 +106,45 @@ private:
             const std::set<IndexT> & viewIds,
             sfmData::Landmark & result
         );  
+    
+    /**
+     * Process triangulation of a track with depth prior enabled
+     * @param sfmData the actual state of the sfm
+     * @param track the track of interest
+     * @param randomNumberGenerator random number generator object
+     * @param viewIds the set of view ids to process. Only tracks observed in these views will be considered
+     * @param result the output landmark
+     * @return false if a critical error occurred
+    */
+    bool processTrackWithPrior(
+            const sfmData::SfMData & sfmData,
+            const track::Track & track,
+            std::mt19937 &randomNumberGenerator,
+            const std::set<IndexT> & viewIds,
+            sfmData::Landmark & result
+        ); 
+
+    /**
+     * Process triangulation of a track with Point fetcher enabled
+     * @param sfmData the actual state of the sfm
+     * @param track the track of interest
+     * @param randomNumberGenerator random number generator object
+     * @param viewIds the set of view ids to process. Only tracks observed in these views will be considered
+     * @param result the output landmark
+     * @return false if a critical error occurred
+    */
+    bool processTrackWithPointFetcher(
+            const sfmData::SfMData & sfmData,
+            const track::Track & track,
+            std::mt19937 &randomNumberGenerator,
+            const std::set<IndexT> & viewIds,
+            sfmData::Landmark & result
+        ); 
 
 private:
+    PointFetcher::uptr _pointFetcherHandler;
+
+private:    
     const size_t _minObservations;
     const double _maxError;
 };

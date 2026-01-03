@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "preprocess.hpp"
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -34,7 +35,7 @@ void remapLandmarkIdsToTrackIds(sfmData::SfMData& sfmData, const track::TracksMa
         const IndexT landmarkId = landmarkPair.first;
         const IndexT firstViewId = landmarkPair.second.getObservations().begin()->first;
         const IndexT firstFeatureId = landmarkPair.second.getObservations().begin()->second.getFeatureId();
-        const feature::EImageDescriberType descType = landmarkPair.second.descType;
+        const feature::EImageDescriberType descType = landmarkPair.second.getDescType();
 
         obsToLandmark.emplace(ObsKey(firstViewId, firstFeatureId, descType), landmarkId);
     }

@@ -12,7 +12,11 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
+
 #include <boost/program_options.hpp>
+
 
 #include <filesystem>
 #include <stdlib.h>
@@ -205,7 +209,7 @@ bool exportToMVE2Format(const SfMData& sfm_data,
 
         for (Landmarks::const_iterator iterLandmarks = landmarks.begin(); iterLandmarks != landmarks.end(); ++iterLandmarks)
         {
-            const Vec3 exportPoint = iterLandmarks->second.X;
+            const Vec3 exportPoint = iterLandmarks->second.getX();
             out << exportPoint.x() << " " << exportPoint.y() << " " << exportPoint.z() << "\n";
             out << 250 << " " << 100 << " " << 150 << "\n";  // Write arbitrary RGB color, see above note
 

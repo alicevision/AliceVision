@@ -6,6 +6,7 @@
 
 #include "ImageInfo.hpp"
 
+#include <aliceVision/system/Logger.hpp>
 #include <boost/algorithm/string.hpp>
 #include <aliceVision/numeric/gps.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
@@ -397,7 +398,7 @@ int ImageInfo::getSensorSize(const std::vector<sensorDB::Datasheet>& sensorDatab
 
 double ImageInfo::getMetadataFocalLength() const
 {
-    double focalLength = getDoubleMetadata({"Exif:FocalLength", "focalLength", "focal length", "lens_focal_length"});
+    double focalLength = getDoubleMetadata({"Exif:FocalLength", "focalLength", "focal length", "lens_focal_length", "focal_length"});
 
     if (focalLength == -1)
     {

@@ -54,6 +54,27 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole)
     BOOST_CHECK_LT(dResidual_after, dResidual_before);
 }
 
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Relative_Pinhole)
+{
+    const int nviews = 3;
+    const int npoints = 6;
+    NViewDatasetConfigurator config;
+    config._useRelative = true;
+    const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+    // Translate the input dataset to a SfMData scene
+    SfMData sfmData = getInputScene(d, config, EINTRINSIC::PINHOLE_CAMERA, EDISTORTION::DISTORTION_NONE);
+
+    const double dResidual_before = RMSE(sfmData);
+
+    // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
+    std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
+    BOOST_CHECK(ba_object->adjust(sfmData));
+
+    const double dResidual_after = RMSE(sfmData);
+    BOOST_CHECK_LT(dResidual_after, dResidual_before);
+}
+
 BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
 {
     const int nviews = 3;
@@ -230,12 +251,12 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
                 sfmData_notRefined.getPose(*sfmData_notRefined.getViews().at(2).get()));  // v2 ignored
 
     // Check 3D points
-    BOOST_CHECK(sfmData.getLandmarks()[0].X != sfmData_notRefined.getLandmarks()[0].X);      // p0 refined
-    BOOST_CHECK(sfmData.getLandmarks()[1].X != sfmData_notRefined.getLandmarks()[1].X);      // p1 refined
-    BOOST_CHECK_EQUAL(sfmData.getLandmarks()[2].X, sfmData_notRefined.getLandmarks()[2].X);  // p2 ignored
+    BOOST_CHECK(sfmData.getLandmarks()[0].getX() != sfmData_notRefined.getLandmarks()[0].getX());      // p0 refined
+    BOOST_CHECK(sfmData.getLandmarks()[1].getX() != sfmData_notRefined.getLandmarks()[1].getX());      // p1 refined
+    BOOST_CHECK_EQUAL(sfmData.getLandmarks()[2].getX(), sfmData_notRefined.getLandmarks()[2].getX());  // p2 ignored
 
     // Not refined parameters:
-    BOOST_CHECK(sfmData.getLandmarks()[2].X == sfmData_notRefined.getLandmarks()[2].X);
+    BOOST_CHECK(sfmData.getLandmarks()[2].getX() == sfmData_notRefined.getLandmarks()[2].getX());
 
     const double dResidual_after = RMSE(sfmData);
     BOOST_CHECK_LT(dResidual_after, dResidual_before);
@@ -246,15 +267,26 @@ double RMSE(const SfMData& sfm_data)
 {
     // Compute residuals for each observation
     std::vector<double> vec;
-    for (Landmarks::const_iterator iterTracks = sfm_data.getLandmarks().begin(); iterTracks != sfm_data.getLandmarks().end(); ++iterTracks)
+    for (const auto & [lid, landmark]: sfm_data.getLandmarks())
     {
-        const Observations& observations = iterTracks->second.getObservations();
-        for (Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
+        const Observations& observations = landmark.getObservations();
+
+        
+        Pose3 world_T_reference;
+        if (landmark.getReferenceViewIndex() != UndefinedIndexT)
         {
-            const View* view = sfm_data.getViews().find(itObs->first)->second.get();
-            const Pose3 pose = sfm_data.getPose(*view).getTransform();
-            const std::shared_ptr<IntrinsicBase> intrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second;
-            const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X.homogeneous(), itObs->second.getCoordinates());
+            const View & refView = sfm_data.getView(landmark.getReferenceViewIndex());
+            world_T_reference = sfm_data.getPose(refView).getTransform().inverse();
+        }
+
+        for (const auto [idView, observation] : observations)
+        {
+            const View & view = sfm_data.getView(idView);
+            const Pose3 camera_T_world = sfm_data.getPose(view).getTransform();
+            const Pose3 camera_T_reference = camera_T_world * world_T_reference;
+            const IntrinsicBase & intrinsic = sfm_data.getIntrinsic(view.getIntrinsicId());
+            const Vec2 residual = intrinsic.residual(camera_T_reference, landmark.getX().homogeneous(), observation.getCoordinates());
+            
             vec.push_back(residual(0));
             vec.push_back(residual(1));
         }
@@ -307,16 +339,26 @@ SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& con
     {
         // Collect the image of point i in each frame.
         Landmark landmark;
-        landmark.X = d._X.col(i);
+        landmark.setX(d._X.col(i));
+
+        if (config._useRelative)
+        {
+            sfmData::View::sptr refView = sfm_data.getViews().at(nviews / 2);
+            landmark.setReferenceView(refView);
+            geometry::Pose3 p = sfm_data.getAbsolutePose(landmark.getReferenceViewIndex()).getTransform();
+            landmark.setX(p(landmark.getX()));
+        }
+
         for (int j = 0; j < nviews; ++j)
         {
             Vec2 pt = d._x[j].col(i);
             // => random noise between [-.5,.5] is added
-            pt(0) += rand() / RAND_MAX - .5;
-            pt(1) += rand() / RAND_MAX - .5;
+            pt(0) += double(rand()) / double(RAND_MAX) - .5;
+            pt(1) += double(rand()) / double(RAND_MAX) - .5;
 
             landmark.getObservations()[j] = Observation(pt, i, unknownScale);
         }
+
         sfm_data.getLandmarks()[i] = landmark;
     }
 

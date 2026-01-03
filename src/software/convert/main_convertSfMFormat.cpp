@@ -183,7 +183,7 @@ int aliceVision_main(int argc, char** argv)
         std::vector<IndexT> toRemove;
         for (const auto& landmarkPair : sfmData.getLandmarks())
         {
-            if (std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(), landmarkPair.second.descType) == imageDescriberTypes.end())
+            if (std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(), landmarkPair.second.getDescType()) == imageDescriberTypes.end())
                 toRemove.push_back(landmarkPair.first);
         }
         for (const IndexT landmarkId : toRemove)

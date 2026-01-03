@@ -1304,23 +1304,30 @@ void Texturing::saveAs(const fs::path& dir, const std::string& basename, EFileTy
     const std::string meshFileTypeStr = EFileType_enumToString(meshFileType);
     const std::string filepath = (dir / (basename + "." + meshFileTypeStr)).string();
 
-    ALICEVISION_LOG_INFO("Save " << filepath << " mesh file");
+    ALICEVISION_LOG_INFO("Saving " << meshFileTypeStr << " mesh file using Assimp.");
 
     if (_atlases.empty())
     {
+        ALICEVISION_LOG_ERROR("No texture atlases available. Cannot save mesh.");
         return;
     }
 
+    // Assimp scene setup
+    // create scene and root node
     aiScene scene;
+    scene.mRootNode = new aiNode();
 
-    scene.mRootNode = new aiNode;
-
-    scene.mMeshes = new aiMesh*[_atlases.size()];
-    scene.mNumMeshes = _atlases.size();
-    scene.mRootNode->mMeshes = new unsigned int[_atlases.size()];
-    scene.mRootNode->mNumMeshes = _atlases.size();
+    // create material array
     scene.mMaterials = new aiMaterial*[_atlases.size()];
     scene.mNumMaterials = _atlases.size();
+
+    // create mesh array
+    scene.mMeshes = new aiMesh*[_atlases.size()];
+    scene.mNumMeshes = _atlases.size();
+
+    // link mesh array to root node
+    scene.mRootNode->mMeshes = new unsigned int[_atlases.size()];
+    scene.mRootNode->mNumMeshes = _atlases.size();
 
     // define shared material properties
     const aiVector3D valcolor = {material.diffuse.r, material.diffuse.g, material.diffuse.b};
@@ -1340,9 +1347,9 @@ void Texturing::saveAs(const fs::path& dir, const std::string& basename, EFileTy
         // Set material for this atlas
         const aiString texName("material_" + Material::textureId(atlasId));
 
-        scene.mMaterials[atlasId] = new aiMaterial;
-        scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_AMBIENT);
-        scene.mMaterials[atlasId]->AddProperty(&valambient, 1, AI_MATKEY_COLOR_DIFFUSE);
+        scene.mMaterials[atlasId] = new aiMaterial();
+        scene.mMaterials[atlasId]->AddProperty(&valcolor, 1, AI_MATKEY_COLOR_DIFFUSE);
+        scene.mMaterials[atlasId]->AddProperty(&valambient, 1, AI_MATKEY_COLOR_AMBIENT);
         scene.mMaterials[atlasId]->AddProperty(&valspecular, 1, AI_MATKEY_COLOR_SPECULAR);
         scene.mMaterials[atlasId]->AddProperty(&shininess, 1, AI_MATKEY_SHININESS);
         scene.mMaterials[atlasId]->AddProperty(&texName, AI_MATKEY_NAME);
@@ -1376,10 +1383,17 @@ void Texturing::saveAs(const fs::path& dir, const std::string& basename, EFileTy
         }
 
         scene.mRootNode->mMeshes[atlasId] = atlasId;
-        scene.mMeshes[atlasId] = new aiMesh;
+        scene.mMeshes[atlasId] = new aiMesh();
         aiMesh* aimesh = scene.mMeshes[atlasId];
         aimesh->mMaterialIndex = atlasId;
         aimesh->mNumUVComponents[0] = 2;
+
+        if (meshFileType == EFileType::GLTF || meshFileType == EFileType::GLB)
+        {
+            // set primitive types to triangles, required for gltf and glb export
+            // for other file types, primitive types is unspecified to avoid normal generation 
+            aimesh->mPrimitiveTypes = aiPrimitiveType_TRIANGLE;
+        }
 
         // Assimp does not allow vertex indices different from uv indices
         // So we need to group and duplicate
@@ -1398,24 +1412,31 @@ void Texturing::saveAs(const fs::path& dir, const std::string& basename, EFileTy
 
         aimesh->mNumVertices = unique_pairs.size();
         aimesh->mVertices = new aiVector3D[unique_pairs.size()];
-        aimesh->mTextureCoords[0] = new aiVector3D[unique_pairs.size()];
+
+        if (hasUVs())
+        {
+            aimesh->mTextureCoords[0] = new aiVector3D[unique_pairs.size()];
+        }
 
         int index = 0;
         for (auto& p : unique_pairs)
         {
-            int vertexId = p.first.first;
-            int uvId = p.first.second;
+            const int vertexId = p.first.first;
 
             aimesh->mVertices[index].x = mesh->pts[vertexId].x;
             aimesh->mVertices[index].y = -mesh->pts[vertexId].y;
             aimesh->mVertices[index].z = -mesh->pts[vertexId].z;
 
-            aimesh->mTextureCoords[0][index].x = mesh->uvCoords[uvId].x;
-            aimesh->mTextureCoords[0][index].y = mesh->uvCoords[uvId].y;
-            aimesh->mTextureCoords[0][index].z = 0.0;
+            if (hasUVs())
+            {
+                const int uvId = p.first.second;
+
+                aimesh->mTextureCoords[0][index].x = mesh->uvCoords[uvId].x;
+                aimesh->mTextureCoords[0][index].y = mesh->uvCoords[uvId].y;
+                aimesh->mTextureCoords[0][index].z = 0.0;
+            }
 
             p.second = index;
-
             ++index;
         }
 
@@ -1440,21 +1461,49 @@ void Texturing::saveAs(const fs::path& dir, const std::string& basename, EFileTy
         }
     }
 
-    std::string formatId = meshFileTypeStr;
+    // exporter setup
+    std::string pFormatId = meshFileTypeStr;
     unsigned int pPreprocessing = 0u;
-    // If gltf, use gltf 2.0
-    if (meshFileType == EFileType::GLTF)
+    
+    if (meshFileType == EFileType::GLTF || meshFileType == EFileType::GLB)
     {
-        formatId = "gltf2";
-        // Flip UVs when exporting (issue with UV origin for gltf2)
+        if (meshFileType == EFileType::GLTF)
+        {
+            // gltf file, use gltf 2.0
+            pFormatId = "gltf2";
+        }
+        else
+        {
+            // glb file, use glb 2.0
+            pFormatId = "glb2";
+        }
+
+        // flip UVs when exporting (issue with UV origin for gltf2)
         // https://github.com/around-media/ue4-custom-prompto/commit/044dbad90fc2172f4c5a8b67c779b80ceace5e1e
-        pPreprocessing |= aiPostProcessSteps::aiProcess_FlipUVs | aiProcess_GenNormals;
+        // pPreprocessing |= aiProcess_FlipUVs;
+        
+        // gen normals in order to have correct shading in Qt 3D Scene
+        // but cause problems with assimp importer
+        pPreprocessing |= aiProcess_GenNormals;
     }
 
+    // export mesh
     Assimp::Exporter exporter;
-    exporter.Export(&scene, formatId, filepath, pPreprocessing);
+    const aiReturn ret = exporter.Export(&scene, pFormatId, filepath, pPreprocessing);
 
-    ALICEVISION_LOG_INFO("Save mesh to " << meshFileTypeStr << " done.");
+    // check for errors
+    if (ret != AI_SUCCESS)
+    {
+        if (ret == AI_OUTOFMEMORY)
+        {
+            ALICEVISION_LOG_ERROR("Assimp exporter ran out of memory while exporting mesh to " << filepath);
+        }
+
+        ALICEVISION_THROW_ERROR("Assimp exporter failed to export mesh to " << filepath << ", error: " << exporter.GetErrorString());
+        return;
+    }
+
+    ALICEVISION_LOG_INFO("Mesh saved.");
 }
 
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,

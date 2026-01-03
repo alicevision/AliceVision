@@ -6,7 +6,8 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
@@ -14,6 +15,7 @@
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/program_options.hpp>
 

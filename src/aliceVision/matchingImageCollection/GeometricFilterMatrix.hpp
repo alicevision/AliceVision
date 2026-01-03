@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <aliceVision/matchingImageCollection/GeometricFilterType.hpp>
+
 namespace aliceVision {
 
 namespace feature {
@@ -31,6 +33,10 @@ struct GeometricFilterMatrix
         m_stIteration(stIteration)
     {}
 
+    virtual Eigen::Matrix3d getMatrix() = 0;
+
+    virtual EGeometricFilterType getType() = 0;
+
     /**
      * @brief Geometry_guided_matching
      * @param sfm_data
@@ -40,7 +46,7 @@ struct GeometricFilterMatrix
      * @param matches
      * @return
      */
-    virtual bool Geometry_guided_matching(const sfmData::SfMData* sfmData,
+    virtual bool Geometry_guided_matching(const sfmData::SfMData& sfmData,
                                           const feature::RegionsPerView& regionsPerView,
                                           const Pair imageIdsPair,
                                           const double dDistanceRatio,

@@ -5,6 +5,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/geometry/lie.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <Eigen/Core>
 #include <ceres/ceres.h>
 #pragma once

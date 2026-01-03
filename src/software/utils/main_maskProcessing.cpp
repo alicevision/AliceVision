@@ -157,10 +157,19 @@ int aliceVision_main(int argc, char** argv)
             {
                 std::filesystem::path otherPath(directoryNames[otherDirIndex]);
 
-                std::filesystem::path otherMaskPath = otherPath / refpath.filename();
-                if (!std::filesystem::exists(otherMaskPath))
+                std::filesystem::path otherMaskPath;
+                if (std::filesystem::is_directory(otherPath))
                 {
-                    continue;
+                    otherMaskPath = otherPath / refpath.filename();
+                    if (!std::filesystem::exists(otherMaskPath))
+                    {
+                        continue;
+                    }
+                }
+                else 
+                {
+                    //Use the specified file directly
+                    otherMaskPath = otherPath;
                 }
 
                 image::Image<unsigned char> otherImg;

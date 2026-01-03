@@ -13,11 +13,12 @@
 #include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/track/trackIO.hpp>
 #include <aliceVision/track/TracksHandler.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -30,13 +31,29 @@ namespace fs = std::filesystem;
  * @param sfmData the original sfmData
  * @param outputSfmData the result sfmData
  * @param fakeFov if one intrinsic is non pinhole, what is the required fov for the "fake" camera
+ * @param scaleFactor the scale factor of all intrinsics
  * @return true if everything worked
 */
 bool convertToPinhole(const sfmData::SfMData & sfmData, 
                     sfmData::SfMData & outputSfmData,
-                    double fakeFov)
+                    double fakeFov,
+                    double scaleFactor)
 {
     outputSfmData.getIntrinsics().clear();
+    
+    if (scaleFactor != 1.0)
+    {
+        // Rescale the views
+        for (auto & [idView, view] : outputSfmData.getViews().valueRange())
+        {
+            int w = view.getImage().getWidth();
+            int h = view.getImage().getHeight();
+            w = int(std::round(double(w) * scaleFactor));
+            h = int(std::round(double(h) * scaleFactor));
+            view.getImage().setWidth(w);
+            view.getImage().setHeight(h);
+        }
+    }
 
     // Loop over all input intrinsics
     for (const auto & [intrinsicId, intrinsicPtr] : sfmData.getIntrinsics())
@@ -62,14 +79,28 @@ bool convertToPinhole(const sfmData::SfMData & sfmData,
             cy = pinhole.getOffset().y();
         }
 
+        // Apply scale factor to all values
+        int w = intrinsicPtr->w();
+        int h = intrinsicPtr->h();
+        w = int(std::round(double(w) * scaleFactor));
+        h = int(std::round(double(h) * scaleFactor));
+        fx = fx * scaleFactor;
+        fy = fy * scaleFactor;
+        cx = cx * scaleFactor;
+        cy = cy * scaleFactor;
+
         std::shared_ptr<camera::IntrinsicBase> fakecam = camera::createIntrinsic(
                                                 camera::EINTRINSIC::PINHOLE_CAMERA, 
                                                 camera::DISTORTION_NONE, 
                                                 camera::UNDISTORTION_NONE, 
-                                                intrinsicPtr->w(), 
-                                                intrinsicPtr->h(),
+                                                w, h,
                                                 fx, fy, cx, cy
                                                 );
+
+        fakecam->setSensorWidth(originalIntrinsic.sensorWidth());
+        fakecam->setSensorHeight(originalIntrinsic.sensorHeight());
+        fakecam->setSerialNumber(originalIntrinsic.serialNumber());
+        fakecam->setInitializationMode(originalIntrinsic.getInitializationMode());
         
         outputSfmData.getIntrinsics().insert({intrinsicId, fakecam});
     }
@@ -203,6 +234,16 @@ bool convertTracks(const sfmData::SfMData & inputSfmData,
     return true;
 }
 
+void resetOffset(sfmData::SfMData & sfmData)
+{
+    for (auto & [_, intrinsic] : sfmData.getIntrinsics().valueRange())
+    {
+        camera::IntrinsicScaleOffset & iso = dynamic_cast<camera::IntrinsicScaleOffset&>(intrinsic);
+        
+        iso.setOffset(Vec2::Zero());
+    }
+}
+
 int aliceVision_main(int argc, char* argv[])
 {
     // command-line parameters
@@ -213,6 +254,8 @@ int aliceVision_main(int argc, char* argv[])
     std::string outputTracksFilename;
     std::string cameraTypeStr;
     double fakeFov = 90.0;
+    double scaleFactor = 1.0;
+    bool correctPrincipalPoint = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -226,8 +269,12 @@ int aliceVision_main(int argc, char* argv[])
     optionalParams.add_options()
         ("fakeFov", po::value<double>(&fakeFov)->default_value(fakeFov),
          "Virtual FOV if output is pinhole and input is not.")
+        ("scaleFactor", po::value<double>(&scaleFactor)->default_value(scaleFactor),
+         "Rescale the size of the images in the sfmData description.")
         ("type", po::value<std::string>(&cameraTypeStr)->default_value(cameraTypeStr),
          "Default camera model type (pinhole, equidistant, equirectangular).")
+        ("correctPrincipalPoint", po::value<bool>(&correctPrincipalPoint)->default_value(correctPrincipalPoint),
+         "Force principal point to image center.")
         ("inputTracks", po::value<std::string>(&inputTracksFilename)->required(),
          "Input Tracks file.")
         ("outputTracks", po::value<std::string>(&outputTracksFilename)->required(),
@@ -263,7 +310,7 @@ int aliceVision_main(int argc, char* argv[])
     sfmData::SfMData outputSfmData(inputSfmData);
     if (cameraType == camera::EINTRINSIC::PINHOLE_CAMERA)
     {
-        if (!convertToPinhole(inputSfmData, outputSfmData, fakeFov))
+        if (!convertToPinhole(inputSfmData, outputSfmData, fakeFov, scaleFactor))
         {
             ALICEVISION_LOG_ERROR("There was an error converting intrinsics");
             return EXIT_FAILURE;
@@ -281,6 +328,12 @@ int aliceVision_main(int argc, char* argv[])
     {
         ALICEVISION_LOG_ERROR("Invalid camera model");
         return EXIT_FAILURE;
+    }
+
+    if (correctPrincipalPoint)
+    {
+        //Set all intrinsics to zero offset
+        resetOffset(outputSfmData);
     }
 
     if (!convertObservations(inputSfmData, outputSfmData))

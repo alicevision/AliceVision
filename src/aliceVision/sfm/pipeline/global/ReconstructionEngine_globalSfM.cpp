@@ -8,6 +8,7 @@
 #include "ReconstructionEngine_globalSfM.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/graph/connectedComponent.hpp>
@@ -299,7 +300,7 @@ bool ReconstructionEngine_globalSfM::computeInitialStructure(matching::PairwiseM
         {
             const Track& track = itTracks->second;
             Landmark& newLandmark = structure[idx];
-            newLandmark.descType = track.descType;
+            newLandmark.setDescType(track.descType);
             Observations& obs = newLandmark.getObservations();
             for (Track::TrackInfoPerView::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
             {
@@ -600,9 +601,9 @@ void ReconstructionEngine_globalSfM::computeRelativeRotations(rotationAveraging:
                         obs[viewI->getViewId()] = Observation(x1_, match._i, scaleI);
                         obs[viewJ->getViewId()] = Observation(x2_, match._j, scaleJ);
                         Landmark& newLandmark = landmarks[landmarkId++];
-                        newLandmark.descType = descType;
+                        newLandmark.setDescType(descType);
                         newLandmark.getObservations() = obs;
-                        newLandmark.X = X;
+                        newLandmark.setX(X);
                     }
                 }
                 // - refine only Structure and Rotations & translations (keep intrinsic constant)

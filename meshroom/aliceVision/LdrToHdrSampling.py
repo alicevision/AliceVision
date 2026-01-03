@@ -25,10 +25,10 @@ def findMetadata(d, keys, defaultValue):
 
 
 class DividedInputNodeSize(desc.DynamicNodeSize):
-    '''
+    """
     The LDR2HDR will reduce the amount of views in the SfMData.
     This class converts the number of LDR input views into the number of HDR output views.
-    '''
+    """
     def __init__(self, param, divParam):
         super(DividedInputNodeSize, self).__init__(param)
         self._divParam = divParam
@@ -44,15 +44,13 @@ class DividedInputNodeSize(desc.DynamicNodeSize):
 
 
 class LdrToHdrSampling(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_LdrToHdrSampling {allParams}'
-    size = DividedInputNodeSize('input', 'nbBrackets')
+    commandLine = "aliceVision_LdrToHdrSampling {allParams}"
+    size = DividedInputNodeSize("input", "nbBrackets")
     parallelization = desc.Parallelization(blockSize=2)
-    commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
-    category = 'Panorama HDR'
-    documentation = '''
-Sample pixels from Low range images for HDR creation.
-'''
+    category = "Panorama HDR"
+    documentation = """Sample pixels from Low range images for HDR creation."""
 
     outliersNb = 0  # Number of detected outliers among the input images
 
@@ -204,7 +202,7 @@ Sample pixels from Low range images for HDR creation.
         node.outliersNb = 0  # Reset the number of detected outliers
         node.userNbBrackets.validValue = True  # Reset the status of "userNbBrackets"
 
-        cameraInitOutput = node.input.getLinkParam(recursive=True)
+        cameraInitOutput = node.input.inputRootLink
         if not cameraInitOutput:
             node.nbBrackets.value = 0
             return
@@ -222,7 +220,7 @@ Sample pixels from Low range images for HDR creation.
 
         if not cameraInitOutput.node.hasAttribute("viewpoints"):
             if cameraInitOutput.node.hasAttribute("input"):
-                cameraInitOutput = cameraInitOutput.node.input.getLinkParam(recursive=True)
+                cameraInitOutput = cameraInitOutput.node.input.inputRootLink
         if cameraInitOutput and cameraInitOutput.node and cameraInitOutput.node.hasAttribute("viewpoints"):
             viewpoints = cameraInitOutput.node.viewpoints.value
         else:

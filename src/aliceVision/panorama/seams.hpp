@@ -7,7 +7,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 
 #include "cachedImage.hpp"
 #include "graphcut.hpp"

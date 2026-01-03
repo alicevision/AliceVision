@@ -6,13 +6,14 @@ from meshroom.core.utils import VERBOSE_LEVEL
 import os.path
 
 class SfMToRig(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_sfmToRig {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_sfmToRig {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Utils'
-    documentation = '''
-Assumes the input SfMData describes a set of cameras capturing a scene at a common time. Transformd the set of cameras into a rig of cameras.
-'''
+    category = "Utils"
+    documentation = """
+Assumes the input SfMData describes a set of cameras capturing a scene at a common time.
+Transforms the set of cameras into a rig of cameras.
+"""
 
     inputs = [
         desc.File(

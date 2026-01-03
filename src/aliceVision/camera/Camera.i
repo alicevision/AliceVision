@@ -4,9 +4,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-%module (module="pyalicevision") camera
+%module (package="pyalicevision") camera
 
 %include <aliceVision/global.i>
+
+%include <aliceVision/numeric/eigen.i>
+%eigen_typemaps(Vec2)
 
 %{
 #include <aliceVision/camera/camera.hpp>

@@ -8,7 +8,7 @@
 #pragma once
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 
 namespace aliceVision {
 namespace matching {

@@ -20,7 +20,7 @@ class SfmBundle
 {
 public:
     using uptr = std::unique_ptr<SfmBundle>;
-    
+
 public:
     /**
      * @brief Process bundle
@@ -32,7 +32,7 @@ public:
     bool process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
 
     /**
-     * brief setup the expansion chunk handler
+     * @brief setup the expansion chunk handler
      * @param expansionChunk a unique ptr. Ownership will be taken
      */
     void setLbaPolicyHandler(LbaPolicy::uptr & lbaPolicy)
@@ -43,6 +43,12 @@ public:
     void setBundleAdjustmentMaxOutlier(size_t bundleAdjustmentMaxOutlier)
     {
         _bundleAdjustmentMaxOutlier = bundleAdjustmentMaxOutlier;
+    }
+
+    void setTemporalConstraintParams(aliceVision::sfm::TemporalConstraintParams tempConstrParams, bool bundleTemporalConstraint)
+    {
+        _tempConstrParams = tempConstrParams;
+        _bundleTemporalConstraint = bundleTemporalConstraint;
     }
 
     /**
@@ -72,15 +78,26 @@ public:
         _minNbCamerasToRefinePrincipalPoint = count;
     }
 
+    /**
+     * @brief Set whether to enable structure refinement in bundle adjustment
+     * @param flag true to enable structure refinement, false to disable it
+    */
+    void setIsStructureRefinementEnabled(bool flag)
+    {
+        _isStructureRefinementEnabled = flag;
+    }
 
 private:
     /**
      * Initialize bundle properties
+     * @param sfmData the input sfmData
+     * @param tracksHandler the tracks handler
+     * @param viewIds the set of view ids which we are sure we want to be estimated
     */
-    bool initialize(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
+    bool initializeIteration(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds);
 
     /**
-     * Cleanup sfmData 
+     * Cleanup sfmData
      * @param sfmData the scene to clean
      * @return true if enough change occurred during the cleaning
     */
@@ -95,14 +112,17 @@ private:
     double _maxReprojectionError = 4.0;
     double _minAngleForLandmark = 2.0;
     double _maxConstraintDistance = 1.0;
-    size_t _minTrackLength = 2;
+    size_t _minTrackLength = 1;
     size_t _minPointsPerPose = 30;
     size_t _bundleAdjustmentMaxOutlier = 50;
     size_t _minNbCamerasToRefinePrincipalPoint = 3;
     bool _useLBA = true;
+    bool _bundleTemporalConstraint = false;
+    aliceVision::sfm::TemporalConstraintParams _tempConstrParams;
     size_t _minNbCamerasLBA = 100;
     size_t _LBAGraphDistanceLimit = 1;
     size_t _LBAMinNbOfMatches = 50;
+    bool _isStructureRefinementEnabled = true;
 };
 
 } // namespace sfm

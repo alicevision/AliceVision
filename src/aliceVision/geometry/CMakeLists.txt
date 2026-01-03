@@ -5,7 +5,6 @@ set(geometry_files_headers
     lie.hpp
     Pose3.hpp
     rigidTransformation3D.hpp
-    Similarity3.hpp
     Intersection.hpp
 )
 
@@ -20,14 +19,12 @@ alicevision_add_library(aliceVision_geometry
     PUBLIC_LINKS
         aliceVision_numeric
         aliceVision_linearProgramming
-    # PRIVATE_LINKS
-        # TODO: fix cross-dependency
-        # aliceVision_robustEstimation
 )
 
 # Unit tests
 alicevision_add_test(rigidTransformation3D_test.cpp NAME "geometry_rigidTransformation3D" LINKS aliceVision_geometry)
 alicevision_add_test(halfSpaceIntersection_test.cpp NAME "geometry_halfSpaceIntersection" LINKS aliceVision_geometry)
+alicevision_add_test(lie_test.cpp NAME "geometry_lie" LINKS aliceVision_geometry)
 alicevision_add_test(Pose3d_test.cpp NAME "geometry_pose3D" LINKS aliceVision_geometry)
 alicevision_add_test(frustumIntersection_test.cpp
     NAME "geometry_frustumIntersection"

@@ -8,7 +8,7 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 
 #include <vector>
 #include <random>

@@ -6,11 +6,12 @@
 
 #pragma once
 
-#include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
-#include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
-#include "aliceVision/sfmData/SfMData.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
+#include <aliceVision/matchingImageCollection/geometricFilterUtils.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
 #include <aliceVision/utils/filesIO.hpp>
 
@@ -92,7 +93,7 @@ struct HGrowingFilteringParam
     HGrowingFilteringParam(std::size_t maxNbHomographies, std::size_t minNbMatchesPerH, const GrowParameters& growParam)
       : _maxNbHomographies(maxNbHomographies),
         _minNbMatchesPerH(minNbMatchesPerH),
-        _growParam(growParam){};
+        _growParam(growParam) {};
 
     /// Max. number of homographies to estimate.
     std::size_t _maxNbHomographies{10};
@@ -174,7 +175,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
      * @return The estimation status.
      */
     template<typename Regions_or_Features_ProviderT>
-    EstimationStatus geometricEstimation(const sfmData::SfMData* sfmData,
+    EstimationStatus geometricEstimation(const sfmData::SfMData& sfmData,
                                          const Regions_or_Features_ProviderT& regionsPerView,
                                          const Pair& pairIndex,
                                          const matching::MatchesPerDescType& putativeMatchesPerType,
@@ -211,8 +212,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         const IndexT viewId_I = pairIndex.first;
         const IndexT viewId_J = pairIndex.second;
 
-        const sfmData::View& viewI = *(sfmData->getViews().at(viewId_I));
-        const sfmData::View& viewJ = *(sfmData->getViews().at(viewId_J));
+        const sfmData::View& viewI = sfmData.getView(viewId_I);
+        const sfmData::View& viewJ = sfmData.getView(viewId_J);
 
         for (const EImageDescriberType& descType : descTypes)
         {
@@ -274,7 +275,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
      * @param matches
      * @return
      */
-    bool Geometry_guided_matching(const sfmData::SfMData* sfmData,
+    bool Geometry_guided_matching(const sfmData::SfMData& sfmData,
                                   const feature::RegionsPerView& regionsPerView,
                                   const Pair imageIdsPair,
                                   const double dDistanceRatio,
@@ -322,6 +323,22 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
      * @return true the number of matches is up to 0.
      */
     bool getMatches(const feature::EImageDescriberType& descType, const IndexT homographyId, matching::IndMatches& matches) const;
+
+    /**
+     * @brief A fake implementation of getMatrix
+     * Should not be used for homography growing
+     * @throw always throw an error
+     */
+    Eigen::Matrix3d getMatrix()
+    {
+        ALICEVISION_THROW_ERROR("Homography growing has no single model");
+        return Eigen::Matrix3d::Identity();
+    }
+
+    /**
+     * @return geometric filter type represented by this class
+     */
+    EGeometricFilterType getType() { return EGeometricFilterType::HOMOGRAPHY_GROWING; }
 
   private:
     // -- Results container

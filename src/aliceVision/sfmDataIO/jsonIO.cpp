@@ -5,7 +5,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "jsonIO.hpp"
+
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
@@ -500,10 +503,12 @@ void saveLandmark(const std::string& name,
     bpt::ptree landmarkTree;
 
     landmarkTree.put("landmarkId", landmarkId);
-    landmarkTree.put("descType", feature::EImageDescriberType_enumToString(landmark.descType));
-
-    saveMatrix("color", landmark.rgb, landmarkTree);
-    saveMatrix("X", landmark.X, landmarkTree);
+    landmarkTree.put("referenceViewIndex", landmark.getReferenceViewIndex());
+    landmarkTree.put("descType", feature::EImageDescriberType_enumToString(landmark.getDescType()));
+    landmarkTree.put("isParallaxRobust", landmark.isParallaxRobust());
+    
+    saveMatrix("color", landmark.getRgb(), landmarkTree);
+    saveMatrix("X", landmark.getX(), landmarkTree);
 
     // observations
     if (saveObservations)
@@ -523,6 +528,7 @@ void saveLandmark(const std::string& name,
                 obsTree.put("featureId", observation.getFeatureId());
                 saveMatrix("x", observation.getCoordinates(), obsTree);
                 obsTree.put("scale", observation.getScale());
+                obsTree.put("depth", observation.getDepth());
             }
 
             observationsTree.push_back(std::make_pair("", obsTree));
@@ -534,13 +540,21 @@ void saveLandmark(const std::string& name,
     parentTree.push_back(std::make_pair(name, landmarkTree));
 }
 
-void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations, bool loadFeatures)
+void loadLandmark(sfmData::SfMData& sfmData, IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations, bool loadFeatures)
 {
     landmarkId = landmarkTree.get<IndexT>("landmarkId");
-    landmark.descType = feature::EImageDescriberType_stringToEnum(landmarkTree.get<std::string>("descType"));
+    landmark.setDescType(feature::EImageDescriberType_stringToEnum(landmarkTree.get<std::string>("descType")));
+    landmark.setParallaxRobust(landmarkTree.get<bool>("isParallaxRobust", false));
 
-    loadMatrix("color", landmark.rgb, landmarkTree);
-    loadMatrix("X", landmark.X, landmarkTree);
+    IndexT referenceViewIndex = landmarkTree.get<IndexT>("referenceViewIndex", UndefinedIndexT);
+    if (referenceViewIndex != UndefinedIndexT)
+    {
+        sfmData::View::sptr view = sfmData.getViews().at(referenceViewIndex);
+        landmark.setReferenceView(view);
+    }
+
+    loadMatrix("color", landmark.getRgb(), landmarkTree);
+    loadMatrix("X", landmark.getX(), landmarkTree);
 
     // observations
     if (loadObservations)
@@ -556,6 +570,7 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
                 observation.setFeatureId(obsTree.get<IndexT>("featureId"));
                 loadMatrix("x", observation.getCoordinates(), obsTree);
                 observation.setScale(obsTree.get<double>("scale", 0.0));
+                observation.setDepth(obsTree.get<double>("depth", -1.0));
             }
 
             landmark.getObservations().emplace(obsTree.get<IndexT>("observationId"), observation);
@@ -702,12 +717,12 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
         {
             bpt::ptree posesTree;
 
-            for (const auto& posePair : sfmData.getPoses())
+            for (const auto& [poseId, pose] : sfmData.getPoses().valueRange())
             {
                 bpt::ptree poseTree;
 
-                poseTree.put("poseId", posePair.first);
-                saveCameraPose("pose", posePair.second, poseTree);
+                poseTree.put("poseId", poseId);
+                saveCameraPose("pose", pose, poseTree);
                 posesTree.push_back(std::make_pair("", poseTree));
             }
 
@@ -905,7 +920,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
 
                 loadCameraPose("pose", pose, poseTree);
 
-                poses.emplace(poseTree.get<IndexT>("poseId"), pose);
+                poses.assign(poseTree.get<IndexT>("poseId"), pose);
             }
         }
 
@@ -936,7 +951,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
             IndexT landmarkId;
             sfmData::Landmark landmark;
 
-            loadLandmark(landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
+            loadLandmark(sfmData, landmarkId, landmark, landmarkNode.second, loadObservations, loadFeatures);
 
             structure.emplace(landmarkId, landmark);
         }

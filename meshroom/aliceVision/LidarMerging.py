@@ -4,15 +4,13 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 class LidarMerging(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_lidarMerging {allParams}'
+    commandLine = "aliceVision_lidarMerging {allParams}"
 
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 
-    category = 'Dense Reconstruction'
-    documentation = '''
-    This node merge several meshes into one.
-    '''
+    category = "Dense Reconstruction"
+    documentation = """This node merge several meshes into one."""
 
     inputs = [
         desc.File(

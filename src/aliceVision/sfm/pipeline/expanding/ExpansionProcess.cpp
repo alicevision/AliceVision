@@ -6,6 +6,7 @@
 
 #include "ExpansionProcess.hpp"
 
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -67,6 +68,8 @@ bool ExpansionProcess::process(sfmData::SfMData & sfmData, track::TracksHandler 
 
     ALICEVISION_LOG_INFO("ExpansionProcess end");
 
+    _historyHandler->debrief(sfmData);
+
     return true;
 }
 
@@ -123,7 +126,7 @@ void ExpansionProcess::remapExistingLandmarks(sfmData::SfMData & sfmData, const 
 
         const IndexT firstViewId = landmarkPair.second.getObservations().begin()->first;
         const IndexT firstFeatureId = landmarkPair.second.getObservations().begin()->second.getFeatureId();
-        const feature::EImageDescriberType descType = landmarkPair.second.descType;
+        const feature::EImageDescriberType descType = landmarkPair.second.getDescType();
 
         obsToLandmark.emplace(ObsKey(firstViewId, firstFeatureId, descType), landmarkId);
     }
@@ -149,6 +152,13 @@ void ExpansionProcess::remapExistingLandmarks(sfmData::SfMData & sfmData, const 
             }
 
             auto landmarkPair = landmarks.find(it->second);
+
+            // This should not happen if each feature is associated to only one track
+            if (landmarkPair == landmarks.end())
+            {
+                continue;
+            }
+
             sfmData::Landmark l = landmarkPair->second;
             landmarks.erase(landmarkPair->first);
 

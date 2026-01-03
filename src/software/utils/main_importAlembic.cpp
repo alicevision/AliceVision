@@ -21,7 +21,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 namespace po = boost::program_options;
@@ -31,21 +31,29 @@ int aliceVision_main(int argc, char** argv)
     // command-line parameters
     std::string abcFilename;
     std::string sfmDataOutputFilename;
-    std::string imagesDir;
-    std::string extension;
+    double frameRate = 24.0;
+    int imageWidth = 640;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&abcFilename)->required(), "Input Alembic file.")
-        ("imagesDir", po::value<std::string>(&imagesDir)->required(), "directory with images")
-        ("extension", po::value<std::string>(&extension)->required(), "images extension")
-        ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(), "SfMData output file.");
+        ("input,i", po::value<std::string>(&abcFilename)->required(),
+         "The external Alembic file to import.")
+        ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(),
+         "SfMData file populated with the camera poses from the external Alembic file.");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("imageWidth", po::value<int>(&imageWidth)->default_value(imageWidth),
+         "Alembic does not export the camera resolutions. Setup the image width for all images, the height will depend on the sensor size ratio.")
+        ("framerate", po::value<double>(&frameRate)->default_value(frameRate),
+         "Alembic frame rate to compute frame id from time.");
     // clang-format on
 
     CmdLine cmdline("AliceVision Alembic importer");
 
     cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
@@ -55,35 +63,12 @@ int aliceVision_main(int argc, char** argv)
     HardwareContext hwc = cmdline.getHardwareContext();
     omp_set_num_threads(hwc.getMaxThreads());
 
-    if (!std::filesystem::exists(imagesDir))
-    {
-        ALICEVISION_LOG_ERROR("Images directory does not exist.");
-        return EXIT_FAILURE;
-    }
-
-    if (!std::filesystem::is_directory(imagesDir))
-    {
-        ALICEVISION_LOG_ERROR("Images directory value is not a directory.");
-        return EXIT_FAILURE;
-    }
-
-    std::vector<std::string> files;
-    for (const auto & item: std::filesystem::directory_iterator(imagesDir))
-    {
-        const std::string itemExtension = item.path().extension().string();
-        if (boost::algorithm::to_lower_copy(itemExtension) == extension)
-        {
-            files.push_back(std::filesystem::canonical(item.path()).string());
-        }
-    }
-    std::sort(files.begin(), files.end());
-    
 
     std::unique_ptr<sfmDataIO::ExternalAlembicImporter> importer;
 
     try
     {
-        importer = std::make_unique<sfmDataIO::ExternalAlembicImporter>(abcFilename);
+        importer = std::make_unique<sfmDataIO::ExternalAlembicImporter>(abcFilename, frameRate, imageWidth);
     }
     catch(...)
     {
@@ -92,7 +77,11 @@ int aliceVision_main(int argc, char** argv)
     }
 
     sfmData::SfMData sfmData;
-    importer->populateSfM(sfmData, files);
+    if (!importer->populateSfM(sfmData))
+    {
+        ALICEVISION_LOG_ERROR("Failed to import Alembic file.");
+        return EXIT_FAILURE;
+    }
 
     if (!sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
     {

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 #include <aliceVision/sfmData/Observation.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/intrinsicsProject.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/intrinsicsLift.hpp>
@@ -52,6 +53,38 @@ struct Constraint2dErrorFunctor
         projectParameters[1] = parameter_distortion;
         projectParameters[2] = transformed.data();
         return _intrinsicProjectFunctor(projectParameters, residuals);
+    }
+
+    /**
+     * @brief Create the appropriate cost functor according the provided input camera intrinsic model
+     * @param[in] intrinsicPtr The intrinsic pointer
+     * @param[in] observation The corresponding observation
+     * @return cost functor
+     */
+    inline static ceres::CostFunction* createCostFunction(std::shared_ptr<camera::IntrinsicBase> intrinsic,
+                                            const sfmData::Observation& observation_first,
+                                            const sfmData::Observation& observation_second)
+    {       
+        auto costFunction = new ceres::DynamicAutoDiffCostFunction<Constraint2dErrorFunctor>(new Constraint2dErrorFunctor(observation_first, observation_second, intrinsic));
+
+        int distortionSize = 1;
+        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
+        if (isod)
+        {
+            auto distortion = isod->getDistortion();
+            if (distortion)
+            {
+                distortionSize = distortion->getParameters().size();
+            }
+        }
+
+        costFunction->AddParameterBlock(intrinsic->getParameters().size()); 
+        costFunction->AddParameterBlock(distortionSize);
+        costFunction->AddParameterBlock(6);
+        costFunction->AddParameterBlock(6);
+        costFunction->SetNumResiduals(2);
+
+        return costFunction;
     }
 
     ceres::DynamicCostFunctionToFunctorTmp _intrinsicLiftFunctor;

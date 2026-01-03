@@ -11,6 +11,8 @@
 #include "compositer.hpp"
 #include "feathering.hpp"
 
+#include <aliceVision/image/io.hpp>
+
 namespace aliceVision {
 
 bool computeSeamsMap(image::Image<unsigned char>& seams, const image::Image<IndexT>& labels)

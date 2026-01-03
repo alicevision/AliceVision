@@ -7,6 +7,8 @@
 #include "ReconstructionEngine.hpp"
 
 #include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 
@@ -51,12 +53,12 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
         auto& landmark = landmarkIt.second;
         if (landmark.getObservations().empty())
             continue;
-        if (markerDescTypes_set.find(landmark.descType) == markerDescTypes_set.end())
+        if (markerDescTypes_set.find(landmark.getDescType()) == markerDescTypes_set.end())
             continue;
-        landmark.rgb = image::BLACK;
+        landmark.setRgb(image::BLACK);
 
         const auto obs = landmark.getObservations().begin();
-        const feature::Regions& regions = regionPerView.getRegions(obs->first, landmark.descType);
+        const feature::Regions& regions = regionPerView.getRegions(obs->first, landmark.getDescType());
         const feature::CCTAG_Regions* cctagRegions = dynamic_cast<const feature::CCTAG_Regions*>(&regions);
         const feature::APRILTAG_Regions* apriltagRegions = dynamic_cast<const feature::APRILTAG_Regions*>(&regions);
         if (cctagRegions)
@@ -67,7 +69,7 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
                 if (d[i] == 255)
                 {
                     ALICEVISION_LOG_TRACE("Found cctag marker: " << i << " (landmarkId: " << landmarkIt.first << ").");
-                    landmark.rgb.r() = i;
+                    landmark.getRgb().r() = i;
                     break;
                 }
             }
@@ -80,7 +82,7 @@ void retrieveMarkersId(sfmData::SfMData& sfmData)
                 if (d[i] == 255)
                 {
                     ALICEVISION_LOG_TRACE("Found apriltag marker: " << i << " (landmarkId: " << landmarkIt.first << ").");
-                    landmark.rgb.r() = i;
+                    landmark.getRgb().r() = i;
                     break;
                 }
             }

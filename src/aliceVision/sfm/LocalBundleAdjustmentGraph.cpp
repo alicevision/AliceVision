@@ -5,7 +5,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "LocalBundleAdjustmentGraph.hpp"
+
 #include <aliceVision/stl/stl.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 
@@ -60,8 +62,10 @@ void LocalBundleAdjustmentGraph::setAllParametersToRefine(const sfmData::SfMData
     _statePerLandmarkId.clear();
 
     // poses
-    for (sfmData::Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
-        _statePerPoseId[itPose->first] = EEstimatorParameterState::REFINED;
+    for (const auto & [poseId, _] : sfmData.getPoses())
+    {
+        _statePerPoseId[poseId] = EEstimatorParameterState::REFINED;
+    }
 
     // intrinsics
     for (const auto& itIntrinsic : sfmData.getIntrinsics())
@@ -383,13 +387,12 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
     //    - Refined <=> its connected to a refined camera
 
     // poses
-    for (auto& posePair : sfmData.getPoses())
+    for (auto& [poseId, pose] : sfmData.getPoses().valueRange())
     {
-        const IndexT poseId = posePair.first;
         const int distance = getPoseDistance(poseId);
         const EEstimatorParameterState state = getStateFromDistance(distance);
 
-        posePair.second.setState(state);
+        pose.setState(state);
 
         _statePerPoseId[poseId] = state;
     }
@@ -436,12 +439,12 @@ void LocalBundleAdjustmentGraph::convertDistancesToStates(sfmData::SfMData& sfmD
         if (!states.at(static_cast<std::size_t>(EEstimatorParameterState::REFINED)) ||
             states.at(static_cast<std::size_t>(EEstimatorParameterState::IGNORED)))
         {
-            itLandmark.second.state = EEstimatorParameterState::IGNORED;
+            itLandmark.second.setState(EEstimatorParameterState::IGNORED);
             _statePerLandmarkId[landmarkId] = EEstimatorParameterState::IGNORED;
         }
         else
         {
-            itLandmark.second.state = EEstimatorParameterState::REFINED;
+            itLandmark.second.setState(EEstimatorParameterState::REFINED);
             _statePerLandmarkId[landmarkId] = EEstimatorParameterState::REFINED;
         }
     }

@@ -1,15 +1,15 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0-develop",
+        "releaseVersion": "2025.1.0",
         "fileVersion": "2.0",
-        "template": true,
         "nodesVersions": {
             "CameraInit": "12.0",
-            "CheckerboardDetection": "1.0",
-            "DistortionCalibration": "5.0",
+            "CheckerboardDetection": "2.0",
+            "DistortionCalibration": "6.0",
             "ExportDistortion": "2.0",
-            "Publish": "1.3"
-        }
+            "CopyFiles": "1.3"
+        },
+        "template": true
     },
     "graph": {
         "CameraInit_1": {
@@ -53,8 +53,8 @@
                 "input": "{DistortionCalibration_1.output}"
             }
         },
-        "Publish_1": {
-            "nodeType": "Publish",
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
             "position": [
                 800,
                 0

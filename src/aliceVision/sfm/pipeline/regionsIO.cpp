@@ -7,6 +7,7 @@
 
 #include "regionsIO.hpp"
 
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 

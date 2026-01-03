@@ -4,7 +4,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/numeric.hpp>
@@ -12,6 +14,8 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/image/drawing.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 
 #include <random>
 #include <algorithm>
@@ -76,6 +80,8 @@ class PyramidFloat
 
     bool apply(const image::Image<float>& grayscale_input)
     {
+        oiio::ParamValue options[] = {{"filtername", "gaussian"}};
+
         // First of all, build pyramid for filtering high frequencies
         _levels[0] = grayscale_input;
         for (int level = 1; level < _levels.size(); level++)
@@ -91,7 +97,8 @@ class PyramidFloat
             oiio::ImageBuf buf_src(spec_src, const_cast<float*>(_levels[level - 1].data()));
             oiio::ImageBuf buf_dst(spec_dst, const_cast<float*>(_levels[level].data()));
 
-            oiio::ImageBufAlgo::resize(buf_dst, buf_src, "gaussian");
+            
+            oiio::ImageBufAlgo::resize(buf_dst, buf_src, options);
         }
 
         return true;

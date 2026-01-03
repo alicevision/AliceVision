@@ -5,7 +5,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/image/all.hpp>
+
+#include <aliceVision/image/io.hpp>
+
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/colorspace.hpp>
+#include <aliceVision/image/dcp.hpp>
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
@@ -200,22 +205,23 @@ std::vector<std::string> getSupportedExtensions()
 {
     std::vector<std::string> supportedExtensions;
 
-    // Map containing the parsed "extension_list" with each supported format and its associated extensions
-    static std::map<std::string, std::vector<std::string>> extensionList = oiio::get_extension_map();
-
-    for (auto& format : extensionList)
+    // oiio::get_extension_map() contains the parsed "extension_list" with each
+    // supported format and its associated extensions
+    for (const auto& [formatName, extensions] : oiio::get_extension_map())
     {
-        for (auto& extension : format.second)
+        for (const auto& extension : extensions)
         {
-            supportedExtensions.push_back(extension.insert(0, "."));
+            supportedExtensions.push_back("." + extension);
         }
     }
+
     return supportedExtensions;
 }
 
 bool isSupported(const std::string& extension)
 {
-    static const std::vector<std::string> supportedExtensions = getSupportedExtensions();
+    const std::vector<std::string> supportedExtensions = getSupportedExtensions();
+
     const auto start = supportedExtensions.begin();
     const auto end = supportedExtensions.end();
     return (std::find(start, end, boost::to_lower_copy(extension)) != end);
@@ -1247,6 +1253,11 @@ void readImage(const std::string& path, Image<float>& image, const ImageReadOpti
     readImage(path, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
 }
 
+void readImage(const std::string& path, Image<IndexT>& image, const ImageReadOptions& imageReadOptions)
+{
+    readImage(path, oiio::TypeDesc::UINT32, 1, image, imageReadOptions);
+}
+
 void readImage(const std::string& path, Image<unsigned char>& image, const ImageReadOptions& imageReadOptions)
 {
     readImage(path, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
@@ -1278,7 +1289,7 @@ void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadO
 
 void logOIIOImageCacheInfo()
 {
-    oiio::ImageCache* cache = oiio::ImageCache::create(true);
+    std::shared_ptr<oiio::ImageCache> cache = oiio::ImageCache::create(true);
 
     int maxOpenFiles = -1;
     cache->getattribute("max_open_files", maxOpenFiles);

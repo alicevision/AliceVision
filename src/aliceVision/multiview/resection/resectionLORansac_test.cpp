@@ -14,6 +14,7 @@
 #include <aliceVision/multiview/ResectionKernel.hpp>
 #include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
@@ -56,7 +57,7 @@ bool refinePoseAsItShouldbe(const Mat& pt3D,
     {
         const size_t idx = vec_inliers[i];
         Landmark landmark;
-        landmark.X = pt3D.col(idx);
+        landmark.setX(pt3D.col(idx));
         landmark.getObservations()[0] = Observation(pt2D.col(idx), UndefinedIndexT, unknownScale);
         sfm_data.getLandmarks()[i] = std::move(landmark);
     }

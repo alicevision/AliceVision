@@ -33,7 +33,7 @@ void createRefMeshFromDenseSfMData(mesh::Mesh& refMesh, const sfmData::SfMData& 
             pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
 
         refVisibilities.push_back(pointVisibility);
-        refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
+        refMesh.pts.push_back(Point3d(landmark.getX()(0), landmark.getX()(1), landmark.getX()(2)));
     }
 }
 

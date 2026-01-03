@@ -5,12 +5,12 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class LightingCalibration(desc.CommandLineNode):
-    commandLine = 'aliceVision_lightingCalibration {allParams}'
-    category = 'Photometric Stereo'
-    documentation = '''
+    commandLine = "aliceVision_lightingCalibration {allParams}"
+    category = "Photometric Stereo"
+    documentation = """
 Evaluate the lighting in a scene using spheres placed in the scene.
 Can also be used to calibrate a lighting dome (RTI type).
-'''
+"""
 
     inputs = [
         desc.File(

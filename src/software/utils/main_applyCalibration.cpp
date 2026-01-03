@@ -12,6 +12,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
 #include <aliceVision/dataio/json.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 
 #include <boost/program_options.hpp>
 

@@ -60,49 +60,6 @@ void imageYDerivative(const Image& img, Image& out, const bool normalize = true)
     imageVerticalConvolution(img, kernel, out);
 }
 
-/**
- ** Compute X-derivative using 3x3 Sobel kernel
- ** @param img Input image
- ** @param out Output image
- ** @param normalize true if kernel must be scaled by 1/8
- **/
-template<typename Image>
-void imageSobelXDerivative(const Image& img, Image& out, const bool normalize = true)
-{
-    Vec3 kernel_horiz(-1.0, 0.0, 1.0);
-
-    if (normalize)
-        kernel_horiz *= 0.5;
-
-    Vec3 kernel_vert(1.0, 2.0, 1.0);
-
-    if (normalize)
-        kernel_vert *= 0.25;
-
-    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
-}
-
-/**
- ** Compute Y-derivative using 3x3 Sobel kernel
- ** @param img Input image
- ** @param out Output image
- ** @param normalize true if kernel must be scaled by 1/8
- **/
-template<typename Image>
-void imageSobelYDerivative(const Image& img, Image& out, const bool normalize = true)
-{
-    Vec3 kernel_horiz(1.0, 2.0, 1.0);
-
-    if (normalize)
-        kernel_horiz *= 0.25;
-
-    Vec3 kernel_vert(-1.0, 0.0, 1.0);
-
-    if (normalize)
-        kernel_vert *= 0.5;
-
-    imageSeparableConvolution(img, kernel_horiz, kernel_vert, out);
-}
 
 /**
  ** Compute X-derivative using 3x3 Scharr kernel

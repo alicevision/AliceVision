@@ -211,6 +211,7 @@ void saveLandmark(const std::string& name,
 
 /**
  * @brief Load a Landmark from a boost property tree.
+ * @param[in] sfmData The SfMData to which the landmark belongs
  * @param[out] landmarkId The output Landmark Id
  * @param[out] landmark The output Landmmark
  * @param[in,out] landmarkTree The input tree
@@ -219,7 +220,7 @@ void saveLandmark(const std::string& name,
  * @param[in] loadObservations Load landmark observations (default: true)
  * @param[in] loadFeatures Load landmark observations features (default: true)
  */
-void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations = true, bool loadFeatures = true);
+void loadLandmark(sfmData::SfMData& sfmData, IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations = true, bool loadFeatures = true);
 
 /**
  * @brief Save survey points in a boost property tree.

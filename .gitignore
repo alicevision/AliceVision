@@ -76,3 +76,8 @@ Production
 
 **/.vscode
 **/.vs
+
+/vcpkg_installed/
+/export/
+/.cache/
+/compile_commands.json

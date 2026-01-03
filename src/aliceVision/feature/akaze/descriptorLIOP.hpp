@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/feature/PointFeature.hpp>
 
 #include <map>

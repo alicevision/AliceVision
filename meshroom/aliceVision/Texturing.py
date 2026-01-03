@@ -7,12 +7,12 @@ import logging
 
 
 class Texturing(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_texturing {allParams}'
+    commandLine = "aliceVision_texturing {allParams}"
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 
-    category = 'Dense Reconstruction'
-    documentation = '''
+    category = "Dense Reconstruction"
+    documentation = """
 This node computes the texturing on the mesh.
 
 If the mesh has no associated UV, it automatically computes UV maps.
@@ -23,7 +23,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
 
 ## Online
 [https://alicevision.org/#photogrammetry/texturing](https://alicevision.org/#photogrammetry/texturing)
-'''
+"""
 
     inputs = [
         desc.File(

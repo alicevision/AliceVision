@@ -9,7 +9,7 @@
 
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>

@@ -50,7 +50,9 @@ enum class EFileType
     OBJ = 0,
     FBX,
     GLTF,
-    STL
+    GLB,
+    STL,
+    PLY
 };
 
 EFileType EFileType_stringToEnum(const std::string& filetype);

@@ -5,10 +5,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "RigSequence.hpp"
+
 #include <aliceVision/stl/mapUtils.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/functional/hash.hpp>
-
 #include <algorithm>
 
 namespace aliceVision {
@@ -68,7 +69,7 @@ double computeCameraScore(const SfMData& sfmData, const track::TracksPerView& tr
 
         if (itObs != landmark.getObservations().end())
         {
-            const Vec2 residual = intrinsic->residual(pose, landmark.X.homogeneous(), itObs->second.getCoordinates());
+            const Vec2 residual = intrinsic->residual(pose, landmark.getX().homogeneous(), itObs->second.getCoordinates());
             score += std::min(1.0 / residual.norm(), 4.0);
         }
     }
@@ -233,7 +234,7 @@ void RigSequence::setupRelativePoses()
         SubPoseInfo& subPoseInfo = _rigInfoPerSubPose.at(subPoseId);
 
         const View& bestIndependantView = _sfmData.getView(_rigInfoPerFrame.at(subPoseInfo.maxFrameId).at(subPoseId).viewId);
-        const geometry::Pose3& bestIndependantPose = _sfmData.getPoses().at(bestIndependantView.getPoseId()).getTransform();
+        const geometry::Pose3& bestIndependantPose = _sfmData.getAbsolutePose(bestIndependantView.getPoseId()).getTransform();
 
         RigSubPose& newSubPose = _rig.getSubPose(subPoseId);
         newSubPose.status = ERigSubPoseStatus::ESTIMATED;
@@ -242,7 +243,7 @@ void RigSequence::setupRelativePoses()
 
         if (rigInitialized)
         {
-            const geometry::Pose3& rigPose = _sfmData.getPoses().at(getRigPoseId(_rigId, subPoseInfo.maxFrameId)).getTransform();
+            const geometry::Pose3& rigPose = _sfmData.getAbsolutePose(getRigPoseId(_rigId, subPoseInfo.maxFrameId)).getTransform();
             newSubPose.pose = bestIndependantPose * rigPose.inverse();
         }  // else pose is Identity
     }
@@ -260,7 +261,6 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
         // if no rig pose, compute and add it
         if (_sfmData.getPoses().find(rigPoseId) == _sfmData.getPoses().end())
         {
-            // TODO: use opengv resection for more than one valid view
             IndexT bestSubPoseId = UndefinedIndexT;
             double bestScore = 0.0;
 
@@ -287,13 +287,13 @@ void RigSequence::rigResection(std::set<IndexT>& updatedViews)
             const RigSubPose& subPose = _rig.getSubPose(bestSubPoseId);
             const View& view = _sfmData.getView(rigFrame.at(bestSubPoseId).viewId);
             const IndexT independantPoseId = view.getPoseId();
-            const CameraPose independantPose = _sfmData.getPoses().at(independantPoseId);
+            const CameraPose independantPose = _sfmData.getAbsolutePose(independantPoseId);
             const CameraPose rigPose(independantPose.getTransform() * subPose.pose.inverse());
 
             ALICEVISION_LOG_DEBUG("Add rig pose:"
                                   << "\n\t- rig pose id: " << rigPoseId << "\n\t- frame id: " << frameId << "\n\t- sub-pose id: " << bestSubPoseId);
 
-            _sfmData.getPoses()[rigPoseId] = rigPose;
+            _sfmData.getPoses().assign(rigPoseId, rigPose);
         }
 
         // remove independent poses and replace with rig pose

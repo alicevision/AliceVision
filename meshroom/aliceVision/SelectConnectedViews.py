@@ -5,15 +5,13 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SelectConnectedViews(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_selectConnectedViews {allParams}'
+    commandLine = "aliceVision_selectConnectedViews {allParams}"
 
     cpu = desc.Level.NORMAL
     ram = desc.Level.NORMAL
 
-    category = 'Dense Reconstruction'
-    documentation = '''
-Select Connected Views based on SfM landmarks.
-'''
+    category = "Dense Reconstruction"
+    documentation = """Select Connected Views based on SfM landmarks."""
 
     inputs = [
         desc.File(

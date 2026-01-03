@@ -19,6 +19,8 @@
 #include <geogram/mesh/mesh.h>
 #include <geogram/basic/geometry_nd.h>
 
+#include <aliceVision/image/imageAlgo.hpp>
+
 namespace aliceVision {
 namespace fuseCut {
 
@@ -608,7 +610,7 @@ void PointCloud::addPointsFromSfM(const Point3d hexah[8], const StaticVector<int
     for (std::size_t i = 0; i < nbPoints; ++i)
     {
         const sfmData::Landmark& landmark = landmarkIt->second;
-        const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
+        const Point3d p(landmark.getX()(0), landmark.getX()(1), landmark.getX()(2));
 
         if (mvsUtils::isPointInHexahedron(p, hexah))
         {

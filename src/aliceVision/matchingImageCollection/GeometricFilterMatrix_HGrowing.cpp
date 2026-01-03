@@ -4,8 +4,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/matching/svgVisualization.hpp>
 #include "GeometricFilterMatrix_HGrowing.hpp"
+
+#include <aliceVision/matching/svgVisualization.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {

@@ -6,6 +6,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/feature/akaze/AKAZE.hpp>
+#include <aliceVision/image/resampling.hpp>
+#include <aliceVision/image/filtering.hpp>
+#include <aliceVision/image/diffusion.hpp>
 #include <aliceVision/feature/imageStats.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/config.hpp>

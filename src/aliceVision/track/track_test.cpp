@@ -6,8 +6,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "aliceVision/track/TracksBuilder.hpp"
+#include "aliceVision/track/TracksMerger.hpp"
 #include "aliceVision/track/tracksUtils.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/MatchesCollections.hpp"
 
 #include <vector>
 #include <utility>
@@ -220,4 +221,48 @@ BOOST_AUTO_TEST_CASE(Track_GetCommonTracksInImages)
         getCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
         BOOST_CHECK_EQUAL(base.size(), set_visibleTracks.size());
     }
+}
+
+BOOST_AUTO_TEST_CASE(Track_Merger)
+{
+    TracksMerger merger;
+
+    TracksMap map1, map2;
+
+    map1[0].descType = EImageDescriberType::UNKNOWN;
+    map1[0].featPerView[0].featureId = 100;
+    map1[0].featPerView[1].featureId = 101;
+    map1[0].featPerView[2].featureId = 102;
+    map1[0].featPerView[3].featureId = 103;
+
+    map1[1].descType = EImageDescriberType::SIFT;
+    map1[1].featPerView[0].featureId = 200;
+    map1[1].featPerView[1].featureId = 201;
+    map1[1].featPerView[2].featureId = 202;
+    map1[1].featPerView[3].featureId = 203;
+
+    map2[0].descType = EImageDescriberType::UNKNOWN;
+    map2[0].featPerView[0].featureId = 100;
+    map2[0].featPerView[4].featureId = 104;
+    map2[0].featPerView[5].featureId = 105;
+    map2[0].featPerView[6].featureId = 106;
+
+    map2[1].descType = EImageDescriberType::UNKNOWN;
+    map2[1].featPerView[0].featureId = 200;
+    map2[1].featPerView[1].featureId = 204;
+    map2[1].featPerView[2].featureId = 205;
+    map2[1].featPerView[3].featureId = 206;
+
+    merger.addTrackMap(map1);
+    merger.addTrackMap(map2);
+
+    const auto & result = merger.getOutputTracks();
+
+    BOOST_CHECK_EQUAL(result.size(), 3);
+
+    size_t max = result.at(0).featPerView.size();
+    max = std::max(max, result.at(1).featPerView.size());
+    max = std::max(max, result.at(2).featPerView.size());
+
+    BOOST_CHECK_EQUAL(max, 7);
 }

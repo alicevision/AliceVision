@@ -147,11 +147,11 @@ bool computeSimilarityFromPairs(const std::vector<Vec3> & ptsA,
  */
 inline void applyTransform(sfmData::SfMData& sfmData, const double S, const Mat3& R, const Vec3& t)
 {
-    for (auto& poseIt : sfmData.getPoses())
+    for (auto& [_, cameraPose] : sfmData.getPoses().valueRange())
     {
-        geometry::Pose3 pose = poseIt.second.getTransform();
+        geometry::Pose3 pose = cameraPose.getTransform();
         pose = pose.transformSRt(S, R, t);
-        poseIt.second.setTransform(pose);
+        cameraPose.setTransform(pose);
     }
 
     for (auto& rigIt : sfmData.getRigs())
@@ -164,7 +164,7 @@ inline void applyTransform(sfmData::SfMData& sfmData, const double S, const Mat3
 
     for (auto& landmark : sfmData.getLandmarks())
     {
-        landmark.second.X = S * R * landmark.second.X + t;
+        landmark.second.setX(S * R * landmark.second.getX() + t);
     }
 }
 

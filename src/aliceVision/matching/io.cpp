@@ -10,6 +10,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 #include <boost/range/iterator_range.hpp>
 
@@ -369,6 +370,21 @@ bool Save(const PairwiseMatches& matches, const std::string& folder, const std::
         exporter.saveGlobalFile();
 
     return true;
+}
+
+void displayStats(const PairwiseMatches& matches)
+{
+    int maxMatches = 5000;
+    utils::Histogram<double> histo(0, maxMatches, 100);
+
+    for (const auto [_, matchesPerDesc]: matches)
+    {
+        int max = std::min(matchesPerDesc.getNbAllMatches(), maxMatches);
+        histo.Add(max);
+    }
+
+    ALICEVISION_LOG_INFO("Matches count per pair (Clamped to " << maxMatches << " matches)");
+    ALICEVISION_LOG_INFO(histo.ToString("", 4, true));
 }
 
 }  // namespace matching

@@ -5,27 +5,30 @@ std::vector<boost::json::value> readJsons(std::istream& is, boost::system::error
 {
     std::vector<boost::json::value> jvs;
     boost::json::stream_parser p;
-    std::string line;
-    std::size_t n = 0;
+    std::string content, line;
+    std::size_t totalRead;
 
-    while (true)
-    {
-        if (n == line.size())
+    while (std::getline(is, line))
+    {   
+        content += line;
+        
+        //Try to read all available items in the buffer
+        while (true)
         {
-            if (!std::getline(is, line))
+            totalRead = p.write_some(content, ec);
+            
+            //remove processed string from content
+            content = content.substr(totalRead);
+
+            // If the parser did not find a value, then it won't
+            // find anything more.
+            if (!p.done())
             {
                 break;
             }
 
-            n = 0;
-        }
-
-        // Consume at least part of the line
-        n += p.write_some(line.data() + n, line.size() - n, ec);
-
-        // If the parser found a value, add it
-        if (p.done())
-        {
+            // Store the value, and try to find another one in the remaining
+            // content
             jvs.push_back(p.release());
             p.reset();
         }

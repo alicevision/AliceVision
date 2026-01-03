@@ -5,7 +5,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/image/all.hpp"
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/colorspace.hpp>
+#include <aliceVision/image/filtering.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <iostream>
 
@@ -100,42 +103,3 @@ BOOST_AUTO_TEST_CASE(Image_Convolution_Scharr_X_Y)
       writeImage("out_ScharrY.png", outFilteredCast, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
 }
 
-BOOST_AUTO_TEST_CASE(Image_Convolution_Sobel_X_Y)
-{
-    Image<float> in(40, 40, true);
-    in.block(10, 10, 20, 20).fill(255.f);
-
-    Image<float> outFiltered(40, 40, true);
-
-    imageSobelXDerivative(in, outFiltered);
-
-    // X dir
-    BOOST_CHECK_EQUAL(127.5f, outFiltered(20, 10));
-    BOOST_CHECK_EQUAL(-127.5f, outFiltered(20, 30));
-    // Y dir
-    BOOST_CHECK_EQUAL(0.f, outFiltered(10, 20));
-    BOOST_CHECK_EQUAL(0.f, outFiltered(30, 20));
-    // Check it exist a vertical black band
-    BOOST_CHECK_EQUAL(0.f, outFiltered.block(0, 10 + 3, 40, 20 - 2 * 3).array().abs().sum());
-
-    Image<unsigned char> inCast = Image<unsigned char>(in.cast<unsigned char>());
-    Image<unsigned char> outFilteredCast = Image<unsigned char>(outFiltered.cast<unsigned char>());
-    BOOST_CHECK_NO_THROW(writeImage("in_Scharr.png", inCast, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
-    BOOST_CHECK_NO_THROW(
-      writeImage("out_SobelX.png", outFilteredCast, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
-
-    outFiltered.fill(0.0f);
-    imageSobelYDerivative(in, outFiltered);
-
-    // X dir
-    BOOST_CHECK_EQUAL(0.f, outFiltered(20, 10));
-    BOOST_CHECK_EQUAL(0.f, outFiltered(20, 30));
-    // Y dir
-    BOOST_CHECK_EQUAL(127.5f, outFiltered(10, 20));
-    BOOST_CHECK_EQUAL(-127.5f, outFiltered(30, 20));
-    // Check it exist a horizontal black band
-    BOOST_CHECK_EQUAL(0.f, outFiltered.block(10 + 3, 0, 20 - 2 * 3, 40).array().abs().sum());
-    outFilteredCast = Image<unsigned char>(outFiltered.cast<unsigned char>());
-    BOOST_CHECK_NO_THROW(
-      writeImage("out_SobelY.png", outFilteredCast, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION)));
-}

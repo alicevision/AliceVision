@@ -17,6 +17,7 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/camera/camera.hpp>
 
 namespace aliceVision {
@@ -32,7 +33,8 @@ bool SfmTriangulation::process(
             std::mt19937 &randomNumberGenerator,
             const std::set<IndexT> &viewIds,
             std::set<IndexT> & evaluatedTracks,
-            std::map<IndexT, sfmData::Landmark> & outputLandmarks
+            std::map<IndexT, sfmData::Landmark> & outputLandmarks,
+            bool useDepthPrior
         )
 {
     evaluatedTracks.clear();
@@ -82,9 +84,29 @@ bool SfmTriangulation::process(
         }
 
         sfmData::Landmark result;
-        if (!processTrack(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+        if (useDepthPrior)
         {
-            continue;
+            if (_pointFetcherHandler)
+            {
+                if (!processTrackWithPointFetcher(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+                {
+                    continue;
+                }
+            }
+            else 
+            {
+                if (!processTrackWithPrior(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+                {
+                    continue;
+                }
+            }
+        }
+        else 
+        {
+            if (!processTrack(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+            {
+                continue;
+            }
         }
 
         #pragma omp critical
@@ -106,6 +128,7 @@ bool SfmTriangulation::processTrack(
 {
     feature::EImageDescriberType descType = track.descType;
 
+    std::vector<double> weights;
     std::vector<Vec2> observations;
     std::vector<std::shared_ptr<camera::IntrinsicBase>> intrinsics;
     std::vector<Eigen::Matrix4d> poses;
@@ -126,6 +149,9 @@ bool SfmTriangulation::processTrack(
         observations.push_back(coords);
         intrinsics.push_back(intrinsic);
         poses.push_back(pose);
+        weights.push_back(1.0);
+        //TODO, check how to use scale correctly
+        //weights.push_back(1.0 / trackItem.scale);
         
         indexedViewIds.push_back(viewId);
     }
@@ -135,7 +161,7 @@ bool SfmTriangulation::processTrack(
     robustEstimation::MatrixModel<Vec4> model;
     std::vector<std::size_t> inliers;
     robustEstimation::ScoreEvaluator<multiview::TriangulationSphericalKernel> scorer(_maxError);
-    multiview::TriangulationSphericalKernel kernel(observations, poses, intrinsics);
+    multiview::TriangulationSphericalKernel kernel(observations, weights, poses, intrinsics);
 
     if (observations.size() <= 0)
     {
@@ -152,8 +178,8 @@ bool SfmTriangulation::processTrack(
     homogeneousToEuclidean(X, X_euclidean); 
 
     //Create landmark from result
-    result.X = X_euclidean;
-    result.descType = track.descType;
+    result.setX(X_euclidean);
+    result.setDescType(track.descType);
 
     for (const std::size_t & i : inliers)
     {   
@@ -173,6 +199,203 @@ bool SfmTriangulation::processTrack(
     return true;
 }
 
+bool SfmTriangulation::processTrackWithPrior(
+            const sfmData::SfMData & sfmData,
+            const track::Track & track,
+            std::mt19937 &randomNumberGenerator,
+            const std::set<IndexT> & viewIds,
+            sfmData::Landmark & result
+        )
+{
+    size_t bestInliersCount = 0;
+
+    //For each observed view in the track
+    for (auto referenceViewId : viewIds)
+    {   
+        if (track.featPerView.find(referenceViewId) == track.featPerView.end())
+        {
+            continue;
+        }
+
+        //Look if this observation has an associated depth
+        const auto & refTrackItem = track.featPerView.at(referenceViewId);
+        if (refTrackItem.depth < 0.0)
+        {
+            continue;
+        }
+
+        //Retrieve pose and feature coordinates for this observation
+        const sfmData::View & rView = sfmData.getView(referenceViewId);
+        const camera::IntrinsicBase & rIntrinsic = sfmData.getIntrinsic(rView.getIntrinsicId());
+        const geometry::Pose3 rPose = sfmData.getPose(rView).getTransform();        
+
+        //Compute 3D point in camera space
+        const double Z = refTrackItem.depth;
+        const Vec2 meters = rIntrinsic.removeDistortion(rIntrinsic.ima2cam(refTrackItem.coords.cast<double>()));
+        Vec3 cX = Z * meters.homogeneous();
+
+        //Transform 3D point in world space
+        const Vec3 oX = rPose.inverse()(cX);
+        
+        //Make sure this point is not dependent on parallax 
+        //As it does not need parallax to estimate its depth
+        sfmData::Landmark landmark;
+        landmark.setParallaxRobust(true);
+        landmark.setX(oX);
+        landmark.setDescType(track.descType);
+
+        //Compute consensus for this depth
+        for (auto viewId : viewIds)
+        {
+            if (track.featPerView.find(viewId) == track.featPerView.end())
+            {
+                continue;
+            }
+
+            const auto & trackItem = track.featPerView.at(viewId);
+
+            const sfmData::View & view = sfmData.getView(viewId);
+            const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
+            const geometry::Pose3 pose = sfmData.getPose(view).getTransform();    
+
+            const Vec2 est = intrinsic.transformProject(pose, oX.homogeneous(), true);
+            const Vec2 mes = trackItem.coords.cast<double>();
+            double err = (est - mes).norm() / trackItem.scale;
+
+            //Use _maxError as threshold for inliers/outlier detection
+            if (err > _maxError)
+            {
+                continue;
+            }
+
+            //Create and associated an observation to the landmark
+            sfmData::Observation & o = landmark.getObservations()[viewId];
+            o.setFeatureId(trackItem.featureId);
+            o.setScale(trackItem.scale);
+            o.setCoordinates(trackItem.coords);
+            o.setDepth(trackItem.depth);
+        }
+
+        //Store the landmark if it's better than the previously estimated one
+        int count = landmark.getObservations().size();
+        if (count > bestInliersCount)
+        {
+            bestInliersCount = count;
+            result = landmark;
+        }
+    }
+
+    //One inlier is the reference, so we need at least 2 inliers
+    if (bestInliersCount < 2)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool SfmTriangulation::processTrackWithPointFetcher(
+            const sfmData::SfMData & sfmData,
+            const track::Track & track,
+            std::mt19937 &randomNumberGenerator,
+            const std::set<IndexT> & viewIds,
+            sfmData::Landmark & result
+        )
+{
+    size_t bestInliersCount = 0;
+    std::vector<std::pair<Vec3, Vec3>> possibleParameters;
+
+    //For each observed view in the track
+    for (auto referenceViewId : viewIds)
+    {   
+        if (track.featPerView.find(referenceViewId) == track.featPerView.end())
+        {
+            continue;
+        }
+
+        //Look if this observation has an associated depth
+        const auto & refTrackItem = track.featPerView.at(referenceViewId);
+
+        const sfmData::View & v = sfmData.getView(referenceViewId);
+        const sfmData::CameraPose & cp = sfmData.getAbsolutePose(v.getPoseId());
+        const camera::IntrinsicBase & intrinsics = *sfmData.getIntrinsics().at(v.getIntrinsicId());
+
+        _pointFetcherHandler->setPose(cp.getTransform());
+
+        Vec3 point, normal;
+        if (!_pointFetcherHandler->pickPointAndNormal(point, normal, intrinsics, refTrackItem.coords))
+        {
+            continue;
+        }
+
+        possibleParameters.push_back(std::make_pair(point, normal));
+    }
+
+
+    
+    //Consider each point
+    for (int idRef = 0; idRef < possibleParameters.size(); idRef++)
+    {
+        const Vec3 & refpt = possibleParameters[idRef].first;
+
+        //Make sure this point is not dependent on parallax 
+        //As it does not need parallax to estimate its depth
+        sfmData::Landmark landmark;
+        landmark.setParallaxRobust(true);
+        landmark.setX(refpt);
+        landmark.setDescType(track.descType);
+        landmark.setIsPrecise(true);
+
+        //For each observed view in the track
+        for (auto viewId: viewIds)
+        {   
+            if (track.featPerView.find(viewId) == track.featPerView.end())
+            {
+                continue;
+            }
+
+            const auto & trackItem = track.featPerView.at(viewId);
+
+            const sfmData::View & view = sfmData.getView(viewId);
+            const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
+            const geometry::Pose3 pose = sfmData.getPose(view).getTransform();    
+
+            const Vec2 est = intrinsic.transformProject(pose, refpt.homogeneous(), true);
+            const Vec2 mes = trackItem.coords.cast<double>();
+            double err = (est - mes).norm() / trackItem.scale;
+
+            //Use _maxError as threshold for inliers/outlier detection
+            if (err > _maxError)
+            {
+                continue;
+            }
+
+            //Create and associated an observation to the landmark
+            sfmData::Observation & o = landmark.getObservations()[viewId];
+            o.setFeatureId(trackItem.featureId);
+            o.setScale(trackItem.scale);
+            o.setCoordinates(trackItem.coords);
+            o.setDepth(trackItem.depth);
+        }
+
+        //Store the landmark if it's better than the previously estimated one
+        int count = landmark.getObservations().size();
+        if (count > bestInliersCount)
+        {
+            bestInliersCount = count;
+            result = landmark;
+        }
+    }
+
+    //One inlier is the reference, so we need at least 2 inliers
+    if (bestInliersCount < 2)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 bool SfmTriangulation::checkChierality(const sfmData::SfMData & sfmData, const sfmData::Landmark & landmark)
 {
     for (const auto & pRefObs : landmark.getObservations())
@@ -185,7 +408,7 @@ bool SfmTriangulation::checkChierality(const sfmData::SfMData & sfmData, const s
         const geometry::Pose3 & refPose = refCameraPose.getTransform();
 
         const Vec3 dir = intrinsic->toUnitSphere(intrinsic->removeDistortion(intrinsic->ima2cam(obs.getCoordinates())));
-        const Vec3 ldir = refPose(landmark.X).normalized();
+        const Vec3 ldir = refPose(landmark.getX()).normalized();
 
         if (dir.dot(ldir) < 0.0)
         {
@@ -205,7 +428,7 @@ double SfmTriangulation::getMaximalAngle(const sfmData::SfMData & sfmData, const
         IndexT refViewId = pRefObs.first;
 
         const sfmData::View & refView = sfmData.getView(refViewId);
-        const sfmData::CameraPose & refCameraPose = sfmData.getPoses().at(refView.getPoseId());
+        const sfmData::CameraPose & refCameraPose = sfmData.getAbsolutePose(refView.getPoseId());
         const geometry::Pose3 & refPose = refCameraPose.getTransform();
 
         for (const auto & pNextObs : landmark.getObservations())
@@ -217,9 +440,9 @@ double SfmTriangulation::getMaximalAngle(const sfmData::SfMData & sfmData, const
             }
 
             const sfmData::View & nextView = sfmData.getView(nextViewId);
-            const sfmData::CameraPose & nextCameraPose = sfmData.getPoses().at(nextView.getPoseId());
+            const sfmData::CameraPose & nextCameraPose = sfmData.getAbsolutePose(nextView.getPoseId());
             const geometry::Pose3 & nextPose = nextCameraPose.getTransform();
-            double angle_deg = camera::angleBetweenRays(refPose, nextPose, landmark.X);
+            double angle_deg = camera::angleBetweenRays(refPose, nextPose, landmark.getX());
 
             max = std::max(max, angle_deg);
         }

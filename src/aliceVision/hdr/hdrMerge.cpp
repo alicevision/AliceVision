@@ -13,6 +13,7 @@
 
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/filtering.hpp>
 
 namespace aliceVision {
 namespace hdr {

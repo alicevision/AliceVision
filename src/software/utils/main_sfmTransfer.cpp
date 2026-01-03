@@ -222,7 +222,7 @@ int aliceVision_main(int argc, char** argv)
             if (pose != sfmDataRef.getPoses().end())
             {
                 view.second->setPoseId(pose->first);
-                sfmData.getPoses()[pose->first] = pose->second;
+                sfmData.getPoses().assign(pose->first, *(pose->second));
             }
         }
     }
@@ -287,7 +287,7 @@ int aliceVision_main(int argc, char** argv)
                             }
                         }
                         // copy the pose of the rig or the independent pose
-                        sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getPoses().at(viewB.getPoseId());
+                        sfmData.getPoses().assign(viewA.getPoseId(), sfmDataRef.getAbsolutePose(viewB.getPoseId()));
 
                         // warning: we copy the full rig (and not only the subpose corresponding to the view).
                         sfmData.getRigs()[viewA.getRigId()] = sfmDataRef.getRigs()[viewB.getRigId()];
@@ -299,7 +299,7 @@ int aliceVision_main(int argc, char** argv)
                             viewA.setPoseId(viewA.getViewId());
                             viewA.setIndependantPose(true);
                         }
-                        sfmData.getPoses()[viewA.getPoseId()] = sfmDataRef.getPose(viewB);
+                        sfmData.setPose(viewA, sfmDataRef.getPose(viewB));
                     }
                 }
                 if (transferIntrinsics)
@@ -365,15 +365,17 @@ int aliceVision_main(int argc, char** argv)
             usedPoseIds.insert(viewIt.second->getPoseId());
         }
         std::set<IndexT> poseIdsToRemove;
-        for (auto poseIt : sfmData.getPoses())
+        for (auto [poseId, _] : sfmData.getPoses())
         {
-            if (usedPoseIds.find(poseIt.first) == usedPoseIds.end())
+            if (usedPoseIds.find(poseId) == usedPoseIds.end())
             {
-                poseIdsToRemove.insert(poseIt.first);
+                poseIdsToRemove.insert(poseId);
             }
         }
         for (auto r : poseIdsToRemove)
+        {
             sfmData.getPoses().erase(r);
+        }
     }
 
     ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");

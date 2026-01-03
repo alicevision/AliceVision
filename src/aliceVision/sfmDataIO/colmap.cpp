@@ -7,6 +7,8 @@
 #include "colmap.hpp"
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -396,8 +398,8 @@ void generateColmapPoints3DTxtFile(const sfmData::SfMData& sfmData, const Compat
     for (const auto& iter : sfmData.getLandmarks())
     {
         const IndexT id = iter.first;
-        const Vec3 exportPoint = iter.second.X;
-        const auto pointColor = iter.second.rgb;
+        const Vec3 exportPoint = iter.second.getX();
+        const auto pointColor = iter.second.getRgb();
         outfile << id << " " << exportPoint.x() << " " << exportPoint.y() << " " << exportPoint.z() << " " << static_cast<int>(pointColor.r()) << " "
                 << static_cast<int>(pointColor.g()) << " " << static_cast<int>(pointColor.b()) << " ";
 

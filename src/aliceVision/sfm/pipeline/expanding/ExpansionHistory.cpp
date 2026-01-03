@@ -6,7 +6,8 @@
 
 #include "ExpansionHistory.hpp"
 
-
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 
 namespace aliceVision {
@@ -21,10 +22,22 @@ bool ExpansionHistory::initialize(const sfmData::SfMData & sfmData)
     // Update epoch id 
     // We want to have a starting epoch larger than the one found in the existing views
     _epoch = 0;
-    for (const auto & pv : sfmData.getViews())
+    for (const auto & [viewId, view] : sfmData.getViews())
     {
-        _epoch = std::max(_epoch, static_cast<size_t>(pv.second->getResectionId()));
+        IndexT rid = view->getResectionId();
+        if (rid == UndefinedIndexT)
+        {
+            continue;
+        }
+
+        if (!sfmData.isPoseAndIntrinsicDefined(viewId))
+        {
+            continue;
+        }
+        
+        _epoch = std::max(_epoch, static_cast<size_t>(view->getResectionId()));
     }
+
 
     _epoch++;
 
@@ -33,6 +46,7 @@ bool ExpansionHistory::initialize(const sfmData::SfMData & sfmData)
 
 bool ExpansionHistory::beginEpoch(const sfmData::SfMData & sfmData)
 {
+    debrief(sfmData);
     return true;
 }
 
@@ -84,8 +98,15 @@ void ExpansionHistory::saveState(const sfmData::SfMData & sfmData)
         //Store usage counter
         _focalHistory[pIntrinsic.first].push_back(std::make_pair(usage, iso->getScale().x()));
     }
+}
 
-    
+void ExpansionHistory::debrief(const sfmData::SfMData & sfmData) const
+{
+    ALICEVISION_LOG_INFO("---- Current statistics ----");
+    ALICEVISION_LOG_INFO("Views : " << sfmData.getViews().size());
+    ALICEVISION_LOG_INFO("Valid views : " << sfmData.getValidViews().size());
+    ALICEVISION_LOG_INFO("Landmarks : " << sfmData.getLandmarks().size());
+    ALICEVISION_LOG_INFO("----------------------------");
 }
 
 } // namespace sfm

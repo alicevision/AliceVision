@@ -35,12 +35,14 @@ public:
         _distanceLimit = distanceLimit;
     }
 
+
 private:
-    void upgradeSfmData(sfmData::SfMData & sfmData, const ConnexityGraph & graph);
+    void upgradeSfmData(sfmData::SfMData & sfmData);
     void setupIntrinsics(sfmData::SfMData & sfmData);
 
 private:
     int _distanceLimit = 1;
+    ConnexityGraph _graph;
 };
 
 }

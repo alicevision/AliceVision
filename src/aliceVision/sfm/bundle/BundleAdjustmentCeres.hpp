@@ -37,8 +37,7 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     {
         CeresOptions(bool verbose = true, bool multithreaded = true, unsigned int maxIterations = 50)
           : verbose(verbose),
-            nbThreads(multithreaded ? omp_get_max_threads() : 1)  // set number of threads, 1 if OpenMP is not enabled
-            ,
+            nbThreads(multithreaded ? omp_get_max_threads() : 1),  // set number of threads, 1 if OpenMP is not enabled
             maxNumIterations(maxIterations)
         {
             setDenseBA();  // use dense BA by default
@@ -58,6 +57,7 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
         bool summary = false;
         bool verbose = true;
         bool useFocalPrior = true;
+        aliceVision::sfm::TemporalConstraintParams temporalConstraintParams;
     };
 
     /**
@@ -179,7 +179,7 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
      * @param[in] refineOptions The chosen refine flag
      * @param[out] problem The Ceres bundle adjustment problem
      */
-    void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+    void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem, std::vector<ceres::ResidualBlockId>& blockIds);
 
     /**
      * @brief Create a residual block for each survey point according to the Ceres format
@@ -214,6 +214,14 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     void addRotationPriorsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
     /**
+     * @brief Create a residual block for each camera pose to add a temporal smoothness constraint
+     * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+     * @param[in] refineOptions The chosen refine flag
+     * @param[out] problem The Ceres bundle adjustment problem
+     */
+    void addTemporalSmoothnessToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem, std::vector<ceres::ResidualBlockId>& blockIds);
+
+    /**
      * @brief Create the Ceres bundle adjustment problem with:
      *  - extrincics and intrinsics parameters blocks.
      *  - residuals blocks for each observation.
@@ -221,7 +229,7 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
      * @param[in] refineOptions The chosen refine flag
      * @param[out] problem The Ceres bundle adjustment problem
      */
-    void createProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+    void createProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem, std::vector<ceres::ResidualBlockId>& landmarksBlockIds, std::vector<ceres::ResidualBlockId>& temporalConstraintBlockIds);
 
     /**
      * @brief Update The given SfMData with the solver solution
@@ -255,7 +263,7 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     std::map<IndexT, std::vector<double>> _distortionsBlocks;
     std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
 
-    std::vector<double> _fakeDistortionBlock;
+    double _fakeDistortionBlock;
     /// landmarks blocks wrapper
     /// block: 3d position(3)
     std::map<IndexT, std::array<double, 3>> _landmarksBlocks;

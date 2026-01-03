@@ -122,7 +122,6 @@ int aliceVision_main(int argc, char** argv)
     }
 
     rotationAveraging::RelativeRotations rotations;
-
     for (const auto & pair : reconstructedPairs)
     {
         rotationAveraging::RelativeRotation rot(pair.reference, pair.next, pair.pose.rotation(), pair.score);
@@ -141,16 +140,20 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    for (auto & item : globalRotations)
-    {
+    // Store the results in the sfmData
+    for (auto & [index, R] : globalRotations)
+    {        
         sfmData::CameraPose cp;
-        const geometry::Pose3& p = cp.getTransform();
-        p.rotation() = item.second;
+        geometry::Pose3 p;
+        p.setRotation(R);
+        
+        cp.setTransform(p);
         cp.setRotationOnly(true);
 
-        sfmData.getPoses()[item.first] = cp;
+        sfmData.getPoses().assign(index, cp);
     }
 
+    ALICEVISION_LOG_INFO("Saving sfmData to " << sfmDataOutputFilename);
     sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
 
     return EXIT_SUCCESS;

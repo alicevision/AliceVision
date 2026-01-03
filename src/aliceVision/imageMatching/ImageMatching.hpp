@@ -54,7 +54,8 @@ enum class EImageMatchingMethod
     SEQUENTIAL = 2,
     SEQUENTIAL_AND_VOCABULARYTREE = 3,
     FRUSTUM = 4,
-    FRUSTUM_OR_VOCABULARYTREE = 5
+    FRUSTUM_OR_VOCABULARYTREE = 5,
+    MIRROR = 6,
 };
 
 /**
@@ -116,6 +117,7 @@ EImageMatchingMode EImageMatchingMode_stringToEnum(const std::string& modeMultiS
 void convertAllMatchesToPairList(const PairList& allMatches, std::size_t numMatches, OrderedPairList& outPairList);
 
 void generateSequentialMatches(const sfmData::SfMData& sfmData, size_t nbMatches, OrderedPairList& outPairList);
+void generateMirrorsMatches(const sfmData::SfMData& sfmData, OrderedPairList& outPairList);
 void generateAllMatchesInOneMap(const std::set<IndexT>& viewIds, OrderedPairList& outPairList);
 void generateAllMatchesBetweenTwoMap(const std::set<IndexT>& viewIdsA, const std::set<IndexT>& viewIdsB, OrderedPairList& outPairList);
 

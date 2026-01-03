@@ -13,10 +13,13 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/ExternalAlembicImporter.hpp>
 
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/program_options.hpp>
 #include <boost/json.hpp>
 
+#include <filesystem>
 #include <fstream>
 
 // These constants define the current software version.
@@ -171,13 +174,46 @@ bool getPosesFromJson(const std::string& posesFilename, ERotationFormat format, 
     return true;
 }
 
+/**
+ * @brief Get a set of poses from an alembic file (assumes the file format is ok).
+ * @param posesFilename the input ABC filename
+ * @param readPose the output poses vector
+ * @param frameRate the file framerate used to estimate frame id from samples timecodes.
+ * @return false if the process failed, true otherwise
+ */
+bool getPosesFromAlembic(const std::string& posesFilename, std::vector<PoseInput>& readPoses, double frameRate)
+{
+    sfmDataIO::ExternalAlembicImporter importer(posesFilename, frameRate);
+
+    sfmData::SfMData sfmData;
+    importer.populateSfM(sfmData);
+
+    readPoses.clear();
+    for (const auto &[id, v]: sfmData.getViews().valueRange())
+    {
+        if (!sfmData.isPoseAndIntrinsicDefined(id))
+        {
+            continue;
+        }
+
+        PoseInput pi;
+        pi.frameId = v.getFrameId();
+        pi.T = sfmData.getAbsolutePose(v.getPoseId()).getTransform().getHomogeneous();
+
+        readPoses.push_back(pi);
+    }
+
+    return true;
+}
+
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
     std::string sfmDataFilename;
     std::string sfmDataOutputFilename;
     std::string posesFilename;
-    ERotationFormat format;
+    ERotationFormat format = ERotationFormat::EulerZXY;
+    double frameRate = 24.0;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -185,14 +221,16 @@ int aliceVision_main(int argc, char** argv)
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
          "Input SfMData file.")
         ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(),
-         "SfMData output file with the injected poses.")
-        ("rotationFormat,r", po::value<ERotationFormat>(&format)->required(),
-         "Rotation format for the input poses: EulerZXY.");
+         "SfMData output file with the injected poses.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("rotationFormat,r", po::value<ERotationFormat>(&format)->default_value(format),
+         "Rotation format for the input poses: EulerZXY.")
+        ("framerate", po::value<double>(&frameRate)->default_value(frameRate),
+         "Alembic frame rate to compute frame id from time.")
         ("posesFilename,p", po::value<std::string>(&posesFilename)->default_value(posesFilename),
-        "JSON file containing the poses to inject.");
+        "File containing the poses to inject.");
     // clang-format on
 
     CmdLine cmdline("AliceVision SfM Pose injecting");
@@ -224,9 +262,30 @@ int aliceVision_main(int argc, char** argv)
     }
 
     std::vector<PoseInput> readPoses;
-    if (!getPosesFromJson(posesFilename, format, readPoses))
+
+    std::string ext = std::filesystem::path(posesFilename).extension().string();
+    boost::to_lower(ext);
+    if (ext == ".json")
     {
-        ALICEVISION_LOG_ERROR("Cannot read the poses");
+        ALICEVISION_LOG_INFO("Json file input detected.");
+        if (!getPosesFromJson(posesFilename, format, readPoses))
+        {
+            ALICEVISION_LOG_ERROR("Cannot read the poses");
+            return EXIT_FAILURE;
+        }
+    }
+    else if (ext == ".abc")
+    {
+        ALICEVISION_LOG_INFO("Alembic file input detected.");
+        if (!getPosesFromAlembic(posesFilename, readPoses, frameRate))
+        {
+            ALICEVISION_LOG_ERROR("Cannot read the poses");
+            return EXIT_FAILURE;
+        }
+    }
+    else 
+    {
+        ALICEVISION_LOG_ERROR("Input file format not recognized.");
         return EXIT_FAILURE;
     }
 
@@ -237,6 +296,7 @@ int aliceVision_main(int argc, char** argv)
         {
             if (pview->getFrameId() == rpose.frameId)
             {
+                ALICEVISION_LOG_INFO("Assigning view " << id << "(frame " << rpose.frameId << ")");
                 geometry::Pose3 pose(rpose.T);
                 sfmData::CameraPose cpose(pose, false);
                 cpose.setRemovable(false);

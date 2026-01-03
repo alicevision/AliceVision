@@ -32,15 +32,13 @@ def outputImagesValueFunct(attr):
 
 
 class ImageProcessing(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_imageProcessing {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_imageProcessing {allParams}"
+    size = desc.DynamicNodeSize("input")
     # parallelization = desc.Parallelization(blockSize=40)
     # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
 
-    category = 'Utils'
-    documentation = '''
-Convert or apply filtering to the input images.
-'''
+    category = "Utils"
+    documentation = """Convert or apply filtering to the input images."""
 
     inputs = [
         desc.File(

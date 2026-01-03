@@ -30,7 +30,7 @@ class SIFT_openCV_Params
      * @param[in] preset The preset configuration
      * @return True if configuration succeed.
      */
-    void setConfigurationPreset(EImageDescriberPreset preset);
+    void setConfigurationPreset(ConfigurationPreset preset);
 
     /// Parameters
     std::size_t gridSize = 4;
@@ -84,7 +84,7 @@ class ImageDescriber_SIFT_openCV : public ImageDescriber
      * @param[in] preset The preset configuration
      * @return True if configuration succeed.
      */
-    void setConfigurationPreset(EImageDescriberPreset preset) override { _params.setConfigurationPreset(preset); }
+    void setConfigurationPreset(ConfigurationPreset preset) override { _params.setConfigurationPreset(preset); }
 
     /**
      * @brief Detect regions on the 8-bit image and compute their attributes (description)

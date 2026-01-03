@@ -17,6 +17,7 @@
 %import <aliceVision/sfmDataIO/SfMDataIO.i>
 %import <aliceVision/sfmData/SfMData.i>
 %import <aliceVision/stl/Stl.i>
+%import <aliceVision/track/track.i>
 
 %{
 #include <aliceVision/version.hpp>

@@ -5,8 +5,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "middlebury.hpp"
+
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -128,7 +131,7 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename,
         {
             // add the pose entry
             const auto pose = geometry::poseFromRT(rotation, translation);
-            scene.getPoses().insert({poseId, sfmData::CameraPose(pose, lockPoses)});
+            scene.getPoses().assign(poseId, sfmData::CameraPose(pose, lockPoses));
         }
 
         // add view

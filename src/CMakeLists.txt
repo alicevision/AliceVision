@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.25)
 message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 
 # ==============================================================================
@@ -63,7 +63,6 @@ trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
 trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
 trilean_option(ALICEVISION_USE_APRILTAG "Enable AprilTag markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
-trilean_option(ALICEVISION_USE_OPENGV "Enable use of OpenGV algorithms" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
@@ -137,8 +136,16 @@ if (WIN32)
     add_definitions(-DNOMINMAX)
     add_definitions(-D_USE_MATH_DEFINES)
     if (MSVC)
+        # MSVC library version
+        cmake_policy(SET CMP0091 NEW)   # Manually choose msvcrt version
+        if(BUILD_SHARED_LIBS)
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        else()
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        endif()
         add_compile_options(/bigobj)
         add_compile_options(/MP)
+        add_compile_options(/GR)   # See policy CMP0117: Enable RTTI on MSVC
     endif()
 endif()
 
@@ -333,7 +340,7 @@ endif()
 # ==============================================================================
 # OpenImageIO
 # ==============================================================================
-find_package(OpenImageIO 2.0.9 REQUIRED)
+find_package(OpenImageIO 3.0 REQUIRED)
 if (OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
     message(STATUS "OpenImageIO found.")
 else()
@@ -593,26 +600,6 @@ if (NOT ALICEVISION_USE_USD STREQUAL "OFF")
 endif()
 
 # ==============================================================================
-# OpenGV
-# ==============================================================================
-# - optional, it allows to use the generic camera PnP algorithms for rig localization
-# ==============================================================================
-set(ALICEVISION_HAVE_OPENGV 0)
-
-if (ALICEVISION_BUILD_SFM)
-    if (NOT ALICEVISION_USE_OPENGV STREQUAL "OFF")
-        find_package(opengv 1.0 CONFIG)
-        if (opengv_FOUND)
-            set(ALICEVISION_HAVE_OPENGV 1)
-            message(STATUS "OpenGV ${opengv_VERSION} found.")
-        elseif (ALICEVISION_USE_OPENGV STREQUAL "ON")
-            message(SEND_ERROR "Failed to find OpenGV.")
-        endif()
-    endif()
-
-endif()
-
-# ==============================================================================
 # UncertaintyTE
 # ==============================================================================
 # - optional, only external and enabled only if ALICEVISION_USE_UNCERTAINTYTE is ON
@@ -775,6 +762,7 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         cmake_policy(SET CMP0078 NEW)  # Use the specified module name for the target's name
         cmake_policy(SET CMP0086 NEW)  # Use "-module {name}" when the module name has been set with SWIG_MODULE_NAME
     
+        set(ALICEVISION_PYTHON_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/python/pyalicevision")
         include(UseSWIG)
         message(STATUS "SWIG found.")
     else()
@@ -981,7 +969,6 @@ message("** Use OpenCV SIFT features: " ${ALICEVISION_HAVE_OCVSIFT})
 message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
 message("** Use AprilTag markers: " ${ALICEVISION_HAVE_APRILTAG})
-message("** Use OpenGV for rig localization: " ${ALICEVISION_HAVE_OPENGV})
 message("** Use ONNX: " ${ALICEVISION_HAVE_ONNX})
 message("** Use ONNX with CUDA: " ${ALICEVISION_HAVE_ONNX_GPU})
 message("\n")
@@ -1004,6 +991,7 @@ endif()
 if (ALICEVISION_BUILD_SWIG_BINDING)
     message("\n")
     message(STATUS "SWIG: " ${SWIG_VERSION} "")
+    message(STATUS "Python: " ${Python3_VERSION} "")
 endif()
 
 message("\n")
@@ -1089,5 +1077,9 @@ configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" ${cmakeUninstallFile}
     IMMEDIATE @ONLY
 )
+
+if (ALICEVISION_BUILD_SWIG_BINDING)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/aliceVision/__init__.py" DESTINATION "${ALICEVISION_PYTHON_INSTALL_DIR}")
+endif()
 
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${cmakeUninstallFile}")

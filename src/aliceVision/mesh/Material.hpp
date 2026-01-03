@@ -32,7 +32,7 @@ class Material
     };
 
     Color diffuse = {0.6, 0.6, 0.6};
-    Color ambient = {0.6, 0.6, 0.6};
+    Color ambient = {0.1, 0.1, 0.1};
     Color specular = {0.0, 0.0, 0.0};
     float shininess = 0.0;
 
@@ -54,8 +54,8 @@ class Material
     /// Get textures by type
     const StaticVector<std::string>& getTextures(TextureType type) const;
 
-    /// Get all textures used in the material
-    StaticVector<std::string> getAllTextures() const;
+    /// Get all texture paths used in the material
+    std::vector<std::string> getAllTextures() const;
 
     /// Check if material has textures of a given type
     bool hasTextures(TextureType type) const;

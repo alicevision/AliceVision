@@ -42,10 +42,16 @@ class ProgressDisplay
     void restart(unsigned long expectedCount) { _impl->restart(expectedCount); }
 
     // Thread safe with respect to other calls to operator++ and to calls to count()
-    void operator++() { _impl->increment(1); }
+    ProgressDisplay& operator++() {
+      _impl->increment(1);
+      return *this;
+    }
 
     // Thread safe with respect to other calls to operator++ and to calls to count()
-    void operator+=(unsigned long increment) { _impl->increment(increment); }
+    ProgressDisplay& operator+=(unsigned long increment) { 
+      _impl->increment(increment);
+      return *this;
+    }
 
     // Thread safe with respect to calls to operator++
     unsigned long count() { return _impl->count(); }

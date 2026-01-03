@@ -16,7 +16,7 @@
 #include "algorithm.h"
 #include <functional>
 #include <numeric>
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/config.hpp>
 
 using namespace aliceVision;

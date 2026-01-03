@@ -11,7 +11,7 @@
     #pragma warning(once : 4244)
 #endif
 
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/MathTrait.hpp>
 #include <aliceVision/feature/PointFeature.hpp>

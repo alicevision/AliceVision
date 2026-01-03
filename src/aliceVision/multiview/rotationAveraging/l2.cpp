@@ -262,6 +262,7 @@ bool L2RotationAveraging_Refine(const RelativeRotations& vec_relativeRot, std::v
     }
     // set number of threads, 1 if openMP is not enabled
     solverOptions.num_threads = omp_get_max_threads();
+    solverOptions.max_num_consecutive_invalid_steps = 10;
 #if CERES_VERSION_MAJOR < 2
     solverOptions.num_linear_solver_threads = omp_get_max_threads();
 #endif

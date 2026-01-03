@@ -17,11 +17,12 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
 // load features per view
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 // feature matches
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/stl/stl.hpp>
 // selection Methods

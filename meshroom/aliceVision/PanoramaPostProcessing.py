@@ -8,14 +8,12 @@ from meshroom.core.utils import COLORSPACES, VERBOSE_LEVEL
 
 
 class PanoramaPostProcessing(desc.CommandLineNode):
-    commandLine = 'aliceVision_panoramaPostProcessing {allParams}'
+    commandLine = "aliceVision_panoramaPostProcessing {allParams}"
     cpu = desc.Level.NORMAL
     ram = desc.Level.INTENSIVE
 
-    category = 'Panorama HDR'
-    documentation = '''
-Post process the panorama.
-'''
+    category = "Panorama HDR"
+    documentation = """Post-process the panorama."""
 
     inputs = [
         desc.File(

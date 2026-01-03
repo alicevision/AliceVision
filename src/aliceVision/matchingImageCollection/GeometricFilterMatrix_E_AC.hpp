@@ -8,10 +8,12 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
+#include <aliceVision/matchingImageCollection/geometricFilterUtils.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/matching/guidedMatching.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
@@ -19,6 +21,7 @@
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <limits>
 
@@ -40,7 +43,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
      *        relating them using a robust method (like A Contrario Ransac).
      */
     template<typename Regions_or_Features_ProviderT>
-    EstimationStatus geometricEstimation(const sfmData::SfMData* sfmData,
+    EstimationStatus geometricEstimation(const sfmData::SfMData& sfmData,
                                          const Regions_or_Features_ProviderT& regionsPerView,
                                          const Pair& pairIndex,
                                          const matching::MatchesPerDescType& putativeMatchesPerType,
@@ -59,12 +62,12 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
             return EstimationStatus(false, false);
 
         // reject pair with missing Intrinsic information
-        const sfmData::View& viewI = sfmData->getView(I);
-        const sfmData::View& viewJ = sfmData->getView(J);
+        const sfmData::View& viewI = sfmData.getView(I);
+        const sfmData::View& viewJ = sfmData.getView(J);
 
         // Check that valid cameras can be retrieved for the pair of views
-        std::shared_ptr<camera::IntrinsicBase> cam_I = sfmData->getIntrinsicSharedPtr(viewI.getIntrinsicId());
-        std::shared_ptr<camera::IntrinsicBase> cam_J = sfmData->getIntrinsicSharedPtr(viewJ.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> cam_I = sfmData.getIntrinsicSharedPtr(viewI.getIntrinsicId());
+        std::shared_ptr<camera::IntrinsicBase> cam_J = sfmData.getIntrinsicSharedPtr(viewJ.getIntrinsicId());
 
         if (!cam_I || !cam_J)
             return EstimationStatus(false, false);
@@ -126,7 +129,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
      * @param matches
      * @return
      */
-    bool Geometry_guided_matching(const sfmData::SfMData* sfmData,
+    bool Geometry_guided_matching(const sfmData::SfMData& sfmData,
                                   const feature::RegionsPerView& regionsPerView,
                                   const Pair imageIdsPair,
                                   const double dDistanceRatio,
@@ -138,14 +141,14 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
             const IndexT I = imageIdsPair.first;
             const IndexT J = imageIdsPair.second;
 
-            const sfmData::View& viewI = sfmData->getView(I);
-            const sfmData::View& viewJ = sfmData->getView(J);
+            const sfmData::View& viewI = sfmData.getView(I);
+            const sfmData::View& viewJ = sfmData.getView(J);
 
             // check that valid cameras can be retrieved for the pair of views
             const camera::IntrinsicBase* camI =
-              sfmData->getIntrinsics().count(viewI.getIntrinsicId()) ? sfmData->getIntrinsics().at(viewI.getIntrinsicId()).get() : nullptr;
+              sfmData.getIntrinsics().count(viewI.getIntrinsicId()) ? sfmData.getIntrinsics().at(viewI.getIntrinsicId()).get() : nullptr;
             const camera::IntrinsicBase* camJ =
-              sfmData->getIntrinsics().count(viewJ.getIntrinsicId()) ? sfmData->getIntrinsics().at(viewJ.getIntrinsicId()).get() : nullptr;
+              sfmData.getIntrinsics().count(viewJ.getIntrinsicId()) ? sfmData.getIntrinsics().at(viewJ.getIntrinsicId()).get() : nullptr;
             if (!camI || !camJ)
                 return false;
 
@@ -173,6 +176,13 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
 
         return matches.getNbAllMatches() != 0;
     }
+
+    Eigen::Matrix3d getMatrix() { return m_E; }
+
+    /**
+     * @return geometric filter type represented by this class
+     */
+    EGeometricFilterType getType() { return EGeometricFilterType::ESSENTIAL_MATRIX; }
 
     // stored data
     Mat3 m_E;

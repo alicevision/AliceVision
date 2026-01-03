@@ -5,14 +5,12 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class MeshResampling(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_meshResampling {allParams}'
+    commandLine = "aliceVision_meshResampling {allParams}"
     cpu = desc.Level.NORMAL
     ram = desc.Level.NORMAL
 
-    category = 'Mesh Post-Processing'
-    documentation = '''
-This node allows to recompute the mesh surface with a new topology and uniform density.
-'''
+    category = "Mesh Post-Processing"
+    documentation = """This node allows to recompute the mesh surface with a new topology and uniform density."""
 
     inputs = [
         desc.File(

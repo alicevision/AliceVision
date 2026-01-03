@@ -40,9 +40,27 @@ function(alicevision_add_library library_name)
         endif()
 
     elseif (BUILD_SHARED_LIBS)
-        cuda_add_library(${library_name} SHARED ${LIBRARY_SOURCES} OPTIONS --compiler-options "-fPIC")
+        if(MSVC)
+            if(CMAKE_BUILD_TYPE MATCHES "Debug")
+                set(CUDA_LIB_OPTIONS --compiler-options "/MDd")
+            else()
+                set(CUDA_LIB_OPTIONS --compiler-options "/MD")
+            endif()
+        else()
+            set(CUDA_LIB_OPTIONS --compiler-options "-fPIC")
+        endif()
+        cuda_add_library(${library_name} SHARED ${LIBRARY_SOURCES} OPTIONS ${CUDA_LIB_OPTIONS})
     else()
-        cuda_add_library(${library_name} ${LIBRARY_SOURCES})
+        if(MSVC)
+            if(CMAKE_BUILD_TYPE MATCHES "Debug")
+                set(CUDA_LIB_OPTIONS --compiler-options "/MTd")
+            else()
+                set(CUDA_LIB_OPTIONS --compiler-options "/MT")
+            endif()
+        else()
+            set(CUDA_LIB_OPTIONS --compiler-options "-fPIC")
+        endif()
+        cuda_add_library(${library_name} ${LIBRARY_SOURCES} OPTIONS ${CUDA_LIB_OPTIONS})
     endif()
 
     if (ALICEVISION_REMOVE_ABSOLUTE)
@@ -329,12 +347,13 @@ function(alicevision_swig_add_library module_name)
         TARGETS
             ${module_name}
         DESTINATION
-            ${CMAKE_INSTALL_BINDIR}
+            ${ALICEVISION_PYTHON_INSTALL_DIR}
     )
+
     install(
         FILES
             ${CMAKE_CURRENT_BINARY_DIR}/${module_name}.py
         DESTINATION
-            ${CMAKE_INSTALL_BINDIR}
+            ${ALICEVISION_PYTHON_INSTALL_DIR}
     )
 endfunction()

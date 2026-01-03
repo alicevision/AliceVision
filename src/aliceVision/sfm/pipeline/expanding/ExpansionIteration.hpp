@@ -42,7 +42,7 @@ public:
     }
 
     /**
-     * brief setup the expansion history handler
+     * @brief setup the expansion history handler
      * @param expansionHistory a shared ptr
      */
     void setExpansionHistoryHandler(ExpansionHistory::sptr & expansionHistory)
@@ -51,7 +51,7 @@ public:
     }
 
     /**
-     * brief setup the expansion history handler
+     * @brief setup the expansion history handler
      * @param expansionPolicy a unique ptr. Ownership will be taken
      */
     void setExpansionPolicyHandler(ExpansionPolicy::uptr & expansionPolicy)
@@ -60,7 +60,7 @@ public:
     }
 
     /**
-     * brief setup the expansion chunk handler
+     * @brief setup the expansion chunk handler
      * @param expansionChunk a unique ptr. Ownership will be taken
      */
     void setExpansionChunkHandler(ExpansionChunk::uptr & expansionChunk)

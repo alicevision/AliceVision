@@ -11,7 +11,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionHistory.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmBundle.hpp>
-#include <aliceVision/sfm/pipeline/expanding/PointFetcher.hpp>
+#include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
+#include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -44,7 +45,7 @@ public:
     }
 
     /**
-     * brief setup the expansion history handler
+     * @brief setup the expansion history handler
      * @param expansionHistory a shared ptr
      */
     void setExpansionHistoryHandler(ExpansionHistory::sptr & expansionHistory)
@@ -53,40 +54,21 @@ public:
     }
 
     /**
-     * brief setup the point fetcher handler
-     * @param pointFetcher a unique ptr. the Ownership will be taken
+     * @brief setup the Resection handler
+     * @param resectionHandler a unique ptr. the Ownership will be taken
     */
-    void setPointFetcherHandler(PointFetcher::uptr & pointFetcherHandler)
+    void setResectionHandler(SfmResection::uptr & resectionHandler)
     {
-        _pointFetcherHandler = std::move(pointFetcherHandler);
-    }
-
-    void setResectionMaxIterations(size_t maxIterations)
-    {
-        _resectionIterations = maxIterations;
+        _resectionHandler = std::move(resectionHandler);
     }
 
     /**
-     * @brief set the maximal error allowed for ransac resection module
-     * @param error the error value or <= 0 for automatic decision
-     * @param count the number of points
+     * @brief setup the Triangulation handler
+     * @param triangulationHandler a unique ptr. the Ownership will be taken
     */
-    void setResectionMaxError(double error)
+    void setTriangulationHandler(SfmTriangulation::uptr & triangulationHandler)
     {
-        _resectionMaxError = error;
-        if (_resectionMaxError <= 0.0)
-        {
-            _resectionMaxError = std::numeric_limits<double>::infinity();
-        }
-    }
-
-    /**
-     * @brief set the minimal number of points to enable triangulation of a track
-     * @param count the number of points
-    */
-    void setTriangulationMinPoints(size_t count)
-    {
-        _triangulationMinPoints = count;
+        _triangulationHandler = std::move(triangulationHandler);
     }
 
     /**
@@ -98,9 +80,36 @@ public:
         _minTriangulationAngleDegrees = angle;
     }
 
+    /**
+     * @brief set the minimal number of inliers under which a resection is considered weak
+     * @param size the inliers count required
+    */
+    void setWeakResectionSize(size_t size)
+    {
+        _weakResectionSize = size;
+    }
+
     const std::set<IndexT> & getIgnoredViews()
     {
         return _ignoredViews;
+    }
+
+     /**
+     * @brief Are the optional depths priors used ?
+     * @param flag boolean to set value to
+    */
+    void setEnableDepthPrior(bool flag)
+    {
+        _enableDepthPrior = flag;
+    }
+
+    /**
+     * @brief Do we prefer prior depth over estimated multiview depth ?
+     * @param flag boolean to set value to
+    */
+    void setIgnoreMultiviewOnPrior(bool flag)
+    {
+        _ignoreMultiviewOnPrior = flag;
     }
 
 private:
@@ -132,15 +141,16 @@ private:
 private:
     SfmBundle::uptr _bundleHandler;
     ExpansionHistory::sptr _historyHandler;
-    PointFetcher::uptr _pointFetcherHandler;
     std::set<IndexT> _ignoredViews;
+    SfmResection::uptr _resectionHandler;
+    SfmTriangulation::uptr _triangulationHandler;
 
 private:    
-    size_t _resectionIterations = 1024;
-    size_t _triangulationMinPoints = 2;
     double _minTriangulationAngleDegrees = 3.0;
-    double _maxTriangulationError = 8.0;
-    double _resectionMaxError = std::numeric_limits<double>::infinity();
+    size_t _weakResectionSize = 100;
+    bool _enableDepthPrior = true;
+    bool _enableMeshPrior = true;
+    bool _ignoreMultiviewOnPrior = false;
 };
 
 } // namespace sfm

@@ -1,5 +1,6 @@
 #pragma once
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 

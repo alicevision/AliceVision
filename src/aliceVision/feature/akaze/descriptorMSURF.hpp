@@ -10,6 +10,7 @@
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/numeric/MathTrait.hpp>
+#include <aliceVision/image/Sampler.hpp>
 
 namespace aliceVision {
 namespace feature {

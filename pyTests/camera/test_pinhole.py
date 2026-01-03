@@ -158,7 +158,7 @@ def test_pinhole_default_constructor():
         "The Pinhole intrinsic's focal length in Y should be 1.0"
 
     offset = intrinsic.getOffset()
-    assert avnum.getX(offset) == 0.0 and avnum.getY(offset) == 0.0
+    assert offset[0] == 0.0 and offset[1] == 0.0
 
     assert intrinsic.sensorWidth() == 36.0
     assert intrinsic.sensorHeight() == 24.0

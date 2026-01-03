@@ -13,7 +13,7 @@
 
 // ColorHarmonization solver
 #include <aliceVision/colorHarmonization/GainOffsetConstraintBuilder.hpp>
-#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/config.hpp>
 
 #include <aliceVision/utils/Histogram.hpp>

@@ -26,15 +26,12 @@ RUN . ./etc/os-release && \
         ca-certificates \
         wget \
         software-properties-common && \
-    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor - > /etc/apt/trusted.gpg.d/kitware.gpg && \
-    apt-add-repository "deb https://apt.kitware.com/ubuntu/ $UBUNTU_CODENAME main" && \
-    apt-get clean && \
-    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential \
         git \
         unzip \
         yasm \
+        libyaml-cpp-dev \
         pkg-config \
         libtool \
         libssl-dev \
@@ -47,14 +44,16 @@ RUN . ./etc/os-release && \
         g++-12 \
         cpp-12 \
         gfortran-12 \
-        python3-dev \
-        python3-pip \
         libpcre2-dev \
         bison && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 --slave /usr/bin/g++ g++ /usr/bin/g++-12 --slave /usr/bin/gcov gcov /usr/bin/gcov-12  --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-12
 
+RUN add-apt-repository ppa:deadsnakes/ppa && apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3.11 python3.11-dev python3.11-distutils curl && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+
 # Install numpy
-RUN python3 -m pip install numpy
+RUN python3.11 -m pip install numpy==1.*
 
 ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
@@ -70,8 +69,8 @@ RUN echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVis
 COPY dl/fcn_resnet50.onnx ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx" >> /etc/profile.d/alicevision.sh
 
-COPY dl/ColorchartDetectionModel ${AV_INSTALL}/share/aliceVision/ColorchartDetectionModel
-RUN echo "export ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=${AV_INSTALL}/share/aliceVision/ColorchartDetectionModel" >> /etc/profile.d/alicevision.sh
+COPY dl/ColorChartDetectionModel ${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel
+RUN echo "export ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel" >> /etc/profile.d/alicevision.sh
 
 COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
 RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh` && echo "Build multithreading number of cores: ${CPU_CORES}"
@@ -86,12 +85,17 @@ RUN cmake "${AV_DEV}" \
      -DCMAKE_BUILD_TYPE=Release \
      -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
      -DAV_BUILD_ZLIB:BOOL=ON \
+     -DAV_BUILD_PYBIND11:BOOL=ON \
      -DAV_BUILD_ALICEVISION:BOOL=OFF \
+     -DPython_EXECUTABLE=/usr/bin/python3.11 \
      -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"
 
 # Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
 RUN mkdir -p "${AV_INSTALL}/lib" && \
     ln -s lib "${AV_INSTALL}/lib64"
+
+# Symlink to Python3 executable in case a call to "python" instead of "python3" is ever made
+RUN ln -s /usr/bin/python3.11 /usr/bin/python
 
 RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so /usr/local/cuda/lib64/libcublas.so
 
@@ -105,7 +109,6 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} assimp
 # RUN make -j ${CPU_CORES} geogram
 # RUN make -j ${CPU_CORES} eigen
-# RUN make -j ${CPU_CORES} opengv
 # RUN make -j ${CPU_CORES} suitesparse
 # RUN make -j ${CPU_CORES} ceres
 # RUN make -j ${CPU_CORES} tiff
@@ -119,7 +122,6 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 # RUN make -j ${CPU_CORES} SWIG
 # RUN make -j ${CPU_CORES} E57Format
 # RUN make -j ${CPU_CORES} LEMON
-# RUN make -j ${CPU_CORES} opengv
 # RUN make -j ${CPU_CORES} OpenMesh
 # RUN make -j ${CPU_CORES} flann
 # RUN make -j ${CPU_CORES} clp

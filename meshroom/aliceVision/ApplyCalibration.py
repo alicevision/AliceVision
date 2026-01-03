@@ -42,7 +42,7 @@ class ApplyCalibration(desc.AVCommandLineNode):
     outputs = [
         desc.File(
             name="output",
-            label="SMData",
+            label="SfMData",
             description="Path to the output SfMData file.",
             value="{nodeCacheFolder}/sfmData.sfm",
         ),

@@ -1,17 +1,15 @@
-__version__ = '5.0'
+__version__ = '6.0'
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class DistortionCalibration(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_distortionCalibration {allParams}'
-    size = desc.DynamicNodeSize('input')
+    commandLine = "aliceVision_distortionCalibration {allParams}"
+    size = desc.DynamicNodeSize("input")
 
-    category = 'Other'
-    documentation = '''
-Calibration of a camera/lens couple distortion using a full screen checkerboard.
-'''
+    category = "Other"
+    documentation = """Calibration of a camera/lens couple distortion using a full screen checkerboard."""
 
     inputs = [
         desc.File(
@@ -44,6 +42,14 @@ Calibration of a camera/lens couple distortion using a full screen checkerboard.
             label="Is Desqueezed",
             description="True if the input image is already desqueezed.",
             value=False,
+        ),
+        desc.FloatParam(
+            name="forcedPixelAspectRatio",
+            label="Force PixelAspect Ratio",
+            description="Force pixel aspect ratio value, overriding metadatas. Ignored if less than or equal 0.0.",
+            value=0.0,
+            range=(0.0, 2.0, 0.1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

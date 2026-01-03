@@ -12,6 +12,8 @@
 #include <Alembic/AbcCoreOgawa/All.h>
 #include <Alembic/Abc/OObject.h>
 
+#include <aliceVision/camera/Equidistant.hpp>
+
 #include <numeric>
 #include <filesystem>
 
@@ -404,7 +406,7 @@ void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const 
 {
     const std::string name = fs::path(view.getImage().getImagePath()).stem().string();
     const sfmData::CameraPose* pose =
-      ((flagsPart & ESfMData::EXTRINSICS) && sfmData.existsPose(view)) ? &(sfmData.getPoses().at(view.getPoseId())) : nullptr;
+      ((flagsPart & ESfMData::EXTRINSICS) && sfmData.existsPose(view)) ? sfmData.getPoses().at(view.getPoseId()).get() : nullptr;
     const std::shared_ptr<camera::IntrinsicBase> intrinsic =
       (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicSharedPtr(view.getIntrinsicId()) : nullptr;
 
@@ -505,21 +507,27 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
         return;
 
     // Fill vector with the values taken from AliceVision
+    std::vector<IndexT> referenceViewIndices;
     std::vector<V3f> positions;
     std::vector<Imath::C3f> colors;
     std::vector<Alembic::Util::uint32_t> descTypes;
+    std::vector<Alembic::Util::bool_t> isParallaxRobust;
     positions.reserve(landmarks.size());
     descTypes.reserve(landmarks.size());
+    isParallaxRobust.reserve(landmarks.size());
+    referenceViewIndices.reserve(landmarks.size());
 
     // For all the 3d points in the hash_map
     for (const auto& landmark : landmarks)
     {
-        const Vec3& pt = landmark.second.X;
-        const image::RGBColor& color = landmark.second.rgb;
+        const Vec3& pt = landmark.second.getX();
+        const image::RGBColor& color = landmark.second.getRgb();
         // convert position from computer vision convention to computer graphics (opengl-like)
         positions.emplace_back(pt[0], -pt[1], -pt[2]);
         colors.emplace_back(color.r() / 255.f, color.g() / 255.f, color.b() / 255.f);
-        descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
+        descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.getDescType()));
+        isParallaxRobust.emplace_back(static_cast<Alembic::Util::bool_t>(landmark.second.isParallaxRobust()));
+        referenceViewIndices.emplace_back(landmark.second.getReferenceViewIndex());
     }
 
     std::vector<Alembic::Util::uint64_t> ids(positions.size());
@@ -542,6 +550,8 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
     OCompoundProperty userProps = pSchema.getUserProperties();
 
     OUInt32ArrayProperty(userProps, "mvg_describerType").set(descTypes);
+    OBoolArrayProperty(userProps, "mvg_isParallaxRobust").set(isParallaxRobust);
+    OUInt32ArrayProperty(userProps, "mvg_referenceViewIndices").set(referenceViewIndices);
 
     if (withVisibility)
     {
@@ -561,11 +571,13 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
 
         std::vector<float> featPos2d;
         std::vector<float> featScale;
+        std::vector<float> featDepth;
         if (withFeatures)
         {
             featPos2d.reserve(nbObservations * 2);
             visibilityFeatId.reserve(nbObservations);
             featScale.reserve(nbObservations);
+            featDepth.reserve(nbObservations);
         }
 
         for (const auto& landmark : landmarks)
@@ -588,6 +600,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
                     featPos2d.emplace_back(obs.getY());
 
                     featScale.emplace_back(obs.getScale());
+                    featDepth.emplace_back(obs.getDepth());
                 }
             }
         }
@@ -600,6 +613,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
             OUInt32ArrayProperty(userProps, "mvg_visibilityFeatId").set(visibilityFeatId);
             OFloatArrayProperty(userProps, "mvg_visibilityFeatPos").set(featPos2d);  // feature position (x,y)
             OFloatArrayProperty(userProps, "mvg_visibilityFeatScale").set(featScale);
+            OFloatArrayProperty(userProps, "mvg_visibilityFeatDepth").set(featDepth);
         }
     }
     if (!landmarksUncertainty.empty())
@@ -623,6 +637,25 @@ void AlembicExporter::addSurveys(const sfmData::SurveyPoints & points)
 {
     OPoints outPoints(_dataImpl->_mvgSurveys, "surveys");
     OPointsSchema& pSchema = outPoints.getSchema();
+
+    //Build positions for abc visualisation
+    std::vector<V3f> positions;
+    for (const auto & [viewId, vsp] : points)
+    {
+        for (const auto & sp : vsp)
+        {
+            positions.emplace_back(sp.point3d[0], -sp.point3d[1], -sp.point3d[2]);
+        }
+    }
+
+    //Fake indices
+    std::vector<Alembic::Util::uint64_t> ids(positions.size());
+    std::iota(begin(ids), end(ids), 0);
+    
+    OPointsSchema::Sample psamp(std::move(V3fArraySample(positions)), std::move(UInt64ArraySample(ids)));
+    pSchema.set(psamp);
+
+    //Now, store information useful for AliceVision
     OCompoundProperty userProps = pSchema.getUserProperties();
 
     std::vector<IndexT> indices;
@@ -654,11 +687,11 @@ void AlembicExporter::addCamera(const std::string& name,
     _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty);
 }
 
-void AlembicExporter::initAnimatedCamera(const std::string& cameraName, std::size_t startFrame)
+void AlembicExporter::initAnimatedCamera(const std::string& cameraName, std::size_t startFrame, double frameRate)
 {
     // Sample the time in order to have one keyframe every frame
     // nb: it HAS TO be attached to EACH keyframed properties
-    TimeSamplingPtr tsp(new TimeSampling(1.0 / 24.0, startFrame / 24.0));
+    TimeSamplingPtr tsp(new TimeSampling(1.0 / frameRate, startFrame / frameRate));
 
     // Create the camera transform object
     std::stringstream ss;

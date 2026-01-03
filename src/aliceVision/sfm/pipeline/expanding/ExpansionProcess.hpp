@@ -40,7 +40,7 @@ public:
     }
 
     /**
-     * brief setup the expansion history handler
+     * @brief setup the expansion history handler
      * @param expansionHistory a shared ptr
      */
     void setExpansionHistoryHandler(ExpansionHistory::sptr & expansionHistory)
@@ -49,7 +49,7 @@ public:
     }
     
     /**
-     * brief setup the expansion iteration handler
+     * @brief setup the expansion iteration handler
      * @param expansionIteration a unique ptr. Ownership will be taken
      */
     void setExpansionIterationHandler(ExpansionIteration::uptr & expansionIteration)
@@ -58,13 +58,20 @@ public:
     }
 
     /**
-     * brief setup the expansion iteration post process handler
+     * @brief setup the expansion iteration post process handler
      * @param expansionPostProcess a unique ptr. Ownership will be taken
      */
     void setExpansionIterationPostProcessHandler(ExpansionPostProcess::uptr & expansionPostProcess)
     {
         _postProcessHandler = std::move(expansionPostProcess);
     }
+
+    /**
+     * @brief Remap the sfmData landmarks to id compatible with trackmap
+     * @param[in] sfmData the object to update
+     * @param[in] tracks the tracks for this scene
+     */
+    static void remapExistingLandmarks(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler);
 
 private:
 
@@ -74,14 +81,6 @@ private:
      * @param[in] tracks the tracks for this scene
      */
     bool prepareExisting(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler);
-
-    /**
-     * @brief Remap the sfmData landmarks to id compatible with trackmap
-     * @param[in] sfmData the object to update
-     * @param[in] tracks the tracks for this scene
-     */
-    void remapExistingLandmarks(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler);
-
     
    
 private:

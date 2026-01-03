@@ -6,6 +6,8 @@
 
 #include "MeshIntersection.hpp"
 
+#include <aliceVision/system/Logger.hpp>
+
 #include <geogram/basic/geometry.h>
 #include <geogram/mesh/mesh_io.h>
 #include <geogram/mesh/mesh_geometry.h>

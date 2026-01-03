@@ -6,9 +6,11 @@
 
 #include "FeatureExtractor.hpp"
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 
 #include <filesystem>
 #include <iomanip>
