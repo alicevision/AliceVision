@@ -35,7 +35,12 @@ namespace bpt = boost::property_tree;
 namespace aliceVision {
 namespace lightingEstimation {
 
-CalibrationData::CalibrationData(){}
+CalibrationData::CalibrationData() : 
+    points(Eigen::MatrixX3f(0, 3)),
+    normals(Eigen::MatrixX3f(0, 3)), 
+    pixels(Eigen::MatrixX2<unsigned int>(0, 2)), 
+    pixelsIntensity(Eigen::VectorXf(0))
+{}
 
 bool CalibrationData::prepareView(const aliceVision::IndexT viewId, 
 								  const sfmData::SfMData& sfmData, 
@@ -44,19 +49,25 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 								  unsigned int resolution)
 {
     aliceVision::sfmData::View::sptr currentView = sfmData.getViews().at(viewId);
-	const fs::path imagePath = fs::path(currentView->getImage().getImagePath());
-	std::shared_ptr<std::vector<CalibrationSphere>> sphereList = calibrationSpheres.at(viewId);
+	if (!currentView)
+	{
+		ALICEVISION_LOG_WARNING("No view found for id '" << viewId << "'.");
+		return false;
+	}
 
+	const fs::path imagePath = fs::path(currentView->getImage().getImagePath());
 	if (boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
 	{
 		return false;
 	}
+	ALICEVISION_LOG_INFO("  - " << imagePath.string());
+    
+	std::shared_ptr<std::vector<CalibrationSphere>> sphereList = calibrationSpheres.at(viewId);
 	if (!sphereList)
 	{
 		ALICEVISION_LOG_WARNING("No detected sphere found for '" << imagePath << "'.");
 		return false;
 	}
-	ALICEVISION_LOG_INFO("  - " << imagePath.string());
 	std::string picturePath = imagePath.string();
 
 	// intrinsics
@@ -99,26 +110,29 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 		Eigen::Vector3f sphereCenterWorld = sphere->getCenter();
 		Eigen::Vector3f sphereCenterCam = RT.block<3, 3>(0, 0) * sphereCenterWorld + RT.block<3, 1>(0, 3);
 		float sphereRadius = sphere->getRadius();
-
-		spherePositionAndNormalsOnImage(imageDim, K, sphereCenterCam, sphereRadius, pixels, points, normals, resolution);
+        
+		Eigen::MatrixX3f normals_cur;
+		Eigen::MatrixX3f points_cur;
+		Eigen::MatrixX2<unsigned int> pixels_cur;
+		spherePositionAndNormalsOnImage(imageDim, K, sphereCenterCam, sphereRadius, pixels_cur, points_cur, normals_cur, resolution);
 		// back on world coordinates
-		points = (points.rowwise() - RT.block<3, 1>(0, 3).transpose()) * RT.block<3, 3>(0, 0);
-		normals = normals * RT.block<3, 3>(0, 0);
+		points_cur = (points_cur.rowwise() - RT.block<3, 1>(0, 3).transpose()) * RT.block<3, 3>(0, 0);
+		normals_cur = normals_cur * RT.block<3, 3>(0, 0);
 
 		// pixels intensity
-		pixelsIntensity = Eigen::VectorXf(pixels.rows());
+		Eigen::VectorXf pixelsIntensity_cur = Eigen::VectorXf(pixels_cur.rows());
 		std::vector<unsigned int> nonZeroIntensities;
-		for (unsigned int ind = 0; ind < pixels.rows(); ind++)
+		for (unsigned int ind = 0; ind < pixels_cur.rows(); ind++)
 		{
-			pixelsIntensity(ind) = imageFloat(pixels(ind, 1), pixels(ind, 0));
-			if (pixelsIntensity(ind) > 10.0 / 255.0)  // remove dark pixels
+			pixelsIntensity_cur(ind) = imageFloat(pixels_cur(ind, 1), pixels_cur(ind, 0));
+			if (pixelsIntensity_cur(ind) > 10.0 / 255.0)  // remove dark pixels
 				nonZeroIntensities.push_back(ind);
 		}
-		normalsList.push_back(normals(nonZeroIntensities, Eigen::placeholders::all));
-		pixelsIntensityList.push_back(pixelsIntensity(nonZeroIntensities));
+		normalsList.push_back(normals_cur(nonZeroIntensities, Eigen::placeholders::all));
+		pixelsIntensityList.push_back(pixelsIntensity_cur(nonZeroIntensities));
 		if (usePose)
-			pointsList.push_back(points(nonZeroIntensities, Eigen::placeholders::all));
-		nb_pix += points.rows();
+			pointsList.push_back(points_cur(nonZeroIntensities, Eigen::placeholders::all));
+		nb_pix += nonZeroIntensities.size();
 	}
 
     if (nb_pix == 0)
@@ -127,25 +141,27 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
     }
 
 	// concatenate matrices
-	normals = Eigen::Matrix3f(nb_pix, 3);
-	pixelsIntensity = Eigen::VectorXf(nb_pix);
+    normals.resize(nb_pix, 3);
+	pixelsIntensity.resize(nb_pix);
     if (usePose)
-		points = Eigen::Matrix3f(nb_pix, 3);
+		points.resize(nb_pix, 3);
 	
 	unsigned int startAt = 0;
-	for (size_t i = 0; i < pointsList.size(); ++i)
+	for (size_t i = 0; i < normalsList.size(); ++i)
 	{
 		normals.block(startAt, 0, normalsList[i].rows(), 3) = normalsList[i];
 		pixelsIntensity.block(startAt, 0, pixelsIntensityList[i].rows(), 1) = pixelsIntensityList[i];
 		if (usePose)
+		{
 			points.block(startAt, 0, pointsList[i].rows(), 3) = pointsList[i];
-		startAt += pointsList[i].rows();
+		}
+		startAt += normalsList[i].rows();
 	}
 
 	return true;
 }
 
-unsigned int CalibrationData::nbPixels() const { return points.rows(); }
+unsigned int CalibrationData::nbPixels() const { return normals.rows(); }
 
 const Eigen::MatrixX3f& CalibrationData::getPoints() { return points; }
 
@@ -155,33 +171,34 @@ const Eigen::MatrixX2<unsigned int>& CalibrationData::getPixels() { return pixel
 
 const Eigen::VectorXf& CalibrationData::getPixelsIntensity() { return pixelsIntensity; }
 
-void lightCalibration(const sfmData::SfMData& sfmData,
-                      const CalibrationSpheres& calibrationSpheres,
-                      const std::string& outputPath,
-                      const std::string& method,
-                      const bool doDebug,
-                      const bool saveAsModel,
-                      const bool ellipticEstimation)
+bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres& calibrationSpheres, const LightType lightType, Lightings &lightings)
 {
     CalibrationDatas calibrationDatas = CalibrationDatas();
     std::map<aliceVision::IndexT, std::vector<aliceVision::IndexT>> viewsId_per_lightId;
 	std::vector<std::string> imageList;
 	std::vector<IndexT> viewIdList;
     
+    Lightings lightingDatas;
+    
     bool usePose = true;
 
     // data preparation
+	ALICEVISION_LOG_INFO("Data preparation");
     for (auto& viewIt : sfmData.getViews())
     {
         ALICEVISION_LOG_INFO("View Id: " << viewIt.first);
-
+        
 		const fs::path imagePath = fs::path(viewIt.second->getImage().getImagePath());
 		imageList.push_back(imagePath.string());
 		viewIdList.push_back(viewIt.first);
 
         std::shared_ptr<CalibrationData> calibrationData = std::make_shared<CalibrationData>();
 
-        calibrationData->prepareView(viewIt.first, sfmData, calibrationSpheres, usePose);
+        if (!calibrationData->prepareView(viewIt.first, sfmData, calibrationSpheres, usePose))
+        {
+            ALICEVISION_LOG_ERROR("Could not prepare view");
+            return false;
+        }
         calibrationDatas.emplace(viewIt.first, calibrationData);
 
         IndexT lightId = viewIt.second->getLightId();
@@ -191,11 +208,9 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         }
         viewsId_per_lightId[lightId].push_back(viewIt.first);
     }
-
-    Eigen::MatrixXf lightMat(viewsId_per_lightId.size(), 3);
-    std::vector<float> intList(viewsId_per_lightId.size());
     
     // computation per light
+	ALICEVISION_LOG_INFO("Computation per light");
     for (auto itLight = viewsId_per_lightId.begin(); itLight != viewsId_per_lightId.end(); itLight++)
     {
         unsigned int lightId = itLight->first;
@@ -217,7 +232,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         for (size_t i = 0; i < itLight->second.size(); ++i)
         {
             IndexT viewId = itLight->second[i];
-            auto calibrationData = calibrationDatas.at(viewId);
+            auto &calibrationData = calibrationDatas.at(viewId);
             pointsFull.block(startAt, 0, calibrationData->getPoints().rows(), 3) = calibrationData->getPoints();
             normalsFull.block(startAt, 0, calibrationData->getNormals().rows(), 3) = calibrationData->getNormals();
             pixelsIntensityFull.block(startAt, 0, calibrationData->getPixelsIntensity().rows(), 1) = calibrationData->getPixelsIntensity();
@@ -225,36 +240,20 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         }
         
         // directionnal computation
-        Eigen::Vector3f lightingDirection = normalsFull.colPivHouseholderQr().solve(pixelsIntensityFull);
-        float intensity = lightingDirection.norm();
-        lightingDirection = lightingDirection / intensity;
-        
-        // conversion in camera frame
-        for (size_t i = 0; i < imageList.size(); ++i)
-		{
-            // set light direction
-                    Eigen::Matrix4f RT = Eigen::Matrix4f::Identity();
-			if (usePose)
-			{
-				IndexT viewId = viewIdList[i];
-				IndexT poseId = sfmData.getViews().at(viewId)->getPoseId();
+        if (lightType == LightType::Directionnal)
+        {
+            Eigen::Vector3f lightingDirection = normalsFull.colPivHouseholderQr().solve(pixelsIntensityFull);
+            float intensity = lightingDirection.norm();
+            lightingDirection = lightingDirection / intensity;
 
-				Eigen::Matrix4f av_to_vis = Eigen::Matrix4f::Identity();
-				av_to_vis(1, 1) = -1.;
-				av_to_vis(2, 2) = -1.;
-				Eigen::Matrix4f RT = sfmData.getPoses().at(poseId)->getTransform().getHomogeneous().cast<float>() * av_to_vis;
-			}
-
-			Eigen::Vector3f lightingDirectionCamera = RT.block<3, 3>(0, 0) * lightingDirection;
-			lightMat(i, 0) = lightingDirectionCamera(0);
-			lightMat(i, 1) = lightingDirectionCamera(1);
-			lightMat(i, 2) = lightingDirectionCamera(2);
-			intList[i] = intensity;
-		}
+            lightingDatas.emplace(lightId, std::make_shared<DirectionnalLighting>(lightingDirection, intensity));
+        }
+        else {
+            return false;
+        }
     }
-
-    // Write in JSON file
-    writeJSON(outputPath, sfmData, imageList, lightMat, intList, saveAsModel, method);
+    
+    return true;
 }
 
 void lightCalibrationOneImage(const std::string& picturePath,
@@ -691,24 +690,13 @@ void writeJSON(const std::string& fileName,
     bpt::ptree fileTree;
 
     int imgCpt = 0;
-    std::map<std::string, sfmData::View> viewMap;
+
+    std::cout << lightMat << std::endl;
+
+	ALICEVISION_LOG_INFO("Building tree from views");
     for (auto& viewIt : sfmData.getViews())
     {
-        std::map<std::string, std::string> currentMetadata = sfmData.getView(viewIt.first).getImage().getMetadata();
-
-        if (currentMetadata.find("Exif:DateTimeDigitized") == currentMetadata.end())
-        {
-            ALICEVISION_LOG_INFO("No metadata case (Exif:DateTimeDigitized is missing)");
-            viewMap[sfmData.getView(viewIt.first).getImage().getImagePath()] = sfmData.getView(viewIt.first);
-        }
-        else
-        {
-            viewMap[currentMetadata.at("Exif:DateTimeDigitized")] = sfmData.getView(viewIt.first);
-        }
-    }
-
-    for (const auto& [currentId, viewId] : viewMap)
-    {
+        auto &viewId = sfmData.getView(viewIt.first);
         const fs::path imagePath = fs::path(viewId.getImage().getImagePath());
 
         // The file may be in the input SfMData but may not have been calibrated: in that case, it is not in imageList

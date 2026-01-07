@@ -1,5 +1,7 @@
 #include "sphereData.hpp"
 
+#include <aliceVision/system/Logger.hpp>
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
@@ -30,24 +32,24 @@ bool load(CalibrationSpheres& calibrationSpheres, const std::string& filename)
     bpt::ptree fileTree;
     // Read the json file and initialize the tree
     bpt::read_json(filename, fileTree);
-
+    
     // iterator on spheres
     for (auto itview = fileTree.begin(); itview != fileTree.end(); itview++)
     {
 		IndexT viewId = stoi(itview->first);
 		auto calibrationSphereVec = std::make_shared<std::vector<CalibrationSphere>>();
-        for (auto itsph = itview->second.begin(); itsph != itview->second.end(); itview++)
+        for (auto itsph = itview->second.begin(); itsph != itview->second.end(); itsph++)
         {
-            float x = itview->second.get_child("").get("x", 0.0);
-            float y = itview->second.get_child("").get("y", 0.0);
-            float r = itview->second.get_child("").get("r", 0.0);
-            std::string type = itview->second.get_child("").get("type", "matte");
+            float x = itsph->second.get_child("").get("x", 0.0);
+            float y = itsph->second.get_child("").get("y", 0.0);
+            float r = itsph->second.get_child("").get("r", 0.0);
+            std::string type = itsph->second.get_child("").get("type", "matte");
 
             Eigen::Vector3f center;
             bool is2D;
-            if (itview->second.get_child("").count("z"))
+            if (itsph->second.get_child("").count("z"))
             {
-                float z = itview->second.get_child("").get("z", 0.0);
+                float z = itsph->second.get_child("").get("z", 0.0);
 
                 center << x, y, z;
                 is2D = false;
@@ -60,7 +62,6 @@ bool load(CalibrationSpheres& calibrationSpheres, const std::string& filename)
             CalibrationSphere calibrationSphere(center, r, is2D, type);
             calibrationSphereVec->push_back(calibrationSphere);
         }
-
 		calibrationSpheres.emplace(viewId, calibrationSphereVec);
     }
     return true;

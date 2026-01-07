@@ -15,6 +15,7 @@
 #include <aliceVision/lightingEstimation/lightingCalibration.hpp>
 #include <aliceVision/lightingEstimation/ellipseGeometry.hpp>
 #include <aliceVision/lightingEstimation/sphereData.hpp>
+#include <aliceVision/lightingEstimation/lightingData.hpp>
 
 // Command line parameters
 #include <aliceVision/cmdline/cmdline.hpp>
@@ -33,6 +34,8 @@
 #include <fstream>
 #include <filesystem>
 
+#include <Windows.h>
+  
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -73,9 +76,7 @@ int aliceVision_main(int argc, char** argv)
         ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"),
          "Method for light estimation.")
         ("doDebug, d", po::value<bool>(&doDebug)->default_value(true),
-         "Do we save debug images.")
-        ("ellipticEstimation, e", po::value<bool>(&ellipticEstimation)->default_value(false),
-         "Used ellipse model for calibration spheres (more precise).");
+         "Do we save debug images.");
     // clang-format on
 
     CmdLine cmdline("AliceVision lightingCalibration");
@@ -99,6 +100,7 @@ int aliceVision_main(int argc, char** argv)
     }
     else
     {
+		ALICEVISION_LOG_INFO("Opening SFM file");
         sfmData::SfMData sfmData;
         if (!sfmDataIO::load(sfmData, inputPath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
         {
@@ -106,14 +108,16 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        lightingEstimation::CalibrationSpheres calibrationSpheres;
+		ALICEVISION_LOG_INFO("Opening calibration sphere file");
+        lightingEstimation::CalibrationSpheres calibrationSpheres = lightingEstimation::CalibrationSpheres();
         if (!lightingEstimation::CalibrationSphereIO::load(calibrationSpheres, inputDetection))
         {
             ALICEVISION_LOG_ERROR("The input file '" + inputDetection + "' cannot be read.");
             return EXIT_FAILURE;
         }
 
-        lightingEstimation::lightCalibration(sfmData, calibrationSpheres, outputJSON, method, doDebug, saveAsModel, ellipticEstimation);
+        lightingEstimation::Lightings lightings;
+        lightingEstimation::lightCalibration(sfmData, calibrationSpheres, lightingEstimation::LightType::Directionnal, lightings);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

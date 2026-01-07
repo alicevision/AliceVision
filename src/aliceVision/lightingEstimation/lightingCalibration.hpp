@@ -14,6 +14,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
 #include <aliceVision/lightingEstimation/sphereData.hpp>
+#include <aliceVision/lightingEstimation/lightingData.hpp>
 
 namespace cv
 {
@@ -22,12 +23,6 @@ namespace cv
 
 namespace aliceVision {
 namespace lightingEstimation {
-
-enum class LightType
-{
-    Directionnal,
-    Ponctual
-};
 
 class CalibrationData
 {
@@ -59,19 +54,9 @@ using CalibrationDatas = sfmData::SharedPtrMap<CalibrationData>;
  * @brief Calibrate lighting direction for a set of images from a .sfm file
  * @param[in] sfmData Input .sfm file to calibrate from
  * @param[in] calibrationSpheres Input spheres parameters
- * @param[out] outputPath Path to the JSON file in which lights' directions are written
- * @param[in] method Method used for calibration ("brightestPoint" or "whiteSphere")
- * @param[in] doDebug True to save debug images
- * @param[in] saveAsModel True to save the estimated lights as model
- * @param[in] ellipticEstimation True to use elliptic estimation of the lighting
+ * @param[in] lightings Output lightings
  */
-void lightCalibration(const sfmData::SfMData& sfmData,
-                      const CalibrationSpheres& calibrationSpheres,
-                      const std::string& outputPath,
-                      const std::string& method,
-                      const bool doDebug,
-                      const bool saveAsModel,
-                      const bool ellipticEstimation);
+bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres& calibrationSpheres, const LightType lightType, Lightings& lightings);
 
 /**
  * @brief Calibrate lighting direction of an image containing a sphere
