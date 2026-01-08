@@ -32,18 +32,31 @@ class Lighting
 class DirectionnalLighting : public Lighting
 {
   public:
-    DirectionnalLighting(Eigen::Vector3f lightDirection_, float intensity_);
+    DirectionnalLighting(const Eigen::Vector3f& lightDirection_, const std::vector<float>& intensity_);
+
+    DirectionnalLighting(const Eigen::Vector3f& lightDirection_, float intensity_);
 
     ~DirectionnalLighting();
 
     DirectionnalLighting* clone() const { return new DirectionnalLighting(*this); }
 
+    const Eigen::Vector3f& getLightDirection() const;
+
+    const std::vector<float>& getLightIntensity() const;
+
   private:
     Eigen::Vector3f lightDirection;
-    float intensity;
+    std::vector<float> intensity;
 };
 
 using Lightings = sfmData::SharedPtrMap<Lighting>;
+
+
+namespace LightingDataIO {
+bool saveJSON(const Lightings& lightings, const std::string& filename);
+
+bool loadJSON(const std::string& filename, Lightings& lightings);
+}
 
 }  // namespace lightingEstimation
 }  // namespace aliceVision

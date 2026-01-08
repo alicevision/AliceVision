@@ -50,7 +50,7 @@ using namespace aliceVision;
 int aliceVision_main(int argc, char** argv)
 {
     system::Timer timer;
-
+ 
     std::string inputPath;
     std::string inputDetection;
     std::string outputJSON;
@@ -117,7 +117,17 @@ int aliceVision_main(int argc, char** argv)
         }
 
         lightingEstimation::Lightings lightings;
-        lightingEstimation::lightCalibration(sfmData, calibrationSpheres, lightingEstimation::LightType::Directionnal, lightings);
+        if (!lightingEstimation::lightCalibration(sfmData, calibrationSpheres, lightingEstimation::LightType::Directionnal, lightings))
+        {
+            ALICEVISION_LOG_ERROR("Could not compute lightings");
+            return EXIT_FAILURE;
+        }
+
+        if(!lightingEstimation::LightingDataIO::saveJSON(lightings, outputJSON))
+        {
+            ALICEVISION_LOG_ERROR("Could not save lightings");
+            return EXIT_FAILURE;
+        }
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
