@@ -42,7 +42,7 @@ class NormalMapEstimator : public IDeviceJob
      * @param[in] queue the SYCL queue to dispatch to
      * @param[in] cams the list of cameras
      */
-    void compute(sycl::queue queue, const std::vector<int>& cams) override;
+    void compute(sycl::queue& queue, const std::vector<int>& cams) override;
 
   private:
     // private members

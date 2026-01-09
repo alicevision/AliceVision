@@ -25,7 +25,7 @@ namespace depthMap {
  * @param[in] in_img_dmp the image in device memory
  * @param[in] path the path of the output image on disk
  */
-void writeDeviceImage(const SyclDeviceMemoryPitched<SyclRGBA, 2>& in_img_dmp, sycl::queue queue, const std::string& path);
+void writeDeviceImage(const SyclDeviceMemoryPitched<SyclRGBA, 2>& in_img_dmp, sycl::queue& queue, const std::string& path);
 
 /**
  * @brief Write a normal map (depth map estimation) on disk from device memory.
@@ -43,7 +43,7 @@ void writeNormalMap(int rc,
                     const mvsUtils::TileParams& tileParams,
                     const ROI& roi,
                     const SyclDeviceMemoryPitched<sycl::float3, 2>& in_normalMap_dmp,
-                    sycl::queue queue,
+                    sycl::queue& queue,
                     int scale,
                     int step,
                     const std::string& name = "");
@@ -64,7 +64,7 @@ void writeNormalMapFiltered(int rc,
                             const mvsUtils::TileParams& tileParams,
                             const ROI& roi,
                             const SyclDeviceMemoryPitched<sycl::float3, 2>& in_normalMap_dmp,
-                            sycl::queue queue,
+                            sycl::queue& queue,
                             int scale = 1,
                             int step = 1,
                             const std::string& name = "");
@@ -85,7 +85,7 @@ void writeDepthThicknessMap(int rc,
                             const mvsUtils::TileParams& tileParams,
                             const ROI& roi,
                             const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthThicknessMap_dmp,
-                            sycl::queue queue,
+                            sycl::queue& queue,
                             int scale,
                             int step,
                             const std::string& name = "");
@@ -106,7 +106,7 @@ void writeDepthPixSizeMap(int rc,
                           const mvsUtils::TileParams& tileParams,
                           const ROI& roi,
                           const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthPixSize_dmp,
-                          sycl::queue queue,
+                          sycl::queue& queue,
                           int scale,
                           int step,
                           const std::string& name = "");
@@ -127,7 +127,7 @@ void writeDepthSimMap(int rc,
                       const mvsUtils::TileParams& tileParams,
                       const ROI& roi,
                       const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthSimMap_dmp,
-                      sycl::queue queue,
+                      sycl::queue& queue,
                       int scale,
                       int step,
                       const std::string& name = "");

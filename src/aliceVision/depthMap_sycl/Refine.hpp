@@ -35,7 +35,7 @@ class Refine
      * @param[in,out] allocationSuccess whether we successfully allocate memory
      * @param[in] queue the queue for device execution
      */
-    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, bool& allocationSuccess, sycl::queue queue);
+    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, bool& allocationSuccess, sycl::queue& queue);
 
     // no default constructor
     Refine() = delete;
@@ -45,18 +45,6 @@ class Refine
 
     // final depth/similarity map getter
     inline const SyclDeviceMemoryPitched<sycl::float2, 2>& getDeviceDepthSimMap() const { return _optimizedDepthSimMap_dmp; }
-
-    /**
-     * @brief Get memory consumpyion in device memory.
-     * @return device memory consumpyion (in MB)
-     */
-    double getDeviceMemoryConsumption() const;
-
-    /**
-     * @brief Get unpadded memory consumpyion in device memory.
-     * @return unpadded device memory consumpyion (in MB)
-     */
-    double getDeviceMemoryConsumptionUnpadded() const;
 
     /**
      * @brief Refine for a single R camera the Semi-Global Matching depth/sim map.
@@ -97,7 +85,7 @@ class Refine
      * @param[in] tile The given tile for Refine computation
      * @param[in] name the export filename
      */
-    void exportVolumeInformation(const Tile& tile, const std::string& name) const;
+    void exportVolumeInformation(const Tile& tile, const std::string& name);
 
     // private members
 
@@ -113,7 +101,6 @@ class Refine
     SyclDeviceMemoryPitched<sycl::float3, 2> _sgmNormalMap_dmp;          //< rc upscaled SGM normal map (for experimentation purposes)
     SyclDeviceMemoryPitched<sycl::float3, 2> _normalMap_dmp;             //< rc normal map (for debug / intermediate results purposes)
     SyclDeviceMemoryPitched<TSimRefine, 3> _volumeRefineSim_dmp;   //< rc refine similarity volume
-    SyclDeviceMemoryPitched<float, 2> _optTmpDepthMap_dmp;         //< for color optimization: temporary depth map buffer
     SyclDeviceMemoryPitched<float, 2> _optImgVariance_dmp;         //< for color optimization: image variance buffer
     sycl::queue _queue;                                            //< queue for device execution
 };

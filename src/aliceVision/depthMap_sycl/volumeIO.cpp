@@ -16,7 +16,6 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/depthMap_sycl/BufPtr.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
 #include <iostream>
@@ -34,9 +33,6 @@ void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_
                                 const ROI& roi)
 {
     const ROI downscaledRoi = downscaleROI(roi, sgmParams.scale * sgmParams.stepXY);
-
-    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     const int sampleSize = 3;
 
@@ -61,7 +57,7 @@ void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_
 
             for (int iz = 0; iz < in_depths.size(); ++iz)
             {
-                const float simValue = float(*get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, x, y, iz));
+                const float simValue = float(in_volumeSim_hmh(x, y, iz));
                 pDepths.push_back(simValue);
             }
         }
@@ -95,8 +91,6 @@ void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSimRefine, 3>& in_volu
     const ROI downscaledRoi = downscaleROI(roi, refineParams.scale * refineParams.stepXY);
 
     const size_t volDimZ = in_volumeSim_hmh.getSize().z();
-    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     const int sampleSize = 3;
 
@@ -121,7 +115,7 @@ void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSimRefine, 3>& in_volu
 
             for (int iz = 0; iz < volDimZ; ++iz)
             {
-                const float simValue = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, x, y, iz));
+                const float simValue = float(in_volumeSim_hmh(x, y, iz));
                 pDepths.push_back(simValue);
             }
         }
@@ -157,11 +151,9 @@ void exportSimilarityVolume(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
     sfmData::SfMData pointCloud;
     const int xyStep = 10;
 
-    IndexT landmarkId;
+    IndexT landmarkId = 0;
 
     const auto volDim = in_volumeSim_hmh.getSize();
-    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     for (int vy = 0; vy < volDim[1]; vy += xyStep)
     {
@@ -179,7 +171,7 @@ void exportSimilarityVolume(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                 const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
 
                 const float maxValue = 80.f;
-                float simValue = *get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
+                float simValue = float(in_volumeSim_hmh(vx, vy, vz));
                 if (simValue > maxValue)
                     continue;
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
@@ -204,11 +196,9 @@ void exportSimilarityVolumeCross(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim
 {
     sfmData::SfMData pointCloud;
 
-    IndexT landmarkId;
+    IndexT landmarkId = 0;
 
     const auto volDim = in_volumeSim_hmh.getSize();
-    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     for (int vz = 0; vz < in_depths.size(); ++vz)
     {
@@ -229,7 +219,7 @@ void exportSimilarityVolumeCross(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim
                 const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
 
                 const float maxValue = 80.f;
-                float simValue = *get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
+                float simValue = float(in_volumeSim_hmh(vx, vy, vz));
 
                 if (simValue > maxValue)
                     continue;
@@ -257,8 +247,6 @@ void exportSimilarityVolumeCross(const SyclHostMemoryHeap<TSimRefine, 3>& in_vol
     sfmData::SfMData pointCloud;
 
     const auto volDim = in_volumeSim_hmh.getSize();
-    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     IndexT landmarkId = 0;
 
@@ -281,7 +269,7 @@ void exportSimilarityVolumeCross(const SyclHostMemoryHeap<TSimRefine, 3>& in_vol
 
             for (int vz = 0; vz < volDim[2]; ++vz)
             {
-                const float simValue = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+                const float simValue = float(in_volumeSim_hmh(vx, vy, vz));
 
                 const float maxValue = 10.f;  // sum of similarity between 0 and 1
                 if (simValue > maxValue)
@@ -315,8 +303,6 @@ void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSim, 3>& in_
     sfmData::SfMData pointCloud;
 
     const auto volDim = in_volumeSim_hmh.getSize();
-    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
     const size_t vy = size_t(divideRoundUp(int(volDim.y()), 2));  // center only
 
     const Point3d planen = (mp.iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
@@ -329,7 +315,7 @@ void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSim, 3>& in_
     {
         for (size_t vz = 0; vz < volDim.z(); ++vz)
         {
-            const float simValue = float(*get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+            const float simValue = float(in_volumeSim_hmh(vx, vy, vz));
 
             if (simValue > 254.f)  // invalid similarity
                 continue;
@@ -352,7 +338,7 @@ void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSim, 3>& in_
 
         for (size_t vz = 0; vz < in_depths.size(); ++vz)
         {
-            const float simValue = float(*get3DBufferAt_h<TSim>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+            const float simValue = float(in_volumeSim_hmh(vx, vy, vz));
 
             if (simValue > 254.f)  // invalid similarity
                 continue;
@@ -387,8 +373,6 @@ void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSimRefine, 3
     sfmData::SfMData pointCloud;
 
     const auto volDim = in_volumeSim_hmh.getSize();
-    const size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    const size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
     const size_t vy = size_t(divideRoundUp(int(volDim.y()), 2));  // center only
 
     // compute min and max similarity values
@@ -399,7 +383,7 @@ void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSimRefine, 3
     {
         for (size_t vz = 0; vz < volDim.z(); ++vz)
         {
-            const float simValue = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+            const float simValue = float(in_volumeSim_hmh(vx, vy, vz));
             maxSim = std::max(maxSim, simValue);
         }
     }
@@ -420,7 +404,7 @@ void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSimRefine, 3
 
         for (size_t vz = 0; vz < volDim.z(); ++vz)
         {
-            const float simValue = float(*get3DBufferAt_h<TSimRefine>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz));
+            const float simValue = float(in_volumeSim_hmh(vx, vy, vz));
             const float simValueNorm = (simValue - minSim) / (maxSim - minSim);
             const float simValueColor = 1 - simValueNorm;  // best similarity value is 0, worst value is 1
 
@@ -465,11 +449,9 @@ void exportColorVolume(const SyclHostMemoryHeap<sycl::float4, 3>& in_volumeSim_h
     sfmData::SfMData pointCloud;
     int xyStep = 10;
 
-    IndexT landmarkId;
+    IndexT landmarkId = 0;
 
     auto volDim = in_volumeSim_hmh.getSize();
-    size_t spitch = in_volumeSim_hmh.getBytesPaddedUpToDim(1);
-    size_t pitch = in_volumeSim_hmh.getBytesPaddedUpToDim(0);
 
     ALICEVISION_LOG_DEBUG("DepthMap exportColorVolume: " << volDim[0] << " x " << volDim[1] << " x " << nbDepths << ", volDim[2]=" << volDim[2]
                                                          << ", xyStep=" << xyStep << ".");
@@ -489,7 +471,7 @@ void exportColorVolume(const SyclHostMemoryHeap<sycl::float4, 3>& in_volumeSim_h
                 const Point3d v = (mp.iCamArr[camIndex] * Point2d(x, y)).normalize();
                 const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
 
-                sycl::float4 colorValue = *get3DBufferAt_h<sycl::float4>(in_volumeSim_hmh.getBuffer(), spitch, pitch, vx, vy, vz);
+                sycl::float4 colorValue = in_volumeSim_hmh(vx, vy, vz);
                 const rgb c = float4_to_rgb(colorValue);  // TODO: convert Lab color into sRGB color
                 pointCloud.getLandmarks()[landmarkId] =
                   sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, image::RGBColor(c.r, c.g, c.b));

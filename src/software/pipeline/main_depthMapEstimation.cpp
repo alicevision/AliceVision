@@ -10,12 +10,20 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 #include <aliceVision/depthMap/DepthMapEstimator.hpp>
 #include <aliceVision/depthMap/DepthMapParams.hpp>
 #include <aliceVision/depthMap/SgmParams.hpp>
 #include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/gpu/gpu.hpp>
+#else
+#include <aliceVision/depthMap_sycl/computeOnMultiDevices.hpp>
+#include <aliceVision/depthMap_sycl/DepthMapEstimator.hpp>
+#include <aliceVision/depthMap_sycl/DepthMapParams.hpp>
+#include <aliceVision/depthMap_sycl/SgmParams.hpp>
+#include <aliceVision/depthMap_sycl/RefineParams.hpp>
+#endif
 
 #include <boost/program_options.hpp>
 
@@ -242,6 +250,7 @@ int aliceVision_main(int argc, char* argv[])
     refineParams.exportIntermediateTopographicCutVolumes = exportIntermediateTopographicCutVolumes;
     refineParams.exportIntermediateVolume9pCsv = exportIntermediateVolume9pCsv;
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
     // print GPU Information
     ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
 
@@ -251,6 +260,7 @@ int aliceVision_main(int argc, char* argv[])
         ALICEVISION_LOG_ERROR("This program needs a CUDA-Enabled GPU (with at least compute capability 2.0).");
         return EXIT_FAILURE;
     }
+#endif
 
     // check if the scale is correct
     if (downscale < 1)
@@ -427,7 +437,11 @@ int aliceVision_main(int argc, char* argv[])
     depthMap::DepthMapEstimator depthMapEstimator(mp, tileParams, depthMapParams, sgmParams, refineParams);
 
     // estimate depth maps
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
     depthMap::computeOnMultiGPUs(cams, depthMapEstimator, nbGPUs);
+#else
+    depthMap::computeOnMultiDevices(cams, depthMapEstimator, nbGPUs);
+#endif
 
     ALICEVISION_COMMANDLINE_END
 }

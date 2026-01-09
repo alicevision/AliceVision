@@ -529,6 +529,38 @@ if (ALICEVISION_BUILD_MVS)
                   aliceVision_sfmDataIO
                   Boost::program_options
         )
+    elseif(ALICEVISION_HAVE_SYCL)
+        # Depth Map Estimation
+        alicevision_add_software(aliceVision_depthMapEstimation
+            SOURCE main_depthMapEstimation.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_system
+                  aliceVision_cmdline
+                  aliceVision_gpu
+                  aliceVision_mvsData
+                  aliceVision_mvsUtils
+                  aliceVision_depthMap
+                  aliceVision_sfmData
+                  aliceVision_sfmDataIO
+                  Boost::program_options
+        )
+        add_sycl_to_target(TARGET aliceVision_depthMapEstimation_exe SOURCES main_depthMapEstimation.cpp)
+
+        # Depth Map Filtering
+        alicevision_add_software(aliceVision_depthMapFiltering
+            SOURCE main_depthMapFiltering.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_system
+                  aliceVision_cmdline
+                  aliceVision_mvsData
+                  aliceVision_mvsUtils
+                  aliceVision_fuseCut
+                  aliceVision_depthMap
+                  aliceVision_sfmData
+                  aliceVision_sfmDataIO
+                  Boost::program_options
+        )
+        add_sycl_to_target(TARGET aliceVision_depthMapFiltering_exe SOURCES main_depthMapFiltering.cpp)
     endif()
 
     # Meshing

@@ -10,9 +10,11 @@
 #define ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
 #define ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
 
-#include <aliceVision/system/Logger.hpp>
-
 #include <sycl/sycl.hpp>
+
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/depthMap_sycl/sycl/buffer.hpp>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +38,7 @@ using SyclColorBaseType = float;
     #endif  // ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
 #endif      // ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 using SyclRGBA = sycl::vec<SyclColorBaseType, 4>;
+using SyclRGB = sycl::vec<SyclColorBaseType, 3>;
 
 /*********************************************************************************
  * forward declarations
@@ -115,6 +118,21 @@ bool operator!=(const SyclSizeBase<Dim>& s1, const SyclSizeBase<Dim>& s2)
             return true;
 
     return false;
+}
+
+template<unsigned Dim>
+constexpr std::strong_ordering operator<=>(const SyclSizeBase<Dim>& s1, const SyclSizeBase<Dim>& s2)
+{
+    bool overflow = false;
+    for (size_t i = Dim; i--;)
+    {
+        if (s1[i] < s2[i])
+            return std::strong_ordering::less;
+        else if (s1[i] > s2[i])
+           overflow = true;
+    }
+
+    return overflow ? std::strong_ordering::greater : std::strong_ordering::equal;
 }
 
 /*********************************************************************************
@@ -315,76 +333,96 @@ template<class Type, unsigned Dim>
 class SyclHostMemoryHeap : public SyclMemorySizeBase<Type, Dim>
 {
     Type* buffer = nullptr;
-    sycl::queue queue;
+    sycl::queue& queue;
 
   public:
-    SyclHostMemoryHeap()
-      : buffer(nullptr)
+    SyclHostMemoryHeap(sycl::queue& queue)
+        : buffer(nullptr),
+          queue(queue)
     {}
 
-    explicit SyclHostMemoryHeap(const SyclSize<Dim>& size, sycl::queue queue)
+    explicit SyclHostMemoryHeap(const SyclSize<Dim>& size, sycl::queue& queue)
         : buffer(nullptr),
           queue(queue)
     {
         allocate(size);
     }
 
-    SyclHostMemoryHeap<Type, Dim>& operator=(const SyclHostMemoryHeap<Type, Dim>& rhs)
-    {
-        if (buffer != nullptr)
-        {
-            allocate(rhs.getSize());
-        }
-        else if (this->getSize() != rhs.getSize())
-        {
-            deallocate();
-            allocate(rhs.getSize());
-        }
-
-        memcpy(buffer, rhs.buffer, rhs.getBytesPadded());
-        return *this;
-    }
+    // Copy operators call the destructor and so deallocate the memory we are trying to transfer
+    // Move or manually create a new object and call memcpy
+    SyclHostMemoryHeap(SyclHostMemoryHeap& in) = delete; // copy
+    SyclHostMemoryHeap(SyclHostMemoryHeap&& in) = default; // move
+    SyclHostMemoryHeap& operator=(SyclHostMemoryHeap& in) = delete;
 
     ~SyclHostMemoryHeap() { deallocate(); }
 
     void initBuffer() { memset(buffer, 0, this->getBytesPadded()); }
 
     // see below with copy() functions
-    sycl::event copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::queue queue, sycl::event prerequisite);
+    inline sycl::event copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite);
+    inline void copyFrom(const image::Image<image::RGBfColor>& img);
+    inline void copyTo(image::Image<image::RGBfColor>& img) const;
 
     inline Type* getBuffer() { return buffer; }
     inline const Type* getBuffer() const { return buffer; }
+
+    inline sycl::queue& getQueue() { return queue; }
+    inline const sycl::queue& getQueue() const { return queue; }
+
     inline Type& operator()(size_t x) { return buffer[x]; }
     inline const Type& operator()(size_t x) const { return buffer[x]; }
-    inline Type& operator()(size_t x, size_t y) { return getRow(y)[x]; }
-    inline const Type& operator()(size_t x, size_t y) const { return getRow(y)[x]; }
+
+    inline Type& operator()(sycl::uint2 coords) {
+        static_assert(Dim == 2, "This operator is only available for 2d images");
+        return buffer[getAddress<2>(sycl::uint2(this->getUnitsInDim(0),
+                                                this->getUnitsInDim(1)),
+                                   coords)];
+    }
+    inline const Type& operator()(sycl::uint2 coords) const {
+        static_assert(Dim == 2, "This operator is only available for 2d images");
+        return buffer[getAddress<2>(sycl::uint2(this->getUnitsInDim(0),
+                                                this->getUnitsInDim(1)),
+                                    coords)];
+    }
+    inline Type& operator()(size_t x, size_t y) {
+        return this->operator()(sycl::uint2(x, y));
+    }
+    inline const Type& operator()(size_t x, size_t y) const {
+        return this->operator()(sycl::uint2(x, y));
+    }
+
+    inline Type& operator()(sycl::uint3 coords) {
+        static_assert(Dim == 3, "This operator is only available for 3d volumes");
+        return buffer[getAddress<3>(sycl::uint3(this->getUnitsInDim(0),
+                                                this->getUnitsInDim(1),
+                                                this->getUnitsInDim(2)),
+                                   coords)];
+    }
+    inline const Type& operator()(sycl::uint3 coords) const {
+        static_assert(Dim == 3, "This operator is only available for 3d volumes");
+        return buffer[getAddress<3>(sycl::uint3(this->getUnitsInDim(0),
+                                                this->getUnitsInDim(1),
+                                                this->getUnitsInDim(2)),
+                                   coords)];
+    }
+    inline Type& operator()(size_t x, size_t y, size_t z) {
+        return this->operator()(sycl::uint3(x, y, z));
+    }
+    inline const Type& operator()(size_t x, size_t y, size_t z) const {
+        return this->operator()(sycl::uint3(x, y, z));
+    }
 
     inline unsigned char* getBytePtr() { return (unsigned char*)buffer; }
     inline const unsigned char* getBytePtr() const { return (unsigned char*)buffer; }
 
-  private:
-    inline Type* getRow(size_t row)
-    {
-        unsigned char* ptr = getBytePtr();
-        ptr += row * this->getPitch();
-        return (Type*)ptr;
-    }
-    inline const Type* getRow(size_t row) const
-    {
-        const unsigned char* ptr = getBytePtr();
-        ptr += row * this->getPitch();
-        return (Type*)ptr;
-    }
-
   public:
-    bool allocate(const SyclSize<Dim>& size)
+    void allocate(const SyclSize<Dim>& size)
     {
         this->setSize(size, true);
 
         buffer = sycl::malloc_host<Type>(this->getUnitsTotal(), queue);
 
-        // this is our only way of checking if we have enough memory to allocate
-        return !(buffer==nullptr);
+        assert(buffer != nullptr);
     }
 
     void deallocate()
@@ -404,70 +442,59 @@ template<class Type, unsigned Dim>
 class SyclDeviceMemoryPitched : public SyclMemorySizeBase<Type, Dim>
 {
     Type* buffer = nullptr;
-    sycl::queue queue;
+    sycl::queue& queue;
 
   public:
-    SyclDeviceMemoryPitched(sycl::queue queue)
+    SyclDeviceMemoryPitched(sycl::queue& queue)
         : buffer(nullptr),
           queue(queue)
     {}
 
-    explicit SyclDeviceMemoryPitched(const SyclSize<Dim>& size, sycl::queue queue) : queue(queue) { allocate(size); }
+    explicit SyclDeviceMemoryPitched(const SyclSize<Dim>& size, bool& allocSuccess, sycl::queue& queue) : buffer(nullptr), queue(queue)
+    { allocSuccess &= allocate(size); }
 
-    explicit SyclDeviceMemoryPitched(const SyclHostMemoryHeap<Type, Dim>& rhs, sycl::queue) : queue(queue)
+    explicit SyclDeviceMemoryPitched(const SyclHostMemoryHeap<Type, Dim>& rhs, bool& allocSuccess, sycl::queue) : queue(queue)
     {
-        allocate(rhs.getSize());
-        copyFrom(rhs);
+        allocSuccess &= allocate(rhs.getSize());
+        if (!allocSuccess) copyFrom(rhs);
     }
+
+    // Copy operators call the destructor and so deallocate the memory we are trying to transfer
+    // Move or manually create a new object and call copyFrom
+    SyclDeviceMemoryPitched(SyclDeviceMemoryPitched& in) = delete; // copy
+    SyclDeviceMemoryPitched(SyclDeviceMemoryPitched&& in) = default; // move
+    SyclDeviceMemoryPitched& operator=(SyclDeviceMemoryPitched& in) = delete;
 
     ~SyclDeviceMemoryPitched() { deallocate(); }
 
-    SyclDeviceMemoryPitched<Type, Dim>& operator=(const SyclDeviceMemoryPitched<Type, Dim>& rhs)
-    {
-        if (buffer == nullptr)
-        {
-            allocate(rhs.getSize());
-        }
-        else if (this->getSize() != rhs.getSize())
-        {
-            deallocate();
-            allocate(rhs.getSize());
-        }
-        copyFrom(rhs);
-        return *this;
-    }
-
     // see below with copy() functions
-    sycl::event copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite);
-    sycl::event copyFrom(const SyclHostMemoryHeap<Type, Dim>& src, sycl::event prerequisite);
+    inline sycl::event copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite);
+    inline sycl::event copyFrom(const SyclHostMemoryHeap<Type, Dim>& src, sycl::event prerequisite);
+    inline sycl::event copyFrom(const image::Image<image::RGBAfColor>& img, sycl::event prerequisite);
+    inline sycl::event copyTo(image::Image<image::RGBAfColor>& img, sycl::event prerequisite);
 
     Type* getBuffer() { return buffer; }
-    sycl::queue getQueue() { return queue; }
+    sycl::queue& getQueue() { return queue; }
 
-    const Type* getBuffer() const { return buffer; }
-    const sycl::queue getQueue() const { return queue; }
-
-    Type& operator()(size_t x) { return buffer[x]; }
-
-    Type& operator()(size_t x, size_t y)
-    {
-        Type* row = getRow(y);
-        return row[x];
-    }
+    Type* const getBuffer() const { return buffer; }
+    const sycl::queue& getQueue() const { return queue; }
 
     inline unsigned char* getBytePtr() { return (unsigned char*)buffer; }
     inline const unsigned char* getBytePtr() const { return (unsigned char*)buffer; }
 
-    inline Type* getRow(size_t row)
-    {
-        unsigned char* ptr = getBytePtr();
-        ptr += row * this->getPitch();
-        return (Type*)ptr;
+    // We use a XZY layout so these functions can work. See sycl/buffer.hpp
+    inline const Type* sliceY(unsigned int y) const {
+        return &(this->buffer[y*this->getUnitsInDim(0)*this->getUnitsInDim(2)]);
+    }
+    inline Type* sliceY(unsigned int y) {
+        return &(this->buffer[y*this->getUnitsInDim(0)*this->getUnitsInDim(2)]);
     }
 
-    bool allocate(const SyclSize<Dim>& size)
+    inline bool allocate(SyclSize<Dim> size)
     {
         this->setSize(size, false);
+
+        assert(buffer==nullptr && "Memory leak, deallocate before calling allocate again");
 
         buffer = sycl::malloc_device<Type>(this->getUnitsTotal(), queue);
 
@@ -486,88 +513,153 @@ class SyclDeviceMemoryPitched : public SyclMemorySizeBase<Type, Dim>
 };
 
 /*********************************************************************************
- * SyclDeviceMemory
+ * SyclDevicePitchedAccess
  *********************************************************************************/
 
-template<class Type>
-class SyclDeviceMemory : public SyclMemorySizeBase<Type, 1>
+// Super minimal class for device access
+// Circumvents deleted copy operator, but doesn't allow reallocation or anything of the like
+
+template<class Type, unsigned Dim>
+class SyclDevicePitchedAccessBase
 {
-    Type* buffer = nullptr;
-    sycl::queue queue;
+protected:
+    Type* const buffer;
+    const sycl::vec<uint, Dim> _dims;
 
-  public:
-    SyclDeviceMemory(sycl::queue queue)
-        : buffer(nullptr),
-          queue(queue)
-    {}
+    explicit SyclDevicePitchedAccessBase(const SyclDeviceMemoryPitched<Type, Dim>& owner) :
+        buffer(owner.getBuffer()),
+        _dims([&]{
+            sycl::vec<unsigned int, Dim> dims{};
+#pragma unroll
+            for(int i = Dim; i--;)
+                dims[i] = owner.getUnitsInDim(i);
+            return dims;
+        } ())
+    {};
+public:
+    const sycl::vec<uint, Dim>& getDims() const { return _dims; };
 
-    explicit SyclDeviceMemory(const size_t size) { allocate(size); }
+    size_t getUnitsTotal() const {
+        size_t product = 1;
+#pragma unroll
+        for(int i = 0; i < Dim; i++)
+            product *= _dims[i];
+        return product;
+    };
+};
 
-    explicit inline SyclDeviceMemory(const SyclHostMemoryHeap<Type, 1>& rhs)
+template<class Type, unsigned Dim>
+class SyclDevicePitchedAccess : public SyclDevicePitchedAccessBase<Type, Dim>
+{
+public:
+    explicit SyclDevicePitchedAccess(const SyclDeviceMemoryPitched<Type, Dim>& owner) :
+        SyclDevicePitchedAccessBase<Type, Dim>(owner) {};
+};
+
+template<class Type>
+class SyclDevicePitchedAccess<Type, 1> : public SyclDevicePitchedAccessBase<Type, 1>
+{
+public:
+    explicit SyclDevicePitchedAccess(const SyclDeviceMemoryPitched<Type, 1>& owner) :
+        SyclDevicePitchedAccessBase<Type, 1>(owner) {};
+
+    /**
+     * @brief Nearest lookup at clamped unnormalized coords
+     * @note Results in undefined behaviour if called from host
+     * @param[in] coords coordinates to sample at
+     * @return sampled texel
+     */
+    inline Type sample_near(const sycl::vec<float, 1>& coords) const
     {
-        allocate(rhs.getSize());
-        copy(*this, rhs);
-    }
+        sycl::vec<unsigned int, 1> rounded = coords.template convert<unsigned int>();
+        rounded = sycl::clamp(rounded, 0, this->_dims - 1);
+        return this->operator()(rounded);
+    };
 
-    // constructor with synchronous copy
-    SyclDeviceMemory(const Type* inbuf, const size_t size)
+    inline Type& operator()(unsigned int coords) const
     {
-        allocate(size);
-        copyFrom(inbuf, size, queue).wait();
-    }
+        return *(this->buffer + coords);
+    };
+};
 
-    ~SyclDeviceMemory() { deallocate(); }
+template<class Type>
+class SyclDevicePitchedAccess<Type, 2> : public SyclDevicePitchedAccessBase<Type, 2>
+{
+public:
+    explicit SyclDevicePitchedAccess(const SyclDeviceMemoryPitched<Type, 2>& owner) :
+        SyclDevicePitchedAccessBase<Type, 2>(owner) {};
 
-    SyclDeviceMemory<Type>& operator=(const SyclDeviceMemory<Type>& rhs)
+    /**
+     * @brief Linear sample at unnormalized coords
+     * @note Results in undefined behaviour if called from host
+     * @note Only works in two dimensions
+     * @param[in] coords coordinates to sample at
+     * @return sampled texel
+     *\/
+    inline Type linear(const sycl::vec<float, 2>& coords) const
     {
-        if (buffer == nullptr)
-        {
-            allocate(rhs.getSize());
-        }
-        else if (this->getSize() != rhs.getSize())
-        {
-            deallocate();
-            allocate(rhs.getSize());
-        }
-        copy(*this, rhs);
-        return *this;
-    }
+        const sycl::vec<float, 2> bl_c = sycl::floor(coords); // Bottom left
+        const sycl::vec<float, 2> tr_c = sycl::ceil(coords);  // Top right
+        const sycl::vec<float, 2> br_c = sycl::vec<float, 2>(tr_c.x(), bl_c.y());
+        const sycl::vec<float, 2> tl_c = sycl::vec<float, 2>(bl_c.x(), tr_c.y());
 
-    Type* getBuffer() { return buffer; }
-    const Type* getBuffer() const { return buffer; }
+        const Type bl_v = sample_near(bl_c);
+        const Type tr_v = sample_near(tr_c);
+        const Type br_v = sample_near(br_c);
+        const Type tl_v = sample_near(tl_c);
 
-    unsigned char* getBytePtr() { return (unsigned char*)buffer; }
-    const unsigned char* getBytePtr() const { return (unsigned char*)buffer; }
+        const sycl::vec<float, 2> mix = coords - bl_c;
 
-    bool allocate(const SyclSize<1>& size)
+        const Type b_v = sycl::mix(bl_v, br_v, mix.x()); // Bottom
+        const Type t_v = sycl::mix(tl_v, tr_v, mix.x()); // Top
+
+        return sycl::mix(b_v, t_v, mix.y());
+    };
+    */
+
+    /**
+     * @brief Nearest lookup at clamped unnormalized coords, in 2 dimensions
+     * @note Results in undefined behaviour if called from host
+     * @param[in] coords coordinates to sample at
+     * @return sampled texel
+     */
+    inline Type sample_near(const sycl::vec<float, 2>& coords) const
     {
-        this->setSize(size, true);
+        sycl::vec<unsigned int, 2> rounded = coords.template convert<unsigned int>();
+        rounded = sycl::clamp(rounded, sycl::vec<unsigned int, 2>(0), this->_dims - 1);
+        return this->operator()(rounded);
+    };
 
-        buffer = sycl::malloc_device(this->getSize(), queue);
-
-        return !(buffer==nullptr);
-    }
-    bool allocate(const size_t size) { return allocate(SyclSize<1>(size)); }
-
-    void deallocate()
+    inline Type& operator()(const sycl::vec<unsigned int, 2>& coords) const
     {
-        if (buffer == nullptr)
-            return;
+        return *(this->buffer + getAddress<2>(this->_dims, coords));
+    };
+};
 
-        sycl::free(buffer, queue);
+template<class Type>
+class SyclDevicePitchedAccess<Type, 3> : public SyclDevicePitchedAccessBase<Type, 3>
+{
+public:
+    explicit SyclDevicePitchedAccess(const SyclDeviceMemoryPitched<Type, 3>& owner) :
+        SyclDevicePitchedAccessBase<Type, 3>(owner) {};
 
-        buffer = nullptr;
-    }
-
-    void copyFrom(const Type* inbuf, const size_t num)
+    /**
+     * @brief Nearest lookup at clamped unnormalized coords, in 3 dimensions
+     * @note Results in undefined behaviour if called from host
+     * @param[in] coords coordinates to sample at
+     * @return sampled texel
+     */
+    inline Type sample_near(const sycl::vec<float, 3>& coords) const
     {
-        queue.copy(inbuf, buffer, num).wait();
-    }
+        sycl::vec<unsigned int, 3> rounded = coords.template convert<unsigned int>();
+        rounded = sycl::clamp(rounded, sycl::vec<unsigned int, 3>(0), this->_dims - 1);
+        return this->operator()(rounded);
+    };
 
-    sycl::event copyFrom(const Type* inbuf, const size_t num, sycl::queue queue, sycl::event prerequisite)
+    inline Type& operator()(const sycl::vec<unsigned int, 3>& coords) const
     {
-        return queue.copy(inbuf, buffer, num, prerequisite);
-    }
+        return *(this->buffer + getAddress<3>(this->_dims, coords));
+    };
 };
 
 /*********************************************************************************
@@ -577,59 +669,205 @@ class SyclDeviceMemory : public SyclMemorySizeBase<Type, 1>
 template<class Type, unsigned Dim>
 sycl::event SyclDeviceMemoryPitched<Type, Dim>::copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite)
 {
+    assert(this->getSize() == src.getSize());
     return this->queue.copy(src.getBuffer(), this->getBuffer(), src.getUnitsTotal(), prerequisite);
 }
 
 template<class Type, unsigned Dim>
 sycl::event SyclDeviceMemoryPitched<Type, Dim>::copyFrom(const SyclHostMemoryHeap<Type, Dim>& src, sycl::event prerequisite)
 {
+    assert(this->getSize() == src.getSize());
     return this->queue.copy(src.getBuffer(), this->getBuffer(), src.getUnitsTotal(), prerequisite);
 }
 
 template<class Type, unsigned Dim>
-sycl::event SyclHostMemoryHeap<Type, Dim>::copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::queue queue, sycl::event prerequisite)
+inline sycl::event SyclHostMemoryHeap<Type, Dim>::copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite)
 {
-    return queue.copy(src.getBuffer(), this->getBuffer(), src.getUnitsTotal(), prerequisite);
+    bool canMemcopy = true;
+
+    const SyclSize inSize = src.getSize();
+    const SyclSize outSize = this->getSize();
+
+#pragma unroll
+    for(int i = Dim - 1; i--;) // Last dimension doesn't affect memory layout
+    {
+        if(inSize[i] != outSize[i])
+        {
+            canMemcopy = false;
+            break;
+        }
+    }
+
+    if(Dim == 1 || canMemcopy)
+        return this->queue.copy(src.getBuffer(), this->getBuffer(), std::min(src.getUnitsTotal(), this->getUnitsTotal()), prerequisite);
+    else
+    {
+        const SyclDevicePitchedAccess acc{src};
+        sycl::vec<uint, Dim> dims{};
+        sycl::range<Dim> range{};
+
+#pragma unroll
+        for(int i = Dim; i--;)
+        {
+            const unsigned int dim = std::min(inSize[i], outSize[i]);
+            dims[i] = dim;
+            range[i] = dim;
+        }
+
+        Type* buffer = this->getBuffer();
+
+        return this->queue.submit([&] (sycl::handler& h) {
+            h.depends_on(prerequisite);
+
+            h.parallel_for(range, [=] (sycl::id<Dim> id) {
+                const sycl::vec<uint, Dim> coords = [&] () {
+                    sycl::vec<uint, Dim> coords{0};
+
+#pragma unroll
+                    for(int i = Dim; i--;)
+                        coords[i] = id[i];
+
+                    return coords;
+                } ();
+
+                *(buffer + getAddress<Dim>(dims, coords)) = acc(coords);
+            });
+        });
+    }
 }
 
-/*********************************************************************************
- * copy functions
- *********************************************************************************/
-
-template<class Type, unsigned Dim>
-sycl::event copy(SyclHostMemoryHeap<Type, Dim>& dst, const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::queue queue, sycl::event prerequisite)
+template<>
+inline sycl::event SyclDeviceMemoryPitched<sycl::float4, 2>::copyFrom(
+                        const image::Image<image::RGBAfColor>& img,
+                        sycl::event prerequisite)
 {
-    return dst.copyFrom(src, queue, prerequisite);
+    static constexpr size_t size = sizeof(sycl::float4);
+    static_assert(size == sizeof(image::RGBAfColor));
+
+    assert(img.cols() <= this->getSize()[0]);
+    assert(img.rows() <= this->getSize()[1]);
+
+    if(img.width() == this->getUnitsInDim(0))
+        return this->getQueue().memcpy(this->getBytePtr(),
+                                       (unsigned char*)img.data(),
+                                       img.size()*sizeof(sycl::float4),
+                                       prerequisite);
+    else
+        for(int r = 0; r < img.rows(); r++)
+            prerequisite = this->getQueue().memcpy(this->getBytePtr() + r * this->getSize()[0] * size,
+                                                   (unsigned char*)img.data() + r * img.cols() * size,
+                                                   img.cols()*sizeof(sycl::float4),
+                                                   prerequisite);
+    return prerequisite;
 }
 
-template<class Type>
-sycl::event copy(SyclHostMemoryHeap<Type, 1>& _dst, const SyclDeviceMemory<Type>& _src, sycl::queue queue, sycl::event prerequisite)
+template<>
+inline void SyclHostMemoryHeap<SyclRGB, 2>::copyFrom(const image::Image<image::RGBfColor>& img)
 {
-    return queue.copy(_src.getBuffer(), _dst.getBuffer(), _src.getUnitsTotal(), prerequisite);
+    const int width = img.width();
+    const int height = img.width();
+    assert(width == this->getUnitsInDim(0));
+    assert(height == this->getUnitsInDim(1));
+    // copy image from host memory to output images
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            const image::RGBfColor value_in = img(y, x);
+            SyclRGB& value_out = this->operator()(size_t(x), size_t(y));
+            value_out.x() = value_in.r();
+            value_out.y() = value_in.g();
+            value_out.z() = value_in.b();
+        }
+    }
 }
 
-template<class Type, unsigned Dim>
-sycl::event copy(SyclDeviceMemoryPitched<Type, Dim>& _dst, const SyclHostMemoryHeap<Type, Dim>& _src, sycl::queue queue, sycl::event prerequisite)
+template<>
+inline void SyclHostMemoryHeap<sycl::float3, 2>::copyFrom(const image::Image<image::RGBfColor>& img)
 {
-    return _dst.copyFrom(_src, queue, prerequisite);
+    const int width = img.width();
+    const int height = img.width();
+    assert(width == this->getUnitsInDim(0));
+    assert(height == this->getUnitsInDim(1));
+    // copy image from host memory to output images
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            const image::RGBfColor value_in = img(y, x);
+            sycl::float3& value_out = this->operator()(size_t(x), size_t(y));
+            value_out.x() = value_in.r();
+            value_out.y() = value_in.g();
+            value_out.z() = value_in.b();
+        }
+    }
 }
 
-template<class Type, unsigned Dim>
-sycl::event copy(SyclDeviceMemoryPitched<Type, Dim>& _dst, const SyclDeviceMemoryPitched<Type, Dim>& _src, sycl::queue queue, sycl::event prerequisite)
+template<>
+inline sycl::event SyclDeviceMemoryPitched<sycl::float4, 2>::copyTo(
+                        image::Image<image::RGBAfColor>& img,
+                        sycl::event prerequisite)
 {
-    return _dst.copyFrom(_src, queue, prerequisite);
+    static constexpr size_t size = sizeof(sycl::float4);
+    static_assert(size == sizeof(image::RGBAfColor));
+
+    assert(img.cols() <= this->getSize()[0]);
+    assert(img.rows() <= this->getSize()[1]);
+
+    if(img.width() == this->getUnitsInDim(0))
+        return this->getQueue().memcpy((unsigned char*)img.data(),
+                                       this->getBytePtr(),
+                                       img.size()*sizeof(sycl::float4),
+                                       prerequisite);
+    else
+        for(int r = 0; r < img.rows(); r++)
+            prerequisite = this->getQueue().memcpy((unsigned char*)img.data() + r * img.cols() * size,
+                                                   this->getBytePtr() + r * this->getSize()[0] * size,
+                                                   img.cols()*sizeof(sycl::float4),
+                                                   prerequisite);
+    return prerequisite;
 }
 
-template<class Type>
-sycl::event copy(SyclDeviceMemory<Type>& _dst, const SyclHostMemoryHeap<Type, 1>& _src, sycl::queue queue, sycl::event prerequisite)
+template<>
+inline void SyclHostMemoryHeap<SyclRGB, 2>::copyTo(image::Image<image::RGBfColor>& img) const
 {
-    return queue.copy(_src.getBuffer(), _dst.getBuffer(), _src.getUnitsTotal(), prerequisite);
+    const int width = img.width();
+    const int height = img.width();
+    assert(width == this->getUnitsInDim(0));
+    assert(height == this->getUnitsInDim(1));
+    // copy image from host memory to output images
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            const sycl::float3 value_in = this->operator()(size_t(x), size_t(y)).convert<float>();
+            image::RGBfColor& value_out = img(y, x);
+            value_out.r() = value_in.x();
+            value_out.g() = value_in.y();
+            value_out.b() = value_in.z();
+        }
+    }
 }
 
-template<class Type>
-void copy(SyclDeviceMemory<Type>& _dst, const Type* buffer, const size_t numelems)
+template<>
+inline void SyclHostMemoryHeap<sycl::float3, 2>::copyTo(image::Image<image::RGBfColor>& img) const
 {
-    _dst.copyFrom(buffer, numelems);
+    const int width = img.width();
+    const int height = img.height();
+    assert(width == this->getUnitsInDim(0));
+    assert(height == this->getUnitsInDim(1));
+    // copy image from host memory to output images
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            const sycl::float3 value_in = this->operator()(size_t(x), size_t(y)).convert<float>();
+            image::RGBfColor& value_out = img(y, x);
+            value_out.r() = value_in.x();
+            value_out.g() = value_in.y();
+            value_out.b() = value_in.z();
+        }
+    }
 }
 
 }  // namespace depthMap

@@ -56,7 +56,7 @@ class DepthMapEstimator : public IDeviceJob
      * @param[in] queue the SYCL queue
      * @param[in] cams the list of cameras
      */
-    void compute(sycl::queue queue, const std::vector<int>& cams) override;
+    void compute(sycl::queue& queue, const std::vector<int>& cams) override;
 
   private:
     // private methods
@@ -66,7 +66,7 @@ class DepthMapEstimator : public IDeviceJob
      * @param[in] cams the list of cameras
      * @param[in,out] tiles the output tiles list
      */
-    void getTilesList(const std::vector<int>& cams, std::vector<Tile>& tiles) const;
+    void getTilesList(const std::vector<int>& cams, std::vector<Tile>& tiles);
 
     // private members
 

@@ -13,6 +13,7 @@
 #include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/depthMap_sycl/depthMapUtils.hpp>
 #include <aliceVision/depthMap_sycl/sycl/DeviceCache.hpp>
+#include <aliceVision/depthMap_sycl/sycl/CameraParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/deviceDepthSimilarityMap.hpp>
 
 #include <filesystem>
@@ -26,7 +27,7 @@ NormalMapEstimator::NormalMapEstimator(const mvsUtils::MultiViewParams& mp)
   : _mp(mp)
 {}
 
-void NormalMapEstimator::compute(sycl::queue queue, const std::vector<int>& cams)
+void NormalMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams)
 {
     for (const int rc : cams)
     {
@@ -37,6 +38,12 @@ void NormalMapEstimator::compute(sycl::queue queue, const std::vector<int>& cams
             const system::Timer timer;
 
             ALICEVISION_LOG_INFO("Compute normal map (rc: " << rc << ")");
+
+            // get R camera parameters
+            CameraParams camParams = getCameraParameters(rc, 1 /*downscale*/, _mp);
+
+            // init prerequisite
+            sycl::event event{};
 
             // read input depth map
             image::Image<float> in_depthMap;
@@ -52,25 +59,32 @@ void NormalMapEstimator::compute(sycl::queue queue, const std::vector<int>& cams
             // fullsize roi
             const ROI roi(0, _mp.getWidth(rc), 0, _mp.getHeight(rc));
 
+            // keep track of memory success
+            bool allocSuccess = true;
+
+            // allocate normal map buffer in device memory
+            SyclDeviceMemoryPitched<sycl::float3, 2> out_normalMap_dmp({size_t(width), size_t(height)}, allocSuccess, queue);
+
             // copy input depth map into depth/sim map in device memory
             // note: we don't need similarity for normal map computation
             //       we use depth/sim map in order to avoid code duplication
-            SyclDeviceMemoryPitched<sycl::float2, 2> in_depthSimMap_dmp({size_t(width), size_t(height)}, queue);
+            SyclDeviceMemoryPitched<sycl::float2, 2> in_depthMap_dmp(out_normalMap_dmp.getSize(), allocSuccess, queue);
+
+            if (!allocSuccess) ALICEVISION_THROW_ERROR("Not enough device memory to compute normal map!")
+
             {
-                SyclHostMemoryHeap<sycl::float2, 2> in_depthSimMap_hmh(in_depthSimMap_dmp.getSize(), queue);
+                SyclHostMemoryHeap<sycl::float2, 2> in_depthMap_hmh(in_depthMap_dmp.getSize(), queue);
 
-                for (int x = 0; x < width; ++x)
-                    for (int y = 0; y < height; ++y)
-                        in_depthSimMap_hmh(size_t(x), size_t(y)) = sycl::float2(in_depthMap(y, x), 1.f);
+                for (int y = 0; y < height; ++y)
+                    for (int x = 0; x < width; ++x)
+                        in_depthMap_hmh(size_t(x), size_t(y)).x() = in_depthMap(y, x);
 
-                in_depthSimMap_dmp.copyFrom(in_depthSimMap_hmh, sycl::event()).wait();
+                event = in_depthMap_dmp.copyFrom(in_depthMap_hmh, event);
             }
 
-            // allocate normal map buffer in device memory
-            SyclDeviceMemoryPitched<sycl::float3, 2> out_normalMap_dmp(in_depthSimMap_dmp.getSize(), queue);
-
             // compute normal map synchronosly
-            sycl_depthSimMapComputeNormal(out_normalMap_dmp, in_depthSimMap_dmp, rc, _mp, 1 /*step*/, roi, queue, sycl::event()).wait();
+            event = sycl_depthMapComputeNormal(out_normalMap_dmp, in_depthMap_dmp, camParams, 1 /*step*/, roi, queue, event);
+            event.wait();
 
             // write output normal map
             writeNormalMapFiltered(rc, _mp, tileParams, roi, out_normalMap_dmp, queue);

@@ -24,7 +24,7 @@ class IDeviceJob
      * @param[in] queue the SYCL queue on which to execute
      * @param[in] cams the list of cameras
      */
-    virtual void compute(sycl::queue queue, const std::vector<int>& cams) = 0;
+    virtual void compute(sycl::queue& queue, const std::vector<int>& cams) = 0;
 };
 
 /**

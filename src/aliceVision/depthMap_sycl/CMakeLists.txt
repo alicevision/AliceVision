@@ -1,19 +1,16 @@
-# Headers
-set(depthMap_files_headers
-    BufPtr.hpp
-    computeOnMultiDevices.hpp
-    CustomPatchPatternParams.hpp
-    DepthMapEstimator.hpp
-    DepthMapParams.hpp
-    depthMapUtils.hpp
-    NormalMapEstimator.hpp
-    Refine.hpp
-    RefineParams.hpp
-    Sgm.hpp
-    SgmDepthList.hpp
-    SgmParams.hpp
-    Tile.hpp
-    volumeIO.hpp
+# Sycl sources
+set(depthMap_sycl_sources
+    sycl/planeSweeping/deviceDepthSimilarityMap.cpp
+    sycl/planeSweeping/deviceSimilarityVolume.cpp
+    sycl/DeviceCache.cpp
+    sycl/DeviceMipmapImage.cpp
+)
+# Sycl sources
+set(depthMap_sycl_headers
+    sycl/planeSweeping/deviceDepthSimilarityMap.hpp
+    sycl/planeSweeping/deviceSimilarityVolume.hpp
+    sycl/DeviceCache.hpp
+    sycl/DeviceMipmapImage.hpp
 )
 
 # Sources
@@ -27,6 +24,25 @@ set(depthMap_files_sources
     Sgm.cpp
     SgmDepthList.cpp
     volumeIO.cpp
+    ${depthMap_sycl_sources}
+)
+
+# Headers
+set(depthMap_files_headers
+    computeOnMultiDevices.hpp
+    CustomPatchPatternParams.hpp
+    DepthMapEstimator.hpp
+    DepthMapParams.hpp
+    depthMapUtils.hpp
+    NormalMapEstimator.hpp
+    Refine.hpp
+    RefineParams.hpp
+    Sgm.hpp
+    SgmDepthList.hpp
+    SgmParams.hpp
+    Tile.hpp
+    volumeIO.hpp
+    ${depthMap_sycl_headers}
 )
 
 alicevision_add_library(aliceVision_depthMap

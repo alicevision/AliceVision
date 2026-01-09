@@ -45,7 +45,7 @@ class Sgm
         bool computeDepthSimMap,
         bool computeNormalMap,
         bool& allocationSuccess,
-        sycl::queue queue);
+        sycl::queue& queue);
 
     // no default constructor
     Sgm() = delete;
@@ -61,18 +61,6 @@ class Sgm
 
     // final normal map getter (optional: could be empty)
     inline const SyclDeviceMemoryPitched<sycl::float3, 2>& getDeviceNormalMap() const { return _normalMap_dmp; }
-
-    /**
-     * @brief Get memory consumpyion in device memory.
-     * @return device memory consumpyion (in MB)
-     */
-    double getDeviceMemoryConsumption() const;
-
-    /**
-     * @brief Get unpadded memory consumpyion in device memory.
-     * @return unpadded device memory consumpyion (in MB)
-     */
-    double getDeviceMemoryConsumptionUnpadded() const;
 
     /**
      * @brief Compute for a single R camera the Semi-Global Matching.
@@ -127,7 +115,7 @@ class Sgm
                                  const SgmDepthList& tileDepthList,
                                  const SyclDeviceMemoryPitched<TSim, 3>& in_volume_dmp,
                                  const std::string& name,
-                                 sycl::event prerequisite) const;
+                                 sycl::event prerequisite);
 
     // private members
 
@@ -139,8 +127,8 @@ class Sgm
 
     // private members in device memory
 
-    SyclHostMemoryHeap<float, 2> _depths_hmh;                   //< rc depth data host memory
-    SyclDeviceMemoryPitched<float, 2> _depths_dmp;              //< rc depth data device memory
+    SyclHostMemoryHeap<float, 1> _depths_hmh;                   //< rc depth data host memory
+    SyclDeviceMemoryPitched<float, 1> _depths_dmp;              //< rc depth data device memory
     SyclDeviceMemoryPitched<sycl::float2, 2> _depthThicknessMap_dmp;  //< rc result depth thickness map
     SyclDeviceMemoryPitched<sycl::float2, 2> _depthSimMap_dmp;        //< rc result depth/sim map
     SyclDeviceMemoryPitched<sycl::float3, 2> _normalMap_dmp;          //< rc normal map
@@ -148,7 +136,7 @@ class Sgm
     SyclDeviceMemoryPitched<TSim, 3> _volumeSecBestSim_dmp;     //< rc second best similarity volume
     SyclDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccA_dmp;   //< for optimization: volume accumulation slice A
     SyclDeviceMemoryPitched<TSimAcc, 2> _volumeSliceAccB_dmp;   //< for optimization: volume accumulation slice B
-    SyclDeviceMemoryPitched<TSimAcc, 2> _volumeAxisAcc_dmp;     //< for optimization: volume accumulation axis
+    SyclDeviceMemoryPitched<TSimAcc, 1> _volumeAxisAcc_dmp;     //< for optimization: volume accumulation axis
     sycl::queue _queue;                                       //< queue for device execution
 };
 

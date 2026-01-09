@@ -26,12 +26,13 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
          bool computeDepthSimMap,
          bool computeNormalMap,
          bool& allocationSuccess,
-         sycl::queue queue)
+         sycl::queue& queue)
   : _mp(mp),
     _tileParams(tileParams),
     _sgmParams(sgmParams),
     _computeDepthSimMap(computeDepthSimMap || sgmParams.exportIntermediateDepthSimMaps),
     _computeNormalMap(computeNormalMap || sgmParams.exportIntermediateNormalMaps),
+    _depths_hmh(queue),
     _depths_dmp(queue),
     _depthThicknessMap_dmp(queue),
     _depthSimMap_dmp(queue),
@@ -53,9 +54,9 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
 
     // allocate depth list in device memory
     {
-        const SyclSize<2> depthsDim(_sgmParams.maxDepths, 1);
+        const SyclSize<1> depthsDim(_sgmParams.maxDepths);
 
-        allocationSuccess &= _depths_hmh.allocate(depthsDim);
+        _depths_hmh.allocate(depthsDim);
         allocationSuccess &= _depths_dmp.allocate(depthsDim);
     }
 
@@ -85,42 +86,8 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
 
         allocationSuccess &= _volumeSliceAccA_dmp.allocate(SyclSize<2>(maxTileSide, _sgmParams.maxDepths));
         allocationSuccess &= _volumeSliceAccB_dmp.allocate(SyclSize<2>(maxTileSide, _sgmParams.maxDepths));
-        allocationSuccess &= _volumeAxisAcc_dmp.allocate(SyclSize<2>(maxTileSide, 1));
+        allocationSuccess &= _volumeAxisAcc_dmp.allocate(SyclSize<1>(maxTileSide));
     }
-}
-
-double Sgm::getDeviceMemoryConsumption() const
-{
-    size_t bytes = 0;
-
-    bytes += _depths_dmp.getBytesPadded();
-    bytes += _depthThicknessMap_dmp.getBytesPadded();
-    bytes += _depthSimMap_dmp.getBytesPadded();
-    bytes += _normalMap_dmp.getBytesPadded();
-    bytes += _volumeBestSim_dmp.getBytesPadded();
-    bytes += _volumeSecBestSim_dmp.getBytesPadded();
-    bytes += _volumeSliceAccA_dmp.getBytesPadded();
-    bytes += _volumeSliceAccB_dmp.getBytesPadded();
-    bytes += _volumeAxisAcc_dmp.getBytesPadded();
-
-    return (double(bytes) / (1024.0 * 1024.0));
-}
-
-double Sgm::getDeviceMemoryConsumptionUnpadded() const
-{
-    size_t bytes = 0;
-
-    bytes += _depths_dmp.getBytesUnpadded();
-    bytes += _depthThicknessMap_dmp.getBytesUnpadded();
-    bytes += _depthSimMap_dmp.getBytesUnpadded();
-    bytes += _normalMap_dmp.getBytesUnpadded();
-    bytes += _volumeBestSim_dmp.getBytesUnpadded();
-    bytes += _volumeSecBestSim_dmp.getBytesUnpadded();
-    bytes += _volumeSliceAccA_dmp.getBytesUnpadded();
-    bytes += _volumeSliceAccB_dmp.getBytesUnpadded();
-    bytes += _volumeAxisAcc_dmp.getBytesUnpadded();
-
-    return (double(bytes) / (1024.0 * 1024.0));
 }
 
 sycl::event Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite)
@@ -136,7 +103,7 @@ sycl::event Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, sycl
 
     // copy rc depth data in page-locked host memory
     for (int i = 0; i < tileDepthList.getDepths().size(); ++i)
-        _depths_hmh(i, 0) = tileDepthList.getDepths()[i];
+        _depths_hmh(i) = tileDepthList.getDepths()[i];
 
     // copy rc depth data in device memory
     sycl::event copyDepthData = _depths_dmp.copyFrom(_depths_hmh, prerequisite);
@@ -183,7 +150,7 @@ sycl::event Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, sycl
 
         ALICEVISION_LOG_INFO(tile << "SGM compute normal map of view id: " << viewId << ", rc: " << tile.rc << " (" << (tile.rc + 1) << " / "
                                   << _mp.ncams << ").");
-        finished = sycl_depthSimMapComputeNormal(_normalMap_dmp, _depthSimMap_dmp, tile.rc, _mp, _sgmParams.stepXY, downscaledRoi, _queue, retrieveDepth);
+        finished = sycl_depthMapComputeNormal(_normalMap_dmp, _depthSimMap_dmp, getCameraParameters(tile.rc, _sgmParams.scale, _mp), _sgmParams.stepXY, downscaledRoi, _queue, retrieveDepth);
 
         // export intermediate normal map (if requested by user)
         if (_sgmParams.exportIntermediateNormalMaps)
@@ -221,8 +188,8 @@ sycl::event Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& 
     const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
 
     // initialize the two similarity volumes at 255
-    sycl::event bestSimInit = sycl_volumeInitialize(_volumeBestSim_dmp, 255.f, _queue, prerequisite);
-    sycl::event secBestSimInit = sycl_volumeInitialize(_volumeSecBestSim_dmp, 255.f, _queue, prerequisite);
+    prerequisite = sycl_volumeInitialize<TSim>(_volumeBestSim_dmp, 255., prerequisite);
+    prerequisite = sycl_volumeInitialize<TSim>(_volumeSecBestSim_dmp, 255., prerequisite);
 
     // get device cache instance
     DeviceCache& deviceCache = DeviceCache::getInstance();
@@ -230,8 +197,10 @@ sycl::event Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& 
     // get R device mipmap image from cache
     const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue);
 
+    // construct R image params
+    const CameraParams rcParams = getCameraParameters(tile.rc, _sgmParams.scale, _mp);
+
     // compute similarity volume per Rc Tc
-    std::vector<sycl::event> rcTcComputed(tile.refineTCams.size());
     for (std::size_t tci = 0; tci < tile.sgmTCams.size(); ++tci)
     {
         const int tc = tile.sgmTCams.at(tci);
@@ -244,6 +213,9 @@ sycl::event Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& 
         // get T device mipmap image from cache
         const DeviceMipmapImage& tcDeviceMipmapImage = deviceCache.requestMipmapImage(tc, _mp, _queue);
 
+        // construct T image params
+        const CameraParams tcParams = getCameraParameters(tc, _sgmParams.scale, _mp);
+
         ALICEVISION_LOG_DEBUG(tile << "Compute similarity volume:" << std::endl
                                    << "\t- rc: " << tile.rc << std::endl
                                    << "\t- tc: " << tc << " (" << (tci + 1) << "/" << tile.sgmTCams.size() << ")" << std::endl
@@ -252,42 +224,34 @@ sycl::event Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& 
                                    << "\t- tile range x: [" << downscaledRoi.x.begin << " - " << downscaledRoi.x.end << "]" << std::endl
                                    << "\t- tile range y: [" << downscaledRoi.y.begin << " - " << downscaledRoi.y.end << "]" << std::endl);
 
-        rcTcComputed.at(tci) = sycl_volumeComputeSimilarity(
+        prerequisite = sycl_volumeComputeSimilarity(
                                      _volumeBestSim_dmp,
                                      _volumeSecBestSim_dmp,
                                      _depths_dmp,
-                                     tile.rc,
-                                     tc,
-                                     _mp,
+                                     rcParams,
+                                     tcParams,
                                      rcDeviceMipmapImage,
                                      tcDeviceMipmapImage,
                                      _sgmParams,
                                      tcDepthRange,
                                      downscaledRoi,
                                      _queue,
-                                     { bestSimInit, secBestSimInit });
+                                     prerequisite);
     }
 
     // update second best uninitialized similarity volume values with first best similarity volume values
     // - allows to avoid the particular case with a single tc (second best volume has no valid similarity values)
     // - useful if a tc alone contributes to the calculation of a subpart of the similarity volume
-    sycl::event finished;
-    if (_sgmParams.updateUninitializedSim)  // should always be true, false for debug purposes
+    if (_sgmParams.updateUninitializedSim) [[likely]] // should always be true, false for debug purposes
     {
         ALICEVISION_LOG_DEBUG(tile << "SGM Update uninitialized similarity volume values from best similarity volume.");
 
-        finished = sycl_volumeUpdateUninitializedSimilarity(_volumeBestSim_dmp, _volumeSecBestSim_dmp, _queue, rcTcComputed);
-    }
-    else // ensure debug still works correctly, at performance cost
-    {
-        for (sycl::event e : rcTcComputed)
-            e.wait();
-        finished = sycl::event();
+        prerequisite = sycl_volumeUpdateUninitializedSimilarity(_volumeBestSim_dmp, _volumeSecBestSim_dmp, _queue, prerequisite);
     }
 
     ALICEVISION_LOG_INFO(tile << "SGM Compute similarity volume done.");
 
-    return finished;
+    return prerequisite;
 }
 
 sycl::event Sgm::optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite)
@@ -329,18 +293,36 @@ sycl::event Sgm::retrieveBestDepth(const Tile& tile, const SgmDepthList& tileDep
     // get depth range
     const Range depthRange(0, tileDepthList.getDepths().size());
 
-    sycl::event finished = sycl_volumeRetrieveBestDepth(
+    // construct R image params
+    const CameraParams rcParams = getCameraParameters(tile.rc, _sgmParams.scale, _mp);
+
+    sycl::event finished;
+
+    if (_computeDepthSimMap)
+    {
+        finished = sycl_volumeRetrieveBestDepthUseSim(
                                  _depthThicknessMap_dmp,  // output depth thickness map
-                                 _depthSimMap_dmp,        // output depth/sim map (or empty)
+                                 _depthSimMap_dmp,        // output depth/sim map
                                  _depths_dmp,             // rc depth
                                  _volumeBestSim_dmp,      // second best sim volume optimized in best sim volume
-                                 tile.rc,
-                                 _mp,
+                                 rcParams,
                                  _sgmParams,
                                  depthRange,
                                  downscaledRoi,
-                                 _queue,
-                                 prerequisite);
+                                 _queue, prerequisite);
+    }
+    else
+    {
+        finished = sycl_volumeRetrieveBestDepthNoSim(
+                                 _depthThicknessMap_dmp,  // output depth thickness map
+                                 _depths_dmp,             // rc depth
+                                 _volumeBestSim_dmp,      // second best sim volume optimized in best sim volume
+                                 rcParams,
+                                 _sgmParams,
+                                 depthRange,
+                                 downscaledRoi,
+                                 _queue, prerequisite);
+    }
 
     ALICEVISION_LOG_INFO(tile << "SGM Retrieve best depth in volume done.");
 
@@ -351,7 +333,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
                                   const SgmDepthList& tileDepthList,
                                   const SyclDeviceMemoryPitched<TSim, 3>& in_volume_dmp,
                                   const std::string& name,
-                                  sycl::event prerequisite) const
+                                  sycl::event prerequisite)
 {
     if (!_sgmParams.exportIntermediateVolumes && !_sgmParams.exportIntermediateCrossVolumes && !_sgmParams.exportIntermediateVolume9pCsv)
     {
@@ -371,7 +353,7 @@ void Sgm::exportVolumeInformation(const Tile& tile,
 
     // copy device similarity volume to host memory
     SyclHostMemoryHeap<TSim, 3> volumeSim_hmh(in_volume_dmp.getSize(), _queue);
-    volumeSim_hmh.copyFrom(in_volume_dmp, _queue, prerequisite).wait();
+    volumeSim_hmh.copyFrom(in_volume_dmp, prerequisite).wait();
 
     if (_sgmParams.exportIntermediateVolumes)
     {

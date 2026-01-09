@@ -31,7 +31,7 @@ struct DepthMapParams
 
     // constant parameters
 
-    const bool useRefine = true;  //< for debug purposes: enable or disable Refine process
+    static constexpr bool useRefine = true;  //< for debug purposes: enable or disable Refine process
 };
 
 }  // namespace depthMap

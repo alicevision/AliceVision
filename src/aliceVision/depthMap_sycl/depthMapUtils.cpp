@@ -35,11 +35,11 @@ void copyFloat2Map(image::Image<float>& out_mapX,
     out_mapY.resize(width, height);
 
     // copy image from host memory to output images
-    for (int x = 0; x < width; ++x)
+    for (int y = 0; y < height; ++y)
     {
-        for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x)
         {
-            const sycl::float2& value = in_map_hmh(size_t(x), size_t(y));
+            const sycl::float2 value = in_map_hmh(size_t(x), size_t(y));
             out_mapX(y, x) = value.x();
             out_mapY(y, x) = value.y();
         }
@@ -51,11 +51,11 @@ void copyFloat2Map(image::Image<float>& out_mapX,
                    const SyclDeviceMemoryPitched<sycl::float2, 2>& in_map_dmp,
                    const ROI& roi,
                    int downscale,
-                   sycl::queue queue)
+                   sycl::queue& queue)
 {
     // copy sycl::float2 map from device pitched memory to host memory
     SyclHostMemoryHeap<sycl::float2, 2> map_hmh(in_map_dmp.getSize(), queue);
-    map_hmh.copyFrom(in_map_dmp, queue, sycl::event()).wait();
+    map_hmh.copyFrom(in_map_dmp, sycl::event()).wait();
 
     copyFloat2Map(out_mapX, out_mapY, map_hmh, roi, downscale);
 }
@@ -88,7 +88,7 @@ void writeFloat2Map(int rc,
                     const mvsUtils::TileParams& tileParams,
                     const ROI& roi,
                     const SyclDeviceMemoryPitched<sycl::float2, 2>& in_map_dmp,
-                    sycl::queue queue,
+                    sycl::queue& queue,
                     const mvsUtils::EFileType fileTypeX,
                     const mvsUtils::EFileType fileTypeY,
                     int scale,
@@ -112,7 +112,7 @@ void writeFloat3Map(int rc,
                     const mvsUtils::TileParams& tileParams,
                     const ROI& roi,
                     const SyclDeviceMemoryPitched<sycl::float3, 2>& in_map_dmp,
-                    sycl::queue queue,
+                    sycl::queue& queue,
                     const mvsUtils::EFileType fileType,
                     int scale,
                     int step,
@@ -124,49 +124,29 @@ void writeFloat3Map(int rc,
 
     // copy map from device pitched memory to host memory
     SyclHostMemoryHeap<sycl::float3, 2> map_hmh(in_map_dmp.getSize(), queue);
-    map_hmh.copyFrom(in_map_dmp, queue, sycl::event()).wait();
+    map_hmh.copyFrom(in_map_dmp, sycl::event()).wait();
 
     // copy map from host memory to an Image
     image::Image<image::RGBfColor> map(width, height, true, {0.f, 0.f, 0.f});
 
-    for (size_t x = 0; x < size_t(width); ++x)
-    {
-        for (size_t y = 0; y < size_t(height); ++y)
-        {
-            const sycl::float3& rgba_hmh = map_hmh(x, y);
-            image::RGBfColor& rgb = map(int(y), int(x));
-            rgb.r() = rgba_hmh.x();
-            rgb.g() = rgba_hmh.y();
-            rgb.b() = rgba_hmh.z();
-        }
-    }
+    map_hmh.copyTo(map);
 
     // write map from the image buffer
     mvsUtils::writeMap(rc, mp, fileType, tileParams, roi, map, scale, step, (name.empty()) ? "" : "_" + name);
 }
 
-void writeDeviceImage(const SyclDeviceMemoryPitched<SyclRGBA, 2>& in_img_dmp, sycl::queue queue, const std::string& path)
+void writeDeviceImage(const SyclDeviceMemoryPitched<SyclRGB, 2>& in_img_dmp, sycl::queue& queue, const std::string& path)
 {
     const SyclSize<2>& imgSize = in_img_dmp.getSize();
 
     // copy image from device pitched memory to host memory
-    SyclHostMemoryHeap<SyclRGBA, 2> img_hmh(imgSize, queue);
-    img_hmh.copyFrom(in_img_dmp, queue, sycl::event()).wait();
+    SyclHostMemoryHeap<SyclRGB, 2> img_hmh(imgSize, queue);
+    img_hmh.copyFrom(in_img_dmp, sycl::event()).wait();
 
     // copy image from host memory to an Image
     image::Image<image::RGBfColor> img(imgSize.x(), imgSize.y(), true, {0.f, 0.f, 0.f});
 
-    for (size_t x = 0; x < imgSize.x(); ++x)
-    {
-        for (size_t y = 0; y < imgSize.y(); ++y)
-        {
-            const SyclRGBA& rgba_hmh = img_hmh(x, y);
-            image::RGBfColor& rgb = img(int(y), int(x));
-            rgb.r() = rgba_hmh.x();
-            rgb.g() = rgba_hmh.y();
-            rgb.b() = rgba_hmh.z();
-        }
-    }
+    img_hmh.copyTo(img);
 
     // write the image buffer
     image::writeImage(
@@ -178,7 +158,7 @@ void writeNormalMap(int rc,
                     const mvsUtils::TileParams& tileParams,
                     const ROI& roi,
                     const SyclDeviceMemoryPitched<sycl::float3, 2>& in_normalMap_dmp,
-                    sycl::queue queue,
+                    sycl::queue& queue,
                     int scale,
                     int step,
                     const std::string& name)
@@ -191,7 +171,7 @@ void writeNormalMapFiltered(int rc,
                             const mvsUtils::TileParams& tileParams,
                             const ROI& roi,
                             const SyclDeviceMemoryPitched<sycl::float3, 2>& in_normalMap_dmp,
-                            sycl::queue queue,
+                            sycl::queue& queue,
                             int scale,
                             int step,
                             const std::string& name)
@@ -204,7 +184,7 @@ void writeDepthThicknessMap(int rc,
                             const mvsUtils::TileParams& tileParams,
                             const ROI& roi,
                             const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthThicknessMap_dmp,
-                            sycl::queue queue,
+                            sycl::queue& queue,
                             int scale,
                             int step,
                             const std::string& name)
@@ -220,7 +200,7 @@ void writeDepthPixSizeMap(int rc,
                           const mvsUtils::TileParams& tileParams,
                           const ROI& roi,
                           const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthPixSize_dmp,
-                          sycl::queue queue,
+                          sycl::queue& queue,
                           int scale,
                           int step,
                           const std::string& name)
@@ -236,7 +216,7 @@ void writeDepthSimMap(int rc,
                       const mvsUtils::TileParams& tileParams,
                       const ROI& roi,
                       const SyclDeviceMemoryPitched<sycl::float2, 2>& in_depthSimMap_dmp,
-                      sycl::queue queue,
+                      sycl::queue& queue,
                       int scale,
                       int step,
                       const std::string& name)

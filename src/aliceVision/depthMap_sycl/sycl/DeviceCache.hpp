@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/depthMap_sycl/sycl/DeviceMipmapImage.hpp>
@@ -38,7 +36,7 @@ class DeviceCache
      * @brief Clear the current device cache.
      * @param[in] queue the queue to identify sycl device/context pair
      */
-    void clear(sycl::queue queue);
+    void clear(const sycl::queue& queue);
 
     /**
      * @brief Add a mipmap image in current device cache.
@@ -49,12 +47,13 @@ class DeviceCache
      * @param[in] mp the multi-view parameters
      * @param[in] queue the queue to identify sycl device/context pair
      */
-    bool addMipmapImage(int camId,
+    void addMipmapImage(int camId,
                         int minDownscale,
                         int maxDownscale,
                         mvsUtils::ImagesCache<image::Image<image::RGBAfColor>>& imageCache,
                         const mvsUtils::MultiViewParams& mp,
-                        sycl::queue queue);
+                        bool& allocSuccess,
+                        sycl::queue& queue);
 
     /**
      * @brief Request a mipmap image in current device cache.
@@ -63,16 +62,15 @@ class DeviceCache
      * @param[in] queue the queue to identify sycl device/context pair
      * @return DeviceMipmapImage
      */
-    const DeviceMipmapImage& requestMipmapImage(int camId, const mvsUtils::MultiViewParams& mp, sycl::queue queue);
+    const DeviceMipmapImage& requestMipmapImage(int camId, const mvsUtils::MultiViewParams& mp, const sycl::queue& queue);
 
     /**
      * @brief Reduce user count of a MipmapImage, and free it's memory if it has no users
      * @param[in] camId the camera index in the ImagesCache / MultiViewParams
-     * @param[in] mp the multi-view parameters
      * @param[in] queue the queue to identify sycl device/context pair
      * @return DeviceMipmapImage
      */
-    void freeMipmapImage(int camId, const mvsUtils::MultiViewParams& mp, sycl::queue queue);
+    void freeMipmapImage(int camId, sycl::queue& queue);
 
   private:
     // private members
@@ -83,14 +81,9 @@ class DeviceCache
      */
     struct SingleDeviceCache
     {
-        SingleDeviceCache(sycl::queue queue);
-        ~SingleDeviceCache() = default;
-
-        std::map<int, std::pair<std::unique_ptr<DeviceMipmapImage>, std::atomic<int>>> mipmaps;  //< <camId, <DeviceMipmapImage, nbUsers>> cached device mipmap images
+        std::unordered_map<int, std::pair<DeviceMipmapImage, unsigned int>> mipmaps_ctd;  //< <camId, <DeviceMipmapImage, nbUsers>> cached device mipmap images
     };
-    std::map<sycl::queue*, std::unique_ptr<SingleDeviceCache>> _cachePerDevice;  // <sycl::queue address, SingleDeviceCachePtr>
-
-    // private methods
+    std::unordered_map<std::size_t, SingleDeviceCache> _cachePerDevice;  // <sycl::queue hash, SingleDeviceCache>
 
     // Singleton, private default constructor
     DeviceCache() = default;
@@ -99,10 +92,10 @@ class DeviceCache
     ~DeviceCache() = default;
 
     /**
-     * @brief Get the SingleDeviceCache associated to the current cudaDeviceId
+     * @brief Get the SingleDeviceCache associated to the current queue
      * @return SingleDeviceCache
      */
-    SingleDeviceCache& getCurrentDeviceCache();
+    SingleDeviceCache& getCurrentDeviceCache(const sycl::queue& queue);
 };
 
 }  // namespace depthMap
