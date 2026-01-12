@@ -96,6 +96,7 @@ jobs:
           cd Meshroom/
           meshroom_avBranch=$(git ls-remote --heads https://github.com/alicevision/Meshroom.git $GITHUB_HEAD_REF | cut -f 1)
           if [ $meshroom_avBranch != "" ]; then git checkout $meshroom_avBranch; echo "Use Meshroom/$GITHUB_HEAD_REF"; fi
+          git checkout fix/batchExecuteGraph
 
           # Set environment variables specific to Meshroom
           export MESHROOM_INSTALL_DIR=$PWD
