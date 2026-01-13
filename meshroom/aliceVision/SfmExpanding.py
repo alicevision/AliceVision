@@ -1,4 +1,4 @@
-__version__ = "2.3"
+__version__ = "2.4"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
