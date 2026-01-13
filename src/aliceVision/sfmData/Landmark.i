@@ -21,6 +21,7 @@
 %ignore aliceVision::sfmData::Landmark::_parallaxRobust;
 %ignore aliceVision::sfmData::Landmark::_isLocked;
 %ignore aliceVision::sfmData::Landmark::_X;
+%ignore aliceVision::sfmData::Landmark::_pointFetcher;
 
 //Add new swig only C++ code
 %extend aliceVision::sfmData::Landmark {

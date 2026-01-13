@@ -126,5 +126,38 @@ bool MeshIntersection::pickPointAndNormal(Vec3 & point, Vec3 & normal, const cam
     return true;
 }
 
+bool MeshIntersection::getPointAndNormal(Vec3 & point, Vec3 & normal, const Vec3 & origin, const Vec3 & direction)
+{
+    //Create geogram ray from alicevision ray
+    GEO::Ray ray;
+
+    ray.origin.x = origin.x();
+    ray.origin.y = -origin.y();
+    ray.origin.z = -origin.z();
+    ray.direction.x = direction.x();
+    ray.direction.y = -direction.y();
+    ray.direction.z = -direction.z();
+
+    GEO::MeshFacetsAABB::Intersection intersection;
+    if (!_aabb.ray_nearest_intersection(ray, intersection)) 
+    {
+        return false;
+    }
+
+    const GEO::vec3 p = ray.origin + intersection.t * ray.direction;
+
+    point.x() = p.x;
+    point.y() = -p.y;
+    point.z() = -p.z;
+
+    const GEO::vec3 n = GEO::normalize(intersection.N);
+
+    normal.x() = n.x;
+    normal.y() = -n.y;
+    normal.z() = -n.z;
+
+    return true;
+}
+
 }
 }
