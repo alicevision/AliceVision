@@ -21,8 +21,8 @@
 #include <aliceVision/sfm/pipeline/expanding/ExpansionPostProcessRig.hpp>
 #include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicyLegacy.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
+#include <aliceVision/sfmData/MeshPointFetcher.hpp>
 
-#include <aliceVision/mesh/MeshIntersection.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -35,48 +35,6 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-//This intermediate class is used as a proxy to not link
-//sfm with mesh library
-class MeshPointFetcher : public sfm::PointFetcher
-{
-public:
-    /**
-     * @brief initialize object. to be called before any other method
-     * @param pathToModel path to obj file to use as mesh
-    */
-    bool initialize(const std::string & pathToModel)
-    {
-        return _mi.initialize(pathToModel);
-    }
-
-    /**
-     * @brief Set the pose of the camera
-     * @param pose the pose of the camera wrt some global coordinates frame
-    */
-    void setPose(const geometry::Pose3 & pose) override
-    {
-        _mi.setPose(pose);
-    }
-
-    /**
-     * @brief virtual method to get coordinates and normals of a pixel of an image
-     * @param point result point in some global coordinates frame
-     * @param normal result normal in some global coordinates frame
-     * @param intrinsic the camera intrinsic object
-     * @param imageCoords the input image pixel coordinates in 2D.
-     * @return false on error
-    */
-    bool pickPointAndNormal(Vec3 & point,
-                                Vec3 & normal,
-                                const camera::IntrinsicBase & intrinsic,
-                                const Vec2 & imageCoords) override
-    {
-        return _mi.pickPointAndNormal(point, normal, intrinsic, imageCoords);
-    }
-
-private:
-    mesh::MeshIntersection _mi;
-};
 
 int aliceVision_main(int argc, char** argv)
 {
@@ -253,18 +211,18 @@ int aliceVision_main(int argc, char** argv)
     sfmBundle->setIsStructureRefinementEnabled(enableStructureRefinement);
     sfmBundle->setTemporalConstraintParams(tempConstrParams, useTemporalConstraint);
 
-    sfm::PointFetcher::uptr pointFetcherHandler;
+    sfmData::PointFetcher::sptr pointFetcherHandler;
     if (!meshFilename.empty())
     {
         ALICEVISION_LOG_INFO("Load mesh");
-        std::unique_ptr<MeshPointFetcher> handler = std::make_unique<MeshPointFetcher>();
+        std::shared_ptr<sfmData::MeshPointFetcher> handler = std::make_shared<sfmData::MeshPointFetcher>();
 
         if (!handler->initialize(meshFilename))
         {
             return EXIT_FAILURE;
         }
 
-        pointFetcherHandler = std::move(handler);
+        pointFetcherHandler = handler;
     }
 
     sfm::LocalizationValidationPolicy::uptr resectionValidationPolicy = std::make_unique<sfm::LocalizationValidationPolicyLegacy>();

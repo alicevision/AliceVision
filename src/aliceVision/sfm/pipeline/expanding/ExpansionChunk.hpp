@@ -149,7 +149,6 @@ private:
     double _minTriangulationAngleDegrees = 3.0;
     size_t _weakResectionSize = 100;
     bool _enableDepthPrior = true;
-    bool _enableMeshPrior = true;
     bool _ignoreMultiviewOnPrior = false;
 };
 

@@ -72,14 +72,13 @@ bool SfmTriangulation::process(
                             allInterestingViews.begin(), allInterestingViews.end(), 
                             std::inserter(trackViewsFiltered, trackViewsFiltered.begin()));
     
-        if(trackViewsFiltered.size() < _minObservations)
+        if(trackViewsFiltered.size() < _minObservations && !useDepthPrior)
         {
             continue;
         }
 
         #pragma omp critical
         {
-            
             evaluatedTracks.insert(trackId);
         }
 
@@ -303,7 +302,7 @@ bool SfmTriangulation::processTrackWithPointFetcher(
         )
 {
     size_t bestInliersCount = 0;
-    std::vector<std::pair<Vec3, Vec3>> possibleParameters;
+    std::map<IndexT, std::pair<Vec3, Vec3>> possibleParameters;
 
     //For each observed view in the track
     for (auto referenceViewId : viewIds)
@@ -328,15 +327,13 @@ bool SfmTriangulation::processTrackWithPointFetcher(
             continue;
         }
 
-        possibleParameters.push_back(std::make_pair(point, normal));
+        possibleParameters[referenceViewId] = std::make_pair(point, normal);
     }
-
-
     
     //Consider each point
-    for (int idRef = 0; idRef < possibleParameters.size(); idRef++)
+    for (const auto & [refViewId, pair] : possibleParameters)
     {
-        const Vec3 & refpt = possibleParameters[idRef].first;
+        const Vec3 & refpt = pair.first;
 
         //Make sure this point is not dependent on parallax 
         //As it does not need parallax to estimate its depth
@@ -344,7 +341,8 @@ bool SfmTriangulation::processTrackWithPointFetcher(
         landmark.setParallaxRobust(true);
         landmark.setX(refpt);
         landmark.setDescType(track.descType);
-        landmark.setIsPrecise(true);
+        landmark.setReferenceView(sfmData.getViews().at(refViewId));
+        landmark.setPointFetcher(_pointFetcherHandler);
 
         //For each observed view in the track
         for (auto viewId: viewIds)
@@ -387,8 +385,8 @@ bool SfmTriangulation::processTrackWithPointFetcher(
         }
     }
 
-    //One inlier is the reference, so we need at least 2 inliers
-    if (bestInliersCount < 2)
+
+    if (bestInliersCount == 0)
     {
         return false;
     }

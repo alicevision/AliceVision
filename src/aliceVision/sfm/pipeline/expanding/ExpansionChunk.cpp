@@ -187,7 +187,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
         }
 
         auto & landmarks = sfmData.getLandmarks();
-        ALICEVISION_LOG_INFO("Existing landmarks : " << landmarks.size());
+        ALICEVISION_LOG_INFO("Existing landmarks before multiview : " << landmarks.size());
 
         for (const auto & pl : outputLandmarks)
         {
@@ -197,7 +197,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
             {
                 landmarks.erase(pl.first);
             }
-
+            
             if (landmark.getObservations().size() < minPoints)
             {
                 continue;
@@ -217,7 +217,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
             landmarks.insert(pl);
         }
 
-        ALICEVISION_LOG_INFO("New landmarks count : " << landmarks.size());
+        ALICEVISION_LOG_INFO("New landmarks count after multiview : " << landmarks.size());
         ALICEVISION_LOG_INFO("ExpansionChunk::triangulate end");
     }
 
@@ -226,15 +226,16 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
         std::set<IndexT> evaluatedTracks;
         std::map<IndexT, sfmData::Landmark> outputLandmarks;
         std::mt19937 randomNumberGenerator;
+
         if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                     randomNumberGenerator, viewIds, 
                                     evaluatedTracks, outputLandmarks, true))
         {
             return false;
         }
-
+        
         auto & landmarks = sfmData.getLandmarks();
-        ALICEVISION_LOG_INFO("Existing landmarks : " << landmarks.size());
+        ALICEVISION_LOG_INFO("Existing landmarks before depth prior : " << landmarks.size());
 
         for (const auto & pl : outputLandmarks)
         {
@@ -247,65 +248,27 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
                     continue;
                 }
             }
-
+            
             if (landmark.getObservations().size() < minPoints)
             {
-                continue;
-            }
-
-            if (!SfmTriangulation::checkChierality(sfmData, landmark))
-            {
-                continue;
-            }
-
-            landmarks.insert(pl);
-        }
-
-        ALICEVISION_LOG_INFO("New landmarks count : " << landmarks.size());
-        ALICEVISION_LOG_INFO("ExpansionChunk::triangulate end");
-    }
-
-    if (_enableMeshPrior)
-    {
-        std::set<IndexT> evaluatedTracks;
-        std::map<IndexT, sfmData::Landmark> outputLandmarks;
-        std::mt19937 randomNumberGenerator;
-        if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
-                                    randomNumberGenerator, viewIds, 
-                                    evaluatedTracks, outputLandmarks, true))
-        {
-            return false;
-        }
-
-        auto & landmarks = sfmData.getLandmarks();
-        ALICEVISION_LOG_INFO("Existing landmarks : " << landmarks.size());
-
-        for (const auto & pl : outputLandmarks)
-        {
-            const auto & landmark = pl.second;
-
-            if (landmarks.find(pl.first) != landmarks.end())
-            {
-                if (!_ignoreMultiviewOnPrior)
+                // Mesh based landmarks (with point fetcher) don't require minimum observation count
+                // as depth is constrained by the mesh.
+                if (landmark.getPointFetcher() == nullptr)
                 {
                     continue;
                 }
             }
-
-            if (landmark.getObservations().size() < minPoints)
-            {
-                continue;
-            }
-
+            
             if (!SfmTriangulation::checkChierality(sfmData, landmark))
             {
                 continue;
             }
 
-            landmarks.insert(pl);
+            
+            landmarks.insert_or_assign(pl.first, pl.second);
         }
 
-        ALICEVISION_LOG_INFO("New landmarks count : " << landmarks.size());
+        ALICEVISION_LOG_INFO("New landmarks count after depth prior: " << landmarks.size());
         ALICEVISION_LOG_INFO("ExpansionChunk::triangulate end");
     }
 
