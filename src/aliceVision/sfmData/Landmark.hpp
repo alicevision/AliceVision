@@ -13,6 +13,7 @@
 #include <aliceVision/stl/FlatMap.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/sfmData/Observation.hpp>
+#include <aliceVision/sfmData/PointFetcher.hpp>
 
 #include <memory>
 
@@ -226,6 +227,21 @@ class Landmark
     */
     void setLocked(bool locked) { _isLocked = locked; }
 
+
+    /**
+     * @brief Get the point fetcher
+     * @return The point fetcher
+     */
+    PointFetcher::sptr getPointFetcher() const { return _pointFetcher; }
+
+    /**
+     * @brief Set the point fetcher
+     * @param pointFetcher The point fetcher to set
+     */
+    void setPointFetcher(PointFetcher::sptr pointFetcher) { _pointFetcher = pointFetcher; }
+
+    
+
 private:
     Vec3 _X = { 0.0, 0.0, 0.0 };  //!> the 3D position of the landmark
     Observations _observations;
@@ -235,6 +251,7 @@ private:
     bool _isLocked = false;
     image::RGBColor _rgb = image::WHITE;  //!> the color associated to the point
     std::shared_ptr<View> _referenceView;  //!> Reference view for relative pose parameterization
+    PointFetcher::sptr _pointFetcher;
 };
 
 }  // namespace sfmData
