@@ -11,7 +11,7 @@
 
 namespace aliceVision 
 {
-namespace sfm
+namespace sfmData
 {
 
 class PointFetcher
@@ -28,6 +28,15 @@ public:
     virtual void setPose(const geometry::Pose3 & pose) = 0;
 
     /**
+     * @brief pick a point on the mesh given a input camera observation
+     * @param output the output measured point
+     * @param intrinsic the camera intrinsics to use for ray computation
+     * @param imageCoords the camera observation we want to use to estimate its 'depth'
+     * @return true if the ray intersects the mesh.
+    */
+    virtual bool pickPoint(Vec3 & output, const camera::IntrinsicBase & intrinsic, const Vec2 & imageCoords) = 0;
+
+    /**
      * @brief virtual method to get coordinates and normals of a pixel of an image
      * @param point result point in some global coordinates frame
      * @param normal result normal in some global coordinates frame
@@ -39,6 +48,16 @@ public:
                                 Vec3 & normal, 
                                 const camera::IntrinsicBase & intrinsic, 
                                 const Vec2 & imageCoords) = 0;
+
+    /**
+     * @brief get a point and get its normal on the mesh given 3D ray
+     * @param point the output measured point
+     * @param normal the output measured normal
+     * @param origin the ray origin
+     * @param direction the ray direction
+     * @return true if the ray intersects the mesh.
+    */
+    virtual bool getPointAndNormal(Vec3 & point, Vec3 & normal, const Vec3 & origin, const Vec3 & direction) = 0;
 };
 
 }
