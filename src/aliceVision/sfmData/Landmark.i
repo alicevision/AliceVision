@@ -19,7 +19,7 @@
 %ignore aliceVision::sfmData::Landmark::_descType;
 %ignore aliceVision::sfmData::Landmark::_observations;
 %ignore aliceVision::sfmData::Landmark::_parallaxRobust;
-%ignore aliceVision::sfmData::Landmark::_isPrecise;
+%ignore aliceVision::sfmData::Landmark::_isLocked;
 %ignore aliceVision::sfmData::Landmark::_X;
 
 //Add new swig only C++ code

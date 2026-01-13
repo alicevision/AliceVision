@@ -87,7 +87,8 @@ class Landmark
         && AreVecNearEqual(_rgb, other._rgb, 1e-3) 
         && _observations == other._observations 
         && _descType == other._descType
-        && getReferenceViewIndex() == other.getReferenceViewIndex();
+        && getReferenceViewIndex() == other.getReferenceViewIndex()
+        && _isLocked == other._isLocked;
     }
 
     /**
@@ -214,16 +215,16 @@ class Landmark
     void setParallaxRobust(bool parallaxRobust) { _parallaxRobust = parallaxRobust; }
 
     /**
-     * @brief Is this landmark precisely located
-     * @return true if this landmark has this special property
+     * @brief Is this landmark locked to estimation
+     * @return true if this landmark is locked to estimation
     */
-    bool isPrecise() const { return _isPrecise; }
+    bool isLocked() const { return _isLocked; }
 
     /**
-    * @brief decide if this landmark is robust even if its parallax is low
-    * @param isPrecise True if robust to lack of parallax
+    * @brief decide if this landmark coordinates are locked
+    * @param locked true this landmark is locked to estimation
     */
-    void setIsPrecise(bool isPrecise) { _isPrecise = isPrecise; }
+    void setLocked(bool locked) { _isLocked = locked; }
 
 private:
     Vec3 _X = { 0.0, 0.0, 0.0 };  //!> the 3D position of the landmark
@@ -231,7 +232,7 @@ private:
     EEstimatorParameterState _state = EEstimatorParameterState::REFINED;
     feature::EImageDescriberType _descType = feature::EImageDescriberType::UNINITIALIZED;
     bool _parallaxRobust = false;
-    bool _isPrecise = false;
+    bool _isLocked = false;
     image::RGBColor _rgb = image::WHITE;  //!> the color associated to the point
     std::shared_ptr<View> _referenceView;  //!> Reference view for relative pose parameterization
 };

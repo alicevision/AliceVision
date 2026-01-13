@@ -506,6 +506,7 @@ void saveLandmark(const std::string& name,
     landmarkTree.put("referenceViewIndex", landmark.getReferenceViewIndex());
     landmarkTree.put("descType", feature::EImageDescriberType_enumToString(landmark.getDescType()));
     landmarkTree.put("isParallaxRobust", landmark.isParallaxRobust());
+    landmarkTree.put("isLocked", landmark.isLocked());
     
     saveMatrix("color", landmark.getRgb(), landmarkTree);
     saveMatrix("X", landmark.getX(), landmarkTree);
@@ -545,6 +546,7 @@ void loadLandmark(sfmData::SfMData& sfmData, IndexT& landmarkId, sfmData::Landma
     landmarkId = landmarkTree.get<IndexT>("landmarkId");
     landmark.setDescType(feature::EImageDescriberType_stringToEnum(landmarkTree.get<std::string>("descType")));
     landmark.setParallaxRobust(landmarkTree.get<bool>("isParallaxRobust", false));
+    landmark.setLocked(landmarkTree.get<bool>("isLocked", false));
 
     IndexT referenceViewIndex = landmarkTree.get<IndexT>("referenceViewIndex", UndefinedIndexT);
     if (referenceViewIndex != UndefinedIndexT)
