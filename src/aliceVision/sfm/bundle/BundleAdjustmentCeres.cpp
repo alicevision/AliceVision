@@ -662,7 +662,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 blockIds.push_back(blockId);
             }
 
-            if (!refineStructure || landmark.getState() == EEstimatorParameterState::CONSTANT || landmark.isPrecise())
+            if (!refineStructure || landmark.getState() == EEstimatorParameterState::CONSTANT || landmark.isLocked())
             {
                 // set the whole landmark parameter block as constant.
                 _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::CONSTANT);

@@ -200,6 +200,19 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
             sampleIsParallaxRobust->reset();
         }
     }
+
+    BoolArraySamplePtr sampleIsLocked;
+    if (userProps && userProps.getPropertyHeader("mvg_isLocked"))
+    {
+        IBoolArrayProperty propIsLocked(userProps, "mvg_isLocked");
+        propIsLocked.get(sampleIsLocked);
+
+        if (sampleIsLocked->size() != positions->size())
+        {
+            ALICEVISION_LOG_WARNING("[Alembic Importer] isLocked property will be ignored.");
+            sampleIsLocked->reset();
+        }
+    }
     
     AV_UInt32ArraySamplePtr sampleReferenceViewIndices;
     if (userProps && userProps.getPropertyHeader("mvg_referenceViewIndices"))
@@ -249,6 +262,12 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         {
             const bool isParallaxRobust = sampleIsParallaxRobust->get()[point3d_i];
             landmark.setParallaxRobust(isParallaxRobust);
+        }
+
+        if (sampleIsLocked)
+        {
+            const bool isLocked = sampleIsLocked->get()[point3d_i];
+            landmark.setLocked(isLocked);
         }
 
         if (sampleReferenceViewIndices)
