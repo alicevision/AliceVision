@@ -28,18 +28,16 @@
 #include <aliceVision/track/trackIO.hpp>
 #include <aliceVision/track/TracksHandler.hpp>
 
-#include <aliceVision/mesh/MeshIntersection.hpp>
-
 #include <aliceVision/dataio/json.hpp>
 #include <aliceVision/sfm/pipeline/bootstrapping/PairsScoring.hpp>
 #include <aliceVision/sfm/pipeline/bootstrapping/Bootstrap.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
+#include <aliceVision/sfmData/MeshPointFetcher.hpp>
+
 #include <cstdlib>
 #include <random>
 #include <regex>
 #include <fstream>
-
-#include <aliceVision/sfmData/SharedPtrMap.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -90,7 +88,7 @@ inline EBOOTSTRAPMETHOD EBOOTSTRAPMETHOD_stringToEnum(const std::string& method)
 /**
  * @brief build an initial set of landmarks from a view and a mesh object
  * @param sfmData the input/output sfmData
- * @param meshFilename the mesh path
+ * @param pFetcher the mesh fetcher
  * @param referenceViewIds the list of reference view id
  * @param tracksMap the input map of tracks
  * @return true
@@ -98,18 +96,10 @@ inline EBOOTSTRAPMETHOD EBOOTSTRAPMETHOD_stringToEnum(const std::string& method)
 bool landmarksFromMesh(
                         sfmData::Landmarks & landmarks,
                         const sfmData::SfMData & sfmData, 
-                        const std::string & meshFilename,
+                        const sfmData::PointFetcher::sptr & pFetcher,
                         const std::set<IndexT> referenceViewIds,
                         const track::TracksHandler& tracksHandler)
 {
-    //Load mesh in the mesh intersection object
-    ALICEVISION_LOG_INFO("Loading mesh");
-    mesh::MeshIntersection mi;
-    if (!mi.initialize(meshFilename))
-    {
-        return EXIT_FAILURE;
-    }
-    
     for (const auto referenceViewId: referenceViewIds)
     {
         //Ignore views without poses and intrinsics
@@ -118,11 +108,12 @@ bool landmarksFromMesh(
             continue;
         }
         
+        const sfmData::View::sptr & vsptr = sfmData.getViews().at(referenceViewId);
         const sfmData::View & v = sfmData.getView(referenceViewId);
         const sfmData::CameraPose & cpose = sfmData.getAbsolutePose(v.getPoseId());
         const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(v.getIntrinsicId());
 
-        mi.setPose(cpose.getTransform());
+        pFetcher->setPose(cpose.getTransform());
 
         const auto & trackIds = tracksHandler.getTracksPerView().at(referenceViewId);
         const auto & tracksMap = tracksHandler.getAllTracks();
@@ -138,7 +129,7 @@ bool landmarksFromMesh(
 
             //Get interpolated 3d point on mesh
             Vec3 point;
-            if (!mi.pickPoint(point, intrinsic, refpt))
+            if (!pFetcher->pickPoint(point, intrinsic, refpt))
             {
                 continue;
             }
@@ -148,6 +139,7 @@ bool landmarksFromMesh(
             l.setX(point);
             l.setDescType(track.descType);
             l.setParallaxRobust(true);
+            l.setReferenceView(vsptr);
 
             sfmData::Observations & observations = l.getObservations();
             observations[referenceViewId] = sfmData::Observation(refpt, featureId, scale);
@@ -248,8 +240,17 @@ bool processMesh(sfmData::SfMData & sfmData,
         return false;
     }
 
+    
+    ALICEVISION_LOG_INFO("Load mesh");
+    std::shared_ptr<sfmData::MeshPointFetcher> pFetcher = std::make_shared<sfmData::MeshPointFetcher>();
+    if (!pFetcher->initialize(meshFilename))
+    {
+        return EXIT_FAILURE;
+    }
+
+
     sfmData::Landmarks landmarks;
-    if (!landmarksFromMesh(landmarks, sfmData, meshFilename, firstViewFilters, tracksHandler))
+    if (!landmarksFromMesh(landmarks, sfmData, pFetcher, firstViewFilters, tracksHandler))
     {
         return false;
     }
@@ -310,8 +311,15 @@ bool processMeshSingle(sfmData::SfMData & sfmData,
         return false;
     }
 
+    ALICEVISION_LOG_INFO("Load mesh");
+    std::shared_ptr<sfmData::MeshPointFetcher> pFetcher = std::make_shared<sfmData::MeshPointFetcher>();
+    if (!pFetcher->initialize(meshFilename))
+    {
+        return EXIT_FAILURE;
+    }
+
     sfmData::Landmarks landmarks;
-    if (!landmarksFromMesh(landmarks, sfmData, meshFilename, firstViewFilters, tracksHandler))
+    if (!landmarksFromMesh(landmarks, sfmData, pFetcher, firstViewFilters, tracksHandler))
     {
         return false;
     }

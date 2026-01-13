@@ -12,6 +12,7 @@
 #include <aliceVision/sfm/bundle/costfunctions/constraint2d.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/constraintPoint.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/projection.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/projectionMesh.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/rotationPrior.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/temporalConstraint.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/depth.hpp>
@@ -537,22 +538,44 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             continue;
         }
 
-        std::array<double, 3>& landmarkBlock = _landmarksBlocks[landmarkId];
+        std::array<double, 3> & landmarkBlock = _landmarksBlocks[landmarkId];
         for (std::size_t i = 0; i < 3; ++i)
         {
             landmarkBlock.at(i) = landmark.getX()(Eigen::Index(i));
         }
 
         //If the landmark has a referenceViewIndex set, then retrieve the reference pose
+        int sizeLandmark = 3;
         double * referencePoseBlockPtr = nullptr;
+
+
         if (landmark.getReferenceViewIndex() != UndefinedIndexT)
         {
+            // Store landmark in reference view geometric frame
             const sfmData::View& refview = sfmData.getView(landmark.getReferenceViewIndex());
+            const geometry::Pose3 refPose = sfmData.getPose(refview).getTransform();
+            Vec3 refX = refPose(landmark.getX());
+
+            // If there is a point fetcher, the landmark is only a bearing vector
+            if (landmark.getPointFetcher())
+            {
+                refX.x() /= refX.z();
+                refX.y() /= refX.z();
+                sizeLandmark = 2;
+            }
+
+            // Note: landmarkBlock[2] is only used when sizeLandmark == 3 (full 3D point).
+            // When sizeLandmark == 2 (bearing vector with point fetcher), this value is ignored
+            // but is set here for completeness and potential diagnostics.
+            landmarkBlock[0] = refX.x();
+            landmarkBlock[1] = refX.y();
+            landmarkBlock[2] = refX.z();
+            
             referencePoseBlockPtr = _posesBlocks.at(refview.getPoseId()).data();
         }
 
         double* landmarkBlockPtr = landmarkBlock.data();
-        problem.AddParameterBlock(landmarkBlockPtr, 3);
+        problem.AddParameterBlock(landmarkBlockPtr, sizeLandmark);
 
         double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
 
@@ -621,19 +644,20 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             else if (referencePoseBlockPtr != nullptr)
             {
                 bool samePose = (referencePoseBlockPtr == poseBlockPtr);
-                ceres::CostFunction* costFunction = ProjectionRelativeErrorFunctor::createCostFunction(intrinsic, observation, samePose);
+                ceres::CostFunction* costFunction = ProjectionMeshErrorFunctor::createCostFunction(intrinsic, observation, landmark.getPointFetcher(), samePose);
 
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
                 params.push_back(distortionBlockPtr);
+                params.push_back(poseBlockPtr);
                 if (!samePose)
                 {
-                    params.push_back(poseBlockPtr);
                     params.push_back(referencePoseBlockPtr);
                 }
                 params.push_back(landmarkBlockPtr);
 
-                problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                blockIds.push_back(blockId);
             }
             else
             {
@@ -1069,7 +1093,40 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
         for (const auto& [idLandmark, block] : _landmarksBlocks)
         {
             sfmData::Landmark& landmark = sfmData.getLandmarks().at(idLandmark);
-            landmark.updateFromEstimator(block);
+
+            std::array<double, 3> lblock = block;
+            
+            if (landmark.getReferenceViewIndex() != UndefinedIndexT)
+            {
+                if (landmark.getPointFetcher())
+                {
+                    const sfmData::View& refview = sfmData.getView(landmark.getReferenceViewIndex());
+                    const geometry::Pose3 refPose = sfmData.getPose(refview).getTransform();
+
+                    const Vec3 origin = refPose.center();
+                    
+                    Vec3 rdir;
+                    rdir.x() = block[0];
+                    rdir.y() = block[1];
+                    rdir.z() = 1.0;
+
+                    rdir = rdir / rdir.norm();
+                    const Vec3 wdir = refPose.rotation().transpose() * rdir;
+                    
+                    Vec3 point, normal;
+                    if (!landmark.getPointFetcher()->getPointAndNormal(point, normal, origin, wdir))
+                    {
+                        ALICEVISION_LOG_DEBUG("A landmark wrongly intersect the mesh.");
+                        continue;
+                    }
+                    
+                    lblock[0] = point.x();
+                    lblock[1] = point.y();
+                    lblock[2] = point.z();
+                }
+            }
+
+            landmark.updateFromEstimator(lblock);
         }
     }
 }
@@ -1147,7 +1204,9 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
 
     // print summary
     if (_ceresOptions.summary)
+    {
         ALICEVISION_LOG_INFO(summary.FullReport());
+    }
 
     // solution is not usable
     if (!summary.IsSolutionUsable())

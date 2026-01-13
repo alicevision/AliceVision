@@ -77,6 +77,20 @@ bool ExpansionProcess::prepareExisting(sfmData::SfMData & sfmData, const track::
 {
     ALICEVISION_LOG_INFO("ExpansionProcess prepareExisting");
 
+    // Remove points without point fetcher
+    std::erase_if(sfmData.getLandmarks(), [](const auto & item) {
+        const auto & [key, value] = item;
+        if (value.getReferenceViewIndex() != UndefinedIndexT)
+        {
+            if (value.getPointFetcher() == nullptr)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    });
+
     //Prepare existing data
     remapExistingLandmarks(sfmData, tracksHandler);
 

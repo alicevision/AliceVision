@@ -10,7 +10,8 @@
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/sfm/pipeline/expanding/PointFetcher.hpp>
+#include <aliceVision/sfmData/PointFetcher.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -56,11 +57,11 @@ public:
 
     /**
      * @brief setup the point fetcher handler
-     * @param pointFetcher a unique ptr. the Ownership will be taken
+     * @param pointFetcher a shared ptr.
     */
-    void setPointFetcherHandler(PointFetcher::uptr & pointFetcherHandler)
+    void setPointFetcherHandler(sfmData::PointFetcher::sptr & pointFetcherHandler)
     {
-        _pointFetcherHandler = std::move(pointFetcherHandler);
+        _pointFetcherHandler = pointFetcherHandler;
     }
 
     /**
@@ -142,7 +143,7 @@ private:
         ); 
 
 private:
-    PointFetcher::uptr _pointFetcherHandler;
+    sfmData::PointFetcher::sptr _pointFetcherHandler;
 
 private:    
     const size_t _minObservations;
