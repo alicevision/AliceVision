@@ -14,6 +14,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/track/trackIO.hpp>
+#include <aliceVision/track/tracksUtils.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -36,6 +37,7 @@ int aliceVision_main(int argc, char** argv)
     double sigmaNoise = 0.0;
     double outlierRatio = 0.0;
     double outlierEpipolarRatio = 0.2;
+    bool randomNoiseVariancePerView = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -49,8 +51,9 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("sigmaNoise", po::value<double>(&sigmaNoise)->default_value(sigmaNoise))
         ("outlierRatio", po::value<double>(&outlierRatio)->default_value(outlierRatio))
-        ("outlierEpipolarRatio", po::value<double>(&outlierEpipolarRatio)->default_value(outlierEpipolarRatio));
-        
+        ("outlierEpipolarRatio", po::value<double>(&outlierEpipolarRatio)->default_value(outlierEpipolarRatio))
+        ("randomNoiseVariancePerView", po::value<bool>(&randomNoiseVariancePerView)->default_value(randomNoiseVariancePerView), "Use different noise variance per view.");
+
     // clang-format on
 
     CmdLine cmdline("AliceVision tracksSimulating");
@@ -74,64 +77,8 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    std::mt19937 generator;
-    std::uniform_real_distribution<double> rand(0, 1);
-    std::uniform_real_distribution<double> randDepth(0.1, 100.0);
-    std::normal_distribution<double> randNoise(0.0, sigmaNoise);
-    
     track::TracksMap mapTracks;
-
-    for (const auto & [landmarkId, landmark] : sfmData.getLandmarks())
-    {
-        const Vec3 point = landmark.getX();
-
-        track::Track track;
-        track.descType = landmark.getDescType();
-
-        for (const auto & [viewId, observation] : landmark.getObservations())
-        {
-            const auto & view = sfmData.getView(viewId);
-            const auto & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
-            const auto & pose = sfmData.getAbsolutePose(view.getPoseId());
-
-            Vec2 obs;
-
-            if (rand(generator) < outlierRatio)
-            {
-                //This is an outlier
-                if (rand(generator) < outlierEpipolarRatio)
-                {
-                    //Outlier but on the epipolar line
-                    Vec3 fakePoint = point * randDepth(generator) / point(2);
-                    obs = intrinsic.transformProject(pose.getTransform(), fakePoint.homogeneous(), true);
-                }
-                else 
-                {
-                    std::uniform_real_distribution<double> randWidth(0.0, intrinsic.w());
-                    std::uniform_real_distribution<double> randHeight(0.0, intrinsic.h());
-
-                    obs.x() = randWidth(generator);
-                    obs.y() = randHeight(generator);
-                }
-            }
-            else 
-            {
-                obs = intrinsic.transformProject(pose.getTransform(), point.homogeneous(), true);
-            }
-
-            obs.x() += randNoise(generator);
-            obs.y() += randNoise(generator);
-
-            track::TrackItem item;
-            item.coords = obs;
-            item.featureId = observation.getFeatureId();
-            item.scale = observation.getScale();
-            
-            track.featPerView[viewId] = item;
-        }
-
-        mapTracks[landmarkId] = track;
-    }
+    track::simulateTracks(sfmData, sigmaNoise, outlierRatio, outlierEpipolarRatio, randomNoiseVariancePerView, mapTracks);
 
      // write the json file
     ALICEVISION_LOG_INFO("Export to file");

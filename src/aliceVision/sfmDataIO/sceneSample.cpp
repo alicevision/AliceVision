@@ -92,10 +92,10 @@ void generateCubeScene(sfmData::SfMData& output)
     const double offsetX = -26;
     const double offsetY = 16;
     output.getIntrinsics().emplace(
-      0, camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE, camera::EUNDISTORTION::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
+      0, camera::createPinhole(camera::DISTORTION_NONE, camera::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY));
     output.getIntrinsics().emplace(
       1,
-      camera::createPinhole(camera::EDISTORTION::DISTORTION_RADIALK3, camera::EUNDISTORTION::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, {0.1, 0.05, -0.001}));
+      camera::createPinhole(camera::DISTORTION_RADIALK3, camera::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, offsetX, offsetY, {0.1, 0.05, -0.001}));
 
     // Generate poses on another cube
     IndexT idpose = 0;
@@ -128,22 +128,13 @@ void generateCubeScene(sfmData::SfMData& output)
 void generateSphereScene(sfmData::SfMData& output, int pointsNb, int posesNb)
 {
     // Generate random points on a sphere
-    IndexT idpt = 0;
-    for (int pt = 0; pt < pointsNb; pt++)
-    {
-        Eigen::Vector3d point3D = Eigen::Vector3d::Random();
-        point3D = 1. * point3D / point3D.norm();
-
-        output.getLandmarks().emplace(idpt, sfmData::Landmark(point3D, feature::EImageDescriberType::UNKNOWN));
-        ++idpt;
-    }
 
     const int w = 4092;
     const int h = 2048;
-    const double focalLengthPixX = 1000.0;
-    const double focalLengthPixY = 2000.0;
+    const double focalLengthPixX = 10000.0;
+    const double focalLengthPixY = 20000.0;
     output.getIntrinsics().emplace(
-      0, camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE, camera::EUNDISTORTION::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, 0, 0));
+      0, camera::createPinhole(camera::DISTORTION_NONE, camera::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, 0, 0));
 
     // Generate poses on a circle
     for (IndexT idPV = 0; idPV < posesNb; idPV++)
@@ -156,6 +147,25 @@ void generateSphereScene(sfmData::SfMData& output, int pointsNb, int posesNb)
         output.getPoses().assign(idPV, sfmData::CameraPose(pose));
         output.getViews().emplace(idPV, std::make_shared<sfmData::View>("", idPV, 0, idPV, w, h));
         output.getView(idPV).setFrameId(idPV);
+    }
+
+    // Generate random points on a sphere and corresponding observations in each view
+    const double arbitraryScale = 1.0;
+    for (int landmarkId = 0; landmarkId < pointsNb; landmarkId++)
+    {
+        Eigen::Vector3d point3D = Eigen::Vector3d::Random();
+        point3D = point3D / point3D.norm();
+
+        sfmData::Landmark landmark(point3D, feature::EImageDescriberType::UNKNOWN);
+        for (int viewId = 0; viewId < posesNb; viewId++)
+        {
+            const sfmData::View& view = output.getView(viewId);
+            const geometry::Pose3 pose = output.getPose(view).getTransform();
+            const camera::IntrinsicBase& intrinsic = output.getIntrinsic(0);
+            const Eigen::Vector2d pt = intrinsic.transformProject(pose, landmark.getX().homogeneous(), true);
+            landmark.getObservations().emplace(viewId, sfmData::Observation(pt, landmarkId, arbitraryScale));
+        }
+        output.getLandmarks().emplace(landmarkId, landmark);
     }
 }
 

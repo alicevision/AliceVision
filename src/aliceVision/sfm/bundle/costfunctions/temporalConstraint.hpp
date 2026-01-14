@@ -52,69 +52,89 @@ struct TemporalConstraintFunctor
         const T* para2 = parameters[2];
         const T* para3 = parameters[3];
 
-        const auto viewPreProcess = [&](const T* angleAxis, const T* translation, T* viewCenter, T* quaternion, T* invQuaternion)
+        const auto quaternionConjugate = [&](const T* quaternion, T* invQuaternion)
         {
-            T invAngleAxis[3];
-            // Inverse the rotation to compute the camera position
-            invAngleAxis[0] = -angleAxis[0];
-            invAngleAxis[1] = -angleAxis[1];
-            invAngleAxis[2] = -angleAxis[2];
-            ceres::AngleAxisRotatePoint(invAngleAxis, translation, viewCenter);
+            invQuaternion[0] = quaternion[0];
+            invQuaternion[1] = -quaternion[1];
+            invQuaternion[2] = -quaternion[2];
+            invQuaternion[3] = -quaternion[3];
+        };
+
+        const auto viewPreProcess = [&](const T* angleAxis, const T* translation, T* viewCenter, T* quaternion)
+        {
+            T invQuaternion[4];
             ceres::AngleAxisToQuaternion(angleAxis, quaternion);
-            ceres::AngleAxisToQuaternion(invAngleAxis, invQuaternion);
+            // Inverse the rotation to compute the camera position
+            quaternionConjugate(quaternion, invQuaternion);
+            ceres::QuaternionRotatePoint(invQuaternion, translation, viewCenter);
         };
 
         T viewCenter0[3], viewCenter1[3], viewCenter2[3], viewCenter3[3];
         T quaternion0[4], quaternion1[4], quaternion2[4], quaternion3[4];
-        T invQuaternion0[4], invQuaternion1[4], invQuaternion2[4], invQuaternion3[4];
 
-        viewPreProcess(&para0[0], &para0[3], viewCenter0, quaternion0, invQuaternion0);
-        viewPreProcess(&para1[0], &para1[3], viewCenter1, quaternion1, invQuaternion1);
-        viewPreProcess(&para2[0], &para2[3], viewCenter2, quaternion2, invQuaternion2);
-        viewPreProcess(&para3[0], &para3[3], viewCenter3, quaternion3, invQuaternion3);
+        viewPreProcess(&para0[0], &para0[3], viewCenter0, quaternion0);
+        viewPreProcess(&para1[0], &para1[3], viewCenter1, quaternion1);
+        viewPreProcess(&para2[0], &para2[3], viewCenter2, quaternion2);
+        viewPreProcess(&para3[0], &para3[3], viewCenter3, quaternion3);
 
-        const auto computeAngleDiff = [&](const T* quaternionA, const T* invQuaternionB, T* angleAxisDiff)
+        const auto computeAngleDiff = [&](const T* quaternionA, const T* quaternionB, T* angleAxisDiff, T* quaternionDiff)
         {
-            T quaternionDiff[4];
+            T invQuaternionB[4];
+            quaternionConjugate(quaternionB, invQuaternionB);
             ceres::QuaternionProduct(quaternionA, invQuaternionB, quaternionDiff);
             ceres::QuaternionToAngleAxis(quaternionDiff, angleAxisDiff);
         };
 
-        T angleAxisDiff0[3], angleAxisDiff1[3], angleAxisDiff2[3];
+        T angleAxisDiff0_0[3], angleAxisDiff0_1[3], angleAxisDiff0_2[3];
+        T quaternionDiff0_0[4], quaternionDiff0_1[4], quaternionDiff0_2[4];
 
-        computeAngleDiff(quaternion1, invQuaternion0, angleAxisDiff0);
-        computeAngleDiff(quaternion2, invQuaternion1, angleAxisDiff1);
-        computeAngleDiff(quaternion3, invQuaternion2, angleAxisDiff2);
+        computeAngleDiff(quaternion1, quaternion0, angleAxisDiff0_0, quaternionDiff0_0);
+        computeAngleDiff(quaternion2, quaternion1, angleAxisDiff0_1, quaternionDiff0_1);
+        computeAngleDiff(quaternion3, quaternion2, angleAxisDiff0_2, quaternionDiff0_2);
 
         if (_boundaryCase == 2)
         {
-            residuals[0] = _c0oWeight * angleAxisDiff0[0];
-            residuals[1] = _c0oWeight * angleAxisDiff0[1];
-            residuals[2] = _c0oWeight * angleAxisDiff0[2];
+            residuals[0] = _c0oWeight * angleAxisDiff0_0[0];
+            residuals[1] = _c0oWeight * angleAxisDiff0_0[1];
+            residuals[2] = _c0oWeight * angleAxisDiff0_0[2];
         }
-        else if (_boundaryCase == 1)
+        else  // (_boundaryCase == 1 or 0)
         {
-            residuals[0] = _c0oWeight * angleAxisDiff1[0];
-            residuals[1] = _c0oWeight * angleAxisDiff1[1];
-            residuals[2] = _c0oWeight * angleAxisDiff1[2];
+            T angleAxisDiff1_0[3], angleAxisDiff1_1[3];
+            T quaternionDiff1_0[4], quaternionDiff1_1[4];
 
-            residuals[3] = _c1oWeight * (angleAxisDiff1[0] - angleAxisDiff0[0]);
-            residuals[4] = _c1oWeight * (angleAxisDiff1[1] - angleAxisDiff0[1]);
-            residuals[5] = _c1oWeight * (angleAxisDiff1[2] - angleAxisDiff0[2]);
-        }
-        else
-        {
-            residuals[0] = _c0oWeight * angleAxisDiff2[0];
-            residuals[1] = _c0oWeight * angleAxisDiff2[1];
-            residuals[2] = _c0oWeight * angleAxisDiff2[2];
+            computeAngleDiff(quaternionDiff0_1, quaternionDiff0_0, angleAxisDiff1_0, quaternionDiff1_0);
+            computeAngleDiff(quaternionDiff0_2, quaternionDiff0_1, angleAxisDiff1_1, quaternionDiff1_1);
 
-            residuals[3] = _c1oWeight * (angleAxisDiff2[0] - angleAxisDiff1[0]);
-            residuals[4] = _c1oWeight * (angleAxisDiff2[1] - angleAxisDiff1[1]);
-            residuals[5] = _c1oWeight * (angleAxisDiff2[2] - angleAxisDiff1[2]);
+            if (_boundaryCase == 1)
+            {
+                residuals[0] = _c0oWeight * angleAxisDiff0_1[0];
+                residuals[1] = _c0oWeight * angleAxisDiff0_1[1];
+                residuals[2] = _c0oWeight * angleAxisDiff0_1[2];
 
-            residuals[6] = _c2oWeight * (2. * angleAxisDiff1[0] - angleAxisDiff0[0] - angleAxisDiff2[0]);
-            residuals[7] = _c2oWeight * (2. * angleAxisDiff1[1] - angleAxisDiff0[1] - angleAxisDiff2[1]);
-            residuals[8] = _c2oWeight * (2. * angleAxisDiff1[2] - angleAxisDiff0[2] - angleAxisDiff2[2]);
+                residuals[3] = _c1oWeight * angleAxisDiff1_0[0];
+                residuals[4] = _c1oWeight * angleAxisDiff1_0[1];
+                residuals[5] = _c1oWeight * angleAxisDiff1_0[2];
+            }
+            else  // (_boundaryCase == 0)
+            {
+                residuals[0] = _c0oWeight * angleAxisDiff0_2[0];
+                residuals[1] = _c0oWeight * angleAxisDiff0_2[1];
+                residuals[2] = _c0oWeight * angleAxisDiff0_2[2];
+
+                residuals[3] = _c1oWeight * angleAxisDiff1_1[0];
+                residuals[4] = _c1oWeight * angleAxisDiff1_1[1];
+                residuals[5] = _c1oWeight * angleAxisDiff1_1[2];
+
+                T angleAxisDiff2_0[3];
+                T quaternionDiff2_0[4];
+
+                computeAngleDiff(quaternionDiff1_1, quaternionDiff1_0, angleAxisDiff2_0, quaternionDiff2_0);
+
+                residuals[6] = _c2oWeight * angleAxisDiff2_0[0];
+                residuals[7] = _c2oWeight * angleAxisDiff2_0[1];
+                residuals[8] = _c2oWeight * angleAxisDiff2_0[2];
+            }
         }
 
         if (_noPositionConstraint)
@@ -189,17 +209,17 @@ struct TemporalConstraintFunctor
         auto costFunction = new ceres::DynamicAutoDiffCostFunction<TemporalConstraintFunctor>
                             (
                                 new TemporalConstraintFunctor(
-                                    positionWeight, orientationWeight, 
-                                    c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 
+                                    positionWeight, orientationWeight,
+                                    c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight,
                                     boundaryCase
                                 )
-                            );  
+                            );
 
         costFunction->AddParameterBlock(6);
         costFunction->AddParameterBlock(6);
         costFunction->AddParameterBlock(6);
-        costFunction->AddParameterBlock(6); 
-        
+        costFunction->AddParameterBlock(6);
+
         if (boundaryCase == 2)
         {
             if (positionWeight != 0.)
