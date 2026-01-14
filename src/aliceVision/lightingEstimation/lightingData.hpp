@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 
 #include <aliceVision/sfmData/SharedPtrMap.hpp>
+#include <aliceVision/sfmData/CameraPose.hpp>
 #include <aliceVision/types.hpp>
 
 namespace aliceVision {
@@ -22,6 +23,8 @@ class Lighting
     virtual ~Lighting() = default;
 
     virtual Lighting* clone() const = 0;
+    
+    virtual Lighting* convertToFrame(const std::shared_ptr<sfmData::CameraPose>& pose) const = 0;
 
     LightType getLightType() const;
 
@@ -38,7 +41,9 @@ class DirectionnalLighting : public Lighting
 
     ~DirectionnalLighting();
 
-    DirectionnalLighting* clone() const { return new DirectionnalLighting(*this); }
+    DirectionnalLighting* clone() const;
+
+    DirectionnalLighting* convertToFrame(const std::shared_ptr<sfmData::CameraPose>& pose) const;
 
     const Eigen::Vector3f& getLightDirection() const;
 

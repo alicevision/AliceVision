@@ -36,6 +36,20 @@ DirectionnalLighting::DirectionnalLighting(const Eigen::Vector3f& lightDirection
 DirectionnalLighting::~DirectionnalLighting()
 {}
 
+DirectionnalLighting* DirectionnalLighting::clone() const { return new DirectionnalLighting(*this); }
+
+DirectionnalLighting* DirectionnalLighting::convertToFrame(const std::shared_ptr<sfmData::CameraPose>& pose) const
+{
+	Eigen::Matrix4f av_to_vis = Eigen::Matrix4f::Identity();
+	av_to_vis(1, 1) = -1.;
+	av_to_vis(2, 2) = -1.;
+	Eigen::Matrix4f RT = pose->getTransform().getHomogeneous().cast<float>() * av_to_vis;
+
+    Eigen::Vector3f newLightDirection = RT.block<3, 3>(0, 0) * lightDirection;
+
+    return new DirectionnalLighting(newLightDirection, intensity);
+}
+
 const Eigen::Vector3f& DirectionnalLighting::getLightDirection() const { return lightDirection; }
 
 const std::vector<float>& DirectionnalLighting::getLightIntensity() const { return intensity; }
@@ -46,8 +60,6 @@ bool saveJSON(const Lightings& lightings, const std::string& filename)
     bpt::ptree lightsTree;
     bpt::ptree fileTree;
 
-    int imgCpt = 0;
-
     ALICEVISION_LOG_INFO("Building tree from lightings");
     for (auto lightIt = lightings.begin(); lightIt != lightings.end(); lightIt++)
     {
@@ -55,7 +67,7 @@ bool saveJSON(const Lightings& lightings, const std::string& filename)
 
         bpt::ptree lightTree;
 
-        lightTree.put("lightId", imgCpt);
+        lightTree.put("lightId", lightId);
         if (lightIt->second->getLightType() == LightType::Directionnal)
         {
             std::shared_ptr<DirectionnalLighting> dirLighting = std::static_pointer_cast<DirectionnalLighting>(lightIt->second);
@@ -66,7 +78,7 @@ bool saveJSON(const Lightings& lightings, const std::string& filename)
             }
 
             // Light type
-            lightTree.put("lightType", "Directionnal");
+            lightTree.put("type", "directionnal");
 
             // Light direction
             bpt::ptree directionNode;
@@ -112,9 +124,9 @@ bool loadJSON(const std::string& filename, Lightings& lightings)
 	{
 		IndexT lightId = stoi(itLight->second.get("lightId", "0"));
 
-		std::string lightType = itLight->second.get("lightType", "None");
+		std::string lightType = itLight->second.get("type", "None");
 
-		if (lightType == "Directionnal")
+		if (lightType == "directionnal")
 		{
 			std::vector<float> currentIntensities;
 			std::vector<float> currentDirection;
@@ -139,7 +151,7 @@ bool loadJSON(const std::string& filename, Lightings& lightings)
 		}
 		else
 		{
-			ALICEVISION_LOG_ERROR("LightType " << lightType << " not handled");
+			ALICEVISION_LOG_ERROR("Light type " << lightType << " not handled");
 			return false;
 		}
 	}

@@ -692,6 +692,18 @@ if (ALICEVISION_BUILD_PHOTOMETRICSTEREO)
                   aliceVision_sfmDataIO
                   Boost::program_options
         )
+		
+        alicevision_add_software(aliceVision_lightingConversionPerCamera
+            SOURCE main_lightingConversionPerCamera.cpp
+            FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+            LINKS aliceVision_lightingEstimation
+                  aliceVision_cmdline
+                  aliceVision_system
+                  aliceVision_sfmData
+                  aliceVision_sfmDataIO
+                  Boost::program_options
+        )
+
 
     endif()
 endif()
