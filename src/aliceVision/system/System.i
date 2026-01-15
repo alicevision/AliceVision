@@ -9,3 +9,15 @@
 %include <aliceVision/global.i>
 %include <aliceVision/system/ProgressDisplay.i>
 
+
+%{
+#include <aliceVision/system/Logger.hpp>
+
+void initialize_alicevision_logger(const std::string & verboseLevel)
+{
+    // set verbose level
+    aliceVision::system::Logger::get()->setLogLevel(verboseLevel);
+}
+%}
+
+void initialize_alicevision_logger(const std::string & verboseLevel);

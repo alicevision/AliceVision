@@ -20,6 +20,10 @@ if hasattr(os, "add_dll_directory"):
         os.add_dll_directory(p)
 
 #Enforce loading order
+from . import system
 from . import geometry
 from . import sfmData
 from . import sfmDataIO
+
+#initialize logger
+system.initialize_alicevision_logger("info")
