@@ -20,6 +20,7 @@
 %ignore aliceVision::sfmData::Landmark::_observations;
 %ignore aliceVision::sfmData::Landmark::_parallaxRobust;
 %ignore aliceVision::sfmData::Landmark::_isPrecise;
+%ignore aliceVision::sfmData::Landmark::_X;
 
 //Add new swig only C++ code
 %extend aliceVision::sfmData::Landmark {
@@ -51,6 +52,7 @@
         rgb = property(getRgbVec3, setRgbVec3)
         state = property(getState, setState)
         descType = property(getDescType, setDescType)
+        X = property(getX, setX)
     %}
 }
 

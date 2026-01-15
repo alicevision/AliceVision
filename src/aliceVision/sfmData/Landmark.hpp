@@ -107,7 +107,9 @@ class Landmark
      * @brief Get the 3D position of the landmark (non-const version)
      * @return Reference to the 3D position vector
      */
+    #ifndef SWIG
     Vec3& getX() { return _X; }
+    #endif
 
     /**
      * @brief Set the 3D position of the landmark
@@ -161,7 +163,9 @@ class Landmark
      * @brief Get the RGB color of the landmark (non-const version)
      * @return Reference to the RGB color associated with the landmark
      */
+    #ifndef SWIG
     image::RGBColor& getRgb() { return _rgb; }
+    #endif
 
     /**
      * @brief Set the RGB color of the landmark
