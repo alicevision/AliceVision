@@ -34,8 +34,8 @@ def outputImagesValueFunct(attr):
 class ImageProcessing(desc.AVCommandLineNode):
     commandLine = "aliceVision_imageProcessing {allParams}"
     size = desc.DynamicNodeSize("input")
-    # parallelization = desc.Parallelization(blockSize=40)
-    # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    parallelization = desc.Parallelization(blockSize=40)
+    commandLineRange = '--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}'
 
     category = "Utils"
     documentation = """Convert or apply filtering to the input images."""
@@ -445,6 +445,13 @@ class ImageProcessing(desc.AVCommandLineNode):
             description="Allows you to choose the format of the output image.",
             value="rgba",
             values=["rgba", "rgb", "grayscale"],
+        ),
+        desc.ChoiceParam(
+            name="outputChannel",
+            label="Output Color Channel(s)",
+            description="Allows you to choose the the output color channel(s).",
+            value="all",
+            values=["all", "red", "green", "blue", "alpha"],
         ),
         desc.ChoiceParam(
             name="inputColorSpace",
