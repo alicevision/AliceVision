@@ -468,7 +468,7 @@ bool readSurveys(IObject iObj, sfmData::SfMData& sfmdata)
     IDoubleArrayProperty propData(userProps, "mvg_surveyData");
     propData.get(sampleData);
 
-    const int sampleDataSize = 5;
+    const int sampleDataSize = 7;
 
     if (sampleId.size() * sampleDataSize != sampleData->size())
     {
@@ -486,6 +486,8 @@ bool readSurveys(IObject iObj, sfmData::SfMData& sfmdata)
         pt.point3d.z() = (*sampleData)[pos * sampleDataSize + 2];
         pt.survey.x() = (*sampleData)[pos * sampleDataSize + 3];
         pt.survey.y() = (*sampleData)[pos * sampleDataSize + 4];
+        pt.residual.x() = (*sampleData)[pos * sampleDataSize + 5];
+        pt.residual.y() = (*sampleData)[pos * sampleDataSize + 6];
 
         output[viewId].push_back(pt);
     }

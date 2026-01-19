@@ -676,6 +676,8 @@ void AlembicExporter::addSurveys(const sfmData::SurveyPoints & points)
             data.push_back(sp.point3d.z());
             data.push_back(sp.survey.x());
             data.push_back(sp.survey.y());
+            data.push_back(sp.residual.x());
+            data.push_back(sp.residual.y());
         }
     }
 

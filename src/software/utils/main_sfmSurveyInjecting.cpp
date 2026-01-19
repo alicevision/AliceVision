@@ -18,6 +18,7 @@
 #include <boost/json.hpp>
 
 #include <fstream>
+#include <stdexcept>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -27,62 +28,198 @@
 using namespace aliceVision;
 namespace po = boost::program_options;
 
-struct SurveyObservation
+// Internal structures for json reading
+
+struct Position3D 
 {
-    Vec3 point3d;
-    Vec2 point2d;
+    double x;
+    double y;
+    double z;
 };
 
-struct SurveyInput
+struct ImagePoint 
 {
-    int frameId;
-    std::vector<SurveyObservation> observations;
+    int frame;
+    double x;
+    double y;
 };
 
-/**
- * @brief get a survey from a boost json object (assume the file format is ok)
- * @param obj the input json object
- * @param readSurvey the output survey information
- * @return false if the process failed
- */
-bool getSurveyFromJson(const boost::json::object& obj, SurveyInput& readSurvey)
+struct Point 
 {
-    readSurvey.observations.clear();
-    readSurvey.frameId = boost::json::value_to<IndexT>(obj.at("frame_no"));
+    std::string point_id;
+    std::string point_name;
+    std::string calc_mode;
+    std::string survey_mode;
+    Position3D calc_3d;
+    Position3D survey_3d;
+    std::vector<ImagePoint> image_points;
+};
 
-    boost::json::value jv = obj.at("points");
-    if (!jv.is_array())
+struct Survey 
+{
+    std::string pgroup_name;
+    std::string camera_name;
+    std::vector<Point> points;
+};
+
+Position3D tag_invoke(boost::json::value_to_tag<Position3D>, boost::json::value const& jv) 
+{
+    if (!jv.is_object())
     {
-        return false;
+        throw std::invalid_argument("Position3D: Expected JSON object");
     }
-
-    boost::json::array vobj = jv.as_array();
-    for (auto item : vobj)
+    
+    boost::json::object const& obj = jv.as_object();
+    
+    if (!obj.contains("x") || !obj.contains("y") || !obj.contains("z"))
     {
-        const boost::json::object& obj = item.as_object();
-
-        SurveyObservation obs;
-        obs.point3d.x() = boost::json::value_to<double>(obj.at("X"));
-        obs.point3d.y() = boost::json::value_to<double>(obj.at("Y"));
-        obs.point3d.z() = boost::json::value_to<double>(obj.at("Z"));
-
-        obs.point2d.x() = boost::json::value_to<double>(obj.at("u"));
-        obs.point2d.y() = boost::json::value_to<double>(obj.at("v"));
-
-        readSurvey.observations.push_back(obs);
+        throw std::invalid_argument("Position3D: Missing required fields (x, y, z)");
     }
+    
+    if (!obj.at("x").is_number() || !obj.at("y").is_number() || !obj.at("z").is_number())
+    {
+        throw std::invalid_argument("Position3D: x, y, z must be numeric values");
+    }
+    
+    return Position3D{
+        boost::json::value_to<double>(obj.at("x")),
+        boost::json::value_to<double>(obj.at("y")),
+        boost::json::value_to<double>(obj.at("z"))
+    };
+}
 
-    return true;
+ImagePoint tag_invoke(boost::json::value_to_tag<ImagePoint>, boost::json::value const& jv) 
+{
+    if (!jv.is_object())
+    {
+        throw std::invalid_argument("ImagePoint: Expected JSON object");
+    }
+    
+    boost::json::object const& obj = jv.as_object();
+    
+    if (!obj.contains("frame") || !obj.contains("x") || !obj.contains("y"))
+    {
+        throw std::invalid_argument("ImagePoint: Missing required fields (frame, x, y)");
+    }
+    
+    if (!obj.at("frame").is_number())
+    {
+        throw std::invalid_argument("ImagePoint: frame must be a numeric value");
+    }
+    
+    if (!obj.at("x").is_number() || !obj.at("y").is_number())
+    {
+        throw std::invalid_argument("ImagePoint: x and y must be numeric values");
+    }
+    
+    int frame = boost::json::value_to<int>(obj.at("frame"));
+    if (frame < 0)
+    {
+        throw std::invalid_argument("ImagePoint: frame must be positive");
+    }
+    
+    return ImagePoint{
+        frame,
+        boost::json::value_to<double>(obj.at("x")),
+        boost::json::value_to<double>(obj.at("y"))
+    };
+}
+
+Point tag_invoke(boost::json::value_to_tag<Point>, boost::json::value const& jv) 
+{
+    if (!jv.is_object())
+    {
+        throw std::invalid_argument("Point: Expected JSON object");
+    }
+    
+    boost::json::object const& obj = jv.as_object();
+    
+    if (!obj.contains("point_id") || !obj.contains("point_name") || 
+        !obj.contains("calc_mode") || !obj.contains("survey_mode") ||
+        !obj.contains("calc_3d") || !obj.contains("survey_3d") || 
+        !obj.contains("image_points"))
+    {
+        throw std::invalid_argument("Point: Missing required fields (point_id, point_name, calc_mode, survey_mode, calc_3d, survey_3d, image_points)");
+    }
+    
+    if (!obj.at("point_id").is_string() || !obj.at("point_name").is_string() ||
+        !obj.at("calc_mode").is_string() || !obj.at("survey_mode").is_string())
+    {
+        throw std::invalid_argument("Point: point_id, point_name, calc_mode, and survey_mode must be strings");
+    }
+    
+    if (!obj.at("image_points").is_array())
+    {
+        throw std::invalid_argument("Point: image_points must be an array");
+    }
+    
+    Point pt;
+    pt.point_id = boost::json::value_to<std::string>(obj.at("point_id"));
+    pt.point_name = boost::json::value_to<std::string>(obj.at("point_name"));
+    pt.calc_mode = boost::json::value_to<std::string>(obj.at("calc_mode"));
+    pt.survey_mode = boost::json::value_to<std::string>(obj.at("survey_mode"));
+    pt.calc_3d = boost::json::value_to<Position3D>(obj.at("calc_3d"));
+    pt.survey_3d = boost::json::value_to<Position3D>(obj.at("survey_3d"));
+    
+    boost::json::array const& img_points = obj.at("image_points").as_array();
+    for (auto const& ip : img_points) 
+    {
+        pt.image_points.push_back(boost::json::value_to<ImagePoint>(ip));
+    }
+    
+    return pt;
+}
+
+Survey tag_invoke(boost::json::value_to_tag<Survey>, boost::json::value const& jv) 
+{
+    if (!jv.is_object())
+    {
+        throw std::invalid_argument("Survey: Expected JSON object");
+    }
+    
+    boost::json::object const& obj = jv.as_object();
+    
+    if (!obj.contains("pgroup_name") || !obj.contains("camera_name") || !obj.contains("points"))
+    {
+        throw std::invalid_argument("Survey: Missing required fields (pgroup_name, camera_name, points)");
+    }
+    
+    if (!obj.at("pgroup_name").is_string() || !obj.at("camera_name").is_string())
+    {
+        throw std::invalid_argument("Survey: pgroup_name and camera_name must be strings");
+    }
+    
+    if (!obj.at("points").is_array())
+    {
+        throw std::invalid_argument("Survey: points must be an array");
+    }
+    
+    Survey survey;
+    survey.pgroup_name = boost::json::value_to<std::string>(obj.at("pgroup_name"));
+    survey.camera_name = boost::json::value_to<std::string>(obj.at("camera_name"));
+    
+    boost::json::array const& points = obj.at("points").as_array();
+    if (points.empty())
+    {
+        throw std::invalid_argument("Survey: points array cannot be empty");
+    }
+    
+    for (auto const& pt : points) 
+    {
+        survey.points.push_back(boost::json::value_to<Point>(pt));
+    }
+    
+    return survey;
 }
 
 /**
  * @brief Get a set of surveys from a JSON file (assumes the file format is ok).
  * The JSON file contains an array of objects. Each object describes a frameId, and a list of points.
  * @param surveyFilename the input JSON filename
- * @param output the read vector of surveyinput
+ * @param output a Survey object filled
  * @return false if the process failed, true otherwise
  */
-bool getSurveysFromJson(const std::string& surveyFilename, std::vector<SurveyInput> & output)
+bool getSurveysFromJson(const std::string& surveyFilename, Survey & output)
 {
     std::ifstream inputfile(surveyFilename);
     if (!inputfile.is_open())
@@ -92,24 +229,30 @@ bool getSurveysFromJson(const std::string& surveyFilename, std::vector<SurveyInp
 
     std::stringstream buffer;
     buffer << inputfile.rdbuf();
-    boost::json::value jv = boost::json::parse(buffer.str());
-
-    if (!jv.is_array())
+    
+    std::string jsonContent = buffer.str();
+    if (jsonContent.empty())
     {
-        return false;
+        throw std::runtime_error("JSON file is empty: " + surveyFilename);
+    }
+    
+    boost::json::value jv;
+    try
+    {
+        jv = boost::json::parse(jsonContent);
+    }
+    catch (const std::exception& e)
+    {
+        throw std::runtime_error("Failed to parse JSON file '" + surveyFilename + "': " + e.what());
     }
 
-    boost::json::array vobj = jv.as_array();
-
-    for (auto item : vobj)
+    try
     {
-        const boost::json::object& obj = item.as_object();
-
-        SurveyInput input;
-        if (getSurveyFromJson(obj, input))
-        {
-            output.push_back(input);
-        }
+        output = boost::json::value_to<Survey>(jv);
+    }
+    catch (const std::exception& e)
+    {
+        throw std::runtime_error("Invalid JSON structure in '" + surveyFilename + "': " + e.what());
     }
 
     return true;
@@ -164,56 +307,89 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    auto & landmarks = sfmData.getLandmarks();
-
-    std::vector<SurveyInput> surveys;
-    if (!getSurveysFromJson(surveyFilename, surveys))
+    // Get First Frame ID as 3DE gives a [0, nbFrames - 1] frame ID
+    IndexT minFrameId = std::numeric_limits<IndexT>::max();
+    for (const auto& [viewId, pView] : sfmData.getViews())
     {
-        ALICEVISION_LOG_ERROR("The survey file '" + surveyFilename + "' cannot be read.");
+        minFrameId = std::min(minFrameId, pView->getFrameId());
+    }
+    ALICEVISION_LOG_INFO("Minimal frame id in sfmData is " << minFrameId << ".");
+
+    // Read survey points in an intermediate structure 
+    Survey survey;
+    try
+    {
+        if (!getSurveysFromJson(surveyFilename, survey))
+        {
+            ALICEVISION_LOG_ERROR("The survey file '" + surveyFilename + "' cannot be opened.");
+            return EXIT_FAILURE;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        ALICEVISION_LOG_ERROR("Error processing survey file '" + surveyFilename + "': " + e.what());
         return EXIT_FAILURE;
     }
 
     sfmData::SurveyPoints & spoints = sfmData.getSurveyPoints();
 
-    // Set the pose for all the views with frame IDs found in the JSON file
-    size_t idFeature = 0;
-    for (const auto& [viewId, pView] : sfmData.getViews())
+    // Fill up sfmData with the intermediate structure
+    for (const auto& [viewId, view] : sfmData.getViews().valueRange())
     {
-        IndexT frameId = pView->getFrameId();
-
-        if (!sfmData.isIntrinsicDefined(viewId))
+        if (!sfmData.isPoseAndIntrinsicDefined(viewId))
         {
             continue;
         }
 
-        const auto & intrinsic = sfmData.getIntrinsic(pView->getIntrinsicId());
+        const auto & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
 
-        for (const auto & survey: surveys)
+        std::vector<sfmData::SurveyPoint> spts;
+
+        IndexT frameId = view.getFrameId();
+
+        //We assume this pose is also coming from 3DE and has not been modified !
+        geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+
+        for (const auto & point: survey.points)
         {
-            if (frameId != survey.frameId)
+            sfmData::SurveyPoint p;
+
+            p.point3d.x() = point.survey_3d.x;
+            p.point3d.y() = -point.survey_3d.y;
+            p.point3d.z() = -point.survey_3d.z;
+
+            for (const auto & image_point: point.image_points)
             {
-                continue;
-            }
+                // Json frame is the sequence offset starting by 1.
+                if (frameId != (image_point.frame - 1 + minFrameId))
+                {
+                    continue;
+                }
 
-            for (const auto & obs : survey.observations)
-            {
-                sfmData::SurveyPoint p;
+                // From 3DE representation (normalized [0,1] with origin at top-left)
+                // to AliceVision (pixel coordinates with origin at bottom-left).
+                // X is scaled by image width, Y is flipped and scaled by image height.
+                p.survey.x() = image_point.x * intrinsic.w();
+                p.survey.y() = (1.0 - image_point.y) * intrinsic.h();
 
-                p.survey.x() = obs.point2d.x() * intrinsic.w();
-                p.survey.y() = intrinsic.h() - 1.0 - (obs.point2d.y() * intrinsic.h());
+                // Compute residual
+                Vec2 obsEstimated = intrinsic.transformProject(pose, p.point3d.homogeneous(), true);                
+                p.residual.x() = p.survey.x() - obsEstimated.x();
+                p.residual.y() = p.survey.y() - obsEstimated.y();
 
-                p.point3d.x() = obs.point3d.x();
-                p.point3d.y() = - obs.point3d.y();
-                p.point3d.z() = - obs.point3d.z();
+                spts.push_back(p);
 
-                spoints[viewId].push_back(p);
-
-                idFeature++;
+                double rx = std::abs(p.residual.x());
+                double ry = std::abs(p.residual.y());
+                ALICEVISION_LOG_INFO("Found observation for frame " << frameId << " with residual [" << rx << ", " << ry << "].");
             }
         }
-    }
 
-    std::cout << sfmData.getSurveyPoints().size() << std::endl;
+        if (spts.size() > 0)
+        {
+            spoints[viewId] = spts;
+        }
+    }
 
     sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
 
