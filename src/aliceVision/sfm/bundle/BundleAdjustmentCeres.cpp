@@ -16,6 +16,7 @@
 #include <aliceVision/sfm/bundle/costfunctions/rotationPrior.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/temporalConstraint.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/depth.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/survey.hpp>
 #include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
 #include <aliceVision/sfm/utils/poseFilter.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
@@ -709,7 +710,25 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
 
         const sfmData::View& view = sfmData.getView(idView);
+        if (!sfmData.isPoseAndIntrinsicDefined(view))
+        {
+            continue;
+        }
+        
         const IndexT intrinsicId = view.getIntrinsicId();
+        const IndexT poseId = view.getPoseId();
+
+        // Do not add surveys if the pose is not to be estimated
+        if (_posesBlocks.find(poseId) == _posesBlocks.end())
+        {
+            continue;
+        }
+
+        // Do not add surveys if the intrinsic is not to be estimated
+        if (_intrinsicsBlocks.find(intrinsicId) == _intrinsicsBlocks.end())
+        {
+            continue;
+        }
 
         // each residual block takes a point and a camera as input and outputs a 2
         // dimensional residual. Internally, the cost function stores the observed
@@ -717,6 +736,7 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         const auto& pose = sfmData.getPose(view);
 
         // needed parameters to create a residual block (K, pose)
+        
         double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
         double* intrinsicBlockPtr = _intrinsicsBlocks.at(intrinsicId).data();
         const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[intrinsicId];
@@ -740,7 +760,7 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         {
             sfmData::Observation observation(spoint.survey, 0, 1.0);
             ceres::CostFunction* costFunction =
-                    ProjectionSurveyErrorFunctor::createCostFunction(intrinsic, spoint.point3d, observation);
+                    SurveyErrorFunctor::createCostFunction(intrinsic, spoint.point3d, spoint.residual, observation, 1.0);
 
             std::vector<double*> params;
             params.push_back(intrinsicBlockPtr);
@@ -1116,7 +1136,7 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
                     Vec3 point, normal;
                     if (!landmark.getPointFetcher()->getPointAndNormal(point, normal, origin, wdir))
                     {
-                        ALICEVISION_LOG_DEBUG("A landmark wrongly intersect the mesh.");
+                        ALICEVISION_LOG_DEBUG("A mesh-based landmark has no intersection with the mesh.");
                         continue;
                     }
                     
@@ -1151,6 +1171,39 @@ void BundleAdjustmentCeres::createJacobian(const sfmData::SfMData& sfmData, ERef
 
     // create Jacobain
     problem.Evaluate(evalOpt, &cost, NULL, NULL, &jacobian);
+}
+
+void BundleAdjustmentCeres::surveyInfos(const sfmData::SfMData & sfmData) const
+{
+    if (sfmData.getSurveyPoints().size() == 0)
+    {
+        return;
+    }
+
+    ALICEVISION_LOG_INFO("Surveys after minimization:");
+    for (const auto & [idView, surveys]: sfmData.getSurveyPoints())
+    {
+        const sfmData::View & view = sfmData.getView(idView);
+        if (!sfmData.isPoseAndIntrinsicDefined(view))
+        {
+            continue;
+        } 
+
+        const auto & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
+        const auto pose = sfmData.getPose(view);
+
+        ALICEVISION_LOG_INFO("View " << idView << ":");
+        for (const auto & survey : surveys)
+        {
+            Vec2 obs = intrinsic.transformProject(pose.getTransform(), survey.point3d.homogeneous(), true);
+
+            double ex = std::abs(obs.x() - survey.survey.x());
+            double ey = std::abs(obs.y() - survey.survey.y());
+            double rx = std::abs(survey.residual.x());
+            double ry = std::abs(survey.residual.y());
+            ALICEVISION_LOG_INFO("Surveyed : [" << rx << ", " << ry << "], Current ["<< ex <<", "<< ey <<"]");
+        }
+    }
 }
 
 bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions)
@@ -1217,6 +1270,9 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
 
     // update input sfmData with the solution
     updateFromSolution(sfmData, refineOptions);
+
+    // Info from surveys
+    surveyInfos(sfmData);
 
     // store some statistics from the summary
     _statistics.time = summary.total_time_in_seconds;
