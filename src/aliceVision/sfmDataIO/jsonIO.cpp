@@ -598,6 +598,8 @@ void saveSurveyPoints(const sfmData::SurveyPoints& spoints, bpt::ptree& parentTr
             pointTree.put("Z", point.point3d.z());
             pointTree.put("u", point.survey.x());
             pointTree.put("v", point.survey.y());
+            pointTree.put("ru", point.residual.x());
+            pointTree.put("rv", point.residual.y());
             
             pointsTree.push_back(std::make_pair("", pointTree));
         }
@@ -623,6 +625,8 @@ void loadSurveyPoints(sfmData::SurveyPoints& spoints, bpt::ptree& parentTree)
             p.point3d.z() = pointTree.second.get<double>("Z");
             p.survey.x() = pointTree.second.get<double>("u");
             p.survey.y() = pointTree.second.get<double>("v");
+            p.residual.x() = pointTree.second.get<double>("ru");
+            p.residual.y() = pointTree.second.get<double>("rv");
 
             spoints[viewId].push_back(p);
         }

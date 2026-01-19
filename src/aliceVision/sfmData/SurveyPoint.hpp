@@ -18,17 +18,19 @@ struct SurveyPoint
 {
     SurveyPoint() = default;
 
-    SurveyPoint(const Vec3 & paramPoint3d, const Vec2 & paramSurvey)
+    SurveyPoint(const Vec3 & paramPoint3d, const Vec2 & paramSurvey, const Vec2 & paramResidual)
       : point3d(paramPoint3d), 
-        survey(paramSurvey)
+        survey(paramSurvey),
+        residual(paramResidual)
     {}
 
     Vec3 point3d;
     Vec2 survey;
+    Vec2 residual;
 
     bool operator==(const SurveyPoint& other) const
     {
-        return (point3d == other.point3d) && (survey == other.survey);
+        return (point3d == other.point3d) && (survey == other.survey) && (residual == other.residual);
     }
 
     inline bool operator!=(const SurveyPoint& other) const { return !(*this == other); }
