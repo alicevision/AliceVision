@@ -214,6 +214,7 @@ int aliceVision_main(int argc, char** argv)
     std::string posesFilename;
     ERotationFormat format = ERotationFormat::EulerZXY;
     double frameRate = 24.0;
+    bool lockPoses = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -229,6 +230,8 @@ int aliceVision_main(int argc, char** argv)
          "Rotation format for the input poses: EulerZXY.")
         ("framerate", po::value<double>(&frameRate)->default_value(frameRate),
          "Alembic frame rate to compute frame id from time.")
+        ("lockPoses", po::value<bool>(&lockPoses)->default_value(lockPoses),
+         "Do we lock the pose parameters for future refinement ?")
         ("posesFilename,p", po::value<std::string>(&posesFilename)->default_value(posesFilename),
         "File containing the poses to inject.");
     // clang-format on
@@ -298,7 +301,7 @@ int aliceVision_main(int argc, char** argv)
             {
                 ALICEVISION_LOG_INFO("Assigning view " << id << "(frame " << rpose.frameId << ")");
                 geometry::Pose3 pose(rpose.T);
-                sfmData::CameraPose cpose(pose, false);
+                sfmData::CameraPose cpose(pose, lockPoses);
                 cpose.setRemovable(false);
                 sfmData.setAbsolutePose(id, cpose);
             }
