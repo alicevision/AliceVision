@@ -271,6 +271,24 @@ bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT m
     return removedElements > 0;
 }
 
+bool eraseLandmarksWithMissingReferenceView(sfmData::SfMData& sfmData)
+{
+    size_t countRemoved = std::erase_if(sfmData.getLandmarks(), [&sfmData](const auto & item) 
+    {
+        const auto & [key, value] = item;
+
+        IndexT viewId = value.getReferenceViewIndex();
+        if (viewId == UndefinedIndexT)
+        {
+            return false;
+        }
+
+        return !sfmData.isPoseAndIntrinsicDefined(viewId);
+    });
+
+    return countRemoved > 0;
+}
+
 /// Remove unstable content from analysis of the sfm_data structure
 bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
                                        const IndexT minPointsPerPose,
@@ -289,7 +307,11 @@ bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
             removedPoses = true;
             removedContent = eraseObservationsWithMissingPoses(sfmData, minPointsPerLandmark);
             if (removedContent)
+            {
                 removedObservations = true;
+            }
+
+            removedContent = eraseLandmarksWithMissingReferenceView(sfmData);
             // Erase some observations can make some Poses index disappear so perform the process in a loop
         }
         removeIteration += removedContent ? 1 : 0;

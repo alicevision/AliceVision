@@ -58,6 +58,16 @@ public:
     */
     bool pickPointAndNormal(Vec3 & point, Vec3 & normal, const camera::IntrinsicBase & intrinsic, const Vec2 & imageCoords);
 
+    /**
+     * @brief get a point and get its normal on the mesh given 3D ray
+     * @param point the output measured point
+     * @param normal the output measured normal
+     * @param origin the ray origin
+     * @param direction the ray direction
+     * @return true if the ray intersects the mesh.
+    */
+    bool getPointAndNormal(Vec3 & point, Vec3 & normal, const Vec3 & origin, const Vec3 & direction);
+
 private:
     GEO::Mesh _mesh;
     GEO::MeshFacetsAABB _aabb;

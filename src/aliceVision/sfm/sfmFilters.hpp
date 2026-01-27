@@ -54,11 +54,19 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
 
 bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT minPointsPerLandmark);
 
+/**
+ * @brief Erase all landmarks whose reference view is not reconstructed
+ * @param sfmData the sfmData to update
+ * @return true if something changed
+ */
+bool eraseLandmarksWithMissingReferenceView(sfmData::SfMData& sfmData);
+
 /// Remove unstable content from analysis of the sfm_data structure
 bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
                                        const IndexT minPointsPerPose = 6,
                                        const IndexT minPointsPerLandmark = 2,
                                        std::set<IndexT>* outRemovedViewsId = NULL);
+
 
 }  // namespace sfm
 }  // namespace aliceVision

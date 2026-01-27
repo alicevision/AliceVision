@@ -44,6 +44,12 @@ class SfMPoseInjecting(desc.AVCommandLineNode):
             value="EulerZXY",
             enabled=lambda node: pathlib.Path(node.posesFilename.value).suffix.lower() == ".json"
         ),
+        desc.BoolParam(
+            name="lockPoses",
+            label="Lock Injected Poses",
+            description="Do we lock the pose parameters for future refinement ?",
+            value=False,
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",

@@ -381,7 +381,20 @@ class SfMData
      * @param[in] viewID The given view ID
      * @return true if intrinsic and pose defined
      */
-    bool isPoseAndIntrinsicDefined(IndexT viewId) const { return isPoseAndIntrinsicDefined(_views.at(viewId).get()); }
+    bool isPoseAndIntrinsicDefined(IndexT viewId) const 
+    { 
+        if (viewId == UndefinedIndexT)
+        {
+            return false;
+        }
+
+        if (_views.find(viewId) == _views.end())
+        {
+            return false;
+        }
+
+        return isPoseAndIntrinsicDefined(_views.at(viewId).get()); 
+    }
 
     /**
      * @brief Check if the given view has an existing pose

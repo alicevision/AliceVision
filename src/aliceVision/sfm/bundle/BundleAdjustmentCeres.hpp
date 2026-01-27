@@ -238,6 +238,12 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
      */
     void updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const;
 
+    /**
+    * @brief Print current state of surveys
+    * @param[in] sfmData the current sfmData to get infos from
+    */
+    void surveyInfos(const sfmData::SfMData & sfmData) const;
+
     // private members
 
     /// user Ceres options to use in the solver

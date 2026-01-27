@@ -512,9 +512,12 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
     std::vector<Imath::C3f> colors;
     std::vector<Alembic::Util::uint32_t> descTypes;
     std::vector<Alembic::Util::bool_t> isParallaxRobust;
+    std::vector<Alembic::Util::bool_t> isLocked;
+
     positions.reserve(landmarks.size());
     descTypes.reserve(landmarks.size());
     isParallaxRobust.reserve(landmarks.size());
+    isLocked.reserve(landmarks.size());
     referenceViewIndices.reserve(landmarks.size());
 
     // For all the 3d points in the hash_map
@@ -527,6 +530,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
         colors.emplace_back(color.r() / 255.f, color.g() / 255.f, color.b() / 255.f);
         descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.getDescType()));
         isParallaxRobust.emplace_back(static_cast<Alembic::Util::bool_t>(landmark.second.isParallaxRobust()));
+        isLocked.emplace_back(static_cast<Alembic::Util::bool_t>(landmark.second.isLocked()));
         referenceViewIndices.emplace_back(landmark.second.getReferenceViewIndex());
     }
 
@@ -551,6 +555,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks,
 
     OUInt32ArrayProperty(userProps, "mvg_describerType").set(descTypes);
     OBoolArrayProperty(userProps, "mvg_isParallaxRobust").set(isParallaxRobust);
+    OBoolArrayProperty(userProps, "mvg_isLocked").set(isLocked);
     OUInt32ArrayProperty(userProps, "mvg_referenceViewIndices").set(referenceViewIndices);
 
     if (withVisibility)
@@ -671,6 +676,8 @@ void AlembicExporter::addSurveys(const sfmData::SurveyPoints & points)
             data.push_back(sp.point3d.z());
             data.push_back(sp.survey.x());
             data.push_back(sp.survey.y());
+            data.push_back(sp.residual.x());
+            data.push_back(sp.residual.y());
         }
     }
 

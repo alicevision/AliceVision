@@ -200,6 +200,19 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
             sampleIsParallaxRobust->reset();
         }
     }
+
+    BoolArraySamplePtr sampleIsLocked;
+    if (userProps && userProps.getPropertyHeader("mvg_isLocked"))
+    {
+        IBoolArrayProperty propIsLocked(userProps, "mvg_isLocked");
+        propIsLocked.get(sampleIsLocked);
+
+        if (sampleIsLocked->size() != positions->size())
+        {
+            ALICEVISION_LOG_WARNING("[Alembic Importer] isLocked property will be ignored.");
+            sampleIsLocked->reset();
+        }
+    }
     
     AV_UInt32ArraySamplePtr sampleReferenceViewIndices;
     if (userProps && userProps.getPropertyHeader("mvg_referenceViewIndices"))
@@ -249,6 +262,12 @@ bool readPointCloud(const Version& abcVersion, IObject iObj, M44d mat, sfmData::
         {
             const bool isParallaxRobust = sampleIsParallaxRobust->get()[point3d_i];
             landmark.setParallaxRobust(isParallaxRobust);
+        }
+
+        if (sampleIsLocked)
+        {
+            const bool isLocked = sampleIsLocked->get()[point3d_i];
+            landmark.setLocked(isLocked);
         }
 
         if (sampleReferenceViewIndices)
@@ -449,7 +468,7 @@ bool readSurveys(IObject iObj, sfmData::SfMData& sfmdata)
     IDoubleArrayProperty propData(userProps, "mvg_surveyData");
     propData.get(sampleData);
 
-    const int sampleDataSize = 5;
+    const int sampleDataSize = 7;
 
     if (sampleId.size() * sampleDataSize != sampleData->size())
     {
@@ -467,6 +486,8 @@ bool readSurveys(IObject iObj, sfmData::SfMData& sfmdata)
         pt.point3d.z() = (*sampleData)[pos * sampleDataSize + 2];
         pt.survey.x() = (*sampleData)[pos * sampleDataSize + 3];
         pt.survey.y() = (*sampleData)[pos * sampleDataSize + 4];
+        pt.residual.x() = (*sampleData)[pos * sampleDataSize + 5];
+        pt.residual.y() = (*sampleData)[pos * sampleDataSize + 6];
 
         output[viewId].push_back(pt);
     }
