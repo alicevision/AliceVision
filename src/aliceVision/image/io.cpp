@@ -1066,6 +1066,7 @@ void writeImage(const std::string& path,
     auto itversion = metadata.find("version");
     if (isEXR && itversion != metadata.end())
     {
+        // The "version" metadata of exr images must be an integer, otherwise the exr image could be misinterpreted.
         if (itversion->type() != oiio::TypeDesc::INT)
         {
             imageSpec.attribute("version", itversion->get_int());
@@ -1235,6 +1236,16 @@ void writeImageNoFloat(const std::string& path,
 
     oiio::ImageSpec imageSpec(image.width(), image.height(), 1, typeDesc);
     imageSpec.extra_attribs = metadata;  // add custom metadata
+
+    auto itversion = metadata.find("version");
+    if (isEXR && itversion != metadata.end())
+    {
+        // The "version" metadata of exr images must be an integer, otherwise the exr image could be misinterpreted.
+        if (itversion->type() != oiio::TypeDesc::INT)
+        {
+            imageSpec.attribute("version", itversion->get_int());
+        }
+    }
 
     imageSpec.attribute("jpeg:subsampling", "4:4:4");             // if possible, always subsampling 4:4:4 for jpeg
     imageSpec.attribute("compression", isEXR ? "zips" : "none");  // if possible, set compression (zips for EXR, none for the other)
