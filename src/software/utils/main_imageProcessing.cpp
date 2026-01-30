@@ -1319,7 +1319,7 @@ int aliceVision_main(int argc, char* argv[])
             const std::string outputfilePath =
               (fs::path(outputPath) / ((pParams.keepImageFilename ? fileName : std::to_string(viewId)) + outputExt)).generic_string();
 
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << "'.");
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process view '" << viewId << (isRAW ? "' (RAW)." : "'."));
 
             auto metadata = view.getImage().getMetadata();
 
@@ -1591,7 +1591,7 @@ int aliceVision_main(int argc, char* argv[])
             const std::string fileExt = path.extension().string();
             const std::string outputExt = extension.empty() ? (isRAW ? ".exr" : fileExt) : (std::string(".") + extension);
 
-            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << "'.");
+            ALICEVISION_LOG_INFO(++i << "/" << size << " - Process image '" << filename << fileExt << (isRAW ? "' (RAW)." : "'."));
 
             const std::string userExt = fs::path(outputPath).extension().string();
             std::string outputFilePath;
