@@ -1,4 +1,4 @@
-__version__ = "3.1"
+__version__ = "3.2"
 
 import json
 
@@ -145,11 +145,17 @@ class LdrToHdrCalibration(desc.AVCommandLineNode):
     ]
 
     outputs = [
-       desc.File(
+        desc.File(
             name="response",
             label="Response File",
             description="Path to the output response file.",
             value="{nodeCacheFolder}/response_<INTRINSIC_ID>.csv",
+        ),
+        desc.File(
+            name="luminanceStatistics",
+            label="Luminance Statistics",
+            description="File containing the luminance statistics produced by the calibration process",
+            value="{nodeCacheFolder}/luminanceStatistics_<INTRINSIC_ID>.txt",
         ),
     ]
 

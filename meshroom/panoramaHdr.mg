@@ -1,6 +1,6 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0",
+        "releaseVersion": "2026.1.0+develop",
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
@@ -8,8 +8,8 @@
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageMatching": "2.0",
-            "LdrToHdrCalibration": "3.1",
-            "LdrToHdrMerge": "4.1",
+            "LdrToHdrCalibration": "3.2",
+            "LdrToHdrMerge": "4.2",
             "LdrToHdrSampling": "4.0",
             "PanoramaCompositing": "2.0",
             "PanoramaEstimation": "1.0",
@@ -19,7 +19,7 @@
             "PanoramaPrepareImages": "1.1",
             "PanoramaSeams": "2.0",
             "PanoramaWarping": "1.1",
-            "SfMTransform": "3.1"
+            "SfMTransform": "3.2"
         },
         "template": true
     },
@@ -31,6 +31,20 @@
                 0
             ],
             "inputs": {}
+        },
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
+            "position": [
+                3000,
+                0
+            ],
+            "inputs": {
+                "inputFiles": [
+                    "{PanoramaPostProcessing_1.outputPanorama}",
+                    "{PanoramaPostProcessing_1.outputPanoramaPreview}",
+                    "{PanoramaPostProcessing_1.downscaledPanoramaLevels}"
+                ]
+            }
         },
         "FeatureExtraction_1": {
             "nodeType": "FeatureExtraction",
@@ -96,6 +110,7 @@
             "inputs": {
                 "input": "{LdrToHdrCalibration_1.input}",
                 "response": "{LdrToHdrCalibration_1.response}",
+                "luminanceStatistics": "{LdrToHdrCalibration_1.luminanceStatistics}",
                 "userNbBrackets": "{LdrToHdrCalibration_1.userNbBrackets}",
                 "byPass": "{LdrToHdrCalibration_1.byPass}",
                 "channelQuantizationPower": "{LdrToHdrCalibration_1.channelQuantizationPower}",
@@ -202,20 +217,6 @@
             ],
             "inputs": {
                 "input": "{SfMTransform_1.output}"
-            }
-        },
-        "CopyFiles_1": {
-            "nodeType": "CopyFiles",
-            "position": [
-                3000,
-                0
-            ],
-            "inputs": {
-                "inputFiles": [
-                    "{PanoramaPostProcessing_1.outputPanorama}",
-                    "{PanoramaPostProcessing_1.outputPanoramaPreview}",
-                    "{PanoramaPostProcessing_1.downscaledPanoramaLevels}"
-                ]
             }
         },
         "SfMTransform_1": {

@@ -30,8 +30,8 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -75,6 +75,8 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmInputDataFilename;
     std::string inputResponsePath;
     std::string sfmOutputDataFilepath;
+    std::string luminanceStatisticsPath;
+
     int nbBrackets = 0;
     bool byPass = false;
     bool keepSourceImageName = false;
@@ -101,6 +103,8 @@ int aliceVision_main(int argc, char** argv)
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
+        ("luminanceStatistics", po::value<std::string>(&luminanceStatisticsPath)->required(),
+         "Path to the luminance statistics file.")
         ("response,o", po::value<std::string>(&inputResponsePath)->required(),
          "Input path for the response file.")
         ("outSfMData,o", po::value<std::string>(&sfmOutputDataFilepath)->required(),
@@ -294,7 +298,7 @@ int aliceVision_main(int argc, char** argv)
             const int targetIndex = middleIndex + offsetRefBracketIndex;
             const bool isOffsetRefBracketIndexValid = (targetIndex >= 0) && (targetIndex < usedNbBrackets);
 
-            const fs::path lumaStatFilepath(fs::path(inputResponsePath).parent_path() /
+            const fs::path lumaStatFilepath(fs::path(luminanceStatisticsPath).parent_path() /
                                             (std::string("luminanceStatistics") + "_" + std::to_string(intrinsicId) + ".txt"));
 
             if (!fs::is_regular_file(lumaStatFilepath) && !isOffsetRefBracketIndexValid)
@@ -353,6 +357,7 @@ int aliceVision_main(int argc, char** argv)
         int pos = 0;
         sfmData::SfMData outputSfm;
         outputSfm.getIntrinsics() = sfmData.getIntrinsics();
+        outputSfm.getRigs() = sfmData.getRigs();
 
         // If we are on the first chunk, or we are computing all the dataset
         // Export a new sfmData with HDR images as new Views and LDR images as ancestors

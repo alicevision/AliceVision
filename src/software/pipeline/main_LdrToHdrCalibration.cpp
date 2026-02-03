@@ -38,8 +38,8 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 using namespace aliceVision::hdr;
@@ -144,6 +144,7 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmInputDataFilename;
     std::string samplesFolder;
     std::string outputResponsePath;
+    std::string outputLuminanceStatisticsPath;
     ECalibrationMethod calibrationMethod = ECalibrationMethod::AUTO;
     std::string calibrationWeightFunction = "default";
     int nbBrackets = 0;
@@ -158,11 +159,13 @@ int aliceVision_main(int argc, char** argv)
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(),
          "SfMData file input.")
-        ("response,o", po::value<std::string>(&outputResponsePath)->required(),
-         "Output path for the response file.");
+        ("luminanceStatistics", po::value<std::string>(&outputLuminanceStatisticsPath)->required(),
+         "File containing the luminance statistics produced by the calibration process.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("response,o", po::value<std::string>(&outputResponsePath)->required(),
+         "Output path for the response file.")
         ("samplesFolders,f", po::value<std::string>(&samplesFolder)->default_value(samplesFolder),
          "Path to folder containing the extracted samples (required if the calibration is not linear).")
         ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
@@ -499,9 +502,19 @@ int aliceVision_main(int argc, char** argv)
             response.writeHtml(htmlName, "response");
         }
 
-        const std::string lumastatBasename = "luminanceStatistics";
-        const std::string lumastatFilename =
-          (fs::path(outputResponsePath).parent_path() / (lumastatBasename + "_" + std::to_string(intrinsicId) + ".txt")).string();
+        
+        // Setup luminance statistics file path
+        std::string lumastatFilename = outputLuminanceStatisticsPath;
+        const std::string token = "<INTRINSIC_ID>";
+        const std::size_t tokenPos = lumastatFilename.find(token);
+        if (tokenPos == std::string::npos)
+        {
+            ALICEVISION_LOG_ERROR("Invalid luminance statistics path '" << outputLuminanceStatisticsPath << "': missing required token '" << token << "'.");
+            return EXIT_FAILURE;
+        }
+        lumastatFilename.replace(tokenPos, token.length(), std::to_string(intrinsicId));
+
+
         std::ofstream file(lumastatFilename);
         if (!file)
         {
