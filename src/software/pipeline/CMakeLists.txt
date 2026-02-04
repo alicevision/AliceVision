@@ -387,6 +387,20 @@ if (ALICEVISION_BUILD_PANORAMA)
               aliceVision_sfmDataIO
               ${Boost_LIBRARIES}
     )
+
+    alicevision_add_software(aliceVision_panoramaRigging
+        SOURCE main_panoramaRigging.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_image
+              aliceVision_feature
+              aliceVision_sfm
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              ${Boost_LIBRARIES}
+    )
+
     alicevision_add_software(aliceVision_panoramaWarping
         SOURCE main_panoramaWarping.cpp
         FOLDER ${FOLDER_SOFTWARE_PIPELINE}
