@@ -302,7 +302,7 @@ class SfMData
     }
 
     /**
-     * @brief Check if the given view have defined intrinsic and pose
+     * @brief Check if the given view has defined intrinsic and pose
      * @param[in] view The given view
      * @return true if intrinsic  defined
      */
@@ -313,7 +313,7 @@ class SfMData
     }
 
     /**
-     * @brief Check if the given view have defined intrinsic and pose
+     * @brief Check if the given view has defined intrinsic and pose
      * @param[in] viewID The given viewID
      * @return true if intrinsic and pose defined
      */
@@ -323,7 +323,45 @@ class SfMData
     }
 
     /**
-     * @brief Check if the given view have defined intrinsi
+     * @brief Check if the given view has a valid pose
+     * @param[in] view The given view
+     * @return true if pose defined
+     */
+    bool isPoseDefined(const View & view) const
+    {        
+        const IndexT poseId = view.getPoseId();
+        if (poseId == UndefinedIndexT)
+        {
+            return false;
+        }
+        
+        auto it = _poses.find(poseId);
+        if (it == _poses.end())
+        {
+            return false;
+        }
+
+        bool rigValid = ((!view.isPartOfRig() || view.isPoseIndependant() || getRigSubPose(view).status != ERigSubPoseStatus::UNINITIALIZED));
+        if (!rigValid)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @brief Check if the given view has a defined pose
+     * @param[in] viewID The given viewID
+     * @return true if pose defined
+     */
+    bool isPoseDefined(IndexT viewId) const 
+    { 
+        return isPoseDefined(*_views.at(viewId)); 
+    }
+
+    /**
+     * @brief Check if the given view has defined intrinsic
      * @param[in] view The given view
      * @return true if intrinsic and pose defined
      */
@@ -362,7 +400,7 @@ class SfMData
     }
 
     /**
-     * @brief Check if the given view have defined intrinsi
+     * @brief Check if the given view has defined intrinsic
      * @param[in] view The given view
      * @return true if intrinsic and pose defined
      */
@@ -377,7 +415,7 @@ class SfMData
     }
 
     /**
-     * @brief Check if the given view have defined intrinsic and pose
+     * @brief Check if the given view has defined intrinsic and pose
      * @param[in] viewID The given view ID
      * @return true if intrinsic and pose defined
      */
