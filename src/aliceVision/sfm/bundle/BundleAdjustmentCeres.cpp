@@ -801,8 +801,6 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
         const std::shared_ptr<IntrinsicBase> intrinsicObject1 = _intrinsicObjects[intrinsicId_1];
         const std::shared_ptr<IntrinsicBase> intrinsicObject2 = _intrinsicObjects[intrinsicId_2];
 
-        // For the moment assume a unique camera
-        assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
 
         double * distortionBlockPtr_1 = fakeDistortionBlockPtr;
         if (_distortionsBlocks.find(intrinsicId_1) != _distortionsBlocks.end())
@@ -810,11 +808,67 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
             distortionBlockPtr_1 = _distortionsBlocks.at(intrinsicId_1).data();
         }
 
-        ceres::CostFunction* costFunction = Constraint2dErrorFunctor::createCostFunction(intrinsicObject1,
-                                                                                        constraint.ObservationFirst,
-                                                                                        constraint.ObservationSecond);
+        double * distortionBlockPtr_2 = fakeDistortionBlockPtr;
+        if (_distortionsBlocks.find(intrinsicId_2) != _distortionsBlocks.end())
+        {
+            distortionBlockPtr_2 = _distortionsBlocks.at(intrinsicId_2).data();
+        }
 
-        problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, distortionBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
+        bool view_1_rig = false;
+        double * rigBlockPtr_1 = nullptr;
+        if (view_1.getRigId() != UndefinedIndexT)
+        {
+            view_1_rig = true;
+            IndexT rigId = view_1.getRigId();
+            IndexT subPoseId = view_1.getSubPoseId();
+            rigBlockPtr_1 = _rigBlocks[rigId][subPoseId].data();
+        }
+
+        bool view_2_rig = false;
+        double * rigBlockPtr_2 = nullptr;
+        if (view_2.getRigId() != UndefinedIndexT)
+        {
+            view_2_rig = true;
+            IndexT rigId = view_2.getRigId();
+            IndexT subPoseId = view_2.getSubPoseId();
+            rigBlockPtr_2 = _rigBlocks[rigId][subPoseId].data();
+        }
+
+        ceres::CostFunction* costFunction = Constraint2dErrorFunctor::createCostFunction(intrinsicObject1,
+                                                                                        intrinsicObject2,
+                                                                                        constraint.ObservationFirst,
+                                                                                        constraint.ObservationSecond,
+                                                                                        view_1_rig,
+                                                                                        view_2_rig,
+                                                                                        (poseBlockPtr_1 == poseBlockPtr_2),
+                                                                                        (rigBlockPtr_1 == rigBlockPtr_2));
+        std::vector<double*> params;
+        params.push_back(intrinsicBlockPtr_1);        
+        params.push_back(distortionBlockPtr_1);
+
+        if (intrinsicBlockPtr_1 != intrinsicBlockPtr_2)
+        {
+            params.push_back(intrinsicBlockPtr_2);
+            params.push_back(distortionBlockPtr_2);
+        }
+
+        params.push_back(poseBlockPtr_1);
+        if (poseBlockPtr_2 != poseBlockPtr_1)
+        {
+            params.push_back(poseBlockPtr_2);
+        }
+
+        if (view_1_rig)
+        {
+            params.push_back(rigBlockPtr_1);
+        }
+
+        if (view_2_rig && rigBlockPtr_1 != rigBlockPtr_2)
+        {
+            params.push_back(rigBlockPtr_2);
+        }
+
+        problem.AddResidualBlock(costFunction, lossFunction, params);
     }
 }
 
