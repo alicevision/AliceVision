@@ -55,6 +55,7 @@ int aliceVision_main(int argc, char** argv)
     std::string inputDetection;
     std::string outputJSON;
     std::string method;
+    std::string outLightType;
     bool doDebug;
     bool saveAsModel;
     bool ellipticEstimation;
@@ -75,6 +76,8 @@ int aliceVision_main(int argc, char** argv)
          "Calibration used for several datasets.")
         ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"),
          "Method for light estimation.")
+        ("lighttype, t", po::value<std::string>(&outLightType)->default_value("directionnal"),
+         "Light type (directionnal, punctual).")
         ("doDebug, d", po::value<bool>(&doDebug)->default_value(true),
          "Do we save debug images.");
     // clang-format on
@@ -117,7 +120,22 @@ int aliceVision_main(int argc, char** argv)
         }
 
         lightingEstimation::Lightings lightings;
-        if (!lightingEstimation::lightCalibration(sfmData, calibrationSpheres, lightingEstimation::LightType::Directionnal, lightings))
+        lightingEstimation::LightType lightType;
+        if(outLightType == "directionnal")
+        {
+            lightType = lightingEstimation::LightType::Directionnal;
+        }
+        else if(outLightType == "punctual")
+        {
+            lightType = lightingEstimation::LightType::Punctual;
+        }
+        else
+        {
+            ALICEVISION_LOG_ERROR("Not handled light type: " << outLightType);
+            return EXIT_FAILURE;
+
+        }
+        if (!lightingEstimation::lightCalibration(sfmData, calibrationSpheres, lightType, lightings))
         {
             ALICEVISION_LOG_ERROR("Could not compute lightings");
             return EXIT_FAILURE;

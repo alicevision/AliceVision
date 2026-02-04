@@ -20,7 +20,9 @@ Lighting::Lighting(LightType lightType_)
 LightType Lighting::getLightType() const
 { return lightType; }
 
-
+/*
+ * Directionnal lighting
+ */
 DirectionnalLighting::DirectionnalLighting(const Eigen::Vector3f& lightDirection_, const std::vector<float>& intensity_)
   : Lighting(LightType::Directionnal),
     lightDirection(lightDirection_),
@@ -54,6 +56,47 @@ const Eigen::Vector3f& DirectionnalLighting::getLightDirection() const { return 
 
 const std::vector<float>& DirectionnalLighting::getLightIntensity() const { return intensity; }
 
+
+/*
+ * Punctual lighting
+ */
+PunctualLighting::PunctualLighting(const Eigen::Vector3f& lightPosition_, const std::vector<float>& intensity_)
+  : Lighting(LightType::Punctual),
+    lightPosition(lightPosition_),
+    intensity(intensity_)
+{}
+
+PunctualLighting::PunctualLighting(const Eigen::Vector3f& lightPosition_, float intensity_)
+  : Lighting(LightType::Punctual),
+    lightPosition(lightPosition_),
+    intensity(3, intensity_)
+{}
+
+PunctualLighting::~PunctualLighting()
+{}
+
+PunctualLighting* PunctualLighting::clone() const { return new PunctualLighting(*this); }
+
+PunctualLighting* PunctualLighting::convertToFrame(const std::shared_ptr<sfmData::CameraPose>& pose) const
+{
+	Eigen::Matrix4f av_to_vis = Eigen::Matrix4f::Identity();
+	av_to_vis(1, 1) = -1.;
+	av_to_vis(2, 2) = -1.;
+	Eigen::Matrix4f RT = pose->getTransform().getHomogeneous().cast<float>() * av_to_vis;
+
+    Eigen::Vector3f newLightPosition = RT.block<3, 3>(0, 0) * lightPosition + RT.block<3,1>(3,0);
+
+    return new PunctualLighting(newLightPosition, intensity);
+}
+
+const Eigen::Vector3f& PunctualLighting::getLightPosition() const { return lightPosition; }
+
+const std::vector<float>& PunctualLighting::getLightIntensity() const { return intensity; }
+
+
+/*
+ * IO functions
+ */
 namespace LightingDataIO {
 bool saveJSON(const Lightings& lightings, const std::string& filename)
 {
@@ -73,7 +116,7 @@ bool saveJSON(const Lightings& lightings, const std::string& filename)
             std::shared_ptr<DirectionnalLighting> dirLighting = std::static_pointer_cast<DirectionnalLighting>(lightIt->second);
             if (!dirLighting)
             {
-                ALICEVISION_LOG_ERROR("Wrong lightings type");
+                ALICEVISION_LOG_ERROR("Wrong lighting type");
                 return false;
             }
 
@@ -102,6 +145,45 @@ bool saveJSON(const Lightings& lightings, const std::string& filename)
             }
             lightTree.add_child("intensity", intensityNode);
         }
+        else if (lightIt->second->getLightType() == LightType::Punctual)
+        {
+            std::shared_ptr<PunctualLighting> pointLighting = std::static_pointer_cast<PunctualLighting>(lightIt->second);
+            if (!pointLighting)
+            {
+                ALICEVISION_LOG_ERROR("Wrong lighting type");
+                return false;
+            }
+
+            // Light type
+            lightTree.put("type", "punctual");
+
+            // Light position 
+            bpt::ptree positionNode;
+            int posLightSize = pointLighting->getLightPosition().size();
+            for (int i = 0; i < posLightSize; ++i)
+            {
+                bpt::ptree cell;
+                cell.put_value<float>(pointLighting->getLightPosition()(i));
+                positionNode.push_back(std::make_pair("", cell));
+            }
+            lightTree.add_child("position", positionNode);
+
+            // Light intensity
+            bpt::ptree intensityNode;
+            int intLightSize = pointLighting->getLightIntensity().size();
+            for (unsigned int i = 0; i < intLightSize; ++i)
+            {
+                bpt::ptree cell;
+                cell.put_value<float>(pointLighting->getLightIntensity()[i]);
+                intensityNode.push_back(std::make_pair("", cell));
+            }
+            lightTree.add_child("intensity", intensityNode);
+        }
+		else
+		{
+			ALICEVISION_LOG_ERROR("Light type not handled");
+			return false;
+		}
 
         lightsTree.push_back(std::make_pair("", lightTree));
     }
@@ -145,9 +227,32 @@ bool loadJSON(const std::string& filename, Lightings& lightings)
 				ALICEVISION_LOG_ERROR("Directionnal lighting should have 3 components (Spherical Harmonics not handled)");
 				return false;
 			}
-			auto lighting = std::make_shared<DirectionnalLighting>(Eigen::Vector3f(currentDirection[0], currentDirection[1], currentDirection[2]),
-																   currentIntensities);
-			lightings.emplace(lightId, lighting);
+            auto lighting = std::make_shared<DirectionnalLighting>(
+                Eigen::Vector3f(currentDirection[0], currentDirection[1], currentDirection[2]), currentIntensities);
+            lightings.emplace(lightId, lighting);
+        }
+        else if (lightType == "punctual")
+		{
+			std::vector<float> currentIntensities;
+			std::vector<float> currentPosition;
+			for (auto& intensities : itLight->second.get_child("intensity"))
+			{
+				currentIntensities.push_back(intensities.second.get_value<float>());
+			}
+
+			for (auto& position: itLight->second.get_child("position"))
+			{
+				currentPosition.push_back(position.second.get_value<float>());
+			}
+
+			if (currentPosition.size() != 3)
+			{
+				ALICEVISION_LOG_ERROR("Lighting position should have 3 components");
+				return false;
+			}
+            auto lighting = std::make_shared<PunctualLighting>(
+                Eigen::Vector3f(currentPosition[0], currentPosition[1], currentPosition[2]), currentIntensities);
+            lightings.emplace(lightId, lighting);
 		}
 		else
 		{

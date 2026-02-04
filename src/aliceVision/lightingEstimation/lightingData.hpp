@@ -12,7 +12,7 @@ namespace lightingEstimation {
 enum class LightType
 {
     Directionnal,
-    Ponctual
+    Punctual
 };
 
 class Lighting
@@ -53,6 +53,29 @@ class DirectionnalLighting : public Lighting
     Eigen::Vector3f lightDirection;
     std::vector<float> intensity;
 };
+
+class PunctualLighting : public Lighting
+{
+  public:
+    PunctualLighting(const Eigen::Vector3f& lightPosition_, const std::vector<float>& intensity_);
+
+    PunctualLighting(const Eigen::Vector3f& lightPosition_, float intensity_);
+
+    ~PunctualLighting();
+
+    PunctualLighting* clone() const;
+
+    PunctualLighting* convertToFrame(const std::shared_ptr<sfmData::CameraPose>& pose) const;
+
+    const Eigen::Vector3f& getLightPosition() const;
+
+    const std::vector<float>& getLightIntensity() const;
+
+  private:
+    Eigen::Vector3f lightPosition;
+    std::vector<float> intensity;
+};
+
 
 using Lightings = sfmData::SharedPtrMap<Lighting>;
 
