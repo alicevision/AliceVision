@@ -1294,37 +1294,47 @@ int main(int argc, char* argv[])
         }
     }
 
+    if (useFisheye)
     {
         int equidistantCount = 0;
 
-        if (useFisheye && estimateFisheyeCircle)
+        if (estimateFisheyeCircle)
         {
-            if (sfmData.getIntrinsics().size() != 1)
+            // Build a map of views indexed by their intrinsicId, ignoring all but equidistant cameras
+            std::map<IndexT, std::vector<sfmData::View::sptr>> viewsPerIntrinsic;
+            for (const auto [idView, view] : sfmData.getViews())
             {
-                ALICEVISION_LOG_ERROR("Only one intrinsic allowed (" << sfmData.getIntrinsics().size() << " found)");
-                return EXIT_FAILURE;
+                IndexT intrinsicId = view->getIntrinsicId();
+                if (intrinsicId == UndefinedIndexT)
+                {
+                    continue;
+                }
+
+                const camera::IntrinsicBase & cam = sfmData.getIntrinsic(intrinsicId);
+                if (!camera::isEquidistant(cam.getType()))
+                {
+                    continue;
+                }
+
+                viewsPerIntrinsic[intrinsicId].push_back(view);
             }
 
-            std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().begin()->second;
-            if (!intrinsic)
+            for (const auto & [intrinsicId, vViews]: viewsPerIntrinsic)
             {
-                ALICEVISION_LOG_ERROR("No valid intrinsic");
-                return EXIT_FAILURE;
-            }
+                camera::Equidistant & cam = dynamic_cast<camera::Equidistant&>(sfmData.getIntrinsic(intrinsicId));
 
-            if (camera::isEquidistant(intrinsic->getType()))
-            {
-                CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
+                CircleDetector detector(cam.w(), cam.h(), 256);
                 if (debugFisheyeCircleEstimation)
                 {
                     fs::path path(sfmOutputDataFilepath);
                     detector.setDebugDirectory(path.parent_path().string());
                 }
-                for (const auto& v : sfmData.getViews())
+
+                for (const auto& v : vViews)
                 {
                     // Read original image
                     image::Image<float> grayscale;
-                    image::readImage(v.second->getImage().getImagePath(), grayscale, image::EImageColorSpace::SRGB);
+                    image::readImage(v->getImage().getImagePath(), grayscale, image::EImageColorSpace::SRGB);
 
                     const bool res = detector.appendImage(grayscale);
                     if (!res)
@@ -1343,35 +1353,37 @@ int main(int argc, char* argv[])
                 const double cx = detector.getCircleCenterX();
                 const double cy = detector.getCircleCenterY();
                 const double r = detector.getCircleRadius();
+                
+                cam.setCircleCenterX(cx);
+                cam.setCircleCenterY(cy);
+                cam.setCircleRadius(0.98 * r);
 
-                // Update parameters with estimated values
-                fisheyeCenterOffset(0) = cx - 0.5 * double(intrinsic->w());
-                fisheyeCenterOffset(1) = cy - 0.5 * double(intrinsic->h());
-                fisheyeRadius = 98.0 * r / (0.5 * std::min(double(intrinsic->w()), double(intrinsic->h())));
-
-                ALICEVISION_LOG_INFO("Computing automatic fisheye circle");
-                ALICEVISION_LOG_INFO(" * Center Offset: " << fisheyeCenterOffset);
-                ALICEVISION_LOG_INFO(" * Radius: " << fisheyeRadius);
+                ALICEVISION_LOG_INFO("Computing automatic fisheye circle for intrinsic " << intrinsicId);
+                ALICEVISION_LOG_INFO(" * Circle center (cx, cy): " << cx << " " << cy);
+                ALICEVISION_LOG_INFO(" * Detected radius: " << r << ", applied radius: " << 0.98 * r);
             }
+
+            equidistantCount = viewsPerIntrinsic.size();
         }
-
-        sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
-        for (const auto& intrinsic_pair : intrinsics)
+        else 
         {
-            std::shared_ptr<camera::IntrinsicBase> intrinsic = intrinsic_pair.second;
-            std::shared_ptr<camera::Equidistant> equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
-            if (!equidistant)
+            sfmData::Intrinsics& intrinsics = sfmData.getIntrinsics();
+            for (const auto& intrinsic_pair : intrinsics)
             {
-                // skip non equidistant cameras
-                continue;
+                std::shared_ptr<camera::IntrinsicBase> intrinsic = intrinsic_pair.second;
+                std::shared_ptr<camera::Equidistant> equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);
+                if (!equidistant)
+                {
+                    // skip non equidistant cameras
+                    continue;
+                }
+                ALICEVISION_LOG_INFO("Update Equidistant camera intrinsic " << intrinsic_pair.first << " with center and offset.");
+
+                equidistant->setCircleCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset(0));
+                equidistant->setCircleCenterY(double(equidistant->h()) / 2.0 + fisheyeCenterOffset(1));
+                equidistant->setCircleRadius(fisheyeRadius / 100.0 * 0.5 * std::min(double(equidistant->w()), double(equidistant->h())));
+                ++equidistantCount;
             }
-            ALICEVISION_LOG_INFO("Update Equidistant camera intrinsic " << intrinsic_pair.first << " with center and offset.");
-
-            equidistant->setCircleCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset(0));
-            equidistant->setCircleCenterY(double(equidistant->h()) / 2.0 + fisheyeCenterOffset(1));
-
-            equidistant->setCircleRadius(fisheyeRadius / 100.0 * 0.5 * std::min(double(equidistant->w()), double(equidistant->h())));
-            ++equidistantCount;
         }
 
         ALICEVISION_LOG_INFO(equidistantCount << " equidistant camera intrinsics have been updated");
