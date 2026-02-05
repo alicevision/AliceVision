@@ -242,6 +242,16 @@ int aliceVision_main(int argc, char** argv)
             }
         }
 
+        if (transferIntrinsics)
+        {
+            for (const auto& matchingViews : commonViewIds)
+            {
+                auto& viewA = sfmData.getView(matchingViews.first);
+                const auto& viewB = sfmDataRef.getView(matchingViews.second);
+                sfmData.getIntrinsicPtr(viewA.getIntrinsicId())->assign(*sfmDataRef.getIntrinsicPtr(viewB.getIntrinsicId()));
+            }
+        }
+
         if (transferLandmarks)
         {
             aliceVision::sfmData::Landmarks refLandmarks = sfmDataRef.getLandmarks();
