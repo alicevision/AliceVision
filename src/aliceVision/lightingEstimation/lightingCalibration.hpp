@@ -52,7 +52,7 @@ void lightCalibrationOneImage(const std::string& picturePath,
                               const float focal,
                               const std::string& method,
                               Eigen::VectorXf& lightingDirection,
-                              float& intensity);
+                              std::array<float, 3>& intensities);
 
 void calibrateLightFromRealSphere(const image::Image<float>& imageFloat,
                                   const cv::Mat& maskCV,
@@ -120,11 +120,14 @@ void writeJSON(const std::string& fileName,
                const sfmData::SfMData& sfmData,
                const std::vector<std::string>& imageList,
                const Eigen::MatrixXf& lightMat,
-               const std::vector<float>& intList,
+               const std::vector<std::array<float, 3>>& intList,
                const bool saveAsModel,
                const std::string method);
 
-void sphereFromLighting(const Eigen::VectorXf& lightVector, const float intensity, const std::string outputFileName, const int outputSize);
+void sphereFromLighting(const Eigen::VectorXf& lightVector,
+                        const std::array<float, 3> intensity,
+                        const std::string outputFileName,
+                        const int outputSize);
 
 }  // namespace lightingEstimation
 }  // namespace aliceVision

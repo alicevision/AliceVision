@@ -123,13 +123,14 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         lightSize = 9;
 
     Eigen::MatrixXf lightMat(imageList.size(), lightSize);
-    std::vector<float> intList;
+    std::vector<std::array<float, 3>> intList;
 
     for (size_t i = 0; i < imageList.size(); ++i)
     {
         std::string picturePath = imageList.at(i);
         Eigen::VectorXf lightingDirection = Eigen::VectorXf::Zero(lightSize);
         float intensity;
+        std::array<float, 3> intensities;
 
         float focal = focals.at(i);
         std::array<float, 3> sphereParam = allSpheresParams.at(i);
@@ -144,22 +145,22 @@ void lightCalibration(const sfmData::SfMData& sfmData,
             image::Image<float> imageFloat;
             image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
             getEllipseMaskFromSphereParameters(sphereParam, K, ellipseParam);
-            calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity);
+            calibrateLightFromRealSphere(imageFloat, maskCV, K, sphereRadius, method, lightingDirection, intensity); // TODO : modifier intensity en itensities (float -> array)
         }
         else
         {
-            lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection, intensity);
+            lightCalibrationOneImage(picturePath, sphereParam, focal, method, lightingDirection, intensities);
         }
 
         lightMat.row(i) = lightingDirection;
-        intList.push_back(intensity);
+        intList.push_back(intensities);
 
         if (doDebug)
         {
             int outputSize = 1024;
             std::string outputFileName =
               fs::path(outputPath).parent_path().string() + "/" + fs::path(picturePath).stem().string() + "_" + method + ".png";
-            sphereFromLighting(lightingDirection, lightingDirection.norm(), outputFileName, outputSize);
+            sphereFromLighting(lightingDirection, intensities, outputFileName, outputSize);
         }
     }
 
@@ -172,11 +173,14 @@ void lightCalibrationOneImage(const std::string& picturePath,
                               const float focal,
                               const std::string& method,
                               Eigen::VectorXf& lightingDirection,
-                              float& intensity)
+                              std::array<float, 3>& intensities)
 {
     // Read picture :
     image::Image<float> imageFloat;
     image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
+
+    image::Image<image::RGBfColor> imageFloatColor;
+    image::readImage(picturePath, imageFloatColor, image::EImageColorSpace::NO_CONVERSION);
 
     // If method = brightest point :
     if (!method.compare("brightestPoint"))
@@ -212,7 +216,7 @@ void lightCalibrationOneImage(const std::string& picturePath,
 
         lightingDirection = 2 * normalBrightestPoint.dot(observationRay) * normalBrightestPoint - observationRay;
 
-        intensity = 1.0;
+        intensities.fill(1.0);
     }
     // If method = whiteSphere :
     else if (!method.compare("whiteSphere"))
@@ -226,9 +230,14 @@ void lightCalibrationOneImage(const std::string& picturePath,
         image::Image<float> patch;
         patch = imageFloat.block(minISphere, minJSphere, 2 * radius, 2 * radius);
 
+        image::Image<image::RGBfColor> patchRGB;
+        patchRGB = imageFloatColor.block(minISphere, minJSphere, 2 * radius, 2 * radius);
+
         const int nbPixelsPatch = 4 * radius * radius;
         Eigen::VectorXf imSphere(nbPixelsPatch);
         Eigen::MatrixXf normalSphere(nbPixelsPatch, 3);
+
+        Eigen::MatrixXf imSphereColor(nbPixelsPatch, 3);
 
         int currentIndex = 0;
 
@@ -241,6 +250,9 @@ void lightCalibrationOneImage(const std::string& picturePath,
                 {
                     // imSphere = normalSphere.s
                     imSphere(currentIndex) = patch(i, j);
+                    imSphereColor(currentIndex, 0) = patchRGB(i, j)(0);
+                    imSphereColor(currentIndex, 1) = patchRGB(i, j)(1);
+                    imSphereColor(currentIndex, 2) = patchRGB(i, j)(2);
 
                     normalSphere(currentIndex, 0) = (float(j) - radius) / radius;
                     normalSphere(currentIndex, 1) = (float(i) - radius) / radius;
@@ -257,10 +269,26 @@ void lightCalibrationOneImage(const std::string& picturePath,
 
         Eigen::VectorXf imSphereMasked(currentIndex);
         imSphereMasked = imSphere.head(currentIndex);
+
+        Eigen::MatrixXf imSphereColorMasked(currentIndex, 3);
+        imSphereColorMasked = imSphereColor.block(0, 0, currentIndex, 3);
+
         lightingDirection = normalSphere.colPivHouseholderQr().solve(imSphere);
 
-        intensity = lightingDirection.norm();
+        float intensity = lightingDirection.norm();
         lightingDirection = lightingDirection / intensity;
+
+        // Channelwise intensity estimation :
+        Eigen::VectorXf shading(currentIndex);
+        shading = normalSphereMasked * lightingDirection;
+
+        for (int ch = 0; ch < 3; ++ch)
+        {
+            Eigen::VectorXf currentChannelValues(currentIndex);
+            currentChannelValues = imSphereColorMasked.col(ch);
+            intensities[ch] = shading.dot(currentChannelValues) / shading.squaredNorm();
+        }
+
     }
 
     // If method = SH :
@@ -321,7 +349,8 @@ void lightCalibrationOneImage(const std::string& picturePath,
         Eigen::MatrixXf normalOrdre1(currentIndex, 3);
         normalOrdre1 = normalSphereMasked.leftCols(3);
         Eigen::Vector3f directionnalPart = normalOrdre1.colPivHouseholderQr().solve(imSphereMasked);
-        intensity = directionnalPart.norm();
+        float intensity = directionnalPart.norm();
+        intensities.fill(intensity);
         directionnalPart = directionnalPart / intensity;
 
         // 2) Other order estimation :
@@ -565,7 +594,7 @@ void writeJSON(const std::string& fileName,
                const sfmData::SfMData& sfmData,
                const std::vector<std::string>& imageList,
                const Eigen::MatrixXf& lightMat,
-               const std::vector<float>& intList,
+               const std::vector<std::array<float, 3>>& intList,
                const bool saveAsModel,
                const std::string method)
 {
@@ -629,10 +658,11 @@ void writeJSON(const std::string& fileName,
             for (unsigned int i = 0; i < 3; ++i)
             {
                 bpt::ptree cell;
-                cell.put_value<float>(intList.at(imgCpt));
+                cell.put_value<float>(intList.at(imgCpt)[i]);
                 intensityNode.push_back(std::make_pair("", cell));
             }
             lightTree.add_child("intensity", intensityNode);
+
             imgCpt++;
 
             lightsTree.push_back(std::make_pair("", lightTree));
@@ -648,10 +678,13 @@ void writeJSON(const std::string& fileName,
     bpt::write_json(fileName, fileTree);
 }
 
-void sphereFromLighting(const Eigen::VectorXf& lightVector, const float intensity, const std::string outputFileName, const int outputSize)
+void sphereFromLighting(const Eigen::VectorXf& lightVector,
+                        const std::array<float, 3> intensity,
+                        const std::string outputFileName,
+                        const int outputSize)
 {
     float radius = (outputSize * 0.9) / 2;
-    image::Image<float> pixelsValues(outputSize, outputSize);
+    image::Image<image::RGBfColor> pixelsValues(outputSize, outputSize);
 
     for (size_t j = 0; j < outputSize; ++j)
     {
@@ -660,8 +693,10 @@ void sphereFromLighting(const Eigen::VectorXf& lightVector, const float intensit
             float center_xy = outputSize / 2;
             Eigen::VectorXf normalSphere(lightVector.size());
             float distanceToCenter = sqrt((i - center_xy) * (i - center_xy) + (j - center_xy) * (j - center_xy));
-            pixelsValues(i, j) = 0;
-
+            for (size_t ch = 0; ch < 3; ++ch)
+            {
+                pixelsValues(i, j)(ch) = 0;
+            }
             if (distanceToCenter < radius)
             {
                 normalSphere(0) = (float(j) - center_xy) / radius;
@@ -680,11 +715,14 @@ void sphereFromLighting(const Eigen::VectorXf& lightVector, const float intensit
                     normalSphere(8) = 3 * normalSphere(2) * normalSphere(2) - 1;
                 }
 
-                for (size_t k = 0; k < lightVector.size(); ++k)
+                for (size_t ch = 0; ch < 3; ++ch)
                 {
-                    pixelsValues(i, j) += normalSphere(k) * lightVector(k);
+                    for (size_t k = 0; k < lightVector.size(); ++k)
+                    {
+                        pixelsValues(i, j)(ch) += normalSphere(k) * lightVector(k);
+                    }
+                    pixelsValues(i, j)(ch) *= intensity[ch];
                 }
-                pixelsValues(i, j) *= intensity;
             }
         }
     }
