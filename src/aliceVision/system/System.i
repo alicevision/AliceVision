@@ -8,7 +8,7 @@
 
 %include <aliceVision/global.i>
 %include <aliceVision/system/ProgressDisplay.i>
-
+%include <aliceVision/system/Parallelization.i>
 
 %{
 #include <aliceVision/system/Logger.hpp>
@@ -20,4 +20,4 @@ void initialize_alicevision_logger(const std::string & verboseLevel)
 }
 %}
 
-void initialize_alicevision_logger(const std::string & verboseLevel);
+void initialize_alicevision_logger(const std::string & verboseLevel);  
