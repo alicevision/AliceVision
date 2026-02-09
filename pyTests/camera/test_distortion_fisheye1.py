@@ -3,6 +3,7 @@ Collection of unit tests for the Fisheye1 Distortion model.
 """
 
 import pytest
+import numpy as np
 
 from pyalicevision import camera as av
 
@@ -124,3 +125,147 @@ def test_distortion_fisheye1_compare():
     distortion1.setParameters(NON_DEFAULT_PARAMETERS)
     assert not distortion1 == distortion2, \
         "The parameters of the first object have been updated"
+
+
+def test_distortion_fisheye1_add_distortion_default():
+    """ Test that addDistortion with default (zero) parameter returns the input
+    point unchanged (early return when k1*r < eps). """
+    distortion = av.DistortionFisheye1()
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(point[0]), \
+        "The x-coordinate should be unchanged with default parameter"
+    assert result[1] == pytest.approx(point[1]), \
+        "The y-coordinate should be unchanged with default parameter"
+
+
+def test_distortion_fisheye1_add_distortion():
+    """ Test that addDistortion with a non-default parameter correctly applies
+    the Fisheye1 distortion model. """
+    k1 = 0.5
+    distortion = av.DistortionFisheye1(k1)
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    # Manually compute: coef = atan(2 * r * tan(k1/2)) / (k1 * r)
+    px, py = 0.5, 0.3
+    r = np.sqrt(px * px + py * py)
+    coef = np.arctan(2.0 * r * np.tan(0.5 * k1)) / (k1 * r)
+
+    assert result[0] == pytest.approx(px * coef), \
+        "The distorted x-coordinate does not match the expected value"
+    assert result[1] == pytest.approx(py * coef), \
+        "The distorted y-coordinate does not match the expected value"
+
+
+def test_distortion_fisheye1_add_distortion_origin():
+    """ Test that addDistortion at the origin returns the origin regardless
+    of the distortion parameter. """
+    distortion = av.DistortionFisheye1(0.5)
+    point = np.array([0.0, 0.0])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(0.0), \
+        "The x-coordinate at the origin should remain 0"
+    assert result[1] == pytest.approx(0.0), \
+        "The y-coordinate at the origin should remain 0"
+
+
+def test_distortion_fisheye1_remove_distortion_default():
+    """ Test that removeDistortion with default (zero) parameter returns
+    the input point unchanged (early return when k1*r < eps). """
+    distortion = av.DistortionFisheye1()
+    point = np.array([0.5, 0.3])
+    result = distortion.removeDistortion(point)
+
+    assert result[0] == pytest.approx(point[0]), \
+        "The x-coordinate should be unchanged with default parameter"
+    assert result[1] == pytest.approx(point[1]), \
+        "The y-coordinate should be unchanged with default parameter"
+
+
+def test_distortion_fisheye1_remove_distortion():
+    """ Test that removeDistortion with a non-default parameter correctly
+    applies the inverse Fisheye1 model. """
+    k1 = 0.5
+    distortion = av.DistortionFisheye1(k1)
+    point = np.array([0.5, 0.3])
+    result = distortion.removeDistortion(point)
+
+    # Manually compute: coef = 0.5 * tan(r * k1) / (tan(k1/2) * r)
+    r = np.sqrt(point[0] ** 2 + point[1] ** 2)
+    coef = 0.5 * np.tan(r * k1) / (np.tan(0.5 * k1) * r)
+
+    assert result[0] == pytest.approx(point[0] * coef), \
+        "The undistorted x-coordinate does not match the expected value"
+    assert result[1] == pytest.approx(point[1] * coef), \
+        "The undistorted y-coordinate does not match the expected value"
+
+
+def test_distortion_fisheye1_add_remove_roundtrip():
+    """ Test that applying addDistortion followed by removeDistortion returns
+    a point close to the original (round-trip consistency). """
+    distortion = av.DistortionFisheye1(0.5)
+    original = np.array([0.5, 0.3])
+
+    distorted = distortion.addDistortion(original)
+    recovered = distortion.removeDistortion(distorted)
+
+    assert recovered[0] == pytest.approx(original[0], abs=1e-6), \
+        "The recovered x-coordinate should match the original after round-trip"
+    assert recovered[1] == pytest.approx(original[1], abs=1e-6), \
+        "The recovered y-coordinate should match the original after round-trip"
+
+
+def test_distortion_fisheye1_add_remove_roundtrip_multiple_points():
+    """ Test the round-trip consistency of addDistortion/removeDistortion
+    for multiple points. """
+    distortion = av.DistortionFisheye1(0.8)
+
+    points = [
+        np.array([0.1, 0.1]),
+        np.array([-0.3, 0.2]),
+        np.array([0.5, -0.5]),
+        np.array([0.8, 0.6]),
+    ]
+
+    for point in points:
+        distorted = distortion.addDistortion(point)
+        recovered = distortion.removeDistortion(distorted)
+
+        assert recovered[0] == pytest.approx(point[0], abs=1e-6), \
+            f"Round-trip failed for x-coordinate of point ({point[0]}, {point[1]})"
+        assert recovered[1] == pytest.approx(point[1], abs=1e-6), \
+            f"Round-trip failed for y-coordinate of point ({point[0]}, {point[1]})"
+
+
+def test_distortion_fisheye1_lock():
+    """ Test creating a DistortionFisheye1 object and getting/updating its lock
+    status. """
+    distortion = av.DistortionFisheye1()
+    assert not distortion.isLocked(), \
+        "A newly created distortion should not be locked"
+
+    distortion.setLocked(True)
+    assert distortion.isLocked(), \
+        "The distortion should be locked after calling setLocked(True)"
+
+    distortion.setLocked(False)
+    assert not distortion.isLocked(), \
+        "The distortion should be unlocked after calling setLocked(False)"
+
+
+def test_distortion_fisheye1_lock_clone():
+    """ Test that the lock status is correctly handled when cloning a
+    DistortionFisheye1 object. """
+    distortion1 = av.DistortionFisheye1()
+    distortion1.setLocked(True)
+    distortion2 = distortion1.clone()
+
+    assert distortion2.isLocked(), \
+        "The cloned distortion should preserve the lock status"
+
+    distortion1.setLocked(False)
+    assert distortion2.isLocked(), \
+        "Unlocking the original should not affect the clone"
