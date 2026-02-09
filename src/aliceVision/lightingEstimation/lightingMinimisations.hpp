@@ -26,9 +26,9 @@ void coarsePunctualLightEstimation(
     const Eigen::VectorXf& pixelsIntensity, 
     const Eigen::Vector3f& sceneCenter,
     const Eigen::Vector3f& lightingDirection,
+    double lightingIntensity,
     double epsilon, 
-    double &lightingDistance,
-    double &lightingIntensity);
+    double &lightingDistance);
 
 void pointSourceModelRefinement(
     const Eigen::MatrixX3f& points, 

@@ -126,8 +126,8 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 		for (unsigned int ind = 0; ind < pixels_cur.rows(); ind++)
 		{
 			pixelsIntensity_cur(ind) = imageFloat(pixels_cur(ind, 1), pixels_cur(ind, 0));
-			if (pixelsIntensity_cur(ind) > 10.0 / 255.0)  // remove dark pixels
-				nonZeroIntensities.push_back(ind);
+			// if (pixelsIntensity_cur(ind) > 10.0 / 255.0)  // remove dark pixels
+			nonZeroIntensities.push_back(ind);
 		}
 		normalsList.push_back(normals_cur(nonZeroIntensities, Eigen::placeholders::all));
 		pixelsIntensityList.push_back(pixelsIntensity_cur(nonZeroIntensities));
@@ -181,7 +181,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 	std::vector<IndexT> viewIdList;
     
     bool usePose = true;
-	double epsilonHuberLoss = 2.0;
+	double epsilonHuberLoss = 1.0;
 
     // data preparation
 	ALICEVISION_LOG_INFO("Data preparation");
@@ -251,6 +251,13 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		// simple linear resolution
 		Eigen::Vector3f lightingDirection = normalsFull.colPivHouseholderQr().solve(pixelsIntensityFull);
 
+		Eigen::MatrixXf pixelIntensityEstimated = normalsFull * lightingDirection;
+		Eigen::VectorXf residuals = pixelsIntensityFull - pixelIntensityEstimated;
+		double meansq = residuals.cwiseProduct(residuals).mean();
+
+		ALICEVISION_LOG_INFO("Initial meansq : " << meansq);
+		ALICEVISION_LOG_INFO("NB pix: " << nb_pix);
+
 		// optimisation with better loss
 		ALICEVISION_LOG_INFO("Initial lightingDirection: " << lightingDirection.transpose());
 		coarseDirectionnalLightEstimation(normalsFull, pixelsIntensityFull, epsilonHuberLoss, lightingDirection);
@@ -269,27 +276,25 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		Eigen::Vector3f sceneCenter = pointsFull.colwise().mean();
 		Eigen::MatrixX3f pointsCentered = pointsFull.rowwise() - sceneCenter.transpose();
 		Eigen::MatrixXf distTosceneCenter = pointsCentered.rowwise().norm();
-		double lightingDistance = distTosceneCenter.mean() * 2.0;
-		sceneCenter << 0. , 0. , 0.;
-		lightingDistance = 10.;
+		double lightingDistance = distTosceneCenter.mean();
 
 		ALICEVISION_LOG_INFO("Scene center: " << sceneCenter.transpose());
 
 		// optimisation of the position on the line (sceneCenter,lightingDirection)
 		ALICEVISION_LOG_INFO("Initial lightingDistance: " << lightingDistance);
 		ALICEVISION_LOG_INFO("Initial lightingIntensity: " << lightingIntensity);
-		coarsePunctualLightEstimation(pointsFull, normalsFull, pixelsIntensityFull, sceneCenter, lightingDirection, epsilonHuberLoss, lightingDistance, lightingIntensity);
+		coarsePunctualLightEstimation(pointsFull, normalsFull, pixelsIntensityFull, sceneCenter, lightingDirection, lightingIntensity, epsilonHuberLoss, lightingDistance);
 		ALICEVISION_LOG_INFO("Estimated lightingDistance: " << lightingDistance);
 		ALICEVISION_LOG_INFO("Estimated lightingIntensity: " << lightingIntensity);
 
 		Eigen::Vector3f lightingPosition = sceneCenter + lightingDistance * lightingDirection;
 		lightingIntensity = lightingIntensity * lightingDistance * lightingDistance;
 		
-		// ALICEVISION_LOG_INFO("Initial lightingPosition: " << lightingPosition.transpose());
-		// ALICEVISION_LOG_INFO("Initial lightingIntensity: " << lightingIntensity);
-		// pointSourceModelRefinement(pointsFull, normalsFull, pixelsIntensityFull, epsilonHuberLoss, lightingPosition, lightingIntensity);
-		// ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
-		// ALICEVISION_LOG_INFO("Estimated lightingIntensity: " << lightingIntensity);
+		ALICEVISION_LOG_INFO("Initial lightingPosition: " << lightingPosition.transpose());
+		ALICEVISION_LOG_INFO("Initial lightingIntensity: " << lightingIntensity);
+		pointSourceModelRefinement(pointsFull, normalsFull, pixelsIntensityFull, epsilonHuberLoss, lightingPosition, lightingIntensity);
+		ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
+		ALICEVISION_LOG_INFO("Estimated lightingIntensity: " << lightingIntensity);
 
 		if(lightType == LightType::Punctual){
             lightings.emplace(lightId, std::make_shared<PunctualLighting>(lightingPosition, lightingIntensity));

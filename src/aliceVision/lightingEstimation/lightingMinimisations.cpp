@@ -46,19 +46,15 @@ struct CoarseDirectionnalEstimation {
 		const T* x = parameters[0];
 
 		// getting light direction
-		Eigen::Matrix<T, 3, 1> s;
-		s << x[0], x[1], x[2];
+		Eigen::Matrix<T, 3, 1> vecLightDir;
+		vecLightDir << x[0], x[1], x[2];
 
 		// data conversion
 		Eigen::Matrix<T, Eigen::Dynamic, 3> normalsCeres = normals.cast<T>();
 		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelsIntensityCeres = pixelsIntensity.cast<T>();
 
-		// per point light direction
-		Eigen::Matrix<T, Eigen::Dynamic, 3> vecLightDir(normalsCeres.rows(), 3);
-        vecLightDir = s.transpose().replicate(normalsCeres.rows(), 1);
-
 		// intensity estimation per point
-		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (vecLightDir.cwiseProduct(normalsCeres)).rowwise().sum().cwiseMax(T(0));
+		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (normalsCeres * vecLightDir).cwiseMax(T(0));
 		// residual computation
 		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = pixelsIntensityCeres - pixelIntensityEstimated;
 		// absolute residual
@@ -116,11 +112,11 @@ struct CoarsePunctualEstimation {
 	/*
 	 * Variable:
 	 *  - d: distance from light source to scene center
-	 *  - phi: intensity of light source
 	 * Data:
 	 *  - x: 3D point
 	 *  - n: normal
 	 *  - i intensity
+	 *  - phi: intensity of light source
      *  - t: lighting direction
      *  - c: scene center
 	 * 
@@ -134,6 +130,7 @@ struct CoarsePunctualEstimation {
 	Eigen::MatrixX3f normals;
 	Eigen::VectorXf pixelsIntensity;
     Eigen::Vector3f lightingDirection;
+	double lightingIntensity;
     Eigen::Vector3f sceneCenter;
 
 	// constructor
@@ -142,8 +139,14 @@ struct CoarsePunctualEstimation {
         const Eigen::MatrixX3f& normals_, 
         const Eigen::VectorXf& pixelsIntensity_, 
         const Eigen::Vector3f& lightingDirection_, 
+		double lightingIntensity_,
         const Eigen::Vector3f& sceneCenter_)
-		: points(points_), normals(normals_), pixelsIntensity(pixelsIntensity_), lightingDirection(lightingDirection_), sceneCenter(sceneCenter_)
+		: points(points_), 
+		normals(normals_), 
+		pixelsIntensity(pixelsIntensity_), 
+		lightingDirection(lightingDirection_), 
+		lightingIntensity(lightingIntensity_), 
+		sceneCenter(sceneCenter_)
 	{}
 
     template<typename T>
@@ -152,7 +155,6 @@ struct CoarsePunctualEstimation {
 		const T* x = parameters[0];
 
         T d = x[0];
-        T phi = x[1];
 
 		// data conversion
 		Eigen::Matrix<T, Eigen::Dynamic, 3> pointsCeres = points.cast<T>();
@@ -160,6 +162,7 @@ struct CoarsePunctualEstimation {
 		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelsIntensityCeres = pixelsIntensity.cast<T>();
         Eigen::Matrix<T, 3, 1> lightingDirectionCeres = lightingDirection.cast<T>();
         Eigen::Matrix<T, 3, 1> sceneCenterCeres = sceneCenter.cast<T>();
+		T phi = T(lightingIntensity);
 
         // light position
         Eigen::Matrix<T, 3, 1> q = sceneCenterCeres + d * lightingDirectionCeres;
@@ -192,20 +195,20 @@ void coarsePunctualLightEstimation(
     const Eigen::VectorXf& pixelsIntensity, 
     const Eigen::Vector3f& sceneCenter,
     const Eigen::Vector3f& lightingDirection,
+    double lightingIntensity,
     double epsilon, 
-    double &lightingDistance,
-    double &lightingIntensity)
+    double &lightingDistance)
 {
-    std::vector<double> x = {lightingDistance, lightingIntensity};
+    std::vector<double> x = {lightingDistance};
     double* params[] = { x.data() };
     int nb_pix = normals.rows();
 
     ceres::Problem problem;
     auto* dynamic_cost = 
         new ceres::DynamicAutoDiffCostFunction<CoarsePunctualEstimation>(
-                new CoarsePunctualEstimation(points, normals, pixelsIntensity, lightingDirection, sceneCenter));
+                new CoarsePunctualEstimation(points, normals, pixelsIntensity, lightingDirection, lightingIntensity, sceneCenter));
 
-    dynamic_cost->AddParameterBlock(2);
+    dynamic_cost->AddParameterBlock(1);
     dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix));
 
     ceres::LossFunction* loss = new ceres::HuberLoss(epsilon);
@@ -226,7 +229,6 @@ void coarsePunctualLightEstimation(
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingDistance = x[0];
-    lightingIntensity = x[1];
 }
 
 // near-light model residual
