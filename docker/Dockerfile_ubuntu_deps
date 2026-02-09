@@ -19,7 +19,7 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 # Cuda version (ENV): $CUDA_VERSION
 
 # Install all compilation tools
-# The Kitware repo provides a recent cmake
+
 RUN . ./etc/os-release && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -37,7 +37,6 @@ RUN . ./etc/os-release && \
         libssl-dev \
         nasm \
         automake \
-        cmake \
         clang-format \
         libxerces-c-dev \
         gcc-12 \
@@ -45,8 +44,15 @@ RUN . ./etc/os-release && \
         cpp-12 \
         gfortran-12 \
         libpcre2-dev \
+	texinfo \
         bison && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 --slave /usr/bin/g++ g++ /usr/bin/g++-12 --slave /usr/bin/gcov gcov /usr/bin/gcov-12  --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-12
+
+# The Kitware repo provides a recent cmake
+RUN test -f /usr/share/doc/kitware-archive-keyring/copyright || wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y cmake=3.25.2-0kitware1ubuntu22.04.1 cmake-data=3.25.2-0kitware1ubuntu22.04.1
 
 RUN add-apt-repository ppa:deadsnakes/ppa && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3.11 python3.11-dev python3.11-distutils curl && \
@@ -101,7 +107,6 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 
 # RUN make -j ${CPU_CORES} lapack
 # RUN make -j ${CPU_CORES} onnxruntime
-# RUN make -j ${CPU_CORES} pcl
 # RUN make -j ${CPU_CORES} turbojpeg
 # RUN make -j ${CPU_CORES} boost
 # RUN make -j ${CPU_CORES} openexr
@@ -132,3 +137,4 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 RUN cmake --build . -j ${CPU_CORES} && \
     mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
     rm -rf "${AV_BUILD}"
+
