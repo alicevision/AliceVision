@@ -98,7 +98,7 @@ void coarseDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const Ei
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-	ALICEVISION_LOG_INFO(summary.BriefReport());
+	ALICEVISION_LOG_DEBUG(summary.BriefReport());
     lightingDirection[0] = x[0];
     lightingDirection[1] = x[1];
     lightingDirection[2] = x[2];
@@ -227,7 +227,7 @@ void coarsePunctualLightEstimation(
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-	ALICEVISION_LOG_INFO(summary.BriefReport());
+	ALICEVISION_LOG_DEBUG(summary.BriefReport());
     lightingDistance = x[0];
 }
 
@@ -333,7 +333,7 @@ void pointSourceModelRefinement(
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-	ALICEVISION_LOG_INFO(summary.BriefReport());
+	ALICEVISION_LOG_DEBUG(summary.BriefReport());
     lightingPosition[0] = x[0];
     lightingPosition[1] = x[1];
     lightingPosition[2] = x[2];
