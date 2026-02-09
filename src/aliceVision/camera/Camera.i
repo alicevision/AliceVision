@@ -10,6 +10,11 @@
 
 %include <aliceVision/numeric/eigen.i>
 %eigen_typemaps(Vec2)
+%eigen_typemaps(Vec3)
+%eigen_typemaps(Vec4)
+%eigen_typemaps(Mat3)
+%eigen_typemaps(Eigen::Matrix2d)
+%eigen_typemaps(Eigen::MatrixXd)
 
 %{
 #include <aliceVision/camera/camera.hpp>

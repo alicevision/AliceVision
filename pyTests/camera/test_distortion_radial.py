@@ -3,59 +3,10 @@ Collection of unit tests for the Radial Distortion models.
 """
 
 import pytest
+import numpy as np
 
 from pyalicevision import camera as av
 
-##################
-### List of functions:
-## DistortionRadialK1
-# - DistortionRadialK1() => DONE
-# - DistortionRadialK1(double k1) => DONE
-# - EDISTORTION getType() => DONE
-# - DistortionRadialK1* clone() => DONE
-# - Vec2 addDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeAddDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeAddDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-# - Vec2 removeDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-# - double getUndistortedRadius(double r) => DONE
-# - [static] double distoFunction(vector<double>& params, double r2) => DONE
-#
-## DistortionRadialK3
-# - DistortionRadialK3() => DONE
-# - DistortionRadialK3(double k1, double k2, double k3) => DONE
-# - EDISTORTION getType() => DONE
-# - DistortionRadialK3* clone() => DONE
-# - Vec2 addDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeAddDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeAddDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-# - Vec2 removeDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-# - double getUndistortedRadius(double r) => DONE
-# - [static] double distoFunction(vector<double>& params, double r2) => DONE
-#
-## DistortionRadialK3PT
-# - DistortionRadialK3PT() => DONE
-# - DistortionRadialK3PT(double k1, double k2, double k3) => DONE
-# - EDISTORTION getType() => DONE
-# - DistortionRadialK3PT* clone() => DONE
-# - Vec2 addDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeAddDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeAddDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-# - Vec2 removeDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-# - double getUndistortedRadius(double r) => DONE
-# - [static] double distoFunction(vector<double>& params, double r2) => DONE
-#
-### Inherited functions (Distortion):
-# - bool operator==(Distortion& other) => DONE
-# - void setParameters(vector<double>& params) => DONE
-# - [inline] vector<double>& getParameters() => DONE
-# - [inline] size_t getDistortionParametersCount() => DONE
-##################
 
 DEFAULT_PARAMETERS_K1 = [0.0]
 NON_DEFAULT_PARAMETERS_K1 = [0.1]
@@ -152,27 +103,6 @@ def test_distortion_radial_k1_clone():
     assert list(distortion1.getParameters()) != list(distortion2.getParameters()), \
         "The clone should still have the default parameters while the original object has " \
         "updated values"
-
-
-@pytest.mark.skip(reason="Vec2 not binded")
-def test_distortion_radial_k1_add_remove_distortion():
-    """ Test creating a DistortionRadialK1 object and adding/removing the
-    distortion to a point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_radial_k1_get_derivative_add():
-    """ Test creating a DistortionRadialK1 object, adding the distortion to a point,
-    and getting the derivative with respect to that point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_radial_k1_get_derivative_remove():
-    """ Test creating a DistortionRadialK1 object, and getting the derivatives with
-    the distortion removed. """
-    assert True
 
 
 def test_distortion_radial_k1_get_radius():
@@ -297,27 +227,6 @@ def test_distortion_radial_k3_clone():
         "updated values"
 
 
-@pytest.mark.skip(reason="Vec2 not binded")
-def test_distortion_radial_k3_add_remove_distortion():
-    """ Test creating a DistortionRadialK3 object and adding/removing the
-    distortion to a point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_radial_k3_get_derivative_add():
-    """ Test creating a DistortionRadialK3 object, adding the distortion to a point,
-    and getting the derivative with respect to that point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_radial_k3_get_derivative_remove():
-    """ Test creating a DistortionRadialK3 object, and getting the derivatives with
-    the distortion removed. """
-    assert True
-
-
 def test_distortion_radial_k3_get_radius():
     """ Test creating a DistortionRadialK3 object and retrieving its undistorted
     radius. """
@@ -440,27 +349,6 @@ def test_distortion_radial_k3pt_clone():
         "updated values"
 
 
-@pytest.mark.skip(reason="Vec2 not binded")
-def test_distortion_radial_k3pt_add_remove_distortion():
-    """ Test creating a DistortionRadialK3PT object and adding/removing the
-    distortion to a point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_radial_k3pt_get_derivative_add():
-    """ Test creating a DistortionRadialK3PT object, adding the distortion to a point,
-    and getting the derivative with respect to that point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_radial_k3pt_get_derivative_remove():
-    """ Test creating a DistortionRadialK3PT object, and getting the derivatives with
-    the distortion removed. """
-    assert True
-
-
 def test_distortion_radial_k3pt_get_radius():
     """ Test creating a DistortionRadialK3PT object and retrieving its undistorted
     radius. """
@@ -528,3 +416,346 @@ def test_distortion_radial_compare():
     assert not (k11 == k31 or k12 == k32 or k11 == k3pt1 or k12 == k3pt2)
     assert k31 == k3pt1 and k32 == k3pt2
     assert not (k31 == k3pt2 or k32 == k3pt1)
+
+
+#
+# DistortionRadialK1: addDistortion / removeDistortion / round-trip
+#
+
+def test_distortion_radial_k1_add_distortion_default():
+    """ Test that addDistortion with default (zero) parameter returns the input
+    point unchanged. """
+    distortion = av.DistortionRadialK1()
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(point[0]), \
+        "The x-coordinate should be unchanged with default parameter"
+    assert result[1] == pytest.approx(point[1]), \
+        "The y-coordinate should be unchanged with default parameter"
+
+
+def test_distortion_radial_k1_add_distortion():
+    """ Test that addDistortion with a non-default parameter correctly applies
+    the RadialK1 distortion model. """
+    distortion = av.DistortionRadialK1(0.1)
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    # r_coeff = 1 + k1 * r2
+    px, py = 0.5, 0.3
+    r2 = px * px + py * py
+    r_coeff = 1.0 + 0.1 * r2
+
+    assert result[0] == pytest.approx(px * r_coeff), \
+        "The distorted x-coordinate does not match the expected value"
+    assert result[1] == pytest.approx(py * r_coeff), \
+        "The distorted y-coordinate does not match the expected value"
+
+
+def test_distortion_radial_k1_add_distortion_origin():
+    """ Test that addDistortion at the origin returns the origin. """
+    distortion = av.DistortionRadialK1(0.1)
+    point = np.array([0.0, 0.0])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(0.0)
+    assert result[1] == pytest.approx(0.0)
+
+
+def test_distortion_radial_k1_remove_distortion_default():
+    """ Test that removeDistortion with default parameter returns the input
+    point unchanged. """
+    distortion = av.DistortionRadialK1()
+    point = np.array([0.5, 0.3])
+    result = distortion.removeDistortion(point)
+
+    assert result[0] == pytest.approx(point[0]), \
+        "The x-coordinate should be unchanged with default parameter"
+    assert result[1] == pytest.approx(point[1]), \
+        "The y-coordinate should be unchanged with default parameter"
+
+
+def test_distortion_radial_k1_add_remove_roundtrip():
+    """ Test round-trip consistency for DistortionRadialK1. """
+    distortion = av.DistortionRadialK1(0.1)
+    original = np.array([0.5, 0.3])
+
+    distorted = distortion.addDistortion(original)
+    recovered = distortion.removeDistortion(distorted)
+
+    assert recovered[0] == pytest.approx(original[0], abs=1e-6)
+    assert recovered[1] == pytest.approx(original[1], abs=1e-6)
+
+
+def test_distortion_radial_k1_add_remove_roundtrip_multiple_points():
+    """ Test round-trip consistency for DistortionRadialK1 with multiple points. """
+    distortion = av.DistortionRadialK1(0.05)
+
+    points = [
+        np.array([0.0, 0.0]),
+        np.array([0.1, 0.1]),
+        np.array([-0.3, 0.2]),
+        np.array([0.5, -0.5]),
+        np.array([0.8, 0.6]),
+    ]
+
+    for point in points:
+        distorted = distortion.addDistortion(point)
+        recovered = distortion.removeDistortion(distorted)
+
+        assert recovered[0] == pytest.approx(point[0], abs=1e-6), \
+            f"Round-trip failed for x of point ({point[0]}, {point[1]})"
+        assert recovered[1] == pytest.approx(point[1], abs=1e-6), \
+            f"Round-trip failed for y of point ({point[0]}, {point[1]})"
+
+
+#
+# DistortionRadialK1: lock
+#
+
+def test_distortion_radial_k1_lock():
+    """ Test lock/unlock for DistortionRadialK1. """
+    distortion = av.DistortionRadialK1()
+    assert not distortion.isLocked()
+
+    distortion.setLocked(True)
+    assert distortion.isLocked()
+
+    distortion.setLocked(False)
+    assert not distortion.isLocked()
+
+
+def test_distortion_radial_k1_lock_clone():
+    """ Test that lock status is preserved through clone for DistortionRadialK1. """
+    distortion1 = av.DistortionRadialK1()
+    distortion1.setLocked(True)
+    distortion2 = distortion1.clone()
+
+    assert distortion2.isLocked()
+    distortion1.setLocked(False)
+    assert distortion2.isLocked()
+
+
+def test_distortion_radial_k3_add_distortion_default():
+    """ Test that addDistortion with default (zero) parameters returns the input
+    point unchanged. """
+    distortion = av.DistortionRadialK3()
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(point[0])
+    assert result[1] == pytest.approx(point[1])
+
+
+def test_distortion_radial_k3_add_distortion():
+    """ Test that addDistortion with non-default parameters correctly applies
+    the RadialK3 distortion model. """
+    distortion = av.DistortionRadialK3(0.1, 0.2, 0.3)
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    px, py = 0.5, 0.3
+    r2 = px * px + py * py
+    r4 = r2 * r2
+    r6 = r4 * r2
+    r_coeff = 1.0 + 0.1 * r2 + 0.2 * r4 + 0.3 * r6
+
+    assert result[0] == pytest.approx(px * r_coeff)
+    assert result[1] == pytest.approx(py * r_coeff)
+
+
+def test_distortion_radial_k3_add_distortion_origin():
+    """ Test that addDistortion at the origin returns the origin. """
+    distortion = av.DistortionRadialK3(0.1, 0.2, 0.3)
+    point = np.array([0.0, 0.0])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(0.0)
+    assert result[1] == pytest.approx(0.0)
+
+
+def test_distortion_radial_k3_remove_distortion_default():
+    """ Test that removeDistortion with default parameters returns the input
+    point unchanged. """
+    distortion = av.DistortionRadialK3()
+    point = np.array([0.5, 0.3])
+    result = distortion.removeDistortion(point)
+
+    assert result[0] == pytest.approx(point[0])
+    assert result[1] == pytest.approx(point[1])
+
+
+def test_distortion_radial_k3_add_remove_roundtrip():
+    """ Test round-trip consistency for DistortionRadialK3. """
+    distortion = av.DistortionRadialK3(0.1, 0.2, 0.3)
+    original = np.array([0.5, 0.3])
+
+    distorted = distortion.addDistortion(original)
+    recovered = distortion.removeDistortion(distorted)
+
+    assert recovered[0] == pytest.approx(original[0], abs=1e-6)
+    assert recovered[1] == pytest.approx(original[1], abs=1e-6)
+
+
+def test_distortion_radial_k3_add_remove_roundtrip_multiple_points():
+    """ Test round-trip consistency for DistortionRadialK3 with multiple points. """
+    distortion = av.DistortionRadialK3(0.05, -0.02, 0.01)
+
+    points = [
+        np.array([0.0, 0.0]),
+        np.array([0.1, 0.1]),
+        np.array([-0.3, 0.2]),
+        np.array([0.5, -0.5]),
+        np.array([0.8, 0.6]),
+    ]
+
+    for point in points:
+        distorted = distortion.addDistortion(point)
+        recovered = distortion.removeDistortion(distorted)
+
+        assert recovered[0] == pytest.approx(point[0], abs=1e-6), \
+            f"Round-trip failed for x of point ({point[0]}, {point[1]})"
+        assert recovered[1] == pytest.approx(point[1], abs=1e-6), \
+            f"Round-trip failed for y of point ({point[0]}, {point[1]})"
+
+
+#
+# DistortionRadialK3: lock
+#
+
+def test_distortion_radial_k3_lock():
+    """ Test lock/unlock for DistortionRadialK3. """
+    distortion = av.DistortionRadialK3()
+    assert not distortion.isLocked()
+
+    distortion.setLocked(True)
+    assert distortion.isLocked()
+
+    distortion.setLocked(False)
+    assert not distortion.isLocked()
+
+
+def test_distortion_radial_k3_lock_clone():
+    """ Test that lock status is preserved through clone for DistortionRadialK3. """
+    distortion1 = av.DistortionRadialK3()
+    distortion1.setLocked(True)
+    distortion2 = distortion1.clone()
+
+    assert distortion2.isLocked()
+    distortion1.setLocked(False)
+    assert distortion2.isLocked()
+
+
+#
+# DistortionRadialK3PT: addDistortion / removeDistortion / round-trip
+#
+
+def test_distortion_radial_k3pt_add_distortion_default():
+    """ Test that addDistortion with default (zero) parameters returns the input
+    point unchanged for K3PT. """
+    distortion = av.DistortionRadialK3PT()
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(point[0])
+    assert result[1] == pytest.approx(point[1])
+
+
+def test_distortion_radial_k3pt_add_distortion():
+    """ Test that addDistortion with non-default parameters correctly applies
+    the RadialK3PT distortion model. """
+    distortion = av.DistortionRadialK3PT(0.1, 0.2, 0.3)
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    px, py = 0.5, 0.3
+    r2 = px * px + py * py
+    r4 = r2 * r2
+    r6 = r4 * r2
+    r_coeff = (1.0 + 0.1 * r2 + 0.2 * r4 + 0.3 * r6) / (1.0 + 0.1 + 0.2 + 0.3)
+
+    assert result[0] == pytest.approx(px * r_coeff)
+    assert result[1] == pytest.approx(py * r_coeff)
+
+
+def test_distortion_radial_k3pt_add_distortion_origin():
+    """ Test that addDistortion at the origin returns the origin for K3PT. """
+    distortion = av.DistortionRadialK3PT(0.1, 0.2, 0.3)
+    point = np.array([0.0, 0.0])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(0.0)
+    assert result[1] == pytest.approx(0.0)
+
+
+def test_distortion_radial_k3pt_remove_distortion_default():
+    """ Test that removeDistortion with default parameters returns the input
+    point unchanged for K3PT. """
+    distortion = av.DistortionRadialK3PT()
+    point = np.array([0.5, 0.3])
+    result = distortion.removeDistortion(point)
+
+    assert result[0] == pytest.approx(point[0])
+    assert result[1] == pytest.approx(point[1])
+
+
+def test_distortion_radial_k3pt_add_remove_roundtrip():
+    """ Test round-trip consistency for DistortionRadialK3PT. """
+    distortion = av.DistortionRadialK3PT(0.1, 0.2, 0.3)
+    original = np.array([0.5, 0.3])
+
+    distorted = distortion.addDistortion(original)
+    recovered = distortion.removeDistortion(distorted)
+
+    assert recovered[0] == pytest.approx(original[0], abs=1e-6)
+    assert recovered[1] == pytest.approx(original[1], abs=1e-6)
+
+
+def test_distortion_radial_k3pt_add_remove_roundtrip_multiple_points():
+    """ Test round-trip consistency for DistortionRadialK3PT with multiple points. """
+    distortion = av.DistortionRadialK3PT(0.05, -0.02, 0.01)
+
+    points = [
+        np.array([0.0, 0.0]),
+        np.array([0.1, 0.1]),
+        np.array([-0.3, 0.2]),
+        np.array([0.5, -0.5]),
+        np.array([0.8, 0.6]),
+    ]
+
+    for point in points:
+        distorted = distortion.addDistortion(point)
+        recovered = distortion.removeDistortion(distorted)
+
+        assert recovered[0] == pytest.approx(point[0], abs=1e-6), \
+            f"Round-trip failed for x of point ({point[0]}, {point[1]})"
+        assert recovered[1] == pytest.approx(point[1], abs=1e-6), \
+            f"Round-trip failed for y of point ({point[0]}, {point[1]})"
+
+
+#
+# DistortionRadialK3PT: lock
+#
+
+def test_distortion_radial_k3pt_lock():
+    """ Test lock/unlock for DistortionRadialK3PT. """
+    distortion = av.DistortionRadialK3PT()
+    assert not distortion.isLocked()
+
+    distortion.setLocked(True)
+    assert distortion.isLocked()
+
+    distortion.setLocked(False)
+    assert not distortion.isLocked()
+
+
+def test_distortion_radial_k3pt_lock_clone():
+    """ Test that lock status is preserved through clone for DistortionRadialK3PT. """
+    distortion1 = av.DistortionRadialK3PT()
+    distortion1.setLocked(True)
+    distortion2 = distortion1.clone()
+
+    assert distortion2.isLocked()
+    distortion1.setLocked(False)
+    assert distortion2.isLocked()

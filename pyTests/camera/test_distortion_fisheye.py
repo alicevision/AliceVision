@@ -3,29 +3,10 @@ Collection of unit tests for the Fisheye Distortion model.
 """
 
 import pytest
+import numpy as np
 
 from pyalicevision import camera as av
 
-##################
-### List of functions:
-# - DistortionFisheye() => DONE
-# - DistortionFisheye(double p1, double p2, double p3, double p4) => DONE
-# - EDISTORTION getType() => DONE
-# - DistortionFisheye* clone() => DONE
-# - Vec2 addDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeAddDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeAddDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-# - Vec2 removeDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-#
-### Inherited functions (Distortion):
-# - bool operator==(Distortion& other) => DONE
-# - void setParameters(vector<double>& params) => DONE
-# - [inline] vector<double>& getParameters() => DONE
-# - [inline] size_t getDistortionParametersCount() => DONE
-# - double getUndistortedRadius(double r) => DONE
-##################
 
 DEFAULT_PARAMETERS = [0.0, 0.0, 0.0, 0.0]
 NON_DEFAULT_PARAMETERS = [0.1, 0.2, 0.3, 0.4]
@@ -121,27 +102,6 @@ def test_distortion_fisheye_clone():
         "updated values"
 
 
-@pytest.mark.skip(reason="Vec2 not binded")
-def test_distortion_fisheye_add_remove_distortion():
-    """ Test creating a DistortionFisheye object and adding/removing the
-    distortion to a point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_fisheye_get_derivative_add():
-    """ Test creating a DistortionFisheye object, adding the distortion to a point,
-    and getting the derivative with respect to that point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_fisheye_get_derivative_remove():
-    """ Test creating a DistortionFisheye object, and getting the derivatives with
-    the distortion removed. """
-    assert True
-
-
 def test_distortion_fisheye_get_radius():
     """ Test creating a DistortionFisheye object and retrieving its undistorted 
     radius. """
@@ -165,3 +125,155 @@ def test_distortion_fisheye_compare():
     distortion1.setParameters(NON_DEFAULT_PARAMETERS)
     assert not distortion1 == distortion2, \
         "The parameters of the first object have been updated"
+
+
+def test_distortion_fisheye_add_distortion_default():
+    """ Test that addDistortion with default (zero) parameters returns the input
+    point unchanged. """
+    distortion = av.DistortionFisheye()
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    # With zero parameters, theta_dist = theta, so addDistortion(p) = p * atan(r)/r
+    r = np.sqrt(point[0] ** 2 + point[1] ** 2)
+    expected_scale = np.arctan(r) / r
+    assert result[0] == pytest.approx(point[0] * expected_scale), \
+        "The x-coordinate should match the expected value with default parameters"
+    assert result[1] == pytest.approx(point[1] * expected_scale), \
+        "The y-coordinate should match the expected value with default parameters"
+
+
+def test_distortion_fisheye_add_distortion():
+    """ Test that addDistortion with non-default parameters correctly applies
+    the Fisheye distortion model. """
+    distortion = av.DistortionFisheye(0.1, 0.2, 0.3, 0.4)
+    point = np.array([0.5, 0.3])
+    result = distortion.addDistortion(point)
+
+    # Manually compute the expected distorted point using the Fisheye model
+    px, py = 0.5, 0.3
+    r = np.sqrt(px * px + py * py)
+    theta = np.arctan(r)
+    theta2 = theta * theta
+    theta3 = theta2 * theta
+    theta5 = theta2 * theta3
+    theta7 = theta3 * theta3 * theta
+    theta9 = theta7 * theta2
+    theta_dist = theta + 0.1 * theta3 + 0.2 * theta5 + 0.3 * theta7 + 0.4 * theta9
+    cdist = theta_dist / r
+
+    assert result[0] == pytest.approx(px * cdist), \
+        "The distorted x-coordinate does not match the expected value"
+    assert result[1] == pytest.approx(py * cdist), \
+        "The distorted y-coordinate does not match the expected value"
+
+
+def test_distortion_fisheye_add_distortion_origin():
+    """ Test that addDistortion at the origin returns the origin regardless
+    of distortion parameters. """
+    distortion = av.DistortionFisheye(0.1, 0.2, 0.3, 0.4)
+    point = np.array([0.0, 0.0])
+    result = distortion.addDistortion(point)
+
+    assert result[0] == pytest.approx(0.0), \
+        "The x-coordinate at the origin should remain 0"
+    assert result[1] == pytest.approx(0.0), \
+        "The y-coordinate at the origin should remain 0"
+
+
+def test_distortion_fisheye_remove_distortion_default():
+    """ Test that removeDistortion with default (zero) parameters returns
+    a point consistent with the inverse of addDistortion. """
+    distortion = av.DistortionFisheye()
+    point = np.array([0.5, 0.3])
+    result = distortion.removeDistortion(point)
+
+    # With zero parameters, removeDistortion should invert addDistortion
+    r_dist = np.sqrt(point[0] ** 2 + point[1] ** 2)
+    theta = r_dist  # with zero params, theta converges to theta_dist
+    expected_scale = np.tan(theta) / r_dist
+    assert result[0] == pytest.approx(point[0] * expected_scale), \
+        "The x-coordinate should match the expected value with default parameters"
+    assert result[1] == pytest.approx(point[1] * expected_scale), \
+        "The y-coordinate should match the expected value with default parameters"
+
+
+def test_distortion_fisheye_remove_distortion():
+    """ Test that removeDistortion with non-default parameters returns a point
+    different from the input. """
+    distortion = av.DistortionFisheye(0.1, 0.2, 0.3, 0.4)
+    point = np.array([0.5, 0.3])
+    result = distortion.removeDistortion(point)
+
+    assert not (result[0] == pytest.approx(point[0]) and
+                result[1] == pytest.approx(point[1])), \
+        "The undistorted point should differ from the input with non-default parameters"
+
+
+def test_distortion_fisheye_add_remove_roundtrip():
+    """ Test that applying addDistortion followed by removeDistortion returns
+    a point close to the original (round-trip consistency). """
+    distortion = av.DistortionFisheye(0.1, 0.2, 0.3, 0.4)
+    original = np.array([0.5, 0.3])
+
+    distorted = distortion.addDistortion(original)
+    recovered = distortion.removeDistortion(distorted)
+
+    assert recovered[0] == pytest.approx(original[0], abs=1e-6), \
+        "The recovered x-coordinate should match the original after round-trip"
+    assert recovered[1] == pytest.approx(original[1], abs=1e-6), \
+        "The recovered y-coordinate should match the original after round-trip"
+
+
+def test_distortion_fisheye_add_remove_roundtrip_multiple_points():
+    """ Test the round-trip consistency of addDistortion/removeDistortion
+    for multiple points. """
+    distortion = av.DistortionFisheye(0.05, -0.02, 0.01, -0.005)
+
+    points = [
+        np.array([0.0, 0.0]),
+        np.array([0.1, 0.1]),
+        np.array([-0.3, 0.2]),
+        np.array([0.5, -0.5]),
+        np.array([0.8, 0.6]),
+    ]
+
+    for point in points:
+        distorted = distortion.addDistortion(point)
+        recovered = distortion.removeDistortion(distorted)
+
+        assert recovered[0] == pytest.approx(point[0], abs=1e-6), \
+            f"Round-trip failed for x-coordinate of point ({point[0]}, {point[1]})"
+        assert recovered[1] == pytest.approx(point[1], abs=1e-6), \
+            f"Round-trip failed for y-coordinate of point ({point[0]}, {point[1]})"
+
+
+def test_distortion_fisheye_lock():
+    """ Test creating a DistortionFisheye object and getting/updating its lock
+    status. """
+    distortion = av.DistortionFisheye()
+    assert not distortion.isLocked(), \
+        "A newly created distortion should not be locked"
+
+    distortion.setLocked(True)
+    assert distortion.isLocked(), \
+        "The distortion should be locked after calling setLocked(True)"
+
+    distortion.setLocked(False)
+    assert not distortion.isLocked(), \
+        "The distortion should be unlocked after calling setLocked(False)"
+
+
+def test_distortion_fisheye_lock_clone():
+    """ Test that the lock status is correctly handled when cloning a
+    DistortionFisheye object. """
+    distortion1 = av.DistortionFisheye()
+    distortion1.setLocked(True)
+    distortion2 = distortion1.clone()
+
+    assert distortion2.isLocked(), \
+        "The cloned distortion should preserve the lock status"
+
+    distortion1.setLocked(False)
+    assert distortion2.isLocked(), \
+        "Unlocking the original should not affect the clone"

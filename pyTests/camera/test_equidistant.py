@@ -3,152 +3,11 @@ Collection of unit tests for the Equidistant intrinsics.
 """
 
 import pytest
+import numpy as np
 
 from pyalicevision import camera as av
 from pyalicevision import numeric as avnum
 
-##################
-### List of functions:
-# - Equidistant() => DONE
-# - Equidistant(uint w, uint h, double focalLengthPix, double offsetX, double offsetY,
-#               shared_ptr<Distortion> distortion = nullptr) => DONE
-# - Equidistant(uint w, uint h, double focalLengthPix, double offsetX, double offsetY,
-#               double circleRadiusPix, shared_ptr<Distortion> distortion = nullptr) => DONE
-# - Equidistant* clone() => DONE
-# - void assign(IntrinsicBase& other)
-# - bool isValid() => DONE
-# - EINTRINSIC getType() => DONE
-# - Vec2 project(Eigen::Matrix4d& pose, Vec4& pt, bool applyDistortion = true) / Vec2,
-#                                                                       Matrix4d and Vec4 not binded
-# - Vec2 project(geometry::Pose3& pose, Vec4& pt3D, bool applyDistortion = true) / Vec2,
-#                                                                       Pose3 and Vec4 not binded
-# - Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(Eigen::Matrix4d& pose, Vec4& pt)
-#                                                                       / Matrix and Vec4 not binded
-# - Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPose(Eigen::Matrix4d& pose, Vec4& pt)
-#                                                                       / Matrix and Vec4 not binded
-# - Eigen::Matrix<double, 2, 16> getDerivativeProjectWrtPoseLeft(Eigen::Matrix4d& pose, Vec4& pt)
-#                                                                       / Matrix and Vec4 not binded
-# - Eigen::Matrix<double, 2, 4> getDerivativeProjectWrtPoint(Eigen::Matrix4d& pose, Vec4& pt)
-#                                                                       / Matrix and Vec4 not binded
-# - Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint3(Eigen::Matrix4d& pose, Vec4& pt)
-#                                                                       / Matrix and Vec4 not binded
-# - Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(Eigen::Matrix4d& pose, Vec4& pt)
-#                                                                       / Matrix and Vec4 not binded
-# - Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtScale(Eigen::Matrix4d& pose, Vec4& pt)
-#                                                                       / Matrix and Vec4 not binded
-# - Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(Eigen::Matrix4d& pose,
-#                                                                       Vec4& pt) / Matrix and Vec4
-#                                                                       not binded
-# - Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtParams(Eigen::Matrix4d& pose,
-#                                                                       Vec4& pt3D) / Matrix and
-#                                                                       Vec4 not binded
-# - Vec3 toUnitSphere(Vec2& pt) / Vec3 and Vec2 not binded
-# - Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(Vec2& pt)
-#                   / Matrix and Vec2 not binded
-# - Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtScale(Vec2& pt)
-#                   / Matrix and Vec2 not binded
-# - double imagePlaneToCameraPlaneError(double value)
-# - Vec2 cam2ima(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() / Matrix not binded
-# - Vec2 ima2cam(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeIma2CamWrtPoint() / Matrix not binded
-# - Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() / Matrix not binded
-# - bool isVisibleRay(Vec3& ray) / Vec3 not binded
-# - [inline] double getCircleRadius() => DONE
-# - [inline] void setCircleRadius(double radius)
-# - [inline] double getCircleCenterX() => DONE
-# - [inline] void setCircleCenterX(double x) => DONE
-# - [inline] double getCircleCenterY() => DONE
-# - [inline] void setCircleCenterY(double y) => DONE
-# - [inline] Vec2 getCircleCenter() / Vec2 not binded
-# - double getHorizontalFov() => DONE
-# - double getVerticalFov() => DONE
-#
-### Inherited functions (IntrinsicScaleOffsetDisto):
-# - bool operator==(const IntrinsicBase&)
-# - void setDistortionObject(shared_ptr<Distortion> object)
-# - bool hasDistortion()
-# - Vec2 addDistortion(Vec2& p) / Vec2 not binded
-# - Vec2 removeDistortion(Vec2& p) / Vec2 not binded
-# - Vec2 getUndistortedPixel(Vec2& p) / Vec2 not binded
-# - Vec2 getDistortedPixel(Vec2& p) / Vec2 not binded
-# - size_t getDistortionParamsSize()
-# - vector<double> getDistortionParams()
-# - void setDistortionParams(vector<double>& distortionParams)
-# - template<class F> void setDistortionParamsFn(F&& callback) / not binded
-# - template<class F> void setDistortionParamsFn(size_t count, F&& callback) / not binded
-# - vector<double> getParameters() => DONE
-# - size_t getParametersSize() => DONE
-# - updateFromParams(vector<double>& params) => DONE
-# - float getMaximalDistortion(double min_radius, double max_radius)
-# - Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(Vec2& pt) / Matrix and Vec2 not binded
-# - Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(Vec2& pt) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeAddDistoWrtDisto(Vec2& pt) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(Vec2& pt) / Matrix and Vec2 not binded
-# - [inline] void setDistortionInitializationMode(EInitMode distortionInitializationMode)
-# - shared_ptr<Distortion> getDistortion()
-# - void setUndistortionObject(shared_ptr<Undistortion> object)
-# - shared_ptr<Undistortion> getUndistortion()
-#
-### Inherited functions (IntrinsicScaleOffset):
-# - void copyFrom(const IntrinsicScaleOffset& other)
-# - void setScale(Vec2& scale) / Vec2 not binded
-# - [inline] Vec2 getScale() / Vec2 not binded
-# - void setOffset(Vec2& offset) / Vec2 not binded
-# - [inline] Vec2 getOffset() / Vec2 not binded
-# - [inline] Vec2 getPrincipalPoint() / Vec2 not binded
-# - Vec2 cam2ima(Vec2 pt) / Vec2 not binded
-# - Eigen::Matrix<double, 2, 2> getDerivativeIma2CamWrtScale(const Vec2& p) /
-#                   Matrix and Vec2 not binded
-# - Eigen::Matrix2d getDerivativeIma2CamWrtPoint() / Matrix not binded
-# - Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() / Matrix not binded
-# - void rescale(float factorW, float factorH)
-# - bool importFromParams(vector<double>& params, Version& inputVersion)
-# - [inine] void setInitialScale(Vec2& initialScale) / Vec2 not binded
-# - [inline] Vec2 getInitialScale() / Vec2 not binded
-# - [inline] void setRatioLocked(bool locked) => DONE
-# - [inline] bool isRatioLocked() => DONE
-#
-### Inherited functions (IntrinsicBase):
-# - [inline] isLocked() => DONE
-# - [inline] unsigned int w() => DONE
-# - [inline] unsigned int h() => DONE
-# - [inline] double sensorWidth() => DONE
-# - [inline] double sensorHeight() => DONE
-# - [inline] string& serialNumber() => DONE
-# - [inline] EInitMode getInitializationMode() => DONE
-# - inline bool operator!=(const IntrinsicBase& other)
-# - Vec2 project(geometry::Pose3& pose, Vec4& pt3D, bool applyDistortion = true) /
-#                    Vec2, Pose3 and Vec4 not binded
-# - Vec2 project(Eigen::Matrix4d& pose, Vec4& pt3D, bool applyDistortion = true)
-# - Vec3 backprojectTransform(Vec2& pt2D, bool applyUndistortion = true,
-#                    geometry::Pose3& pose = geometry::Pose3(),
-#                    double depth = 1.0) / Vec3, Vec2 and Pose3 not binded
-# - Vec4 getCartesianfromSphericalCoordinates(Vec3& pt) / Vec3 not binded
-# - Eigen::Matrix<double, 4, 3> getDerivativeCartesianfromSphericalCoordinates(Vec3& pt) /
-#                    Matrix and Vec3 not binded
-# - [inline] Vec2 residual(geometry::Pose3& pose, Vec4& X, Vec2& x)
-# - [inline] Mat2X residuals(const geometry::Pose3& pose, const Mat3X& X, const Mat2X& x)
-# - [inline] void lock() => DONE
-# - [inline] void unlock() => DONE
-# - [inline] void setWidth(unsigned int width) => DONE
-# - [inline] void setHeight(unsigned int height) => DONE
-# - [inline] void setSensorWidth(double width) => DONE
-# - [inline] void setSensorHeight(double height) => DONE
-# - [inline] void setSerialNumber(std::string& serialNumber) => DONE
-# - [inline] void setInitializationMode(EInitMode initializationMode) => DONE
-# - string getTypeStr() => DONE
-# - bool isVisible(Vec2& pix) / Vec2 not binded
-# - bool isVisible(Vec2f& pix) / Vec2f not binded
-# - float getMaximalDistortion(double min_radius, double max_radius)
-# - std::size_t hashValue()
-# - void rescale(float factorW, float factorH)
-# - void initializeState() => DONE
-# - EEstimatorParameterState getState() => DONE
-# - void setState(EEstimatorParameterState state) => DONE
-# - [inline] Vec3 applyIntrinsicExtrinsic(geometry::Pose3& pose, IntrinsicBase* intrinsic,
-#                   Vec2& x) / Vec3, Pose3 and Vec2 not binded
-##################
 
 DEFAUT_PARAMETERS = (1.0, 1.0, 0.0, 0.0)
 
@@ -165,8 +24,6 @@ def test_equidistant_default_constructor():
 
     scale = intrinsic.getScale()
     assert scale[0] == 1.0 and scale[1] == 1.0
-
-    print(scale)
 
     offset = intrinsic.getOffset()
     assert offset[0] == 0.0 and offset[1] == 0.0
@@ -389,3 +246,469 @@ def test_equidistant_get_set_initialization_mode():
 
     intrinsic.setInitializationMode(av.EInitMode_ESTIMATED)
     assert intrinsic.getInitializationMode() == av.EInitMode_ESTIMATED
+
+
+# =====================================================================
+# cam2ima / ima2cam
+# =====================================================================
+
+def test_equidistant_cam2ima_default():
+    """ Test cam2ima with default Equidistant (circleRadius=0.5, pp=(0.5,0.5)). """
+    intrinsic = av.Equidistant()
+    # cam2ima(p) = circleRadius * p + principalPoint = 0.5 * p + (0.5, 0.5)
+    p = np.array([0.0, 0.0])
+    result = intrinsic.cam2ima(p)
+    assert result[0] == pytest.approx(0.5, abs=1e-12)
+    assert result[1] == pytest.approx(0.5, abs=1e-12)
+
+    p2 = np.array([1.0, -1.0])
+    result2 = intrinsic.cam2ima(p2)
+    assert result2[0] == pytest.approx(1.0, abs=1e-12)
+    assert result2[1] == pytest.approx(0.0, abs=1e-12)
+
+
+def test_equidistant_cam2ima_configured():
+    """ Test cam2ima with configured Equidistant (w=1000, h=800, focal=900).
+    circleRadius = min(1000,800)*0.5 = 400, principalPoint = (500, 400). """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    # cam2ima(p) = 400 * p + (500, 400)
+    p = np.array([0.0, 0.0])
+    result = intrinsic.cam2ima(p)
+    assert result[0] == pytest.approx(500.0, abs=1e-10)
+    assert result[1] == pytest.approx(400.0, abs=1e-10)
+
+    p2 = np.array([0.1, 0.2])
+    result2 = intrinsic.cam2ima(p2)
+    assert result2[0] == pytest.approx(540.0, abs=1e-10)
+    assert result2[1] == pytest.approx(480.0, abs=1e-10)
+
+
+def test_equidistant_ima2cam_default():
+    """ Test ima2cam with default Equidistant. """
+    intrinsic = av.Equidistant()
+    # ima2cam(p) = (p - pp) / circleRadius = (p - (0.5,0.5)) / 0.5
+    p = np.array([0.5, 0.5])
+    result = intrinsic.ima2cam(p)
+    assert result[0] == pytest.approx(0.0, abs=1e-12)
+    assert result[1] == pytest.approx(0.0, abs=1e-12)
+
+    p2 = np.array([1.0, 0.0])
+    result2 = intrinsic.ima2cam(p2)
+    assert result2[0] == pytest.approx(1.0, abs=1e-12)
+    assert result2[1] == pytest.approx(-1.0, abs=1e-12)
+
+
+def test_equidistant_ima2cam_configured():
+    """ Test ima2cam with configured Equidistant. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    # ima2cam(p) = (p - (500, 400)) / 400
+    p = np.array([540.0, 480.0])
+    result = intrinsic.ima2cam(p)
+    assert result[0] == pytest.approx(0.1, abs=1e-10)
+    assert result[1] == pytest.approx(0.2, abs=1e-10)
+
+
+def test_equidistant_cam2ima_ima2cam_round_trip():
+    """ Test that cam2ima and ima2cam are inverse operations. """
+    intrinsic = av.Equidistant(1000, 800, 900, 5.0, -3.0)
+    pts_cam = [np.array([0.0, 0.0]), np.array([0.1, -0.2]),
+               np.array([-0.3, 0.15]), np.array([0.5, 0.5])]
+    for p_cam in pts_cam:
+        p_ima = intrinsic.cam2ima(p_cam)
+        p_cam_back = intrinsic.ima2cam(p_ima)
+        assert p_cam_back[0] == pytest.approx(p_cam[0], abs=1e-10)
+        assert p_cam_back[1] == pytest.approx(p_cam[1], abs=1e-10)
+
+    pts_ima = [np.array([500.0, 400.0]), np.array([600.0, 300.0]),
+               np.array([450.0, 450.0])]
+    for p_ima in pts_ima:
+        p_cam = intrinsic.ima2cam(p_ima)
+        p_ima_back = intrinsic.cam2ima(p_cam)
+        assert p_ima_back[0] == pytest.approx(p_ima[0], abs=1e-10)
+        assert p_ima_back[1] == pytest.approx(p_ima[1], abs=1e-10)
+
+
+def test_equidistant_cam2ima_with_offset():
+    """ Test cam2ima with non-zero offset. """
+    intrinsic = av.Equidistant(1000, 800, 900, 10.0, -5.0)
+    # circleRadius = 400, pp = (10 + 500, -5 + 400) = (510, 395)
+    p = np.array([0.0, 0.0])
+    result = intrinsic.cam2ima(p)
+    assert result[0] == pytest.approx(510.0, abs=1e-10)
+    assert result[1] == pytest.approx(395.0, abs=1e-10)
+
+
+# =====================================================================
+# addDistortion / removeDistortion (without distortion)
+# =====================================================================
+
+def test_equidistant_add_distortion_no_disto():
+    """ Test that addDistortion returns the point unchanged when no distortion is set. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    p = np.array([0.1, 0.2])
+    result = intrinsic.addDistortion(p)
+    assert result[0] == pytest.approx(p[0], abs=1e-12)
+    assert result[1] == pytest.approx(p[1], abs=1e-12)
+
+
+def test_equidistant_remove_distortion_no_disto():
+    """ Test that removeDistortion returns the point unchanged when no distortion is set. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    p = np.array([0.1, 0.2])
+    result = intrinsic.removeDistortion(p)
+    assert result[0] == pytest.approx(p[0], abs=1e-12)
+    assert result[1] == pytest.approx(p[1], abs=1e-12)
+
+
+def test_equidistant_add_remove_distortion_round_trip_no_disto():
+    """ Test that addDistortion and removeDistortion are inverse when no distortion. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    pts = [np.array([0.0, 0.0]), np.array([0.15, -0.1]),
+           np.array([-0.3, 0.25]), np.array([0.5, 0.5])]
+    for p in pts:
+        p_add = intrinsic.addDistortion(p)
+        p_back = intrinsic.removeDistortion(p_add)
+        assert p_back[0] == pytest.approx(p[0], abs=1e-12)
+        assert p_back[1] == pytest.approx(p[1], abs=1e-12)
+
+
+# =====================================================================
+# getUndistortedPixel / getDistortedPixel
+# =====================================================================
+
+def test_equidistant_get_undistorted_pixel_no_disto():
+    """ Test that getUndistortedPixel returns the input when no distortion is set.
+    getUndistortedPixel(p) = cam2ima(removeDistortion(ima2cam(p))) = p (no disto). """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    pts = [np.array([550.0, 420.0]), np.array([500.0, 400.0]),
+           np.array([300.0, 600.0])]
+    for p in pts:
+        result = intrinsic.getUndistortedPixel(p)
+        assert result[0] == pytest.approx(p[0], abs=1e-10)
+        assert result[1] == pytest.approx(p[1], abs=1e-10)
+
+
+def test_equidistant_get_distorted_pixel_no_disto():
+    """ Test that getDistortedPixel returns the input when no distortion is set.
+    getDistortedPixel(p) = cam2ima(addDistortion(ima2cam(p))) = p (no disto). """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    pts = [np.array([550.0, 420.0]), np.array([500.0, 400.0]),
+           np.array([300.0, 600.0])]
+    for p in pts:
+        result = intrinsic.getDistortedPixel(p)
+        assert result[0] == pytest.approx(p[0], abs=1e-10)
+        assert result[1] == pytest.approx(p[1], abs=1e-10)
+
+
+def test_equidistant_undistorted_distorted_pixel_round_trip():
+    """ Test that getUndistortedPixel and getDistortedPixel are inverses (no disto). """
+    intrinsic = av.Equidistant(1000, 800, 900, 5.0, -3.0)
+    pts = [np.array([510.0, 395.0]), np.array([600.0, 300.0]),
+           np.array([400.0, 500.0])]
+    for p in pts:
+        p_undist = intrinsic.getUndistortedPixel(p)
+        p_back = intrinsic.getDistortedPixel(p_undist)
+        assert p_back[0] == pytest.approx(p[0], abs=1e-10)
+        assert p_back[1] == pytest.approx(p[1], abs=1e-10)
+
+
+# =====================================================================
+# imagePlaneToCameraPlaneError / pixelProbability
+# =====================================================================
+
+def test_equidistant_image_plane_to_camera_plane_error():
+    """ Test imagePlaneToCameraPlaneError: returns value / scale(0). """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    # scale(0) = 900
+    assert intrinsic.imagePlaneToCameraPlaneError(1.0) == pytest.approx(1.0 / 900.0, abs=1e-12)
+    assert intrinsic.imagePlaneToCameraPlaneError(2.5) == pytest.approx(2.5 / 900.0, abs=1e-12)
+    assert intrinsic.imagePlaneToCameraPlaneError(0.0) == pytest.approx(0.0, abs=1e-12)
+
+
+def test_equidistant_pixel_probability():
+    """ Test pixelProbability: returns 1.0 / w. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    assert intrinsic.pixelProbability() == pytest.approx(1.0 / 1000.0, abs=1e-12)
+
+    intrinsic_default = av.Equidistant()
+    assert intrinsic_default.pixelProbability() == pytest.approx(1.0, abs=1e-12)
+
+
+# =====================================================================
+# getPrincipalPoint
+# =====================================================================
+
+def test_equidistant_get_principal_point():
+    """ Test getPrincipalPoint: returns (offset_x + w/2, offset_y + h/2). """
+    intrinsic = av.Equidistant(1000, 800, 900, 10.0, -5.0)
+    pp = intrinsic.getPrincipalPoint()
+    assert pp[0] == pytest.approx(10.0 + 500.0, abs=1e-12)
+    assert pp[1] == pytest.approx(-5.0 + 400.0, abs=1e-12)
+
+    intrinsic_default = av.Equidistant()
+    pp_default = intrinsic_default.getPrincipalPoint()
+    assert pp_default[0] == pytest.approx(0.5, abs=1e-12)
+    assert pp_default[1] == pytest.approx(0.5, abs=1e-12)
+
+
+# =====================================================================
+# setScale / getScale / setOffset / getOffset
+# =====================================================================
+
+def test_equidistant_set_get_scale():
+    """ Test setting and getting the scale (focal length in pixels). """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    scale = intrinsic.getScale()
+    assert scale[0] == pytest.approx(900.0, abs=1e-12)
+    assert scale[1] == pytest.approx(900.0, abs=1e-12)
+
+    new_scale = np.array([1200.0, 1100.0])
+    intrinsic.setScale(new_scale)
+    scale2 = intrinsic.getScale()
+    assert scale2[0] == pytest.approx(1200.0, abs=1e-12)
+    assert scale2[1] == pytest.approx(1100.0, abs=1e-12)
+
+
+def test_equidistant_set_get_offset():
+    """ Test setting and getting the offset. """
+    intrinsic = av.Equidistant(1000, 800, 900, 5.0, -3.0)
+    offset = intrinsic.getOffset()
+    assert offset[0] == pytest.approx(5.0, abs=1e-12)
+    assert offset[1] == pytest.approx(-3.0, abs=1e-12)
+
+    new_offset = np.array([10.0, 20.0])
+    intrinsic.setOffset(new_offset)
+    offset2 = intrinsic.getOffset()
+    assert offset2[0] == pytest.approx(10.0, abs=1e-12)
+    assert offset2[1] == pytest.approx(20.0, abs=1e-12)
+
+    # Principal point should also update
+    pp = intrinsic.getPrincipalPoint()
+    assert pp[0] == pytest.approx(10.0 + 500.0, abs=1e-12)
+    assert pp[1] == pytest.approx(20.0 + 400.0, abs=1e-12)
+
+
+# =====================================================================
+# offset lock / scale lock
+# =====================================================================
+
+def test_equidistant_offset_lock_unlock():
+    """ Test getting/updating the lock status of the offset. """
+    intrinsic = av.Equidistant()
+    assert not intrinsic.isOffsetLocked()
+
+    intrinsic.setOffsetLocked(True)
+    assert intrinsic.isOffsetLocked()
+    intrinsic.setOffsetLocked(False)
+    assert not intrinsic.isOffsetLocked()
+
+
+def test_equidistant_scale_lock_unlock():
+    """ Test getting/updating the lock status of the scale. """
+    intrinsic = av.Equidistant()
+    assert not intrinsic.isScaleLocked()
+
+    intrinsic.setScaleLocked(True)
+    assert intrinsic.isScaleLocked()
+    intrinsic.setScaleLocked(False)
+    assert not intrinsic.isScaleLocked()
+
+
+# =====================================================================
+# getFocalLength / getPixelAspectRatio / setFocalLength
+# =====================================================================
+
+def test_equidistant_get_focal_length():
+    """ Test getFocalLength: focalMM = fx * sensorWidth / max(w,h) * pixelAspectRatio. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    # fx = fy = 900, max(w,h) = 1000, sensorWidth = 36.0
+    # focalInMM = 900 * 36.0 / 1000 = 32.4
+    # pixelAspectRatio = fy/fx = 1.0
+    # result = 32.4 * 1.0 = 32.4
+    assert intrinsic.getFocalLength() == pytest.approx(32.4, abs=1e-10)
+
+
+def test_equidistant_get_pixel_aspect_ratio():
+    """ Test getPixelAspectRatio: 1 / (fx/fy). With equal fx, fy the ratio is 1. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    assert intrinsic.getPixelAspectRatio() == pytest.approx(1.0, abs=1e-12)
+
+    # Change scale to different fx, fy
+    intrinsic.setScale(np.array([900.0, 450.0]))
+    # focalRatio = fx/fy = 900/450 = 2.0
+    # pixelAspectRatio = 1/2 = 0.5
+    assert intrinsic.getPixelAspectRatio() == pytest.approx(0.5, abs=1e-12)
+
+
+def test_equidistant_set_focal_length():
+    """ Test setFocalLength and verifying the focal length is correctly retrieved. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    # Set focal to 50mm with aspect ratio 1.0
+    intrinsic.setFocalLength(50.0, 1.0)
+    assert intrinsic.getFocalLength() == pytest.approx(50.0, abs=1e-10)
+
+    # Set focal to 35mm with aspect ratio 1.0
+    intrinsic.setFocalLength(35.0, 1.0)
+    assert intrinsic.getFocalLength() == pytest.approx(35.0, abs=1e-10)
+
+
+# =====================================================================
+# rescale
+# =====================================================================
+
+def test_equidistant_rescale():
+    """ Test rescaling the intrinsic. Width, height, scale, and offset are updated. """
+    intrinsic = av.Equidistant(1000, 800, 900, 10.0, -5.0)
+
+    intrinsic.rescale(0.5, 0.5)
+
+    assert intrinsic.w() == 500
+    assert intrinsic.h() == 400
+
+    scale = intrinsic.getScale()
+    assert scale[0] == pytest.approx(450.0, abs=1e-10)
+    assert scale[1] == pytest.approx(450.0, abs=1e-10)
+
+    offset = intrinsic.getOffset()
+    assert offset[0] == pytest.approx(5.0, abs=1e-10)
+    assert offset[1] == pytest.approx(-2.5, abs=1e-10)
+
+
+def test_equidistant_rescale_up():
+    """ Test rescaling up and checking consistency. """
+    intrinsic = av.Equidistant(500, 400, 450, 0.0, 0.0)
+
+    intrinsic.rescale(2.0, 2.0)
+
+    assert intrinsic.w() == 1000
+    assert intrinsic.h() == 800
+
+    scale = intrinsic.getScale()
+    assert scale[0] == pytest.approx(900.0, abs=1e-10)
+    assert scale[1] == pytest.approx(900.0, abs=1e-10)
+
+
+# =====================================================================
+# hasDistortion / getDistortionParams / distortionInitializationMode
+# =====================================================================
+
+def test_equidistant_has_distortion():
+    """ Test that hasDistortion returns False when no distortion is set. """
+    intrinsic = av.Equidistant()
+    assert not intrinsic.hasDistortion()
+
+
+def test_equidistant_get_distortion_params_no_disto():
+    """ Test that getDistortionParams returns empty and getDistortionParamsSize
+    returns 0 when no distortion is set. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    assert intrinsic.getDistortionParamsSize() == 0
+    params = intrinsic.getDistortionParams()
+    assert len(params) == 0
+
+
+def test_equidistant_distortion_initialization_mode():
+    """ Test getting/setting the distortion initialization mode. """
+    intrinsic = av.Equidistant()
+    assert intrinsic.getDistortionInitializationMode() == av.EInitMode_NONE
+
+    intrinsic.setDistortionInitializationMode(av.EInitMode_ESTIMATED)
+    assert intrinsic.getDistortionInitializationMode() == av.EInitMode_ESTIMATED
+
+    intrinsic.setDistortionInitializationMode(av.EInitMode_CALIBRATED)
+    assert intrinsic.getDistortionInitializationMode() == av.EInitMode_CALIBRATED
+
+
+# =====================================================================
+# Equidistant with custom circle radius
+# =====================================================================
+
+def test_equidistant_cam2ima_custom_circle_radius():
+    """ Test cam2ima with custom circle radius. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0, 200.0)
+    # circleRadius = 200, principalPoint = (500, 400)
+    p = np.array([0.5, -0.5])
+    result = intrinsic.cam2ima(p)
+    assert result[0] == pytest.approx(200.0 * 0.5 + 500.0, abs=1e-10)
+    assert result[1] == pytest.approx(200.0 * (-0.5) + 400.0, abs=1e-10)
+
+
+def test_equidistant_ima2cam_custom_circle_radius():
+    """ Test ima2cam with custom circle radius. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0, 200.0)
+    # ima2cam(p) = (p - (500, 400)) / 200
+    p = np.array([600.0, 300.0])
+    result = intrinsic.ima2cam(p)
+    assert result[0] == pytest.approx(0.5, abs=1e-10)
+    assert result[1] == pytest.approx(-0.5, abs=1e-10)
+
+
+def test_equidistant_cam2ima_ima2cam_round_trip_custom_circle_radius():
+    """ Test that cam2ima and ima2cam round-trip with custom circle radius. """
+    intrinsic = av.Equidistant(1000, 800, 900, 5.0, -3.0, 300.0)
+    pts_cam = [np.array([0.0, 0.0]), np.array([0.3, -0.4]),
+               np.array([-0.1, 0.6])]
+    for p_cam in pts_cam:
+        p_ima = intrinsic.cam2ima(p_cam)
+        p_cam_back = intrinsic.ima2cam(p_ima)
+        assert p_cam_back[0] == pytest.approx(p_cam[0], abs=1e-10)
+        assert p_cam_back[1] == pytest.approx(p_cam[1], abs=1e-10)
+
+
+# =====================================================================
+# FOV consistency
+# =====================================================================
+
+def test_equidistant_fov_consistency():
+    """ Test that horizontal and vertical FOV are equal (equidistant property)
+    and match expected formula: rsensor / (scale(0) * sensorWidth / max(w,h)). """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    h_fov = intrinsic.getHorizontalFov()
+    v_fov = intrinsic.getVerticalFov()
+    assert h_fov == pytest.approx(v_fov, abs=1e-12)
+
+    # rsensor = min(36.0, 24.0) = 24.0
+    # rscale = 36.0 / max(1000, 800) = 0.036
+    # fmm = 900 * 0.036 = 32.4
+    # fov = 24.0 / 32.4
+    expected_fov = 24.0 / 32.4
+    assert h_fov == pytest.approx(expected_fov, abs=1e-10)
+
+
+def test_equidistant_fov_changes_with_focal():
+    """ Test that FOV changes after modifying the focal length. """
+    intrinsic = av.Equidistant(1000, 800, 900, 0.0, 0.0)
+    fov_before = intrinsic.getHorizontalFov()
+
+    intrinsic.setFocalLength(50.0, 1.0)
+    fov_after = intrinsic.getHorizontalFov()
+
+    # Larger focal => smaller FOV
+    assert fov_after < fov_before
+
+
+# =====================================================================
+# setWidth / setHeight / setSensorWidth / setSensorHeight
+# =====================================================================
+
+def test_equidistant_set_width_height():
+    """ Test setting width and height independently. """
+    intrinsic = av.Equidistant()
+    assert intrinsic.w() == 1 and intrinsic.h() == 1
+
+    intrinsic.setWidth(2000)
+    intrinsic.setHeight(1500)
+    assert intrinsic.w() == 2000
+    assert intrinsic.h() == 1500
+
+
+def test_equidistant_set_sensor_dimensions():
+    """ Test setting sensor width and height. """
+    intrinsic = av.Equidistant()
+    assert intrinsic.sensorWidth() == 36.0
+    assert intrinsic.sensorHeight() == 24.0
+
+    intrinsic.setSensorWidth(17.3)
+    intrinsic.setSensorHeight(13.0)
+    assert intrinsic.sensorWidth() == pytest.approx(17.3, abs=1e-12)
+    assert intrinsic.sensorHeight() == pytest.approx(13.0, abs=1e-12)
