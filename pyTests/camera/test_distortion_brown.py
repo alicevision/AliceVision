@@ -6,29 +6,6 @@ import pytest
 
 from pyalicevision import camera as av
 
-##################
-### List of functions:
-# - DistortionBrown() => DONE
-# - DistortionBrown(double p1, double p2, double p3, double p4, double p5) => DONE
-# - EDISTORTION getType() => DONE
-# - DistortionBrown* clone() => DONE
-# - Vec2 addDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeAddDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-# - Eigen::MatrixXd getDerivativeAddDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-# - Vec2 removeDistortion(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(Vec2& p) / Matrix and Vec2 not binded
-#                       / unsupported by this class
-# - Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(Vec2& p) / Matrix and Vec2 not binded
-#                       / unsupported by this class
-#
-### Inherited functions (Distortion):
-# - bool operator==(Distortion& other) => DONE
-# - void setParameters(vector<double>& params) => DONE
-# - [inline] vector<double>& getParameters() => DONE
-# - [inline] size_t getDistortionParametersCount() => DONE
-# - double getUndistortedRadius(double r) => DONE
-##################
-
 DEFAULT_PARAMETERS = [0.0, 0.0, 0.0, 0.0, 0.0]
 NON_DEFAULT_PARAMETERS = [0.1, 0.2, 0.3, 0.4, 0.5]
 
@@ -121,20 +98,6 @@ def test_distortion_brown_clone():
     assert list(distortion1.getParameters()) != list(distortion2.getParameters()), \
         "The clone should still have the default parameters while the original object has " \
         "updated values"
-
-
-@pytest.mark.skip(reason="Vec2 not binded")
-def test_distortion_brown_add_remove_distortion():
-    """ Test creating a DistortionBrown object and adding/removing the
-    distortion to a point. """
-    assert True
-
-
-@pytest.mark.skip(reason="Matrix and Vec2 not binded")
-def test_distortion_brown_get_derivative_add():
-    """ Test creating a DistortionBrown object, adding the distortion to a point,
-    and getting the derivative with respect to that point. """
-    assert True
 
 
 def test_distortion_brown_get_radius():

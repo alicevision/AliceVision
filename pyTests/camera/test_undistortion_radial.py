@@ -7,34 +7,6 @@ import pytest
 from pyalicevision import camera as av
 from pyalicevision import numeric as avnum
 
-##################
-### List of functions:
-# - UndistortionRadialK3(int width, int height) => DONE
-# - EUNDISTORTION getType() => DONE
-# - Undistortion* clone() => DONE
-# - Vec2 undistortNormalized(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix<double, 2, 2> getDerivativeUndistortNormalizedwrtPoint(Vec2& p) /
-#                   Matrix and Vec2 not binded
-# - Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortNormalizedwrtParameters(
-#                   Vec2& p) / Matrix and Vec2 not binded
-# - Vec2 inverseNormalized(Vec2& p) / Vec2 not binded
-#
-### Inherited functions (Undistortion):
-# - bool operator==(Undistortion& other) => DONE
-# - void setOffset(Vec2& offset) / Vec2 not binded
-# - void setSize(int width, int height) => DONE
-# - [inline] Vec2 getOffset() / Vec2 not binded
-# - [inline] Vec2 getSize() / Vec2 not binded
-# - vector<double>& getParameters() => DONE
-# - void setParameters(vector<double>& params)
-# - size_t getUndistortionParametersCount() => DONE
-# - Vec2 undistort(Vec2& p) / Vec2 not binded
-# - Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeUndistortWrtParameters(Vec2& p) /
-#                   Matrix and Vec2 not binded
-# - Eigen::Matrix<double, 2, 2> getDerivativeUndistortWrtParameters(Vec2& p) /
-#                   Matrix and Vec2 not binded
-# - Vec2 inverse(Vec2& p) / Vec2 not binded
-##################
 
 DEFAULT_PARAMETERS = (0.0, 0.0, 0.0)
 NON_DEFAULT_PARAMETERS = (0.1, 0.0, 0.2)
@@ -125,7 +97,4 @@ def test_undistortion_radial_get_set_size():
     assert size[0] == HEIGHT and size[1] == WIDTH
 
 
-@pytest.mark.skip(reason="Vec2 not binded")
-def test_undistortion_radial_get_set_offset():
-    """ Test creating an UndistortionRadialK3 object and manipulating its offset. """
-    assert True
+
