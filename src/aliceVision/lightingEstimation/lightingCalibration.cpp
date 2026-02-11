@@ -181,7 +181,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 	std::vector<IndexT> viewIdList;
     
     bool usePose = true;
-	double epsilonHuberLoss = 1.0;
+	double epsilonHuberLoss = 2.0;
 
     // data preparation
 	ALICEVISION_LOG_INFO("Data preparation");
@@ -276,7 +276,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		Eigen::Vector3f sceneCenter = pointsFull.colwise().mean();
 		Eigen::MatrixX3f pointsCentered = pointsFull.rowwise() - sceneCenter.transpose();
 		Eigen::MatrixXf distTosceneCenter = pointsCentered.rowwise().norm();
-		double lightingDistance = 2.0 * distTosceneCenter.mean();
+		double lightingDistance = 4.0 * distTosceneCenter.mean();
 
 		ALICEVISION_LOG_INFO("Scene center: " << sceneCenter.transpose());
 

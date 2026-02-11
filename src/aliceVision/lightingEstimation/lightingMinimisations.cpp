@@ -12,6 +12,8 @@
 // Eigen
 #include <Eigen/Dense>
 #include <Eigen/Core>
+#include <Eigen/SVD>
+#include <limits>
 #include <ceres/ceres.h>
 
 namespace aliceVision {
@@ -58,11 +60,11 @@ struct CoarseDirectionnalEstimation {
 		// residual computation
 		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = pixelsIntensityCeres - pixelIntensityEstimated;
 		// absolute residual
-		Eigen::Matrix<T, Eigen::Dynamic, 1> errorSq = errorVec.array().square();
+		// Eigen::Matrix<T, Eigen::Dynamic, 1> errorSq = errorVec.array().square();
 
 		// set residual
-		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorSq.rows());
-		residualVec = errorSq;
+		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorVec.rows());
+		residualVec = errorVec;
 
         return true;
     }
@@ -88,7 +90,7 @@ void coarseDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const Ei
 
     // Options solveur
 	ceres::Solver::Options options;
-	options.minimizer_progress_to_stdout = true;
+	options.minimizer_progress_to_stdout = false;
 	options.minimizer_type = ceres::LINE_SEARCH;
 	options.line_search_direction_type = ceres::LBFGS;
 	options.max_lbfgs_rank = 20;
@@ -98,7 +100,7 @@ void coarseDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const Ei
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-	ALICEVISION_LOG_DEBUG(summary.BriefReport());
+	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingDirection[0] = x[0];
     lightingDirection[1] = x[1];
     lightingDirection[2] = x[2];
@@ -179,11 +181,11 @@ struct CoarsePunctualEstimation {
 		// residual computation
 		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = pixelsIntensityCeres - pixelIntensityEstimated;
 		// squaring residual
-		Eigen::Matrix<T, Eigen::Dynamic, 1> errorSq = errorVec.array().square();
+		// Eigen::Matrix<T, Eigen::Dynamic, 1> errorSq = errorVec.array().square();
 
 		// set residual
-		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorSq.rows());
-		residualVec = errorSq;
+		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorVec.rows());
+		residualVec = errorVec;
 
         return true;
     }
@@ -217,7 +219,7 @@ void coarsePunctualLightEstimation(
 
     // Options solveur
 	ceres::Solver::Options options;
-	options.minimizer_progress_to_stdout = true;
+	options.minimizer_progress_to_stdout = false;
 	options.minimizer_type = ceres::LINE_SEARCH;
 	options.line_search_direction_type = ceres::LBFGS;
 	options.max_lbfgs_rank = 20;
@@ -227,7 +229,7 @@ void coarsePunctualLightEstimation(
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-	ALICEVISION_LOG_DEBUG(summary.BriefReport());
+	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingDistance = x[0];
 }
 
@@ -287,11 +289,11 @@ struct PointSourceModelRefinement {
 		// residual computation
 		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = pixelsIntensityCeres - pixelIntensityEstimated;
 		// Huber loss
-		Eigen::Matrix<T, Eigen::Dynamic, 1> errorSq = errorVec.array().square();
+		// Eigen::Matrix<T, Eigen::Dynamic, 1> errorSq = errorVec.array().square();
 
 		// set residual
-		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorSq.rows());
-		residualVec = errorSq;
+		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorVec.rows());
+		residualVec = errorVec;
 
         return true;
     }
@@ -323,7 +325,7 @@ void pointSourceModelRefinement(
 
     // Options solveur
 	ceres::Solver::Options options;
-	options.minimizer_progress_to_stdout = true;
+	options.minimizer_progress_to_stdout = false;
 	options.minimizer_type = ceres::LINE_SEARCH;
 	options.line_search_direction_type = ceres::LBFGS;
 	options.max_lbfgs_rank = 20;
@@ -333,11 +335,65 @@ void pointSourceModelRefinement(
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-	ALICEVISION_LOG_DEBUG(summary.BriefReport());
+	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingPosition[0] = x[0];
     lightingPosition[1] = x[1];
     lightingPosition[2] = x[2];
     lightingIntensity = x[3];
+
+    ceres::Problem::EvaluateOptions evalOptions;
+    evalOptions.parameter_blocks = { x.data() };
+    evalOptions.apply_loss_function = false;
+
+    ceres::CRSMatrix jacobian;
+    if (problem.Evaluate(evalOptions, nullptr, nullptr, nullptr, &jacobian))
+    {
+        Eigen::MatrixXd denseJacobian = Eigen::MatrixXd::Zero(jacobian.num_rows, jacobian.num_cols);
+        for (int row = 0; row < jacobian.num_rows; ++row)
+        {
+            for (int idx = jacobian.rows[row]; idx < jacobian.rows[row + 1]; ++idx)
+            {
+                denseJacobian(row, jacobian.cols[idx]) = jacobian.values[idx];
+            }
+        }
+
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(denseJacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        const auto& singularValues = svd.singularValues();
+        double conditionNumber = std::numeric_limits<double>::infinity();
+        if (singularValues.size() > 0)
+        {
+            const double maxSv = singularValues.maxCoeff();
+            const double minSv = singularValues.minCoeff();
+            if (minSv > 0.0)
+            {
+                conditionNumber = maxSv / minSv;
+            }
+        }
+
+        ALICEVISION_LOG_INFO("Jacobian condition number (2-norm, without loss): " << conditionNumber);
+
+        if (singularValues.size() > 0)
+        {
+            const int lastIndex = static_cast<int>(singularValues.size()) - 1;
+            const Eigen::VectorXd vMin = svd.matrixV().col(lastIndex);
+            ALICEVISION_LOG_INFO("Jacobian weakest direction (V min SV): [" << vMin.transpose() << "]");
+        }
+
+        if (singularValues.size() > 0)
+        {
+            const int count = static_cast<int>(singularValues.size());
+            const Eigen::MatrixXd vMat = svd.matrixV();
+            for (int i = 0; i < count; ++i)
+            {
+                ALICEVISION_LOG_INFO("Jacobian V col " << i << " (singular value " << singularValues[i] << "): ["
+                                                      << vMat.col(i).transpose() << "]");
+            }
+        }
+    }
+    else
+    {
+        ALICEVISION_LOG_WARNING("Failed to evaluate Jacobian for condition number.");
+    }
 }
 
 } // namespace lightingEstimation
