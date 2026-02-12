@@ -340,60 +340,6 @@ void pointSourceModelRefinement(
     lightingPosition[1] = x[1];
     lightingPosition[2] = x[2];
     lightingIntensity = x[3];
-
-    ceres::Problem::EvaluateOptions evalOptions;
-    evalOptions.parameter_blocks = { x.data() };
-    evalOptions.apply_loss_function = false;
-
-    ceres::CRSMatrix jacobian;
-    if (problem.Evaluate(evalOptions, nullptr, nullptr, nullptr, &jacobian))
-    {
-        Eigen::MatrixXd denseJacobian = Eigen::MatrixXd::Zero(jacobian.num_rows, jacobian.num_cols);
-        for (int row = 0; row < jacobian.num_rows; ++row)
-        {
-            for (int idx = jacobian.rows[row]; idx < jacobian.rows[row + 1]; ++idx)
-            {
-                denseJacobian(row, jacobian.cols[idx]) = jacobian.values[idx];
-            }
-        }
-
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(denseJacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        const auto& singularValues = svd.singularValues();
-        double conditionNumber = std::numeric_limits<double>::infinity();
-        if (singularValues.size() > 0)
-        {
-            const double maxSv = singularValues.maxCoeff();
-            const double minSv = singularValues.minCoeff();
-            if (minSv > 0.0)
-            {
-                conditionNumber = maxSv / minSv;
-            }
-        }
-
-        ALICEVISION_LOG_INFO("Jacobian condition number (2-norm, without loss): " << conditionNumber);
-
-        if (singularValues.size() > 0)
-        {
-            const int lastIndex = static_cast<int>(singularValues.size()) - 1;
-            const Eigen::VectorXd vMin = svd.matrixV().col(lastIndex);
-            ALICEVISION_LOG_INFO("Jacobian weakest direction (V min SV): [" << vMin.transpose() << "]");
-        }
-
-        if (singularValues.size() > 0)
-        {
-            const int count = static_cast<int>(singularValues.size());
-            const Eigen::MatrixXd vMat = svd.matrixV();
-            for (int i = 0; i < count; ++i)
-            {
-                ALICEVISION_LOG_INFO("Jacobian V col " << i << " (singular value " << singularValues[i] << "): ["
-                                                      << vMat.col(i).transpose() << "]");
-            }
-        }
-    }
-    else
-    {
-        ALICEVISION_LOG_WARNING("Failed to evaluate Jacobian for condition number.");
-    }
 }
 
 } // namespace lightingEstimation
