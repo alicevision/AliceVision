@@ -39,13 +39,13 @@ class CalibrationData
 
     const Eigen::MatrixX2<unsigned int>& getPixels();
 
-    const Eigen::VectorXf& getPixelsIntensity();
+    const Eigen::MatrixX3f& getPixelsRGBf();
 
   private:
     Eigen::MatrixX3f points;
     Eigen::MatrixX3f normals;
     Eigen::MatrixX2<unsigned int> pixels;
-    Eigen::VectorXf pixelsIntensity;
+    Eigen::MatrixX3f pixelsRGBf;
 };
 
 using CalibrationDatas = sfmData::SharedPtrMap<CalibrationData>;

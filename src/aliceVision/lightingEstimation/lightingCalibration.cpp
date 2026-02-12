@@ -40,7 +40,7 @@ CalibrationData::CalibrationData() :
     points(Eigen::MatrixX3f(0, 3)),
     normals(Eigen::MatrixX3f(0, 3)), 
     pixels(Eigen::MatrixX2<unsigned int>(0, 2)), 
-    pixelsIntensity(Eigen::VectorXf(0))
+    pixelsRGBf(Eigen::MatrixX3f(0, 3))
 {}
 
 bool CalibrationData::prepareView(const aliceVision::IndexT viewId, 
@@ -93,13 +93,13 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 	}
     
     // image
-	image::Image<float> imageFloat;
-	image::readImage(picturePath, imageFloat, image::EImageColorSpace::NO_CONVERSION);
+	image::Image<image::RGBfColor> imageRGBf;
+	image::readImage(picturePath, imageRGBf, image::EImageColorSpace::NO_CONVERSION);
     
     // getting data
     std::vector<Eigen::MatrixX3f> pointsList;
     std::vector<Eigen::MatrixX3f> normalsList;
-    std::vector<Eigen::VectorXf> pixelsIntensityList;
+    std::vector<Eigen::MatrixX3f> pixelsRGBfList;
 
 	// load set of sphere geometries
 	unsigned int nb_pix = 0;
@@ -121,16 +121,16 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 		normals_cur = normals_cur * RT.block<3, 3>(0, 0);
 
 		// pixels intensity
-		Eigen::VectorXf pixelsIntensity_cur = Eigen::VectorXf(pixels_cur.rows());
+		Eigen::MatrixX3f pixelsRGBf_cur = Eigen::MatrixX3f(pixels_cur.rows(), 3);
 		std::vector<unsigned int> nonZeroIntensities;
 		for (unsigned int ind = 0; ind < pixels_cur.rows(); ind++)
 		{
-			pixelsIntensity_cur(ind) = imageFloat(pixels_cur(ind, 1), pixels_cur(ind, 0));
+			pixelsRGBf_cur.block(ind, 0, 1, 3) = imageRGBf(pixels_cur(ind, 1), pixels_cur(ind, 0));
 			// if (pixelsIntensity_cur(ind) > 10.0 / 255.0)  // remove dark pixels
 			nonZeroIntensities.push_back(ind);
 		}
 		normalsList.push_back(normals_cur(nonZeroIntensities, Eigen::placeholders::all));
-		pixelsIntensityList.push_back(pixelsIntensity_cur(nonZeroIntensities));
+		pixelsRGBfList.push_back(pixelsRGBf_cur(nonZeroIntensities, Eigen::placeholders::all));
 		if (usePose)
 			pointsList.push_back(points_cur(nonZeroIntensities, Eigen::placeholders::all));
 		nb_pix += nonZeroIntensities.size();
@@ -143,7 +143,7 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 
 	// concatenate matrices
     normals.resize(nb_pix, 3);
-	pixelsIntensity.resize(nb_pix);
+	pixelsRGBf.resize(nb_pix, 3);
     if (usePose)
 		points.resize(nb_pix, 3);
 	
@@ -151,7 +151,7 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 	for (size_t i = 0; i < normalsList.size(); ++i)
 	{
 		normals.block(startAt, 0, normalsList[i].rows(), 3) = normalsList[i];
-		pixelsIntensity.block(startAt, 0, pixelsIntensityList[i].rows(), 1) = pixelsIntensityList[i];
+		pixelsRGBf.block(startAt, 0, pixelsRGBfList[i].rows(), 3) = pixelsRGBfList[i];
 		if (usePose)
 		{
 			points.block(startAt, 0, pointsList[i].rows(), 3) = pointsList[i];
@@ -170,7 +170,7 @@ const Eigen::MatrixX3f& CalibrationData::getNormals() { return normals; }
 
 const Eigen::MatrixX2<unsigned int>& CalibrationData::getPixels() { return pixels; }
 
-const Eigen::VectorXf& CalibrationData::getPixelsIntensity() { return pixelsIntensity; }
+const Eigen::MatrixX3f& CalibrationData::getPixelsRGBf() { return pixelsRGBf; }
 
 
 bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres& calibrationSpheres, const LightType lightType, Lightings &lightings)
@@ -233,7 +233,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
         // concatenate matrices
         Eigen::MatrixX3f pointsFull(nb_pix, 3);
         Eigen::MatrixX3f normalsFull(nb_pix, 3);
-        Eigen::VectorXf pixelsIntensityFull(nb_pix);
+        Eigen::MatrixX3f pixelsRGBFull(nb_pix, 3);
         
         unsigned int startAt = 0;
         for (size_t i = 0; i < itLight->second.size(); ++i)
@@ -242,9 +242,14 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
             auto &calibrationData = calibrationDatas.at(viewId);
             pointsFull.block(startAt, 0, calibrationData->getPoints().rows(), 3) = calibrationData->getPoints();
             normalsFull.block(startAt, 0, calibrationData->getNormals().rows(), 3) = calibrationData->getNormals();
-            pixelsIntensityFull.block(startAt, 0, calibrationData->getPixelsIntensity().rows(), 1) = calibrationData->getPixelsIntensity();
+            pixelsRGBFull.block(startAt, 0, calibrationData->getPixelsRGBf().rows(), 3) = calibrationData->getPixelsRGBf();
             startAt += calibrationData->nbPixels();
         }
+
+		// convert RGB to grayscale
+		Eigen::Vector3f rgb23gray = Eigen::Vector3f(0.299, 0.587, 0.114); 
+		Eigen::VectorXf pixelsIntensityFull(nb_pix);
+		pixelsIntensityFull = pixelsRGBFull * rgb23gray;
         
         // directionnal lighting estimation
 
