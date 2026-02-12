@@ -12,7 +12,8 @@ namespace lightingEstimation {
 enum class LightType
 {
     Directionnal,
-    Punctual
+    Punctual,
+    LED
 };
 
 class Lighting
@@ -59,6 +60,8 @@ class PunctualLighting : public Lighting
   public:
     PunctualLighting(const Eigen::Vector3f& lightPosition_, const std::vector<float>& intensity_);
 
+    PunctualLighting(const Eigen::Vector3f& lightPosition_, const Eigen::Vector3f& intensity_);
+
     PunctualLighting(const Eigen::Vector3f& lightPosition_, float intensity_);
 
     ~PunctualLighting();
@@ -75,6 +78,37 @@ class PunctualLighting : public Lighting
     Eigen::Vector3f lightPosition;
     std::vector<float> intensity;
 };
+
+class LEDLighting : public Lighting
+{
+  public:
+    LEDLighting(
+      const Eigen::Vector3f& lightPosition_, 
+      const Eigen::Vector3f& lightDirection_, 
+      const Eigen::Vector3f& lightRGBIntensity_, 
+      const Eigen::Vector3f& lightRGBAnisotropy_);
+
+    ~LEDLighting();
+
+    LEDLighting* clone() const;
+
+    LEDLighting* convertToFrame(const std::shared_ptr<sfmData::CameraPose>& pose) const;
+
+    const Eigen::Vector3f& getLightPosition() const;
+
+    const Eigen::Vector3f& getLightDirection() const;
+
+    const Eigen::Vector3f& getLightRGBIntensity() const;
+
+    const Eigen::Vector3f& getLightRGBAnisotropy() const;
+
+  private:
+    Eigen::Vector3f lightPosition;
+    Eigen::Vector3f lightDirection;
+    Eigen::Vector3f lightRGBIntensity;
+    Eigen::Vector3f lightRGBAnisotropy;
+};
+
 
 
 using Lightings = sfmData::SharedPtrMap<Lighting>;

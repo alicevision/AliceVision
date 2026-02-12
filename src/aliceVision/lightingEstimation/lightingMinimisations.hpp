@@ -26,9 +26,9 @@ void coarsePunctualLightEstimation(
     const Eigen::VectorXf& pixelsIntensity, 
     const Eigen::Vector3f& sceneCenter,
     const Eigen::Vector3f& lightingDirection,
-    double lightingIntensity,
+    float lightingIntensity,
     double epsilon, 
-    double &lightingDistance);
+    float &lightingDistance);
 
 void pointSourceModelRefinement(
     const Eigen::MatrixX3f& points, 
@@ -36,7 +36,25 @@ void pointSourceModelRefinement(
     const Eigen::VectorXf& pixelsIntensity, 
     double epsilon, 
     Eigen::Vector3f &lightPosition, 
-    double &lightIntensity);
+    float &lightIntensity);
+
+void coloredPointSourceModelRefinement(
+	const Eigen::MatrixX3f& points, 
+	const Eigen::MatrixX3f& normals, 
+	const Eigen::MatrixX3f& pixelsRGBIntensity, 
+	double epsilon, 
+	Eigen::Vector3f &lightingPosition, 
+	Eigen::Vector3f &lightingRGBIntensity);
+
+void LEDModelRefinement(
+	const Eigen::MatrixX3f& points, 
+	const Eigen::MatrixX3f& normals, 
+	const Eigen::MatrixX3f& pixelsRGBf, 
+	double epsilon, 
+	Eigen::Vector3f &lightingPosition, 
+	Eigen::Vector3f &lightingDirection, 
+	Eigen::Vector3f &lightingRGBIntensity,
+	Eigen::Vector3f &lightingRGBAnisotropy);
 
 } // namespace lightingEstimation
 } // namespace aliceVision

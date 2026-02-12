@@ -77,7 +77,7 @@ int aliceVision_main(int argc, char** argv)
         ("method, m", po::value<std::string>(&method)->default_value("brightestPoint"),
          "Method for light estimation.")
         ("lighttype, t", po::value<std::string>(&outLightType)->default_value("directionnal"),
-         "Light type (directionnal, punctual).")
+         "Light type (directionnal, punctual, led).")
         ("doDebug, d", po::value<bool>(&doDebug)->default_value(true),
          "Do we save debug images.");
     // clang-format on
@@ -128,6 +128,10 @@ int aliceVision_main(int argc, char** argv)
         else if(outLightType == "punctual")
         {
             lightType = lightingEstimation::LightType::Punctual;
+        }
+        else if(outLightType == "led")
+        {
+            lightType = lightingEstimation::LightType::LED;
         }
         else
         {

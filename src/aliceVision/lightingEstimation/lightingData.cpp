@@ -66,6 +66,16 @@ PunctualLighting::PunctualLighting(const Eigen::Vector3f& lightPosition_, const 
     intensity(intensity_)
 {}
 
+PunctualLighting::PunctualLighting(const Eigen::Vector3f& lightPosition_, const Eigen::Vector3f& intensity_)
+  : Lighting(LightType::Punctual),
+    lightPosition(lightPosition_),
+    intensity(3, 0)
+{
+    intensity[0] = intensity_(0);
+    intensity[1] = intensity_(1);
+    intensity[2] = intensity_(2);
+}
+
 PunctualLighting::PunctualLighting(const Eigen::Vector3f& lightPosition_, float intensity_)
   : Lighting(LightType::Punctual),
     lightPosition(lightPosition_),
@@ -92,6 +102,49 @@ PunctualLighting* PunctualLighting::convertToFrame(const std::shared_ptr<sfmData
 const Eigen::Vector3f& PunctualLighting::getLightPosition() const { return lightPosition; }
 
 const std::vector<float>& PunctualLighting::getLightIntensity() const { return intensity; }
+
+
+/*
+ * LED lighting
+ */
+LEDLighting::LEDLighting(
+      const Eigen::Vector3f& lightPosition_, 
+      const Eigen::Vector3f& lightDirection_, 
+      const Eigen::Vector3f& lightRGBIntensity_, 
+      const Eigen::Vector3f& lightRGBAnisotropy_): 
+    Lighting(LightType::LED),
+    lightPosition(lightPosition_),
+    lightDirection(lightDirection_),
+    lightRGBIntensity(lightRGBIntensity_),
+    lightRGBAnisotropy(lightRGBAnisotropy_)
+{}
+
+LEDLighting::~LEDLighting()
+{}
+
+LEDLighting* LEDLighting::clone() const { return new LEDLighting(*this); }
+
+LEDLighting* LEDLighting::convertToFrame(const std::shared_ptr<sfmData::CameraPose>& pose) const
+{
+	Eigen::Matrix4f av_to_vis = Eigen::Matrix4f::Identity();
+	av_to_vis(1, 1) = -1.;
+	av_to_vis(2, 2) = -1.;
+	Eigen::Matrix4f RT = pose->getTransform().getHomogeneous().cast<float>() * av_to_vis;
+
+    Eigen::Vector3f newLightPosition = RT.block<3, 3>(0, 0) * lightPosition + RT.block<3,1>(3,0);
+    Eigen::Vector3f newLightDirection = RT.block<3, 3>(0, 0) * lightDirection;
+
+    return new LEDLighting(newLightPosition, newLightDirection, lightRGBIntensity, lightRGBAnisotropy);
+}
+
+const Eigen::Vector3f& LEDLighting::getLightPosition() const { return lightPosition; }
+
+const Eigen::Vector3f& LEDLighting::getLightDirection() const { return lightDirection; }
+
+const Eigen::Vector3f& LEDLighting::getLightRGBIntensity() const { return lightRGBIntensity; }
+
+const Eigen::Vector3f& LEDLighting::getLightRGBAnisotropy() const { return lightRGBAnisotropy; }
+
 
 
 /*
@@ -179,6 +232,62 @@ bool saveJSON(const Lightings& lightings, const std::string& filename)
             }
             lightTree.add_child("intensity", intensityNode);
         }
+        else if (lightIt->second->getLightType() == LightType::LED)
+        {
+            std::shared_ptr<LEDLighting> pointLighting = std::static_pointer_cast<LEDLighting>(lightIt->second);
+            if (!pointLighting)
+            {
+                ALICEVISION_LOG_ERROR("Wrong lighting type");
+                return false;
+            }
+
+            // Light type
+            lightTree.put("type", "led");
+
+            // Light position 
+            bpt::ptree positionNode;
+            int posLightSize = pointLighting->getLightPosition().size();
+            for (int i = 0; i < posLightSize; ++i)
+            {
+                bpt::ptree cell;
+                cell.put_value<float>(pointLighting->getLightPosition()(i));
+                positionNode.push_back(std::make_pair("", cell));
+            }
+            lightTree.add_child("position", positionNode);
+
+            // Light direction 
+            bpt::ptree directionNode;
+            int dirLightSize = pointLighting->getLightDirection().size();
+            for (int i = 0; i < dirLightSize; ++i)
+            {
+                bpt::ptree cell;
+                cell.put_value<float>(pointLighting->getLightDirection()(i));
+                directionNode.push_back(std::make_pair("", cell));
+            }
+            lightTree.add_child("direction", directionNode);
+
+            // Light rgb intensity
+            bpt::ptree rgbIntensityNode;
+            int rgbIntensityLightSize = pointLighting->getLightRGBIntensity().size();
+            for (int i = 0; i < rgbIntensityLightSize; ++i)
+            {
+                bpt::ptree cell;
+                cell.put_value<float>(pointLighting->getLightRGBIntensity()(i));
+                rgbIntensityNode.push_back(std::make_pair("", cell));
+            }
+            lightTree.add_child("rgbintensity", rgbIntensityNode);
+
+            // Light rgb anisotropy
+            bpt::ptree rgbAnisotropyNode;
+            int rgbAnisotropySize = pointLighting->getLightRGBAnisotropy().size();
+            for (int i = 0; i < rgbAnisotropySize; ++i)
+            {
+                bpt::ptree cell;
+                cell.put_value<float>(pointLighting->getLightRGBAnisotropy()(i));
+                rgbAnisotropyNode.push_back(std::make_pair("", cell));
+            }
+            lightTree.add_child("rgbanisotropy", rgbAnisotropyNode);
+        }
 		else
 		{
 			ALICEVISION_LOG_ERROR("Light type not handled");
@@ -252,6 +361,46 @@ bool loadJSON(const std::string& filename, Lightings& lightings)
 			}
             auto lighting = std::make_shared<PunctualLighting>(
                 Eigen::Vector3f(currentPosition[0], currentPosition[1], currentPosition[2]), currentIntensities);
+            lightings.emplace(lightId, lighting);
+		}
+        else if (lightType == "led")
+		{
+			std::vector<float> currentPosition;
+			std::vector<float> currentDirection;
+			std::vector<float> currentRGBIntensity;
+			std::vector<float> currentRGBAnisotropy;
+
+			for (auto& position: itLight->second.get_child("position"))
+			{
+				currentPosition.push_back(position.second.get_value<float>());
+			}
+
+			for (auto& direction: itLight->second.get_child("direction"))
+			{
+				currentDirection.push_back(direction.second.get_value<float>());
+			}
+
+			for (auto& rgbintensity : itLight->second.get_child("rgbintensity"))
+			{
+				currentRGBIntensity.push_back(rgbintensity.second.get_value<float>());
+			}
+
+			for (auto& rgbanisotropy : itLight->second.get_child("rgbanisotropy"))
+			{
+				currentRGBAnisotropy.push_back(rgbanisotropy.second.get_value<float>());
+			}
+
+			if (currentPosition.size() != 3)
+			{
+				ALICEVISION_LOG_ERROR("Lighting position should have 3 components");
+				return false;
+			}
+            auto lighting = std::make_shared<LEDLighting>(
+                Eigen::Vector3f(currentPosition[0], currentPosition[1], currentPosition[2]), 
+                Eigen::Vector3f(currentDirection[0], currentDirection[1], currentDirection[2]), 
+                Eigen::Vector3f(currentRGBIntensity[0], currentRGBIntensity[1], currentRGBIntensity[2]), 
+                Eigen::Vector3f(currentRGBAnisotropy[0], currentRGBAnisotropy[1], currentRGBAnisotropy[2])
+            );
             lightings.emplace(lightId, lighting);
 		}
 		else

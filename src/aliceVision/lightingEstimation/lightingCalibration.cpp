@@ -125,7 +125,9 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 		std::vector<unsigned int> nonZeroIntensities;
 		for (unsigned int ind = 0; ind < pixels_cur.rows(); ind++)
 		{
-			pixelsRGBf_cur.block(ind, 0, 1, 3) = imageRGBf(pixels_cur(ind, 1), pixels_cur(ind, 0));
+			pixelsRGBf_cur(ind, 0) = imageRGBf(pixels_cur(ind, 1), pixels_cur(ind, 0))(0);
+			pixelsRGBf_cur(ind, 1) = imageRGBf(pixels_cur(ind, 1), pixels_cur(ind, 0))(1);
+			pixelsRGBf_cur(ind, 2) = imageRGBf(pixels_cur(ind, 1), pixels_cur(ind, 0))(2);
 			// if (pixelsIntensity_cur(ind) > 10.0 / 255.0)  // remove dark pixels
 			nonZeroIntensities.push_back(ind);
 		}
@@ -268,7 +270,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		coarseDirectionnalLightEstimation(normalsFull, pixelsIntensityFull, epsilonHuberLoss, lightingDirection);
 		ALICEVISION_LOG_INFO("Estimated lightingDirection: " << lightingDirection.transpose());
 
-		double lightingIntensity = lightingDirection.norm();
+		float lightingIntensity = lightingDirection.norm();
 		lightingDirection = lightingDirection / lightingIntensity;
         if (lightType == LightType::Directionnal)
         {
@@ -281,7 +283,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		Eigen::Vector3f sceneCenter = pointsFull.colwise().mean();
 		Eigen::MatrixX3f pointsCentered = pointsFull.rowwise() - sceneCenter.transpose();
 		Eigen::MatrixXf distTosceneCenter = pointsCentered.rowwise().norm();
-		double lightingDistance = 4.0 * distTosceneCenter.mean();
+		float lightingDistance = 4.0 * distTosceneCenter.mean();
 
 		ALICEVISION_LOG_INFO("Scene center: " << sceneCenter.transpose());
 
@@ -300,11 +302,40 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		pointSourceModelRefinement(pointsFull, normalsFull, pixelsIntensityFull, epsilonHuberLoss, lightingPosition, lightingIntensity);
 		ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
 		ALICEVISION_LOG_INFO("Estimated lightingIntensity: " << lightingIntensity);
+		
+		Eigen::Vector3f lightingRGBIntensity = lightingIntensity * Eigen::Vector3f::Ones();
+
+		ALICEVISION_LOG_INFO("Initial lightingPosition: " << lightingPosition.transpose());
+		ALICEVISION_LOG_INFO("Initial lightingRGBIntensity: " << lightingRGBIntensity.transpose());
+		coloredPointSourceModelRefinement(pointsFull, normalsFull, pixelsRGBFull, epsilonHuberLoss, lightingPosition, lightingRGBIntensity);
+		ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
+		ALICEVISION_LOG_INFO("Estimated lightingRGBIntensity: " << lightingRGBIntensity.transpose());
 
 		if(lightType == LightType::Punctual){
-            lightings.emplace(lightId, std::make_shared<PunctualLighting>(lightingPosition, lightingIntensity));
+            lightings.emplace(lightId, std::make_shared<PunctualLighting>(lightingPosition, lightingRGBIntensity));
 			return true;
 		}
+
+		Eigen::Vector3f lightingLEDDirection = lightingPosition - sceneCenter;
+		lightingLEDDirection = lightingLEDDirection / lightingLEDDirection.norm();
+		Eigen::Vector3f lightingRGBAnisotropy = 0.01 * Eigen::Vector3f::Ones();
+
+		ALICEVISION_LOG_INFO("Initial lightingPosition: " << lightingPosition.transpose());
+		ALICEVISION_LOG_INFO("Initial lightingDirection: " << lightingLEDDirection.transpose());
+		ALICEVISION_LOG_INFO("Initial lightingRGBIntensity: " << lightingRGBIntensity.transpose());
+		ALICEVISION_LOG_INFO("Initial lightingRGBAnisotropy: " << lightingRGBAnisotropy.transpose());
+		LEDModelRefinement(pointsFull, normalsFull, pixelsRGBFull, epsilonHuberLoss, lightingPosition, lightingLEDDirection, lightingRGBIntensity, lightingRGBAnisotropy);
+		ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
+		ALICEVISION_LOG_INFO("Estimated lightingDirection: " << lightingLEDDirection.transpose());
+		ALICEVISION_LOG_INFO("Estimated lightingRGBIntensity: " << lightingRGBIntensity.transpose());
+		ALICEVISION_LOG_INFO("Estimated lightingRGBAnisotropy: " << lightingRGBAnisotropy.transpose());
+
+		if(lightType == LightType::LED){
+            lightings.emplace(lightId, std::make_shared<LEDLighting>(lightingPosition, lightingLEDDirection, lightingRGBIntensity, lightingRGBAnisotropy));
+			return true;
+		}
+
+
 		return false;
     }
     
