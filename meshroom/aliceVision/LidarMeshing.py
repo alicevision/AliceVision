@@ -36,12 +36,12 @@ class LidarMeshing(desc.AVCommandLineNode):
             name="boundingBox",
             label="Bounding Box Settings",
             description="Translation, rotation and scale of the bounding box.",
-            groupDesc=[
+            items=[
                 desc.GroupAttribute(
                     name="bboxTranslation",
                     label="Translation",
                     description="Position in space.",
-                    groupDesc=[
+                    items=[
                         desc.FloatParam(
                             name="x", label="x", description="X offset.",
                             value=0.0,
@@ -64,7 +64,7 @@ class LidarMeshing(desc.AVCommandLineNode):
                     name="bboxRotation",
                     label="Euler Rotation",
                     description="Rotation in Euler degrees.",
-                    groupDesc=[
+                    items=[
                         desc.FloatParam(
                             name="x", label="x", description="Euler X rotation.",
                             value=0.0,
@@ -87,7 +87,7 @@ class LidarMeshing(desc.AVCommandLineNode):
                     name="bboxScale",
                     label="Scale",
                     description="Scale of the bounding box.",
-                    groupDesc=[
+                    items=[
                         desc.FloatParam(
                             name="x", label="x", description="X scale.",
                             value=1.0,

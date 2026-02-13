@@ -130,7 +130,7 @@ class ImageProcessing(desc.AVCommandLineNode):
             label="Lens Correction",
             description="Automatic lens correction settings.",
             joinChar=":",
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="lensCorrectionEnabled",
                     label="Enable",
@@ -207,7 +207,7 @@ class ImageProcessing(desc.AVCommandLineNode):
             label="Sharpen Filter",
             description="Sharpen filter parameters.",
             joinChar=":",
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="sharpenFilterEnabled",
                     label="Enable",
@@ -245,7 +245,7 @@ class ImageProcessing(desc.AVCommandLineNode):
             label="Bilateral Filter",
             description="Bilateral filter parameters.",
             joinChar=":",
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="bilateralFilterEnabled",
                     label="Enable",
@@ -284,7 +284,7 @@ class ImageProcessing(desc.AVCommandLineNode):
             label="Clahe Filter",
             description="Clahe filter parameters.",
             joinChar=":",
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="claheEnabled",
                     label="Enable",
@@ -315,7 +315,7 @@ class ImageProcessing(desc.AVCommandLineNode):
             label="Noise Filter",
             description="Noise filter parameters.",
             joinChar=":",
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="noiseEnabled",
                     label="Enable",
@@ -371,7 +371,7 @@ class ImageProcessing(desc.AVCommandLineNode):
             description="NL Means Denoising Parameters.\n"
                         "This implementation only works on 8-bit images, so the colors can be reduced and clamped.",
             joinChar=":",
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="nlmFilterEnabled",
                     label="Enable",
@@ -422,7 +422,7 @@ class ImageProcessing(desc.AVCommandLineNode):
             label="Pixel Aspect Ratio",
             description="Pixel Aspect Ratio parameters.",
             joinChar=":",
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="parEnabled",
                     label="Enable",

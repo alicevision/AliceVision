@@ -87,12 +87,12 @@ The transformation can be based on:
             name="manualTransform",
             label="Manual Transform (Gizmo)",
             description="Translation, rotation (Euler ZXY) and uniform scale.",
-            groupDesc=[
+            items=[
                 desc.GroupAttribute(
                     name="manualTranslation",
                     label="Translation",
                     description="Translation in space.",
-                    groupDesc=[
+                    items=[
                         desc.FloatParam(
                             name="x",
                             label="x",
@@ -121,7 +121,7 @@ The transformation can be based on:
                     name="manualRotation",
                     label="Euler Rotation",
                     description="Rotation in Euler angles.",
-                    groupDesc=[
+                    items=[
                         desc.FloatParam(
                             name="x",
                             label="x",
@@ -180,7 +180,7 @@ The transformation can be based on:
                 label="Marker Align",
                 description="",
                 joinChar=":",
-                groupDesc=[
+                items=[
                     desc.IntParam(
                         name="markerId",
                         label="Marker",
@@ -193,7 +193,7 @@ The transformation can be based on:
                         label="Coord",
                         description="Marker coordinates.",
                         joinChar=",",
-                        groupDesc=[
+                        items=[
                             desc.FloatParam(
                                 name="x",
                                 label="x",

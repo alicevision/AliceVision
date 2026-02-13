@@ -43,7 +43,7 @@ Spheres can be automatically detected or manually defined in the interface.
             name="sphereCenter",
             label="Sphere Center",
             description="Center of the circle (XY offset to the center of the image in pixels).",
-            groupDesc=[
+            items=[
                 desc.FloatParam(
                     name="x",
                     label="x",
