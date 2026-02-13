@@ -28,7 +28,7 @@ RUN update-alternatives --install /usr/bin/g++ g++ /opt/rh/gcc-toolset-12/root/u
 RUN update-alternatives --install /usr/bin/cpp cpp /opt/rh/gcc-toolset-12/root/usr/bin/cpp 60
 RUN dnf install -y ca-certificates wget cmake git unzip pcre2-devel xerces-c-devel
 RUN dnf install -y python3.11-devel python3.11-pip python3.11-pybind11-devel bison diffutils which file yasm
-RUN dnf install -y gcc-toolset-12-gcc-gfortran libasan libubsan yaml-cpp
+RUN dnf install -y gcc-toolset-12-gcc-gfortran libasan libubsan yaml-cpp openssl-devel texinfo libtool automake
 RUN dnf update -y
 
 # RUN scl enable gcc-toolset-12 bash
@@ -45,10 +45,17 @@ RUN gfortran --version
 
 RUN python3.11 -m pip install numpy==1.*
 
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6.tar.gz 
+RUN tar -xzf cmake-3.31.6.tar.gz && \
+    cd cmake-3.31.6 && \
+    ./bootstrap --prefix=/usr/local && \
+    make -j 16 && \
+    make install
+
 ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
     AV_INSTALL=/opt/AliceVision_install \
-    PATH="${PATH}:${AV_BUNDLE}"
+    PATH="/usr/local/bin:${PATH}"
 
 COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
 RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" >> /etc/profile.d/alicevision.sh
@@ -115,5 +122,5 @@ RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gn
 
 
 RUN cmake --build . -j ${CPU_CORES} && \
-   mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
-   rm -rf "${AV_BUILD}"
+mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
+rm -rf "${AV_BUILD}"

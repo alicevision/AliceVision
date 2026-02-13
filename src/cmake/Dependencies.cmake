@@ -1254,7 +1254,7 @@ if(AV_BUILD_SUITESPARSE)
         BUILD_ALWAYS 0
         UPDATE_COMMAND ""
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-        CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --with-gmp=<INSTALL_DIR>
+        CONFIGURE_COMMAND autoreconf -f -i <SOURCE_DIR> && <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --with-gmp=<INSTALL_DIR>
         BUILD_COMMAND $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
         DEPENDS gmp
     )
