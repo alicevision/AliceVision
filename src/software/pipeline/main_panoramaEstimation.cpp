@@ -143,12 +143,6 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if (!inputSfmData.getRigs().empty())
-    {
-        ALICEVISION_LOG_ERROR("Rigs are not currently supported in PanoramaEstimation.");
-        return EXIT_FAILURE;
-    }
-
     /* Store the pose c1_R_o of the prior */
     sfmData::Poses& initial_poses = inputSfmData.getPoses();
     Eigen::Matrix3d c1_R_oprior = Eigen::Matrix3d::Identity();
