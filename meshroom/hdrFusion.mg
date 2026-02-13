@@ -1,12 +1,12 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0",
+        "releaseVersion": "2026.1.0+develop",
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.0",
             "CopyFiles": "1.3",
-            "LdrToHdrCalibration": "3.1",
-            "LdrToHdrMerge": "4.1",
+            "LdrToHdrCalibration": "3.2",
+            "LdrToHdrMerge": "4.2",
             "LdrToHdrSampling": "4.0"
         },
         "template": true
@@ -19,6 +19,18 @@
                 0
             ],
             "inputs": {}
+        },
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
+            "position": [
+                800,
+                0
+            ],
+            "inputs": {
+                "inputFiles": [
+                    "{LdrToHdrMerge_1.outputFolder}"
+                ]
+            }
         },
         "LdrToHdrCalibration_1": {
             "nodeType": "LdrToHdrCalibration",
@@ -45,6 +57,7 @@
             "inputs": {
                 "input": "{LdrToHdrCalibration_1.input}",
                 "response": "{LdrToHdrCalibration_1.response}",
+                "luminanceStatistics": "{LdrToHdrCalibration_1.luminanceStatistics}",
                 "userNbBrackets": "{LdrToHdrCalibration_1.userNbBrackets}",
                 "byPass": "{LdrToHdrCalibration_1.byPass}",
                 "channelQuantizationPower": "{LdrToHdrCalibration_1.channelQuantizationPower}",
@@ -59,18 +72,6 @@
             ],
             "inputs": {
                 "input": "{CameraInit_1.output}"
-            }
-        },
-        "CopyFiles_1": {
-            "nodeType": "CopyFiles",
-            "position": [
-                800,
-                0
-            ],
-            "inputs": {
-                "inputFiles": [
-                    "{LdrToHdrMerge_1.outputFolder}"
-                ]
             }
         }
     }

@@ -90,7 +90,8 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
                       const std::string& outputFolder,
                       const std::string& extension,
                       const std::string& offsetPresetX,
-                      const std::string& offsetPresetY)
+                      const std::string& offsetPresetY,
+                      IndexT poseId)
 {
     // Load source image from disk
     image::Image<image::RGBfColor> imageSource;
@@ -153,8 +154,8 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
             auto view = std::make_shared<sfmData::View>(
               /* image path */ subFolder + std::string("/") + filename,
               /* viewId */ viewId,
-              /* intrinsicId */ 0,
-              /* poseId */ UndefinedIndexT,
+              /* intrinsicId */ i,
+              /* poseId */ poseId,
               /* width */ outSide,
               /* height */ outSide,
               /* rigId */ 0,
@@ -540,7 +541,7 @@ int aliceVision_main(int argc, char** argv)
         }
         else if (splitMode == "dualfisheye")
         {
-            hasCorrectPath = splitDualFisheye(outSfmData, imagePath, outputFolder, extension, dualFisheyeOffsetPresetX, dualFisheyeOffsetPresetY);
+            hasCorrectPath = splitDualFisheye(outSfmData, imagePath, outputFolder, extension, dualFisheyeOffsetPresetX, dualFisheyeOffsetPresetY, i);
         }
 
         if (!hasCorrectPath)
@@ -596,22 +597,26 @@ int aliceVision_main(int argc, char** argv)
             width = view->getImage().getWidth();
             height = view->getImage().getHeight();
             focal_px = view->getImage().getMetadataFocalLength() * (width / 36.0);
-            if (focal_px < 0)
-            {
-                // If there is no focal metadata, use a default field of view of 170 degrees
-                focal_px = (width / 2.0) / tan(degreeToRadian(170.0) / 2.0);
-            }
 
             // Use either a pinhole fisheye model or an equidistant model depending on user choice
             if (dualFisheyeCameraModel == "fisheye4")
             {
                 cameraModel = camera::EINTRINSIC::PINHOLE_CAMERA;
                 distortionModel = camera::EDISTORTION::DISTORTION_FISHEYE;
+
+                if (focal_px < 0)
+                {
+                    // If there is no focal metadata, use a default field of view of 170 degrees
+                    focal_px = (width / 2.0) / tan(degreeToRadian(170.0) / 2.0);
+                }
             }
             else 
             {
                 cameraModel = camera::EINTRINSIC::EQUIDISTANT_CAMERA;
                 distortionModel = camera::EDISTORTION::DISTORTION_RADIALK3PT;
+                // For equidistant, always replace focal
+                // As the existing focal make no real sense
+                focal_px = width / M_PI;
             }
         }
 
@@ -625,6 +630,11 @@ int aliceVision_main(int argc, char** argv)
         // Note: intrinsic ID is 0, this convention is used in several places in this file
         auto& intrinsics = outSfmData.getIntrinsics();
         intrinsics.emplace(0, intrinsic);
+        if (splitMode == "dualfisheye")
+        {
+            // In dual-fisheye mode, also register the same intrinsic under ID 1 for the second view.
+            intrinsics.emplace(1, intrinsic);
+        }
     }
 
     // Save sfmData with modified path to images

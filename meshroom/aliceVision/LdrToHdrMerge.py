@@ -1,4 +1,4 @@
-__version__ = "4.1"
+__version__ = "4.2"
 
 import json
 
@@ -43,6 +43,12 @@ class LdrToHdrMerge(desc.AVCommandLineNode):
             name="response",
             label="Response File",
             description="Response file.",
+            value="",
+        ),
+        desc.File(
+            name="luminanceStatistics",
+            label="Luminance Statistics",
+            description="File containing the luminance statistics produced by the calibration process",
             value="",
         ),
         desc.IntParam(
