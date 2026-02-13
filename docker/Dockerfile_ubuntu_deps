@@ -52,7 +52,7 @@ RUN . ./etc/os-release && \
 RUN test -f /usr/share/doc/kitware-archive-keyring/copyright || wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
 RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y cmake=3.25.2-0kitware1ubuntu22.04.1 cmake-data=3.25.2-0kitware1ubuntu22.04.1
+    DEBIAN_FRONTEND=noninteractive apt-get install -y cmake=3.31.11-0kitware1ubuntu22.04.1 cmake-data=3.31.11-0kitware1ubuntu22.04.1
 
 RUN add-apt-repository ppa:deadsnakes/ppa && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3.11 python3.11-dev python3.11-distutils curl && \
