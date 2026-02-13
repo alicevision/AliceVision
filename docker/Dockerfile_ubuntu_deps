@@ -37,7 +37,6 @@ RUN . ./etc/os-release && \
         libssl-dev \
         nasm \
         automake \
-        cmake \
         clang-format \
         libxerces-c-dev \
         gcc-12 \
@@ -45,8 +44,18 @@ RUN . ./etc/os-release && \
         cpp-12 \
         gfortran-12 \
         libpcre2-dev \
+        texinfo \
+        automake \
+        libtool \
         bison && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 --slave /usr/bin/g++ g++ /usr/bin/g++-12 --slave /usr/bin/gcov gcov /usr/bin/gcov-12  --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-12
+
+# The Kitware repo provides a recent cmake
+RUN test -f /usr/share/doc/kitware-archive-keyring/copyright || wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y cmake=3.31.11-0kitware1ubuntu22.04.1 cmake-data=3.31.11-0kitware1ubuntu22.04.1
+
 
 RUN add-apt-repository ppa:deadsnakes/ppa && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3.11 python3.11-dev python3.11-distutils curl && \
