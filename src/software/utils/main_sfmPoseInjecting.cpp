@@ -215,6 +215,7 @@ int aliceVision_main(int argc, char** argv)
     ERotationFormat format = ERotationFormat::EulerZXY;
     double frameRate = 24.0;
     bool lockPoses = false;
+    int offset = 0;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -233,7 +234,9 @@ int aliceVision_main(int argc, char** argv)
         ("lockPoses", po::value<bool>(&lockPoses)->default_value(lockPoses),
          "Do we lock the pose parameters for future refinement ?")
         ("posesFilename,p", po::value<std::string>(&posesFilename)->default_value(posesFilename),
-        "File containing the poses to inject.");
+        "File containing the poses to inject.")
+        ("offset", po::value<int>(&offset)->default_value(offset),
+        "Offset to use on the reference file frame number to match the input frame number.");
     // clang-format on
 
     CmdLine cmdline("AliceVision SfM Pose injecting");
@@ -292,12 +295,17 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    for (const auto& rpose : readPoses)
+    {
+        ALICEVISION_LOG_INFO("A keyframe has been found in reference with frameId " << rpose.frameId << " (With offset : " << rpose.frameId + offset << ").");
+    }
+
     // Set the pose for all the views with frame IDs found in the JSON file
     for (const auto& [id, pview] : sfmData.getViews())
     {
         for (const auto& rpose : readPoses)
         {
-            if (pview->getFrameId() == rpose.frameId)
+            if (pview->getFrameId() == rpose.frameId + offset)
             {
                 ALICEVISION_LOG_INFO("Assigning view " << id << "(frame " << rpose.frameId << ")");
                 geometry::Pose3 pose(rpose.T);

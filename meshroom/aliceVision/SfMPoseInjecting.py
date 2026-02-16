@@ -44,6 +44,12 @@ class SfMPoseInjecting(desc.AVCommandLineNode):
             value="EulerZXY",
             enabled=lambda node: pathlib.Path(node.posesFilename.value).suffix.lower() == ".json"
         ),
+        desc.IntParam(
+            name="offset",
+            label="Frame number offset",
+            description="Offset to use on the reference file frame number to match the input frame number.",
+            value=0,
+        ),
         desc.BoolParam(
             name="lockPoses",
             label="Lock Injected Poses",
