@@ -142,7 +142,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                         "- With the smart method, keyframes are selected based on their sharpness "
                         "and optical flow scores.",
             group=None,  # skip group from command line
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="useSmartSelection",
                     label="Use Smart Keyframe Selection",
@@ -157,7 +157,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                                 "to the set parameters.",
                     group=None,  # skip group from command line
                     enabled=lambda node: node.selectionMethod.useSmartSelection.value is False,
-                    groupDesc=[
+                    items=[
                         desc.IntParam(
                             name="minFrameStep",
                             label="Min Frame Step",
@@ -197,7 +197,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                                 "flow scores.",
                     group=None,  # skip group from command line
                     enabled=lambda node: node.selectionMethod.useSmartSelection.value,
-                    groupDesc=[
+                    items=[
                         desc.FloatParam(
                             name="pxDisplacement",
                             label="Pixel Displacement",
@@ -337,14 +337,14 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
             group=None,  # skip group from command line
             enabled=lambda node: node.selectionMethod.useSmartSelection.value,
             advanced=True,
-            groupDesc=[
+            items=[
                 desc.GroupAttribute(
                     name="debugScores",
                     label="Export Scores",
                     description="Export the computed sharpness and optical flow scores to a file.",
                     group=None,  # skip group from command line
                     enabled=lambda node: node.debugOptions.enabled,
-                    groupDesc=[
+                    items=[
                         desc.BoolParam(
                             name="exportScores",
                             label="Export Scores To CSV",
@@ -376,7 +376,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                     description="Visualise the motion vectors for each input frame in HSV.",
                     group=None,  # skip group from command line
                     enabled=lambda node: node.debugOptions.enabled,
-                    groupDesc=[
+                    items=[
                         desc.BoolParam(
                             name="exportFlowVisualisation",
                             label="Visualise Optical Flow",

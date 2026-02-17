@@ -89,7 +89,7 @@ This node allows to setup the Panorama:
             name="fisheyeCenterOffset",
             label="Fisheye Center",
             description="Center of the fisheye circle (XY offset to the center in pixels).",
-            groupDesc=[
+            items=[
                 desc.FloatParam(
                     name="fisheyeCenterOffset_x",
                     label="x",

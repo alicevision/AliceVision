@@ -85,7 +85,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             description="Color map parameters.",
             enabled=lambda node: (node.imagesFolder.value != ''),
             group=None,
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="enable",
                     label="Enable",
@@ -110,7 +110,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             description="Bump mapping parameters.",
             enabled=lambda node: (node.inputRefMesh.value != ''),
             group=None,
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="enable",
                     label="Enable",
@@ -151,7 +151,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             description="Displacement mapping parameters.",
             enabled=lambda node: (node.inputRefMesh.value != ""),
             group=None,
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="enable",
                     label="Enable",
@@ -211,7 +211,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
         desc.GroupAttribute(
             name="multiBandNbContrib",
             label="Multi-Band Contributions",
-            groupDesc=[
+            items=[
                 desc.IntParam(
                     name="high",
                     label="High Freq",

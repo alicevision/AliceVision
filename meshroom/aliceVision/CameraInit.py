@@ -188,7 +188,7 @@ Intrinsic = [
         name="principalPoint",
         label="Principal Point",
         description="Position of the optical center in the image (i.e. the sensor surface).",
-        groupDesc=[
+        items=[
             desc.FloatParam(
                 name="x",
                 label="x",
@@ -243,7 +243,7 @@ Intrinsic = [
         name="undistortionOffset",
         label="Undistortion Offset",
         description="Undistortion offset.",
-        groupDesc=[
+        items=[
             desc.FloatParam(
                 name="x",
                 label="x",
@@ -356,7 +356,7 @@ The needed metadata are:
                 name="viewpoint",
                 label="Viewpoint",
                 description="Viewpoint.",
-                groupDesc=Viewpoint,
+                items=Viewpoint,
             ),
             label="Viewpoints",
             description="Input viewpoints.",
@@ -368,7 +368,7 @@ The needed metadata are:
                 name="intrinsic",
                 label="Intrinsic",
                 description="Intrinsic.",
-                groupDesc=Intrinsic,
+                items=Intrinsic,
             ),
             label="Intrinsics",
             description="Camera intrinsics.",

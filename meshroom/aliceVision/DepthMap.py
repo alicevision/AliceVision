@@ -72,7 +72,7 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
             label="Tiling",
             description="Tiles are used to split the computation into fixed buffers to fit the GPU best.",
             group=None,
-            groupDesc=[
+            items=[
                 desc.IntParam(
                     name="tileBufferWidth",
                     label="Buffer Width",
@@ -126,7 +126,7 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
                         "This method is highly robust but has limited depth precision (banding artifacts due to a "
                         "limited list of depth planes).",
             group=None,
-            groupDesc=[
+            items=[
                 desc.IntParam(
                     name="sgmScale",
                     label="Downscale Factor",
@@ -269,7 +269,7 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
                         "range around the SGM depth map.\n"
                         "This allows to compute a depth map with sub-pixel accuracy.",
             group=None,
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="refineEnabled",
                     label="Enable",
@@ -380,7 +380,7 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
             label="Color Optimization",
             description="Color optimization post-process parameters.",
             group=None,
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="colorOptimizationEnabled",
                     label="Enable",
@@ -404,7 +404,7 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
             description="User custom patch pattern for similarity comparison.",
             advanced=True,
             group=None,
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="sgmUseCustomPatchPattern",
                     label="Enable For SGM",
@@ -432,7 +432,7 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
                         description="Custom patch pattern subpart configuration for similarity volume computation.",
                         joinChar=":",
                         group=None,
-                        groupDesc=[
+                        items=[
                             desc.ChoiceParam(
                                 name="customPatchPatternSubpartType",
                                 label="Type",
@@ -489,7 +489,7 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
                         "Warning: Dramatically affect performances and use large amount of storage.",
             advanced=True,
             group=None,
-            groupDesc=[
+            items=[
                 desc.BoolParam(
                     name="exportIntermediateDepthSimMaps",
                     label="Export Depth Maps",
