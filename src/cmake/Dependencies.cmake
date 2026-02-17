@@ -112,8 +112,8 @@ if(AV_BUILD_ZLIB)
     set(ZLIB_TARGET zlib)
 
     ExternalProject_Add(${ZLIB_TARGET}
-        URL https://www.zlib.net/zlib-1.3.1.tar.gz
-        URL_HASH SHA256=9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+        URL https://www.zlib.net/zlib-1.3.2.tar.gz
+        URL_HASH SHA256=bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16
         DOWNLOAD_DIR ${BUILD_DIR}/download/zlib
         PREFIX ${BUILD_DIR}
         BUILD_IN_SOURCE 0
