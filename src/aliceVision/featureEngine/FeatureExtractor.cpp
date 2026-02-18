@@ -149,7 +149,7 @@ void FeatureExtractor::process(const HardwareContext& hContext, const image::EIm
         nbThreads = std::min(cpuJobs.size(), nbThreads);
 
         ALICEVISION_LOG_INFO("# threads for extraction: " << nbThreads);
-        omp_set_nested(1);
+        omp_set_max_active_levels(2);
 
 #pragma omp parallel for num_threads(nbThreads)
         for (int i = 0; i < cpuJobs.size(); ++i)

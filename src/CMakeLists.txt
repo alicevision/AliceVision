@@ -253,6 +253,7 @@ endif()
 if (ALICEVISION_USE_OPENMP STREQUAL "OFF")
     set(ALICEVISION_HAVE_OPENMP 0)
 else() # ON OR AUTO
+    # set(OpenMP_RUNTIME_MSVC "llvm")
     find_package(OpenMP)
 
     if (OPENMP_FOUND)
@@ -676,13 +677,13 @@ if (NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
         set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
     endif()
 
-    find_package(CUDA 11.0)
+    find_package(CUDA 12.0)
 
     if (CUDA_FOUND)
         set(ALICEVISION_HAVE_CUDA 1)
         message(STATUS "CUDA found.")
     elseif (ALICEVISION_USE_CUDA STREQUAL "ON")
-        message(SEND_ERROR "Failed to find CUDA (>= 11.0).")
+        message(SEND_ERROR "Failed to find CUDA (>= 12.0).")
     endif()
 endif()
 
