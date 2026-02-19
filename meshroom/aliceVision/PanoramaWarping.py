@@ -1,15 +1,12 @@
 __version__ = "1.1"
 
-import json
-import os
-
 from meshroom.core import desc
 from meshroom.core.utils import COLORSPACES, EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
-
+from pyalicevision import parallelization as avpar
 
 class PanoramaWarping(desc.AVCommandLineNode):
     commandLine = "aliceVision_panoramaWarping {allParams}"
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicReconstructedViewsSize("input")
     parallelization = desc.Parallelization(blockSize=5)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 

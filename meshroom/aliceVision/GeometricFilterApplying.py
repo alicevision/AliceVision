@@ -2,11 +2,11 @@ __version__ = "1.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
-
+from pyalicevision import parallelization as avpar
 
 class GeometricFilterApplying(desc.AVCommandLineNode):
     commandLine = 'aliceVision_geometricFilterApplying {allParams}'
-    size = desc.DynamicNodeSize('input')
+    size = avpar.DynamicViewsSize("input")
     parallelization = desc.Parallelization(blockSize=20)
     commandLineRange = '--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}'
 

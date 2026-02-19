@@ -5,11 +5,11 @@ import os
 
 from meshroom.core import desc
 from meshroom.core.utils import EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
-
+from pyalicevision import parallelization as avpar
 
 class PanoramaCompositing(desc.AVCommandLineNode):
     commandLine = "aliceVision_panoramaCompositing {allParams}"
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicReconstructedViewsSize("input")
     parallelization = desc.Parallelization(blockSize=5)
     commandLineRange = "--rangeIteration {rangeIteration} --rangeSize {rangeBlockSize}"
     cpu = desc.Level.INTENSIVE

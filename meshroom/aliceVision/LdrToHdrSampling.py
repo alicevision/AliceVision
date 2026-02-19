@@ -4,7 +4,7 @@ import json
 
 from meshroom.core import desc
 from meshroom.core.utils import COLORSPACES, VERBOSE_LEVEL
-
+from pyalicevision import parallelization as avpar
 
 def findMetadata(d, keys, defaultValue):
     v = None
@@ -24,28 +24,10 @@ def findMetadata(d, keys, defaultValue):
     return defaultValue
 
 
-class DividedInputNodeSize(desc.DynamicNodeSize):
-    """
-    The LDR2HDR will reduce the amount of views in the SfMData.
-    This class converts the number of LDR input views into the number of HDR output views.
-    """
-    def __init__(self, param, divParam):
-        super(DividedInputNodeSize, self).__init__(param)
-        self._divParam = divParam
-
-    def computeSize(self, node):
-        s = super(DividedInputNodeSize, self).computeSize(node)
-        divParam = node.attribute(self._divParam)
-        if divParam.value == 0:
-            return s
-        # s is the total number of inputs and may include outliers, that will not be used
-        # during computations and should thus be excluded from the size computation
-        return (s - node.outliersNb) / divParam.value
-
 
 class LdrToHdrSampling(desc.AVCommandLineNode):
     commandLine = "aliceVision_LdrToHdrSampling {allParams}"
-    size = DividedInputNodeSize("input", "nbBrackets")
+    size = avpar.DynamicDividedViewsSize("input", "nbBrackets")
     parallelization = desc.Parallelization(blockSize=2)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 

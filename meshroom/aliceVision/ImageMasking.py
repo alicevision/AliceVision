@@ -2,11 +2,11 @@ __version__ = "3.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
-
+from pyalicevision import parallelization as avpar
 
 class ImageMasking(desc.AVCommandLineNode):
     commandLine = "aliceVision_imageMasking {allParams}"
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicViewsSize("input")
     parallelization = desc.Parallelization(blockSize=40)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 

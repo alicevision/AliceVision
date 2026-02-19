@@ -4,6 +4,7 @@ import json
 
 from meshroom.core import desc
 from meshroom.core.utils import COLORSPACES, EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
+from pyalicevision import parallelization as avpar
 
 def findMetadata(d, keys, defaultValue):
     v = None
@@ -25,7 +26,7 @@ def findMetadata(d, keys, defaultValue):
 
 class LdrToHdrMerge(desc.AVCommandLineNode):
     commandLine = "aliceVision_LdrToHdrMerge {allParams}"
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicDividedViewsSize("input", "nbBrackets")
     parallelization = desc.Parallelization(blockSize=2)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 

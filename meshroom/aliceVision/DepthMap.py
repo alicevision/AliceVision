@@ -2,12 +2,12 @@ __version__ = "5.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
-
+from pyalicevision import parallelization as avpar
 
 class DepthMap(desc.AVCommandLineNode):
     commandLine = "aliceVision_depthMapEstimation {allParams}"
     gpu = desc.Level.INTENSIVE
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicReconstructedViewsSize("input")
     parallelization = desc.Parallelization(blockSize=12)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 

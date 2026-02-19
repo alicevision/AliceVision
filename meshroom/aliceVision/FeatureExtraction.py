@@ -2,11 +2,11 @@ __version__ = "1.3"
 
 from meshroom.core import desc
 from meshroom.core.utils import COLORSPACES, DESCRIBER_TYPES, VERBOSE_LEVEL
-
+from pyalicevision import parallelization as avpar
 
 class FeatureExtraction(desc.AVCommandLineNode):
     commandLine = "aliceVision_featureExtraction {allParams}"
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicViewsSize("input")
     parallelization = desc.Parallelization(blockSize=40)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
