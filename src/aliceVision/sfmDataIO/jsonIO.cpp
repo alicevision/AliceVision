@@ -891,7 +891,7 @@ bool loadJSON(sfmData::SfMData& sfmData,
                     view->getImage().setWidth(intrinsics->w());
                     view->getImage().setHeight(intrinsics->h());
                 }
-                updateIncompleteView(*view, viewIdMethod, viewIdRegex);
+                bootstrapView(*view, viewIdMethod, viewIdRegex);
 
 #pragma omp critical
                 {

@@ -557,5 +557,15 @@ std::string getAliceVisionOCIOConfig();
 
 void setAliceVisionRootOverride(const std::string& value);
 
+/**
+* @brief List all images found in the directory path
+* if path is a file, then only this path is considered
+* A file is considered an image if its extension match oiio known extensions
+* @param images the result list of images
+* @param path the filesystem path to check
+* @return true if no error happened
+*/
+bool listImages(std::vector<std::string> & images, const std::string & path);
+
 }  // namespace image
 }  // namespace aliceVision

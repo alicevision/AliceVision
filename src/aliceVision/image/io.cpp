@@ -11,7 +11,8 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/colorspace.hpp>
 #include <aliceVision/image/dcp.hpp>
-
+#include <aliceVision/half.hpp>
+#include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 
@@ -21,9 +22,6 @@
 #include <OpenImageIO/color.h>
 #include <OpenImageIO/imagecache.h>
 
-#include <aliceVision/half.hpp>
-#include <aliceVision/stl/mapUtils.hpp>
-
 #include <boost/algorithm/string.hpp>
 
 #include <cstring>
@@ -31,6 +29,8 @@
 #include <stdexcept>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+#include <cctype>
 
 namespace aliceVision {
 namespace image {
@@ -1452,7 +1452,67 @@ std::string getAliceVisionOCIOConfig()
     return {};
 }
 
-void setAliceVisionRootOverride(const std::string& value) { aliceVisionRootOverride = value; }
+void setAliceVisionRootOverride(const std::string& value) 
+{ 
+    aliceVisionRootOverride = value; 
+}
+
+bool listImages(std::vector<std::string> & images, const std::string & path)
+{
+    images.clear();
+
+    // Retrieve all image extensions supported by oiio
+    std::vector<std::string> oiioExtensions = getSupportedExtensions();
+
+    // Lambda to check if a path has a supported image extension
+    auto isSupportedImageExtension = [&oiioExtensions](const fs::path& filePath) -> bool 
+    {
+        std::string currentExtension = filePath.extension().string();
+        std::transform(currentExtension.begin(), currentExtension.end(), currentExtension.begin(), ::tolower);
+
+        for (const auto& oiioExtension : oiioExtensions)
+        {
+            if (oiioExtension == currentExtension)
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // Check if path is a file
+    fs::path paramPath(path);
+    if (fs::is_regular_file(paramPath))
+    {
+        if (isSupportedImageExtension(paramPath))
+        {
+            images.push_back(path);
+            return true;
+        }
+    }
+
+    // Check if path is a directory
+    if (!fs::is_directory(paramPath))
+    {
+        return false;
+    }
+
+    // Recursively find all files with a given extension
+    for (const auto& entry : fs::recursive_directory_iterator(path)) 
+    {
+        if (!entry.is_regular_file())
+        {
+            continue;
+        }
+
+        if (isSupportedImageExtension(entry.path()))
+        {
+            images.push_back(entry.path().string());
+        }
+    }
+
+    return true;
+}
 
 }  // namespace image
 }  // namespace aliceVision

@@ -381,7 +381,7 @@ int aliceVision_main(int argc, char** argv)
             for (int i = 0; i < imagePaths.size(); ++i)
             {
                 auto view = std::make_shared<sfmData::View>(imagePaths.at(i).string());
-                updateIncompleteView(*view, viewIdMethod, viewIdRegex);
+                bootstrapView(*view, viewIdMethod, viewIdRegex);
 
 #pragma omp critical
                 {

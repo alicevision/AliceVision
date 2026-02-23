@@ -237,6 +237,15 @@ class View
      */
     void setResectionId(IndexT resectionId) { _resectionId = resectionId; }
 
+    /**
+     * @brief Check if the view has the minimal identifiers required for processing.
+     * @return true if view, intrinsic, and pose identifiers are set consistently.
+     */
+    bool isFullySetup()
+    {
+        return (getViewId() != UndefinedIndexT && getIntrinsicId() != UndefinedIndexT && getPoseId() == getViewId());
+    }
+
   private:
     /// view id
     IndexT _viewId;
