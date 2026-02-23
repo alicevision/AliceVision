@@ -2,11 +2,12 @@ __version__ = "2.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
-
+from pyalicevision import parallelization as avpar
 
 class CheckerboardDetection(desc.AVCommandLineNode):
     commandLine = "aliceVision_checkerboardDetection {allParams}"
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicViewsSize("input")
+    
     parallelization = desc.Parallelization(blockSize=5)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 

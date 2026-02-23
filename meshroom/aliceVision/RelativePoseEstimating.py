@@ -2,10 +2,11 @@ __version__ = "3.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
+from pyalicevision import parallelization as avpar
 
 class RelativePoseEstimating(desc.AVCommandLineNode):
     commandLine = "aliceVision_relativePoseEstimating {allParams}"
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicViewsSize("input")
     
     parallelization = desc.Parallelization(blockSize=25)
     commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"

@@ -2,14 +2,13 @@ __version__ = "1.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
-
-import os.path
+from pyalicevision import parallelization as avpar
 
 
 class MaskEroding(desc.AVCommandLineNode):
     commandLine = "aliceVision_maskEroding {allParams}"
 
-    size = desc.DynamicNodeSize("input")
+    size = avpar.DynamicViewsSize("input")
     parallelization = desc.Parallelization(blockSize=50)
     commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
 
