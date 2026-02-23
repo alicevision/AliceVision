@@ -1475,7 +1475,7 @@ std::shared_ptr<sfmData::View> KeyframeSelector::createView(const std::string& i
     // Complete the View attributes
     sfmDataIO::EViewIdMethod viewIdMethod = sfmDataIO::EViewIdMethod::METADATA;
     std::string viewIdRegex = ".*?(\\d+)";
-    sfmDataIO::updateIncompleteView(*(view.get()), viewIdMethod, viewIdRegex);
+    sfmDataIO::bootstrapView(*(view.get()), viewIdMethod, viewIdRegex);
 
     // Set the frame ID
     IndexT frameId;

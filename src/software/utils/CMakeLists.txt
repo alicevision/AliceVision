@@ -62,6 +62,16 @@ if (ALICEVISION_BUILD_SFM)
               ${Boost_LIBRARIES}
     )
 
+    alicevision_add_software(aliceVision_listImages 
+        SOURCE main_listImages.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              ${Boost_LIBRARIES}
+    )
+
     alicevision_add_software(aliceVision_maskEroding 
         SOURCE main_maskEroding.cpp
         FOLDER ${FOLDER_SOFTWARE_UTILS}

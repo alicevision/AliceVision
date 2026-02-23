@@ -211,7 +211,7 @@ bool readGt(const std::string& rootPath, sfmData::SfMData& sfmData, bool useUID)
 
         std::shared_ptr<sfmData::View> viewPtr = std::make_shared<sfmData::View>(imgFile, UndefinedIndexT, index);
 
-        updateIncompleteView(*viewPtr, EViewIdMethod::FILENAME, ".*?(\\d+)");
+        bootstrapView(*viewPtr, EViewIdMethod::FILENAME, ".*?(\\d+)");
 
         // Update intrinsics with width and height of image
         sfmData.getViews().emplace(viewPtr->getViewId(), viewPtr);

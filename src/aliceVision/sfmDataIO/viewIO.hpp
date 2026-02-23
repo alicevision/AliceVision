@@ -61,7 +61,7 @@ inline std::istream& operator>>(std::istream& in, EViewIdMethod& s)
  * @param[in] viewIdMethod ViewId generation method to use
  * @param[in] viewIdRegex Optional regex used when viewIdMethod is FILENAME
  */
-void updateIncompleteView(sfmData::View& view, EViewIdMethod viewIdMethod = EViewIdMethod::METADATA, const std::string& viewIdRegex = "");
+void bootstrapView(sfmData::View& view, EViewIdMethod viewIdMethod = EViewIdMethod::METADATA, const std::string& viewIdRegex = "");
 
 /**
  * @brief create an intrinsic for the given View
