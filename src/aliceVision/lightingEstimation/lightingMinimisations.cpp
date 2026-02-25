@@ -197,8 +197,6 @@ void coarsePunctualLightEstimation(
     double epsilon, 
     float &lightingDistance)
 {
-    std::vector<double> x = {lightingDistance};
-    double* params[] = { x.data() };
     int nb_pix = normals.rows();
 
     ceres::Problem problem;
@@ -211,6 +209,8 @@ void coarsePunctualLightEstimation(
 
     ceres::LossFunction* loss = new ceres::HuberLoss(epsilon);
 
+    std::vector<double> p0 = {lightingDistance};
+    double* params[] = { p0.data() };
     problem.AddResidualBlock(dynamic_cost, loss, params, 1);
 
     // Options solveur
@@ -226,7 +226,7 @@ void coarsePunctualLightEstimation(
     ceres::Solve(options, &problem, &summary);
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
-    lightingDistance = x[0];
+    lightingDistance = p0[0];
 }
 
 // near-light model residual
@@ -259,13 +259,14 @@ struct PointSourceModelRefinement {
     template<typename T>
     bool operator()(T const* const* parameters, T* residual) const
     {
-		const T* x = parameters[0];
+		const T* p0 = parameters[0];
+		const T* p1 = parameters[1];
 
 		// getting light position
 		Eigen::Matrix<T, 3, 1> q;
-		q << x[0], x[1], x[2];
+		q << p0[0], p0[1], p0[2];
 		// getting light intensity
-		T phi = x[3];
+		T phi = p1[0];
 
 		// data conversion
 		Eigen::Matrix<T, Eigen::Dynamic, 3> pointsCeres = points.cast<T>();
@@ -301,7 +302,6 @@ void pointSourceModelRefinement(
 	Eigen::Vector3f &lightingPosition, 
 	float &lightingIntensity)
 {
-    std::vector<double> x{lightingPosition[0], lightingPosition[1], lightingPosition[2], lightingIntensity};
     int nb_pix = points.rows();
 
     ceres::Problem problem;
@@ -309,13 +309,16 @@ void pointSourceModelRefinement(
         new ceres::DynamicAutoDiffCostFunction<PointSourceModelRefinement>(
                 new PointSourceModelRefinement(points, normals, pixelsIntensity));
 
-    dynamic_cost->AddParameterBlock(4);
+    dynamic_cost->AddParameterBlock(3);
+    dynamic_cost->AddParameterBlock(1);
     dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix));
 
     ceres::LossFunction* loss = new ceres::HuberLoss(epsilon);
 
-    double* params[] = { x.data() };
-    problem.AddResidualBlock(dynamic_cost, loss, params, 1);
+    std::vector<double> p0{lightingPosition[0], lightingPosition[1], lightingPosition[2]};
+    std::vector<double> p1{lightingIntensity};
+    double* params[] = { p0.data(), p1.data() };
+    problem.AddResidualBlock(dynamic_cost, loss, params, 2);
 
     // Options solveur
 	ceres::Solver::Options options;
@@ -327,13 +330,13 @@ void pointSourceModelRefinement(
 	options.max_num_iterations = 100;
 
     ceres::Solver::Summary summary;
-    ceres::Solve(options, &problem, &summary);
+	ceres::Solve(options, &problem, &summary);
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
-    lightingPosition[0] = x[0];
-    lightingPosition[1] = x[1];
-    lightingPosition[2] = x[2];
-    lightingIntensity = x[3];
+    lightingPosition[0] = p0[0];
+    lightingPosition[1] = p0[1];
+    lightingPosition[2] = p0[2];
+    lightingIntensity = p1[0];
 }
 
 
@@ -367,14 +370,15 @@ struct ColoredPointSourceModelRefinement {
     template<typename T>
     bool operator()(T const* const* parameters, T* residual) const
     {
-		const T* x = parameters[0];
+		const T* p0 = parameters[0];
+		const T* p1 = parameters[1];
 
 		// getting light position
 		Eigen::Matrix<T, 3, 1> q;
-		q << x[0], x[1], x[2];
+		q << p0[0], p0[1], p0[2];
 		// getting light intensity
 		Eigen::Matrix<T, 3, 1> phi;
-		phi << x[3], x[4], x[5];
+		phi << p1[0], p1[1], p1[2];
 
 		// data conversion
 		Eigen::Matrix<T, Eigen::Dynamic, 3> pointsCeres = points.cast<T>();
@@ -412,7 +416,8 @@ void coloredPointSourceModelRefinement(
 	Eigen::Vector3f &lightingPosition, 
 	Eigen::Vector3f &lightingRGBIntensity)
 {
-    std::vector<double> x{lightingPosition[0], lightingPosition[1], lightingPosition[2], lightingRGBIntensity[0], lightingRGBIntensity[1], lightingRGBIntensity[2]};
+    std::vector<double> p0{lightingPosition[0], lightingPosition[1], lightingPosition[2]};
+    std::vector<double> p1{lightingRGBIntensity[0], lightingRGBIntensity[1], lightingRGBIntensity[2]};
     int nb_pix = points.rows();
 
     ceres::Problem problem;
@@ -420,13 +425,14 @@ void coloredPointSourceModelRefinement(
         new ceres::DynamicAutoDiffCostFunction<ColoredPointSourceModelRefinement>(
                 new ColoredPointSourceModelRefinement(points, normals, pixelsRGBIntensity));
 
-    dynamic_cost->AddParameterBlock(6);
+    dynamic_cost->AddParameterBlock(3);
+    dynamic_cost->AddParameterBlock(3);
     dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix*3));
 
     ceres::LossFunction* loss = new ceres::HuberLoss(epsilon);
 
-    double* params[] = { x.data() };
-    problem.AddResidualBlock(dynamic_cost, loss, params, 1);
+    double* params[] = { p0.data(), p1.data() };
+    problem.AddResidualBlock(dynamic_cost, loss, params, 2);
 
     // Options solveur
 	ceres::Solver::Options options;
@@ -441,12 +447,12 @@ void coloredPointSourceModelRefinement(
     ceres::Solve(options, &problem, &summary);
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
-    lightingPosition[0] = x[0];
-    lightingPosition[1] = x[1];
-    lightingPosition[2] = x[2];
-    lightingRGBIntensity[0] = x[3];
-    lightingRGBIntensity[1] = x[4];
-    lightingRGBIntensity[2] = x[5];
+    lightingPosition[0] = p0[0];
+    lightingPosition[1] = p0[1];
+    lightingPosition[2] = p0[2];
+    lightingRGBIntensity[0] = p1[0];
+    lightingRGBIntensity[1] = p1[1];
+    lightingRGBIntensity[2] = p1[2];
 }
 
 
@@ -483,20 +489,23 @@ struct LEDModelResidual {
     template<typename T>
     bool operator()(T const* const* parameters, T* residual) const
     {
-		const T* x = parameters[0];
+		const T* p0 = parameters[0];
+		const T* p1 = parameters[1];
+		const T* p2 = parameters[2];
+		const T* p3 = parameters[3];
 
 		// getting light position
 		Eigen::Matrix<T, 3, 1> q;
-		q << x[0], x[1], x[2];
+		q << p0[0], p0[1], p0[2];
 		// getting light direction
 		Eigen::Matrix<T, 3, 1> d;
-		d << x[3], x[4], x[5];
+		d << p1[0], p1[1], p1[2];
 		// getting light RGB intensities
 		Eigen::Matrix<T, 3, 1> phi;
-		phi << x[6], x[7], x[8];
+		phi << p2[0], p2[1], p2[2];
 		// getting light RGB anisotrophic parameters
 		Eigen::Matrix<T, 3, 1> mu;
-		mu << x[9], x[10], x[11];
+		mu << p3[0], p3[1], p3[2];
 
 		// data conversion
 		Eigen::Matrix<T, Eigen::Dynamic, 3> pointsCeres = points.cast<T>();
@@ -528,7 +537,7 @@ struct LEDModelResidual {
 		Eigen::Matrix<T, Eigen::Dynamic, 3> errorVec = pixelsRGBfCeres - pixelRGBfEstimated;
 
 		// set residual
-		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 3>> residualVec(residual, errorVec.rows(), errorVec.cols());
+		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 3>> residualVec(residual, errorVec.rows(), 3);
 		residualVec = errorVec;
 
         return true;
@@ -545,16 +554,22 @@ void LEDModelRefinement(
 	Eigen::Vector3f &lightingRGBIntensity,
 	Eigen::Vector3f &lightingRGBAnisotropy)
 {
-    std::vector<double> x{
+    std::vector<double> p0{
       lightingPosition[0],
       lightingPosition[1],
       lightingPosition[2],
+    };
+    std::vector<double> p1{
       lightingDirection[0],
       lightingDirection[1],
       lightingDirection[2],
+    };
+    std::vector<double> p2{
       lightingRGBIntensity[0],
       lightingRGBIntensity[1],
       lightingRGBIntensity[2],
+    };
+    std::vector<double> p3{
       lightingRGBAnisotropy[0],
       lightingRGBAnisotropy[1],
       lightingRGBAnisotropy[2],
@@ -566,13 +581,16 @@ void LEDModelRefinement(
         new ceres::DynamicAutoDiffCostFunction<LEDModelResidual>(
                 new LEDModelResidual(points, normals, pixelsRGBf));
 
-    dynamic_cost->AddParameterBlock(12);
+    dynamic_cost->AddParameterBlock(3);
+    dynamic_cost->AddParameterBlock(3);
+    dynamic_cost->AddParameterBlock(3);
+    dynamic_cost->AddParameterBlock(3);
     dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix*3));
 
     ceres::LossFunction* loss = new ceres::HuberLoss(epsilon);
 
-    double* params[] = { x.data() };
-    problem.AddResidualBlock(dynamic_cost, loss, params, 1);
+    double* params[] = { p0.data(), p1.data(), p2.data(), p3.data() };
+    problem.AddResidualBlock(dynamic_cost, loss, params, 4);
 
     // Options solveur
 	ceres::Solver::Options options;
@@ -587,18 +605,18 @@ void LEDModelRefinement(
     ceres::Solve(options, &problem, &summary);
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
-    lightingPosition[0] = x[0];
-    lightingPosition[1] = x[1];
-    lightingPosition[2] = x[2];
-    lightingDirection[0] = x[3];
-    lightingDirection[1] = x[4];
-    lightingDirection[2] = x[5];
-    lightingRGBIntensity[0] = x[6];
-    lightingRGBIntensity[1] = x[7];
-    lightingRGBIntensity[2] = x[8];
-    lightingRGBAnisotropy[0] = x[9];
-    lightingRGBAnisotropy[1] = x[10];
-    lightingRGBAnisotropy[2] = x[11];
+    lightingPosition[0] = p0[0];
+    lightingPosition[1] = p0[1];
+    lightingPosition[2] = p0[2];
+    lightingDirection[0] = p1[0];
+    lightingDirection[1] = p1[1];
+    lightingDirection[2] = p1[2];
+    lightingRGBIntensity[0] = p2[0];
+    lightingRGBIntensity[1] = p2[1];
+    lightingRGBIntensity[2] = p2[2];
+    lightingRGBAnisotropy[0] = p3[0];
+    lightingRGBAnisotropy[1] = p3[1];
+    lightingRGBAnisotropy[2] = p3[2];
 }
 
 } // namespace lightingEstimation

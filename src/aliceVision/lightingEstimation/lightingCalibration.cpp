@@ -61,7 +61,7 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 	{
 		return false;
 	}
-	ALICEVISION_LOG_INFO("  - " << imagePath.string());
+	ALICEVISION_LOG_DEBUG("  - " << imagePath.string());
     
 	std::shared_ptr<std::vector<CalibrationSphere>> sphereList = calibrationSpheres.at(viewId);
 	if (!sphereList)
@@ -122,20 +122,20 @@ bool CalibrationData::prepareView(const aliceVision::IndexT viewId,
 
 		// pixels intensity
 		Eigen::MatrixX3f pixelsRGBf_cur = Eigen::MatrixX3f(pixels_cur.rows(), 3);
-		std::vector<unsigned int> nonZeroIntensities;
+		std::vector<unsigned int> keptIntensities;
 		for (unsigned int ind = 0; ind < pixels_cur.rows(); ind++)
 		{
 			pixelsRGBf_cur(ind, 0) = imageRGBf(pixels_cur(ind, 1), pixels_cur(ind, 0))(0);
 			pixelsRGBf_cur(ind, 1) = imageRGBf(pixels_cur(ind, 1), pixels_cur(ind, 0))(1);
 			pixelsRGBf_cur(ind, 2) = imageRGBf(pixels_cur(ind, 1), pixels_cur(ind, 0))(2);
-			// if (pixelsIntensity_cur(ind) > 10.0 / 255.0)  // remove dark pixels
-			nonZeroIntensities.push_back(ind);
+			// if (pixelsRGBf_cur.row(ind).maxCoeff() < 250.0 / 255.0 || pixelsRGBf_cur.row(ind).minCoeff() > 10.0 / 255.0)  // remove light and dark pixels
+			keptIntensities.push_back(ind);
 		}
-		normalsList.push_back(normals_cur(nonZeroIntensities, Eigen::placeholders::all));
-		pixelsRGBfList.push_back(pixelsRGBf_cur(nonZeroIntensities, Eigen::placeholders::all));
+		normalsList.push_back(normals_cur(keptIntensities, Eigen::placeholders::all));
+		pixelsRGBfList.push_back(pixelsRGBf_cur(keptIntensities, Eigen::placeholders::all));
 		if (usePose)
-			pointsList.push_back(points_cur(nonZeroIntensities, Eigen::placeholders::all));
-		nb_pix += nonZeroIntensities.size();
+			pointsList.push_back(points_cur(keptIntensities, Eigen::placeholders::all));
+		nb_pix += keptIntensities.size();
 	}
 
     if (nb_pix == 0)
@@ -183,13 +183,13 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 	std::vector<IndexT> viewIdList;
     
     bool usePose = true;
-	double epsilonHuberLoss = 2.0;
+	double epsilonHuberLoss = 0.5;
 
     // data preparation
 	ALICEVISION_LOG_INFO("Data preparation");
     for (auto& viewIt : sfmData.getViews())
     {
-        ALICEVISION_LOG_INFO("View Id: " << viewIt.first);
+        ALICEVISION_LOG_DEBUG("View Id: " << viewIt.first);
         
 		const fs::path imagePath = fs::path(viewIt.second->getImage().getImagePath());
 		imageList.push_back(imagePath.string());
@@ -283,7 +283,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		Eigen::Vector3f sceneCenter = pointsFull.colwise().mean();
 		Eigen::MatrixX3f pointsCentered = pointsFull.rowwise() - sceneCenter.transpose();
 		Eigen::MatrixXf distTosceneCenter = pointsCentered.rowwise().norm();
-		float lightingDistance = 4.0 * distTosceneCenter.mean();
+		float lightingDistance = 10.0 * distTosceneCenter.mean();
 
 		ALICEVISION_LOG_INFO("Scene center: " << sceneCenter.transpose());
 
@@ -316,9 +316,9 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 			return true;
 		}
 
-		Eigen::Vector3f lightingLEDDirection = lightingPosition - sceneCenter;
+		Eigen::Vector3f lightingLEDDirection = sceneCenter - lightingPosition;
 		lightingLEDDirection = lightingLEDDirection / lightingLEDDirection.norm();
-		Eigen::Vector3f lightingRGBAnisotropy = 0.01 * Eigen::Vector3f::Ones();
+		Eigen::Vector3f lightingRGBAnisotropy = 0.0001 * Eigen::Vector3f::Ones();
 
 		ALICEVISION_LOG_INFO("Initial lightingPosition: " << lightingPosition.transpose());
 		ALICEVISION_LOG_INFO("Initial lightingDirection: " << lightingLEDDirection.transpose());
