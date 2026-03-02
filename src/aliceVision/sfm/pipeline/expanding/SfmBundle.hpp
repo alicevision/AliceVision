@@ -87,6 +87,24 @@ public:
         _isStructureRefinementEnabled = flag;
     }
 
+    /**
+     * @brief Get the number of valid points per pose required
+     * @return the threshold used to discriminate a valid pose
+    */
+    size_t getMinPointsPerPose() const
+    {
+        return _minPointsPerPose;
+    }
+
+    /**
+     * @brief Set the number of valid points per pose required
+     * @param minPointsPerPose the threshold used to discriminate a valid pose
+    */
+    void setMinPointsPerPose(size_t minPointsPerPose)
+    {
+        _minPointsPerPose = minPointsPerPose;
+    }
+
 private:
     /**
      * Initialize bundle properties
