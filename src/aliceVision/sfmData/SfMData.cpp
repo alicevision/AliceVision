@@ -477,6 +477,19 @@ void SfMData::repair()
     removeUnusedLandmarks();
 }
 
+bool SfMData::isFullyReconstructed() const
+{
+    for (const auto & [_, view] : getViews().valueRange())
+    {
+        if (!isPoseAndIntrinsicDefined(view))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
 {
     LandmarksPerView landmarksPerView;

@@ -48,7 +48,8 @@ alicevision_add_library(aliceVision_sfmData
 alicevision_add_test(sfmData_test.cpp
     NAME "sfmData"
     LINKS aliceVision_sfmData
-          aliceVision_system
+        aliceVision_camera
+        aliceVision_system
 )
 alicevision_add_test(view_test.cpp
     NAME "view"

@@ -758,6 +758,12 @@ class SfMData
     */
     void getBoundingBox(Eigen::Vector3d & bbMin, Eigen::Vector3d & bbMax);
 
+    /**
+     * Are all views fully estimated ?
+     * @return true if no views have invalid pose or intrinsic
+     */
+    bool isFullyReconstructed() const;
+
   private:
     /// Structure (3D points with their 2D observations)
     Landmarks _landmarks;
