@@ -711,7 +711,7 @@ if (ALICEVISION_HAVE_CUDA)
         CACHE STRING "CUDA CC versions to compile")
 
     # Add all requested CUDA CCs to the command line for offline compilation
-    list(SORT ALICEVISION_CUDA_CC_LIST)
+    list(SORT ALICEVISION_CUDA_CC_LIST COMPARE NATURAL ORDER ASCENDING)
     foreach (ALICEVISION_CC_VERSION ${ALICEVISION_CUDA_CC_LIST})
         set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CC_VERSION},code=sm_${ALICEVISION_CC_VERSION}")
     endforeach()
