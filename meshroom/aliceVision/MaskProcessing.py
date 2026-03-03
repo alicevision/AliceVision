@@ -12,7 +12,7 @@ class MaskProcessingNodeSize(desc.DynamicNodeSize):
     def __init__(self, param):
         self._params = param
 
-    def computeSize(self, node):
+    def __call__(self, node):
 
         size = 0
 

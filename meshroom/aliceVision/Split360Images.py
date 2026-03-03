@@ -9,8 +9,8 @@ class Split360InputNodeSize(desc.DynamicNodeSize):
     The Split360Images will increase the amount of views in the SfMData.
     This class converts the number of input views into the number of split output views.
     """
-    def computeSize(self, node):
-        s = super(Split360InputNodeSize, self).computeSize(node)
+    def __call__(self, node):
+        s = super(Split360InputNodeSize, self).__call__(node)
         factor = 0
         mode = node.attribute('splitMode')
         if mode.value == 'equirectangular':

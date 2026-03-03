@@ -2,7 +2,7 @@
 
 This module provides classes that compute chunk sizes for parallelizing
 AliceVision pipeline nodes based on the number of views in an SfMData file.
-Each class implements a `computeSize` method that returns the number of
+Each class implements a `__call__` method that returns the number of
 parallel chunks a node should be split into.
 """
 
@@ -21,7 +21,7 @@ class DynamicViewsSize(object):
     def __init__(self, param):
         self._param = param
 
-    def computeSize(self, node):
+    def __call__(self, node):
         """Compute the number of chunks from the total view count.
 
         Args:
@@ -59,7 +59,7 @@ class DynamicReconstructedViewsSize(object):
     def __init__(self, param):
         self._param = param
 
-    def computeSize(self, node):
+    def __call__(self, node):
         """Compute the number of chunks from the reconstructed view count.
 
         A view is considered reconstructed when it has both a valid pose and
@@ -109,7 +109,7 @@ class DynamicDividedViewsSize(object):
         self._param = param
         self._divider = divider
 
-    def computeSize(self, node):
+    def __call__(self, node):
         """Compute the number of chunks by dividing the view count.
 
         Args:
