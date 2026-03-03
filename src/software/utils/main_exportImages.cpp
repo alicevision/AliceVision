@@ -485,8 +485,11 @@ int aliceVision_main(int argc, char* argv[])
                 sfmDataIO::ESfMData::INTRINSICS | 
                 sfmDataIO::ESfMData::EXTRINSICS
     );
-    if (rangeStart == 0)
+
+    if (rangeStart <= 0)
+    {
         flagsPart = sfmDataIO::ESfMData::ALL;
+    }
 
     // Read the input SfM scene
     sfmData::SfMData inputSfmData;
