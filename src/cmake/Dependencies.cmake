@@ -256,7 +256,9 @@ if(AV_BUILD_ASSIMP)
     # GCC 13 requires explicit <cstdint> include in draco (bundled with assimp 5.2.5)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13")
         set(ASSIMP_PATCH_COMMAND
-            PATCH_COMMAND sed -i "s|#include <vector>|#include <vector>\\n#include <cstdint>|" <SOURCE_DIR>/contrib/draco/src/draco/io/file_utils.h
+            PATCH_COMMAND ${CMAKE_COMMAND}
+                -DINPUT_FILE=<SOURCE_DIR>/contrib/draco/src/draco/io/file_utils.h
+                -P ${CMAKE_SOURCE_DIR}/src/cmake/PatchAssimpDracoForGCC13.cmake
         )
     else()
         set(ASSIMP_PATCH_COMMAND "")
