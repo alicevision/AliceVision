@@ -29,9 +29,10 @@ public:
      * Multiple iteration may be necessary to complete.
      * @param sfmData the scene to process
      * @param tracksHandler the tracks for this scene
+     * @param expansionMode select a configuration set among an enum
      * @return true if the iteration succeeded
     */
-    bool process(sfmData::SfMData & sfmData,  track::TracksHandler & tracksHandler);
+    bool process(sfmData::SfMData & sfmData,  track::TracksHandler & tracksHandler, EExpansionMode expansionMode);
 
     /**
      * @return a pointer to the chunk handler

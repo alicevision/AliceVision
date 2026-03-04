@@ -13,7 +13,7 @@ namespace aliceVision {
 namespace sfm {
 
 
-bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewsChunk)
+bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewsChunk, EExpansionMode expansionMode)
 {   
     _ignoredViews.clear();
     ALICEVISION_LOG_INFO("ExpansionChunk::process start");
@@ -154,8 +154,20 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
     {
         return false;
     }
+
+    // When not in try hard mode, increase the default min points per pose
+    size_t minPoints = _bundleHandler->getMinPointsPerPose();
+    if (expansionMode == EExpansionMode::EXPANSION_STRICT)
+    { 
+        _bundleHandler->setMinPointsPerPose(minPoints * 2);
+    }
     
-    if (!_bundleHandler->process(sfmData, tracksHandler, validViewIds))
+    bool sfmCheck = _bundleHandler->process(sfmData, tracksHandler, validViewIds);
+    
+    //Roll back the bundle parameters
+    _bundleHandler->setMinPointsPerPose(minPoints);
+
+    if (!sfmCheck)
     {
         return false;
     }

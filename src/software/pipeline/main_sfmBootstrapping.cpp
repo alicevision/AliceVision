@@ -577,6 +577,17 @@ int aliceVision_main(int argc, char** argv)
     {
         return EXIT_FAILURE;
     }
+
+    // Set resection ID to 0 for all reconstructed views
+    for (auto & [viewId, view] : sfmData.getViews().valueRange())
+    {
+        if (!sfmData.isPoseAndIntrinsicDefined(view))
+        {
+            continue;
+        }
+
+        view.setResectionId(0);
+    }
     
     showStatsAngles(sfmData);
     

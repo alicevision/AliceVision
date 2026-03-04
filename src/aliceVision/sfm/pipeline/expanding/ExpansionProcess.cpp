@@ -31,14 +31,21 @@ bool ExpansionProcess::process(sfmData::SfMData & sfmData, track::TracksHandler 
     }
 
     //Prepare existing data
-    prepareExisting(sfmData, tracksHandler);
+    if (!prepareExisting(sfmData, tracksHandler))
+    {
+        ALICEVISION_LOG_ERROR("Failed to prepare process");
+        return false;
+    }
+
+    EExpansionMode expansionMode = EExpansionMode::EXPANSION_STRICT;
 
     int nbPoses = 0;
-    do
+    
+    while (true)
     {
         nbPoses = sfmData.getPoses().size();
 
-        if (!_iterationHandler->process(sfmData, tracksHandler))
+        if (!_iterationHandler->process(sfmData, tracksHandler, expansionMode))
         {
             return false;
         }
@@ -46,16 +53,14 @@ bool ExpansionProcess::process(sfmData::SfMData & sfmData, track::TracksHandler 
         if (_postProcessHandler)
         {
             if (_postProcessHandler->process(sfmData, tracksHandler))
-            {
-                return true;
-                
+            {                
                 if (_iterationHandler->getChunkHandler() == nullptr)
                 {
                     return false;
                 }
 
                 // Perform a new estimation step on modified views
-                if (!_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, _postProcessHandler->getUpdatedViews()))
+                if (!_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, _postProcessHandler->getUpdatedViews(), expansionMode))
                 {
                     return false;
                 }
@@ -63,8 +68,26 @@ bool ExpansionProcess::process(sfmData::SfMData & sfmData, track::TracksHandler 
         }
 
         ALICEVISION_LOG_INFO("ExpansionProcess poses count : " << sfmData.getPoses().size());
+        
+        // Everything is already computed, exit
+        if (sfmData.isFullyReconstructed())
+        {
+            break;
+        }
+
+        // Nothing changed in the last iteration
+        if (sfmData.getPoses().size() == nbPoses)
+        {
+            //Before exiting, try again with less constraints
+            if (expansionMode == EExpansionMode::EXPANSION_PERMISSIVE)
+            {
+                break;
+            }
+
+            expansionMode = EExpansionMode::EXPANSION_PERMISSIVE;
+        }
     }
-    while (sfmData.getPoses().size() != nbPoses);
+    
 
     ALICEVISION_LOG_INFO("ExpansionProcess end");
 
@@ -104,7 +127,7 @@ bool ExpansionProcess::prepareExisting(sfmData::SfMData & sfmData, const track::
         }
 
         // Process everything in existing sfmData
-        if (!_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, sfmData.getValidViews()))
+        if (!_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, sfmData.getValidViews(), EExpansionMode::EXPANSION_STRICT))
         {
             return false;
         }
