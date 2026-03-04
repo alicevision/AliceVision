@@ -13,7 +13,7 @@ namespace aliceVision {
 namespace sfm {
 
 
-bool ExpansionIteration::process(sfmData::SfMData & sfmData, track::TracksHandler & tracksHandler)
+bool ExpansionIteration::process(sfmData::SfMData & sfmData, track::TracksHandler & tracksHandler, EExpansionMode expansionMode)
 {
     ALICEVISION_LOG_INFO("ExpansionIteration::process start");
 
@@ -44,7 +44,7 @@ bool ExpansionIteration::process(sfmData::SfMData & sfmData, track::TracksHandle
             break;
         }
    
-        if (!_chunkHandler->process(sfmData, tracksHandler, _policy->getNextViews()))
+        if (!_chunkHandler->process(sfmData, tracksHandler, _policy->getNextViews(), expansionMode))
         {
             continue;
         }

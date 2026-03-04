@@ -13,6 +13,7 @@
 #include <aliceVision/sfm/pipeline/expanding/SfmBundle.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
+#include <aliceVision/sfm/pipeline/expanding/ExpansionConfig.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -30,10 +31,12 @@ public:
      * @param sfmData the sfmData which describes the current sfm state
      * @param tracksHandler the scene tracks handler
      * @param viewsChunks a list of view ids to process in this chunk
+     * @param expansionMode select a configuration set among an enum
     */
     bool process(sfmData::SfMData & sfmData, 
                 const track::TracksHandler & tracksHandler, 
-                const std::set<IndexT> & viewsChunk);
+                const std::set<IndexT> & viewsChunk,
+                EExpansionMode expansionMode);
 
     /**
      * @brief setup the bundle handler
