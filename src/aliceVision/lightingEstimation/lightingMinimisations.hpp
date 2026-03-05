@@ -38,6 +38,15 @@ void pointSourceModelRefinement(
     Eigen::Vector3f &lightPosition, 
     float &lightIntensity);
 
+void pointSourceGammaModelRefinement(
+    const Eigen::MatrixX3f& points, 
+    const Eigen::MatrixX3f& normals, 
+    const Eigen::VectorXf& pixelsIntensity, 
+    double epsilon, 
+    Eigen::Vector3f &lightPosition, 
+    float &lightIntensity,
+    float &gamma);
+
 void coloredPointSourceModelRefinement(
 	const Eigen::MatrixX3f& points, 
 	const Eigen::MatrixX3f& normals, 

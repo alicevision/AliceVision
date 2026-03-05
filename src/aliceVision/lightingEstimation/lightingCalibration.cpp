@@ -302,6 +302,15 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		pointSourceModelRefinement(pointsFull, normalsFull, pixelsIntensityFull, epsilonHuberLoss, lightingPosition, lightingIntensity);
 		ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
 		ALICEVISION_LOG_INFO("Estimated lightingIntensity: " << lightingIntensity);
+
+		// float gamma = 1.0;
+		// ALICEVISION_LOG_INFO("Initial lightingPosition: " << lightingPosition.transpose());
+		// ALICEVISION_LOG_INFO("Initial lightingIntensity: " << lightingIntensity);
+		// ALICEVISION_LOG_INFO("Initial gamma: " << gamma);
+		// pointSourceGammaModelRefinement(pointsFull, normalsFull, pixelsIntensityFull, epsilonHuberLoss, lightingPosition, lightingIntensity, gamma);
+		// ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
+		// ALICEVISION_LOG_INFO("Estimated lightingIntensity: " << lightingIntensity);
+		// ALICEVISION_LOG_INFO("Estimated gamma: " << gamma);
 		
 		Eigen::Vector3f lightingRGBIntensity = lightingIntensity * Eigen::Vector3f::Ones();
 

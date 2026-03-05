@@ -13,11 +13,73 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <Eigen/SVD>
+#include <array>
+#include <cmath>
 #include <limits>
 #include <ceres/ceres.h>
 
 namespace aliceVision {
 namespace lightingEstimation {
+
+namespace {
+
+void logProblemJacobianFromProblem(const std::string& problemName,
+                                   ceres::Problem& problem,
+                                   const std::vector<double*>& parameterBlocks)
+{
+    ceres::Problem::EvaluateOptions evalOptions;
+    evalOptions.parameter_blocks = parameterBlocks;
+
+    double cost = 0.0;
+    std::vector<double> residuals;
+    std::vector<double> gradient;
+    ceres::CRSMatrix jacobian;
+    if (!problem.Evaluate(evalOptions, &cost, &residuals, &gradient, &jacobian))
+    {
+        ALICEVISION_LOG_WARNING("[" << problemName << "] Could not evaluate Jacobian from Problem.");
+        return;
+    }
+
+    if (jacobian.num_rows <= 0 || jacobian.num_cols <= 0)
+    {
+        ALICEVISION_LOG_DEBUG("[" << problemName << "] Empty Jacobian from Problem.");
+        return;
+    }
+
+    Eigen::MatrixXd jtj = Eigen::MatrixXd::Zero(jacobian.num_cols, jacobian.num_cols);
+    for (int r = 0; r < jacobian.num_rows; ++r)
+    {
+        const int rowStart = jacobian.rows[r];
+        const int rowEnd = jacobian.rows[r + 1];
+        for (int a = rowStart; a < rowEnd; ++a)
+        {
+            const int colA = jacobian.cols[a];
+            const double valA = jacobian.values[a];
+            for (int b = rowStart; b < rowEnd; ++b)
+            {
+                const int colB = jacobian.cols[b];
+                const double valB = jacobian.values[b];
+                jtj(colA, colB) += valA * valB;
+            }
+        }
+    }
+
+    std::ostringstream oss;
+    oss << "[" << problemName << "] Problem Jacobian shape: "
+        << jacobian.num_rows << "x" << jacobian.num_cols
+        << ", nnz=" << jacobian.values.size();
+    oss << "\n[" << problemName << "] Gradient (" << gradient.size() << "): ";
+    for (size_t i = 0; i < gradient.size(); ++i)
+    {
+        if (i > 0)
+            oss << " ";
+        oss << gradient[i];
+    }
+    oss << "\n[" << problemName << "] JtJ (" << jtj.rows() << "x" << jtj.cols() << "):\n" << jtj;
+    ALICEVISION_LOG_DEBUG(oss.str());
+}
+
+} // namespace
 
 // coarse directionnal estimation
 struct CoarseDirectionnalEstimation {
@@ -85,6 +147,7 @@ void coarseDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const Ei
     ceres::LossFunction* loss = new ceres::HuberLoss(epsilon);
 
     problem.AddResidualBlock(dynamic_cost, loss, params, 1);
+    logProblemJacobianFromProblem("CoarseDirectionnalEstimation [before]", problem, {params[0]});
 
     // Options solveur
 	ceres::Solver::Options options;
@@ -97,6 +160,7 @@ void coarseDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const Ei
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+    logProblemJacobianFromProblem("CoarseDirectionnalEstimation [after]", problem, {params[0]});
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingDirection[0] = x[0];
@@ -212,6 +276,7 @@ void coarsePunctualLightEstimation(
     std::vector<double> p0 = {lightingDistance};
     double* params[] = { p0.data() };
     problem.AddResidualBlock(dynamic_cost, loss, params, 1);
+    logProblemJacobianFromProblem("CoarsePunctualEstimation [before]", problem, {params[0]});
 
     // Options solveur
 	ceres::Solver::Options options;
@@ -224,6 +289,7 @@ void coarsePunctualLightEstimation(
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+    logProblemJacobianFromProblem("CoarsePunctualEstimation [after]", problem, {params[0]});
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingDistance = p0[0];
@@ -319,6 +385,7 @@ void pointSourceModelRefinement(
     std::vector<double> p1{lightingIntensity};
     double* params[] = { p0.data(), p1.data() };
     problem.AddResidualBlock(dynamic_cost, loss, params, 2);
+    logProblemJacobianFromProblem("PointSourceModelRefinement [before]", problem, {params[0], params[1]});
 
     // Options solveur
 	ceres::Solver::Options options;
@@ -331,12 +398,133 @@ void pointSourceModelRefinement(
 
     ceres::Solver::Summary summary;
 	ceres::Solve(options, &problem, &summary);
+    logProblemJacobianFromProblem("PointSourceModelRefinement [after]", problem, {params[0], params[1]});
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingPosition[0] = p0[0];
     lightingPosition[1] = p0[1];
     lightingPosition[2] = p0[2];
     lightingIntensity = p1[0];
+}
+
+// near-light model residual
+struct PointSourceGammaModelRefinement {
+
+	/*
+	 * Variable:
+	 *  - q: 3D position of light source
+	 *  - phi: intensity of light source
+	 *  - gamma: gamma correction parameter
+	 * Data:
+	 *  - x: 3D point
+	 *  - n: normal
+	 *  - i intensity
+	 * 
+	 * Function:
+	 *   - directionnal lighting at each point: s = phi . (q - x) / (q - x)^3
+	 *   - intensity estimation: ie = {s . n}+
+	 *   - absolute difference between ie and i
+	 */
+
+	Eigen::MatrixX3f points;
+	Eigen::MatrixX3f normals;
+	Eigen::VectorXf pixelsIntensity;
+
+	// constructor
+	PointSourceGammaModelRefinement(const Eigen::MatrixX3f& points_, const Eigen::MatrixX3f& normals_, const Eigen::VectorXf& pixelsIntensity_)
+		: points(points_), normals(normals_), pixelsIntensity(pixelsIntensity_)
+	{}
+
+    template<typename T>
+    bool operator()(T const* const* parameters, T* residual) const
+    {
+		const T* p0 = parameters[0];
+		const T* p1 = parameters[1];
+		const T* p2 = parameters[2];
+
+		// getting light position
+		Eigen::Matrix<T, 3, 1> q;
+		q << p0[0], p0[1], p0[2];
+		// getting light intensity
+		T phi = p1[0];
+		// getting gamma parameter
+		T gamma = p2[0];
+
+		// data conversion
+		Eigen::Matrix<T, Eigen::Dynamic, 3> pointsCeres = points.cast<T>();
+		Eigen::Matrix<T, Eigen::Dynamic, 3> normalsCeres = normals.cast<T>();
+		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelsIntensityCeres = pixelsIntensity.cast<T>();
+
+		// directionnal light estimation per point
+		Eigen::Matrix<T, Eigen::Dynamic, 3> vecSourcePoint = (pointsCeres.rowwise() - q.transpose()) * (-1.0);
+		// compute norm
+		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePoint = vecSourcePoint.rowwise().norm();
+		// norm to the cube
+		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePointCube = normSourcePoint.cwiseProduct(normSourcePoint).cwiseProduct(normSourcePoint);
+		// per point light direction
+		Eigen::Matrix<T, Eigen::Dynamic, 3> vecLightDir = vecSourcePoint.array().colwise() / normSourcePointCube.array() * phi;
+		// intensity estimation per point
+		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (vecLightDir.cwiseProduct(normalsCeres)).rowwise().sum().cwiseMax(T(0));
+		// residual computation
+		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = pixelsIntensityCeres.array() - pixelIntensityEstimated.array().pow(gamma);
+
+		// set residual
+		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorVec.rows());
+		residualVec = errorVec;
+
+        return true;
+    }
+};
+
+void pointSourceGammaModelRefinement(
+	const Eigen::MatrixX3f& points, 
+	const Eigen::MatrixX3f& normals, 
+	const Eigen::VectorXf& pixelsIntensity, 
+	double epsilon, 
+	Eigen::Vector3f &lightingPosition, 
+	float &lightingIntensity,
+	float &gamma)
+{
+    int nb_pix = points.rows();
+
+    ceres::Problem problem;
+    auto* dynamic_cost = 
+        new ceres::DynamicAutoDiffCostFunction<PointSourceGammaModelRefinement>(
+                new PointSourceGammaModelRefinement(points, normals, pixelsIntensity));
+
+    dynamic_cost->AddParameterBlock(3);
+    dynamic_cost->AddParameterBlock(1);
+    dynamic_cost->AddParameterBlock(1);
+    dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix));
+
+    ceres::LossFunction* loss = new ceres::HuberLoss(epsilon);
+
+    std::vector<double> p0{lightingPosition[0], lightingPosition[1], lightingPosition[2]};
+    std::vector<double> p1{lightingIntensity};
+    std::vector<double> p2{gamma};
+    double* params[] = { p0.data(), p1.data(), p2.data() };
+    problem.AddResidualBlock(dynamic_cost, loss, params, 3);
+    logProblemJacobianFromProblem("PointSourceModelRefinement [before]", problem, {params[0], params[1], params[2]});
+
+    // Options solveur
+	ceres::Solver::Options options;
+	options.minimizer_progress_to_stdout = false;
+	options.minimizer_type = ceres::LINE_SEARCH;
+	options.line_search_direction_type = ceres::LBFGS;
+	options.max_lbfgs_rank = 20;
+	options.line_search_type = ceres::WOLFE;
+	options.max_num_iterations = 100;
+
+    ceres::Solver::Summary summary;
+	ceres::Solve(options, &problem, &summary);
+    logProblemJacobianFromProblem("PointSourceModelRefinement [after]", problem, {params[0], params[1], params[2]});
+
+	ALICEVISION_LOG_INFO(summary.BriefReport());
+    lightingPosition[0] = p0[0];
+    lightingPosition[1] = p0[1];
+    lightingPosition[2] = p0[2];
+    lightingIntensity = p1[0];
+    gamma = p2[0];
 }
 
 
@@ -433,6 +621,7 @@ void coloredPointSourceModelRefinement(
 
     double* params[] = { p0.data(), p1.data() };
     problem.AddResidualBlock(dynamic_cost, loss, params, 2);
+    logProblemJacobianFromProblem("ColoredPointSourceModelRefinement [before]", problem, {params[0], params[1]});
 
     // Options solveur
 	ceres::Solver::Options options;
@@ -445,6 +634,7 @@ void coloredPointSourceModelRefinement(
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+    logProblemJacobianFromProblem("ColoredPointSourceModelRefinement [after]", problem, {params[0], params[1]});
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingPosition[0] = p0[0];
@@ -521,7 +711,7 @@ struct LEDModelResidual {
 		// per point light direction
 		Eigen::Matrix<T, Eigen::Dynamic, 3> vecSigma = vecSourcePoint.array().colwise() / normSourcePoint.array();
 		// per point sigma . d
-		Eigen::Matrix<T, Eigen::Dynamic, 1> sigma_dot_d = vecSigma * d;
+		Eigen::Matrix<T, Eigen::Dynamic, 1> sigma_dot_d = (vecSigma * d).array().abs();
 		// per point anisotropy
 		Eigen::Matrix<T, Eigen::Dynamic, 3> anisotropy(pointsCeres.rows(), 3);
 		anisotropy(Eigen::placeholders::all, 0) = sigma_dot_d.array().pow(mu(0));
@@ -591,6 +781,7 @@ void LEDModelRefinement(
 
     double* params[] = { p0.data(), p1.data(), p2.data(), p3.data() };
     problem.AddResidualBlock(dynamic_cost, loss, params, 4);
+    logProblemJacobianFromProblem("LEDModelResidual [before]", problem, {params[0], params[1], params[2], params[3]});
 
     // Options solveur
 	ceres::Solver::Options options;
@@ -603,6 +794,7 @@ void LEDModelRefinement(
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+    logProblemJacobianFromProblem("LEDModelResidual [after]", problem, {params[0], params[1], params[2], params[3]});
 
 	ALICEVISION_LOG_INFO(summary.BriefReport());
     lightingPosition[0] = p0[0];
