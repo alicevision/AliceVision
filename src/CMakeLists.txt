@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.30)
 message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 
 # ==============================================================================
@@ -267,9 +267,12 @@ else() # ON OR AUTO
 endif()
 
 if (ALICEVISION_HAVE_OPENMP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    if (NOT MSVC)
+    if (MSVC)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /openmp:llvm")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp:llvm")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
             # for those using the clang with OpenMP support
             list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES omp)
