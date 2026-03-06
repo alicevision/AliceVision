@@ -84,7 +84,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             label="Color Mapping",
             description="Color map parameters.",
             enabled=lambda node: (node.imagesFolder.value != ''),
-            group=None,
+            commandLineGroup=None,
             items=[
                 desc.BoolParam(
                     name="enable",
@@ -92,7 +92,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
                     description="Generate textures if set to true.",
                     value=True,
                     invalidate=False,
-                    group=None,
+                    commandLineGroup=None,
                 ),
                 desc.ChoiceParam(
                     name="colorMappingFileType",
@@ -109,7 +109,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             label="Bump Mapping",
             description="Bump mapping parameters.",
             enabled=lambda node: (node.inputRefMesh.value != ''),
-            group=None,
+            commandLineGroup=None,
             items=[
                 desc.BoolParam(
                     name="enable",
@@ -117,7 +117,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
                     description="Generate normal / bump maps if set to true.",
                     value=True,
                     invalidate=False,
-                    group=None,
+                    commandLineGroup=None,
                 ),
                 desc.ChoiceParam(
                     name="bumpType",
@@ -150,7 +150,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             label="Displacement Mapping",
             description="Displacement mapping parameters.",
             enabled=lambda node: (node.inputRefMesh.value != ""),
-            group=None,
+            commandLineGroup=None,
             items=[
                 desc.BoolParam(
                     name="enable",
@@ -158,7 +158,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
                     description="Generate height maps for displacement.",
                     value=True,
                     invalidate=False,
-                    group=None,
+                    commandLineGroup=None,
                 ),
                 desc.ChoiceParam(
                     name="displacementMappingFileType",
@@ -343,7 +343,7 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             label="Mesh",
             description="Output mesh file.",
             value="{nodeCacheFolder}/texturedMesh.{outputMeshFileTypeValue}",
-            group="",
+            commandLineGroup="",
             ),
         desc.File(
             name="outputMaterial",
@@ -351,14 +351,14 @@ Many cameras are contributing to the low frequencies and only the best ones cont
             label="Material",
             description="Output material file.",
             value="{nodeCacheFolder}/texturedMesh.mtl",
-            group="",
+            commandLineGroup="",
             ),
         desc.File(
             name="outputTextures",
             label="Textures",
             description="Output texture files.",
             value=lambda attr: "{nodeCacheFolder}/texture_*." + attr.node.colorMapping.colorMappingFileType.value if attr.node.colorMapping.enable.value else "",
-            group="",
+            commandLineGroup="",
         ),
     ]
 

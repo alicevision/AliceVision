@@ -67,7 +67,7 @@ class SketchfabUpload(desc.Node):
             name="inputFiles",
             label="Input Files",
             description="Input Files to export.",
-            group="",
+            commandLineGroup="",
         ),
         desc.StringParam(
             name="apiToken",
@@ -109,7 +109,7 @@ class SketchfabUpload(desc.Node):
             name="tags",
             label="Tags",
             description="Maximum of 42 separate tags.",
-            group="",
+            commandLineGroup="",
         ),
         desc.ChoiceParam(
             name="category",

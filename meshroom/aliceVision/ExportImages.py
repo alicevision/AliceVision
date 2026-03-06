@@ -115,7 +115,7 @@ For example, the target intrinsics may be the same without the distortion.
             description="List of undistorted images.",
             semantic="image",
             value=lambda attr: getUndistortedPath(attr.node.namingMode.value),
-            group="",
+            commandLineGroup="",
             advanced=True,
         ),
          desc.File(

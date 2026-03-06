@@ -22,7 +22,7 @@ class ConvertMesh(desc.AVCommandLineNode):
             description="Output mesh format (*.obj, *.fbx, *.gltf, *.glb, *.stl, *.ply).",
             value="obj",
             values=["obj", "fbx", "gltf", "glb", "stl", "ply"],
-            group="",
+            commandLineGroup="",
         ),
         desc.BoolParam(
             name="flipNormals",

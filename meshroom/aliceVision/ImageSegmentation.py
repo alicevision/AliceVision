@@ -87,6 +87,6 @@ class ImageSegmentation(desc.AVCommandLineNode):
             description="Generated segmentation masks.",
             semantic="image",
             value=lambda attr: "{nodeCacheFolder}/<VIEW_ID>.exr" if not attr.node.keepFilename.value else "{nodeCacheFolder}/<FILESTEM>.exr",
-            group="",
+            commandLineGroup="",
         ),
     ]

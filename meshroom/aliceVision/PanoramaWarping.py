@@ -25,7 +25,7 @@ class PanoramaWarping(desc.AVCommandLineNode):
             label="Estimate Resolution",
             description="Estimate output panorama resolution automatically based on the resolution of input images.",
             value=True,
-            group=None, # skip group from command line
+            commandLineGroup=None, # skip group from command line
         ),
         desc.IntParam(
             name="panoramaWidth",

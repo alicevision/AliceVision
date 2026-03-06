@@ -59,7 +59,7 @@ class LdrToHdrMerge(desc.AVCommandLineNode):
             value=0,
             range=(0, 15, 1),
             invalidate=False,
-            group="user",  # not used directly on the command line
+            commandLineGroup="user",  # not used directly on the command line
             errorMessage="The set number of brackets is not a multiple of the number of input images.\n"
                          "Errors will occur during the computation.",
             exposed=True,
@@ -72,14 +72,14 @@ class LdrToHdrMerge(desc.AVCommandLineNode):
                         "is 0, else it is equal to 'userNbBrackets'.",
             value=0,
             range=(0, 15, 1),
-            group="bracketsParams",
+            commandLineGroup="bracketsParams",
         ),
         desc.BoolParam(
             name="offsetRefBracketIndexEnabled",
             label="Manually Specify Ref Bracket",
             description="Manually specify the reference bracket index to control the exposure of the HDR image.",
             value=False,
-            group="user",  # not used directly on the command line
+            commandLineGroup="user",  # not used directly on the command line
         ),
         desc.IntParam(
             name="offsetRefBracketIndex",
@@ -171,7 +171,7 @@ class LdrToHdrMerge(desc.AVCommandLineNode):
             label="Enable Highlight",
             description="Enable highlights correction.",
             value=False,
-            group="user",  # not used directly on the command line
+            commandLineGroup="user",  # not used directly on the command line
             enabled=lambda node: node.byPass.enabled and not node.byPass.value,
         ),
         desc.FloatParam(
@@ -234,7 +234,7 @@ class LdrToHdrMerge(desc.AVCommandLineNode):
             label="Folder",
             description="Path to the folder containing the merged HDR images.",
             value="{nodeCacheFolder}",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
         desc.File(
             name="outSfMData",

@@ -80,7 +80,7 @@ class SfMMerge(desc.AVCommandLineNode):
             description="Output SfM file format.",
             value="abc",
             values=["abc", "sfm", "json"],
-            group="",  # exclude from command line
+            commandLineGroup="",  # exclude from command line
         ),
         desc.ChoiceParam(
             name="verboseLevel",

@@ -360,7 +360,7 @@ The needed metadata are:
             ),
             label="Viewpoints",
             description="Input viewpoints.",
-            group="",
+            commandLineGroup="",
         ),
         desc.ListAttribute(
             name="intrinsics",
@@ -372,7 +372,7 @@ The needed metadata are:
             ),
             label="Intrinsics",
             description="Camera intrinsics.",
-            group="",
+            commandLineGroup="",
         ),
         desc.File(
             name="sensorDatabase",

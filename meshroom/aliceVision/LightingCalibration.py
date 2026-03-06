@@ -68,6 +68,6 @@ Can also be used to calibrate a lighting dome (RTI type).
             description="Estimated Lighting Visualization.",
             semantic="image",
             value="{nodeCacheFolder}/<FILESTEM>_{methodValue}.png",
-            group=None,
+            commandLineGroup=None,
         ),
     ]

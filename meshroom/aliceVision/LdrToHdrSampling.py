@@ -50,7 +50,7 @@ class LdrToHdrSampling(desc.AVCommandLineNode):
             value=0,
             range=(0, 15, 1),
             invalidate=False,
-            group="user",  # not used directly on the command line
+            commandLineGroup="user",  # not used directly on the command line
             errorMessage="The set number of brackets is not a multiple of the number of input images.\n"
                          "Errors will occur during the computation.",
             exposed=True,
@@ -63,7 +63,7 @@ class LdrToHdrSampling(desc.AVCommandLineNode):
                         "is 0, else it is equal to 'userNbBrackets'.",
             value=0,
             range=(0, 15, 1),
-            group="bracketsParams",
+            commandLineGroup="bracketsParams",
         ),
         desc.BoolParam(
             name="byPass",

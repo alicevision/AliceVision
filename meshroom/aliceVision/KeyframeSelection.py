@@ -141,7 +141,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                         "sequence with respect to the set parameters.\n"
                         "- With the smart method, keyframes are selected based on their sharpness "
                         "and optical flow scores.",
-            group=None,  # skip group from command line
+            commandLineGroup=None,  # skip group from command line
             items=[
                 desc.BoolParam(
                     name="useSmartSelection",
@@ -155,7 +155,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                     description="Parameters for the regular keyframe selection.\n"
                                 "Keyframes are selected regularly over the sequence with respect "
                                 "to the set parameters.",
-                    group=None,  # skip group from command line
+                    commandLineGroup=None,  # skip group from command line
                     enabled=lambda node: node.selectionMethod.useSmartSelection.value is False,
                     items=[
                         desc.IntParam(
@@ -195,7 +195,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                     description="Parameters for the smart keyframe selection.\n"
                                 "Keyframes are selected based on their sharpness and optical "
                                 "flow scores.",
-                    group=None,  # skip group from command line
+                    commandLineGroup=None,  # skip group from command line
                     enabled=lambda node: node.selectionMethod.useSmartSelection.value,
                     items=[
                         desc.FloatParam(
@@ -334,7 +334,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
             name="debugOptions",
             label="Debug Options",
             description="Debug options for the Smart keyframe selection method.",
-            group=None,  # skip group from command line
+            commandLineGroup=None,  # skip group from command line
             enabled=lambda node: node.selectionMethod.useSmartSelection.value,
             advanced=True,
             items=[
@@ -342,7 +342,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                     name="debugScores",
                     label="Export Scores",
                     description="Export the computed sharpness and optical flow scores to a file.",
-                    group=None,  # skip group from command line
+                    commandLineGroup=None,  # skip group from command line
                     enabled=lambda node: node.debugOptions.enabled,
                     items=[
                         desc.BoolParam(
@@ -374,7 +374,7 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                     name="opticalFlowVisualisation",
                     label="Optical Flow Visualisation",
                     description="Visualise the motion vectors for each input frame in HSV.",
-                    group=None,  # skip group from command line
+                    commandLineGroup=None,  # skip group from command line
                     enabled=lambda node: node.debugOptions.enabled,
                     items=[
                         desc.BoolParam(

@@ -41,7 +41,7 @@ A Graph Cut Max-Flow is applied to optimally cut the volume. This cut represents
             description="File type for the output mesh.",
             value="obj",
             values=["gltf", "obj", "fbx", "stl"],
-            group="",
+            commandLineGroup="",
         ),
         desc.BoolParam(
             name="useBoundingBox",
@@ -50,7 +50,7 @@ A Graph Cut Max-Flow is applied to optimally cut the volume. This cut represents
                         "If enabled, it takes priority over the 'Estimate Space From SfM' option.\n"
                         "Parameters can be adjusted in advanced settings.",
             value=False,
-            group="",
+            commandLineGroup="",
         ),
         desc.GroupAttribute(
             name="boundingBox",
@@ -304,7 +304,7 @@ A Graph Cut Max-Flow is applied to optimally cut the volume. This cut represents
             value=False,
             invalidate=False,
             advanced=True,
-            group="",
+            commandLineGroup="",
         ),
         desc.IntParam(
             name="densifyNbFront",
@@ -402,7 +402,7 @@ A Graph Cut Max-Flow is applied to optimally cut the volume. This cut represents
             value=False,
             invalidate=False,
             advanced=True,
-            group="",
+            commandLineGroup="",
         ),
         desc.FloatParam(
             name="maskHelperPointsWeight",

@@ -78,7 +78,7 @@ class PanoramaPostProcessing(desc.CommandLineNode):
             description="Name of the output panorama.",
             value="panorama.exr",
             invalidate=False,
-            group=None,
+            commandLineGroup=None,
             advanced=True,
         ),
         desc.StringParam(
@@ -87,7 +87,7 @@ class PanoramaPostProcessing(desc.CommandLineNode):
             description="Name of the preview of the output panorama.",
             value="panoramaPreview.jpg",
             invalidate=False,
-            group=None,
+            commandLineGroup=None,
             advanced=True,
         ),
         desc.ChoiceParam(
@@ -119,6 +119,6 @@ class PanoramaPostProcessing(desc.CommandLineNode):
             label="Downscaled Panorama Levels",
             description="Downscaled versions of the generated panorama.",
             value=lambda attr: "{nodeCacheFolder}/" + os.path.splitext(attr.node.panoramaName.value)[0] + "_level_*.exr",
-            group="",
+            commandLineGroup="",
         ),
     ]

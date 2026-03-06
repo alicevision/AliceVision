@@ -97,14 +97,14 @@ Based on the input image filenames, it will recognize the input video sequence t
             label="Camera",
             description="Output filename for the animated camera in Alembic format.",
             value="{nodeCacheFolder}/camera.abc",
-            group="",  # exclude from command line
+            commandLineGroup="",  # exclude from command line
         ),
         desc.File(
             name="outputUndistorted",
             label="Undistorted Folder",
             description="Output undistorted folder.",
             value="{nodeCacheFolder}/undistort/",
-            group="",  # exclude from command line
+            commandLineGroup="",  # exclude from command line
         ),
         desc.File(
             name="outputImages",
@@ -112,7 +112,7 @@ Based on the input image filenames, it will recognize the input video sequence t
             description="Output undistorted images.",
             value="{nodeCacheFolder}/undistort/<INTRINSIC_ID>_<FILESTEM>.{undistortedImageTypeValue}",
             semantic="image",
-            group="",  # exclude from command line
+            commandLineGroup="",  # exclude from command line
             enabled=lambda node: node.exportUndistortedImages.value,
         ),
     ]

@@ -35,7 +35,7 @@ class PanoramaMerging(desc.AVCommandLineNode):
             description="Output file type for the merged panorama.",
             value="exr",
             values=["jpg", "png", "tif", "exr"],
-            group="",  # not part of allParams, as this is not a parameter for the command line
+            commandLineGroup="",  # not part of allParams, as this is not a parameter for the command line
         ),
         desc.BoolParam(
             name="useTiling",

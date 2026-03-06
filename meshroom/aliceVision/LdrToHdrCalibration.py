@@ -53,7 +53,7 @@ class LdrToHdrCalibration(desc.AVCommandLineNode):
             value=0,
             range=(0, 15, 1),
             invalidate=False,
-            group="user",  # not used directly on the command line
+            commandLineGroup="user",  # not used directly on the command line
             errorMessage="The set number of brackets is not a multiple of the number of input images.\n"
                          "Errors will occur during the computation.",
             exposed=True,
@@ -66,7 +66,7 @@ class LdrToHdrCalibration(desc.AVCommandLineNode):
                         "else it is equal to 'userNbBrackets'.",
             value=0,
             range=(0, 15, 1),
-            group="bracketsParams",
+            commandLineGroup="bracketsParams",
         ),
         desc.BoolParam(
             name="byPass",
@@ -120,7 +120,7 @@ class LdrToHdrCalibration(desc.AVCommandLineNode):
             values=COLORSPACES,
             value="AUTO",
             invalidate=False,
-            group="user",  # not used directly on the command line
+            commandLineGroup="user",  # not used directly on the command line
             enabled=lambda node: node.byPass.enabled and not node.byPass.value,
             exposed=True,
         ),

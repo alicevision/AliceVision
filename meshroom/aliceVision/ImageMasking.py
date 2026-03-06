@@ -33,7 +33,7 @@ class ImageMasking(desc.AVCommandLineNode):
                         " - Green: default values\n"
                         " - White: Tolerance = 1, minSaturation = 0, maxSaturation = 0.1, minValue = 0.8, maxValue = 1\n"
                         " - Black: Tolerance = 1, minSaturation = 0, maxSaturation = 0.1, minValue = 0, maxValue = 0.2",
-            group=None,
+            commandLineGroup=None,
             enabled=lambda node: node.algorithm.value == "HSV",
             items=[
                 desc.FloatParam(

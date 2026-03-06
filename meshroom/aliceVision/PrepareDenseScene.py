@@ -104,7 +104,7 @@ This node export undistorted images so the depth map and texturing can be comput
             description="List of undistorted images.",
             semantic="image",
             value="{nodeCacheFolder}/<VIEW_ID>.{outputFileTypeValue}",
-            group="",
+            commandLineGroup="",
             advanced=True,
         ),
     ]

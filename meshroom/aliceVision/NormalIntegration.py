@@ -45,6 +45,6 @@ class NormalIntegration(desc.CommandLineNode):
             description="Generated depth in the camera coordinate system.",
             semantic="image",
             value="{nodeCacheFolder}/<POSE_ID>_depthMap.exr",
-            group="", # do not export on the command line
+            commandLineGroup="", # do not export on the command line
         )
     ]

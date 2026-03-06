@@ -30,7 +30,7 @@ class LidarMeshing(desc.AVCommandLineNode):
                         "If enabled, it takes priority over the 'Estimate Space From SfM' option.\n"
                         "Parameters can be adjusted in advanced settings.",
             value=False,
-            group="",
+            commandLineGroup="",
         ),
         desc.GroupAttribute(
             name="boundingBox",

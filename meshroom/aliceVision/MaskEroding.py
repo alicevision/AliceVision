@@ -52,6 +52,6 @@ class MaskEroding(desc.AVCommandLineNode):
             description="Processed masks.",
             semantic="imageList",
             value= "{nodeCacheFolder}/*.exr",
-            group="",
+            commandLineGroup="",
         ),
     ]

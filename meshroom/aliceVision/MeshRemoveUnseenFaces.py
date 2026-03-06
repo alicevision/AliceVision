@@ -32,7 +32,7 @@ class MeshRemoveUnseenFaces(desc.AVCommandLineNode):
             description="File type for the output mesh.",
             value="obj",
             values=["gltf", "obj", "fbx", "stl"],
-            group="",
+            commandLineGroup="",
         ),
         desc.IntParam(
             name="minObservations",

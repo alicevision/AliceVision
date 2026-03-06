@@ -118,7 +118,7 @@ If multiple color charts are submitted, only the first one will be taken in acco
             label="SfMData",
             description="Output SfMData.",
             value=lambda attr: ("{nodeCacheFolder}/" + os.path.basename(attr.node.input.value)) if (os.path.splitext(attr.node.input.value)[1] in [".abc", ".sfm"]) else "",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
         desc.File(
             name="output",
@@ -132,6 +132,6 @@ If multiple color charts are submitted, only the first one will be taken in acco
             description="Output images.",
             semantic="image",
             value=outputImagesValueFunct,
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
     ]

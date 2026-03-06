@@ -78,6 +78,6 @@ class MaskProcessing(desc.AVCommandLineNode):
             description="Processed segmentation masks.",
             semantic="imageList",
             value= "{nodeCacheFolder}/*.exr",
-            group="",
+            commandLineGroup="",
         ),
     ]

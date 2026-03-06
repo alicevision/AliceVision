@@ -87,21 +87,21 @@ The lighting conditions are assumed to be known.
             label="SfMData Albedo",
             description="Output SfMData file containing the albedo information.",
             value="{nodeCacheFolder}/albedoMaps.sfm",
-            group="",  # remove from command line
+            commandLineGroup="",  # remove from command line
         ),
         desc.File(
             name="outputSfmDataNormal",
             label="SfMData Normal",
             description="Output SfMData file containing the normal maps information.",
             value="{nodeCacheFolder}/normalMaps.sfm",
-            group="",  # remove from command line
+            commandLineGroup="",  # remove from command line
         ),
         desc.File(
             name="outputSfmDataNormalPNG",
             label="SfMData Normal PNG",
             description="Output SfMData file containing the normal maps information.",
             value="{nodeCacheFolder}/normalMapsPNG.sfm",
-            group="", # remove from command line
+            commandLineGroup="", # remove from command line
         ),
         # these attributes are only here to describe more accurately the output of the node
         # by specifying that it generates 2 sequences of images
@@ -112,7 +112,7 @@ The lighting conditions are assumed to be known.
             description="Generated normal maps in the camera coordinate system.",
             semantic="image",
             value="{nodeCacheFolder}/<POSE_ID>_normals.exr",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
         desc.File(
             name="normalsPNG",
@@ -120,7 +120,7 @@ The lighting conditions are assumed to be known.
             description="Generated normal maps in the camera coordinate system (in false colors).",
             semantic="image",
             value="{nodeCacheFolder}/<POSE_ID>_normals.png",
-            group="", # do not export on the command line
+            commandLineGroup="", # do not export on the command line
         ),
         desc.File(
             name="normalsWorld",
@@ -128,7 +128,7 @@ The lighting conditions are assumed to be known.
             description="Generated normal maps in the world coordinate system.",
             semantic="image",
             value="{nodeCacheFolder}/<POSE_ID>_normals_w.exr",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
 
         desc.File(
@@ -137,6 +137,6 @@ The lighting conditions are assumed to be known.
             description="Generated albedo maps.",
             semantic="image",
             value="{nodeCacheFolder}/<POSE_ID>_albedo.png",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
     ]
