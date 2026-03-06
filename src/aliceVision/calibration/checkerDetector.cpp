@@ -1159,8 +1159,10 @@ void CheckerDetector::drawCheckerBoard(image::Image<image::RGBColor>& img, bool 
         drawEdges(board, colors[idx], false);
 
         idx++;
-        if (idx >= _boards.size())
+        if (idx >= colors.size())
+        {
             idx = 0;
+        }
     }
 }
 
