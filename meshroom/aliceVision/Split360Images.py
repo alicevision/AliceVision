@@ -45,7 +45,7 @@ class Split360Images(desc.AVCommandLineNode):
             name="dualFisheyeGroup",
             label="Dual Fisheye",
             description="Dual Fisheye.",
-            group=None,
+            commandLineGroup=None,
             enabled=lambda node: node.splitMode.value == "dualfisheye",
             items=[
                 desc.ChoiceParam(
@@ -75,7 +75,7 @@ class Split360Images(desc.AVCommandLineNode):
             name="equirectangularGroup",
             label="Equirectangular",
             description="Equirectangular",
-            group=None,
+            commandLineGroup=None,
             enabled=lambda node: node.splitMode.value == "equirectangular",
             items=[
                 desc.IntParam(

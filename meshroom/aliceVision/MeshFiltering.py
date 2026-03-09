@@ -25,7 +25,7 @@ This node applies a Laplacian filtering to remove local defects from the raw Mes
             description="File type for the output mesh.",
             value="obj",
             values=["gltf", "obj", "fbx", "stl"],
-            group="",
+            commandLineGroup="",
         ),
         desc.BoolParam(
             name="keepLargestMeshOnly",

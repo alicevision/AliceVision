@@ -91,14 +91,14 @@ Compare feature/descriptor matching repeatability on some dataset with known hom
             description="Invalidate.",
             value=0,
             range=(0, 10000, 1),
-            group="",
+            commandLineGroup="",
         ),
         desc.StringParam(
             name="comments",
             label="Comments",
             description="Comments.",
             value="",
-            group="",
+            commandLineGroup="",
             invalidate=False,
         ),
         desc.ChoiceParam(

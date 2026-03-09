@@ -60,7 +60,7 @@ Spheres can be automatically detected or manually defined in the interface.
                 ),
             ],
             enabled=lambda node: not node.autoDetect.value,
-            group=None,  # skip group from command line
+            commandLineGroup=None,  # skip group from command line
         ),
         desc.FloatParam(
             name="sphereRadius",

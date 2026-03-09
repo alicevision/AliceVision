@@ -87,6 +87,6 @@ The detection method also supports nested calibration grids.
             description="Debug images.",
             semantic="image",
             value="{nodeCacheFolder}/<VIEW_ID>.png",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
     ]

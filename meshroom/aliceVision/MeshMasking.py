@@ -28,7 +28,7 @@ class MeshMasking(desc.AVCommandLineNode):
             description="File type of the output mesh.",
             value="obj",
             values=["obj", "gltf", "fbx", "stl"],
-            group="",
+            commandLineGroup="",
         ),
         desc.ListAttribute(
             elementDesc=desc.File(

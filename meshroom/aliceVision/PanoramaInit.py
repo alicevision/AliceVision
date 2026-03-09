@@ -105,7 +105,7 @@ This node allows to setup the Panorama:
                     range=(-1000.0, 10000.0, 1.0),
                 ),
             ],
-            group=None,  # skip group from command line
+            commandLineGroup=None,  # skip group from command line
             enabled=lambda node: node.useFisheye.value and not node.estimateFisheyeCircle.value,
         ),
         desc.FloatParam(
@@ -147,7 +147,7 @@ This node allows to setup the Panorama:
             semantic="image",
             description="Contact sheet path.",
             value="{nodeCacheFolder}/contactSheetImage.jpg",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
             enabled=lambda node: node.buildContactSheet.enabled
         ),
         desc.File(

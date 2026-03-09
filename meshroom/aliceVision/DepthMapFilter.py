@@ -124,7 +124,7 @@ This allows to filter unstable points before starting the fusion of all depth ma
             description="Filtered depth maps.",
             semantic="image",
             value="{nodeCacheFolder}/<VIEW_ID>_depthMap.exr",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
         desc.File(
             name="sim",
@@ -132,7 +132,7 @@ This allows to filter unstable points before starting the fusion of all depth ma
             description="Filtered sim maps.",
             semantic="image",
             value="{nodeCacheFolder}/<VIEW_ID>_simMap.exr",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
         desc.File(
             name="normal",
@@ -141,6 +141,6 @@ This allows to filter unstable points before starting the fusion of all depth ma
             semantic="image",
             value="{nodeCacheFolder}/<VIEW_ID>_normalMap.exr",
             enabled=lambda node: node.computeNormalMaps.value,
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
     ]

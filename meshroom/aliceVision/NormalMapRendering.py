@@ -45,6 +45,6 @@ class NormalMapRendering(desc.AVCommandLineNode):
             description="Rendered normal maps.",
             semantic="image",
             value="{nodeCacheFolder}/<VIEW_ID>_normalMap.exr",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
     ]

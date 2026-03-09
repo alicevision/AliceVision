@@ -66,7 +66,7 @@ It also allows to export an undistorted image of the lens grids for validation.
             label="Distortion Nuke Node",
             description="Calibrated distortion ST map.",
             value="{nodeCacheFolder}/nukeLensDistortion_<INTRINSIC_ID>.nk",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
             enabled=lambda node: node.exportNukeNode.value,
         ),
         desc.File(
@@ -75,7 +75,7 @@ It also allows to export an undistorted image of the lens grids for validation.
             description="Undistorted lens grids for validation",
             semantic="image",
             value="{nodeCacheFolder}/lensgrid_<VIEW_ID>_undistort.exr",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
             enabled=lambda node: node.exportLensGridsUndistorted.value,
         ),
         desc.File(
@@ -84,7 +84,7 @@ It also allows to export an undistorted image of the lens grids for validation.
             description="Calibrated distortion ST map.",
             semantic="image",
             value="{nodeCacheFolder}/stmap_<INTRINSIC_ID>_distort.exr",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
             enabled=lambda node: node.exportSTMaps.value,
         ),
         desc.File(
@@ -93,7 +93,7 @@ It also allows to export an undistorted image of the lens grids for validation.
             description="Calibrated undistortion ST map.",
             semantic="image",
             value="{nodeCacheFolder}/stmap_<INTRINSIC_ID>_undistort.exr",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
             enabled=lambda node: node.exportSTMaps.value,
         ),
     ]

@@ -74,7 +74,7 @@ It is robust to motion-blur, depth-of-field, occlusion. Be careful to have enoug
                         "Warning: Use ULTRA only on small datasets.",
             value="normal",
             values=["low", "medium", "normal", "high", "ultra", "custom"],
-            group=lambda node: 'allParams' if node.describerPreset.value != 'custom' else None,
+            commandLineGroup=lambda node: 'allParams' if node.describerPreset.value != 'custom' else None,
         ),
         desc.IntParam(
             name="maxNbFeatures",

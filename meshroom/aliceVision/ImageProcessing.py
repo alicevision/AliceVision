@@ -607,7 +607,7 @@ class ImageProcessing(desc.AVCommandLineNode):
             label="SfMData",
             description="Output SfMData file.",
             value=lambda attr: ("{nodeCacheFolder}/" + os.path.basename(attr.node.input.value)) if (os.path.splitext(attr.node.input.value)[1] in [".abc", ".sfm"]) else "",
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
         desc.File(
             name="output",
@@ -621,6 +621,6 @@ class ImageProcessing(desc.AVCommandLineNode):
             description="Output images.",
             semantic="image",
             value=outputImagesValueFunct,
-            group="",  # do not export on the command line
+            commandLineGroup="",  # do not export on the command line
         ),
     ]
