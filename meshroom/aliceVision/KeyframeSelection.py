@@ -7,8 +7,8 @@ from meshroom.core.utils import EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
 videoExts = [".avi", ".mov", ".mp4", ".m4a", ".m4v", ".3gp", ".3g2", ".mj2", ".m4v", ".mpg"]
 
 class KeyframeSelectionNodeSize(desc.DynamicNodeSize):
-    def computeSize(self, node):
-        inputPathsSize = super(KeyframeSelectionNodeSize, self).computeSize(node)
+    def __call__(self, node):
+        inputPathsSize = super(KeyframeSelectionNodeSize, self).__call__(node)
         s = 0
         finalSize = 0
         defaultParam = self._param
@@ -16,7 +16,7 @@ class KeyframeSelectionNodeSize(desc.DynamicNodeSize):
         # Compute the size for each entry in the list of input paths
         for input in node.attribute("inputPaths").value:
             self._param = input.fullName
-            s = s + super(KeyframeSelectionNodeSize, self).computeSize(node)
+            s = s + super(KeyframeSelectionNodeSize, self).__call__(node)
 
         # Retrieve the maximum number of keyframes for the smart selection
         # (which is high by default)
