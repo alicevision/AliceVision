@@ -27,7 +27,6 @@
     "geogram",
     "cctag",
     "popsift",
-    "eigen3",
     "expat",
     "flann",
     "nanoflann",
@@ -103,6 +102,11 @@
     {
       "name": "cctag",
       "version": "1.0.4"
+    },
+    {
+      "name": "eigen3",
+      "version": "3.4.1#1"
+    },
     {
       "name": "python3",
       "version": "3.11.10#0"
