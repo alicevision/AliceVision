@@ -8,14 +8,14 @@
 
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/depthMap_sycl/SgmParams.hpp>
-#include <aliceVision/depthMap_sycl/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
 #include <aliceVision/depthMap_sycl/sycl/CameraParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/DeviceMipmapImage.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @brief Copy depth and default from input depth/sim map to another depth/sim map.
@@ -55,8 +55,8 @@ sycl::event sycl_normalMapUpscale(SyclDeviceMemoryPitched<sycl::float3, 2>& out_
  * @param[in] prerequisite the event to depend on for queue ordering
  */
 sycl::event sycl_depthThicknessSmoothThickness(SyclDeviceMemoryPitched<sycl::float2, 2>& inout_depthThicknessMap_dmp,
-                                               const SgmParams& sgmParams,
-                                               const RefineParams& refineParams,
+                                               const depthMapCommon::SgmParams& sgmParams,
+                                               const depthMapCommon::RefineParams& refineParams,
                                                const ROI& roi,
                                                sycl::queue& queue,
                                                sycl::event prerequisite);
@@ -77,7 +77,7 @@ sycl::event sycl_computeSgmUpscaledDepthPixSizeMap(SyclDeviceMemoryPitched<sycl:
                                                    const SyclDeviceMemoryPitched<sycl::float2, 2>& in_sgmDepthThicknessMap_dmp,
                                                    const CameraParams& camParams,
                                                    const DeviceMipmapImage& rcDeviceMipmapImage,
-                                                   const RefineParams& refineParams,
+                                                   const depthMapCommon::RefineParams& refineParams,
                                                    const ROI& roi,
                                                    sycl::queue& queue,
                                                    sycl::event prerequisite);
@@ -123,10 +123,10 @@ sycl::event sycl_depthSimMapOptimizeGradientDescent(SyclDeviceMemoryPitched<sycl
                                                     const SyclDeviceMemoryPitched<sycl::float2, 2>& in_refineDepthSimMap_dmp,
                                                     const CameraParams& camParams,
                                                     const DeviceMipmapImage& rcDeviceMipmapImage,
-                                                    const RefineParams& refineParams,
+                                                    const depthMapCommon::RefineParams& refineParams,
                                                     const ROI& roi,
                                                     sycl::queue& queue,
                                                     sycl::event prerequisite);
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

@@ -16,7 +16,6 @@ set(depthMap_sycl_headers
 # Sources
 set(depthMap_files_sources
     computeOnMultiDevices.cpp
-    CustomPatchPatternParams.cpp
     DepthMapEstimator.cpp
     depthMapUtils.cpp
     NormalMapEstimator.cpp
@@ -30,22 +29,18 @@ set(depthMap_files_sources
 # Headers
 set(depthMap_files_headers
     computeOnMultiDevices.hpp
-    CustomPatchPatternParams.hpp
     DepthMapEstimator.hpp
-    DepthMapParams.hpp
     depthMapUtils.hpp
     NormalMapEstimator.hpp
     Refine.hpp
-    RefineParams.hpp
     Sgm.hpp
     SgmDepthList.hpp
-    SgmParams.hpp
     Tile.hpp
     volumeIO.hpp
     ${depthMap_sycl_headers}
 )
 
-alicevision_add_library(aliceVision_depthMap
+alicevision_add_library(aliceVision_depthMap_sycl
     USE_SYCL
     SOURCES
         ${depthMap_files_headers}
@@ -54,6 +49,7 @@ alicevision_add_library(aliceVision_depthMap
         aliceVision_mvsData
         aliceVision_mvsUtils
         aliceVision_system
+        aliceVision_depthMapCommon
         assimp::assimp
     PRIVATE_LINKS
         aliceVision_sfmData

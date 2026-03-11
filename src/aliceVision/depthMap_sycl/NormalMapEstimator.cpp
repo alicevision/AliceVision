@@ -21,14 +21,15 @@
 namespace fs = std::filesystem;
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 NormalMapEstimator::NormalMapEstimator(const mvsUtils::MultiViewParams& mp)
   : _mp(mp)
 {}
 
-void NormalMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams)
+void NormalMapEstimator::compute(const sycl::device& device, const std::vector<int>& cams)
 {
+    sycl::queue queue = constructQueue(device);
     for (const int rc : cams)
     {
         const std::string normalMapFilepath = getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::normalMapFiltered);
@@ -79,7 +80,7 @@ void NormalMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cam
                     for (int x = 0; x < width; ++x)
                         in_depthMap_hmh(size_t(x), size_t(y)).x() = in_depthMap(y, x);
 
-                event = in_depthMap_dmp.copyFrom(in_depthMap_hmh, event);
+                event = in_depthMap_dmp.copyFrom(in_depthMap_hmh, queue, event);
             }
 
             // compute normal map synchronosly
@@ -94,5 +95,5 @@ void NormalMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cam
     }
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

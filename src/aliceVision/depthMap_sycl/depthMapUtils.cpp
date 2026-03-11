@@ -18,7 +18,21 @@
 #include <assimp/scene.h>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
+
+sycl::queue constructQueue(const sycl::device& device) {
+    static auto async_handler_object = [] (sycl::exception_list exceptions) {
+        for (auto e : exceptions) {
+            try {
+                std::rethrow_exception(e);
+            } catch (sycl::exception const &e) {
+                ALICEVISION_LOG_WARNING("Caught asynchronous SYCL exception " << e.code() << ": \""
+                                        << e.what() << "\" Warning: Only allocation faliures due to running out of memory will dealt with!");
+            }
+        }
+    };
+    return sycl::queue(device, async_handler_object, {sycl::property::queue::in_order()});
+};
 
 void copyFloat2Map(image::Image<float>& out_mapX,
                    image::Image<float>& out_mapY,
@@ -55,7 +69,7 @@ void copyFloat2Map(image::Image<float>& out_mapX,
 {
     // copy sycl::float2 map from device pitched memory to host memory
     SyclHostMemoryHeap<sycl::float2, 2> map_hmh(in_map_dmp.getSize(), queue);
-    map_hmh.copyFrom(in_map_dmp, sycl::event()).wait();
+    map_hmh.copyFrom(in_map_dmp, queue, sycl::event()).wait();
 
     copyFloat2Map(out_mapX, out_mapY, map_hmh, roi, downscale);
 }
@@ -124,7 +138,7 @@ void writeFloat3Map(int rc,
 
     // copy map from device pitched memory to host memory
     SyclHostMemoryHeap<sycl::float3, 2> map_hmh(in_map_dmp.getSize(), queue);
-    map_hmh.copyFrom(in_map_dmp, sycl::event()).wait();
+    map_hmh.copyFrom(in_map_dmp, queue, sycl::event()).wait();
 
     // copy map from host memory to an Image
     image::Image<image::RGBfColor> map(width, height, true, {0.f, 0.f, 0.f});
@@ -141,7 +155,7 @@ void writeDeviceImage(const SyclDeviceMemoryPitched<SyclRGB, 2>& in_img_dmp, syc
 
     // copy image from device pitched memory to host memory
     SyclHostMemoryHeap<SyclRGB, 2> img_hmh(imgSize, queue);
-    img_hmh.copyFrom(in_img_dmp, sycl::event()).wait();
+    img_hmh.copyFrom(in_img_dmp, queue, sycl::event()).wait();
 
     // copy image from host memory to an Image
     image::Image<image::RGBfColor> img(imgSize.x(), imgSize.y(), true, {0.f, 0.f, 0.f});
@@ -232,6 +246,8 @@ void writeDepthSimMapFromTileList(int rc,
                                   const mvsUtils::TileParams& tileParams,
                                   const std::vector<ROI>& tileRoiList,
                                   const std::vector<SyclHostMemoryHeap<sycl::float2, 2>>& in_depthSimMapTiles_hmh,
+                                  std::vector<std::mutex>& unlockList,
+                                  const std::vector<std::shared_future<void>>& waitList,
                                   int scale,
                                   int step,
                                   const std::string& name)
@@ -259,8 +275,14 @@ void writeDepthSimMapFromTileList(int rc,
         image::Image<float> tileDepthMap;
         image::Image<float> tileSimMap;
 
+        // wait for computation
+        waitList.at(i).wait();
+
         // copy tile depth/sim map from host memory
         copyFloat2Map(tileDepthMap, tileSimMap, in_depthSimMapTiles_hmh.at(i), roi, scaleStep);
+
+        // allow memory to be overwritten
+        unlockList.at(i).unlock();
 
         // add tile maps to the full-size maps with weighting
         mvsUtils::addTileMapWeighted(rc, mp, tileParams, roi, scaleStep, tileDepthMap, depthMap);
@@ -274,17 +296,9 @@ void writeDepthSimMapFromTileList(int rc,
 
 void resetDepthSimMap(SyclHostMemoryHeap<sycl::float2, 2>& inout_depthSimMap_hmh, float depth, float sim)
 {
-    const SyclSize<2>& depthSimMapSize = inout_depthSimMap_hmh.getSize();
-
-    for (size_t x = 0; x < depthSimMapSize.x(); ++x)
-    {
-        for (size_t y = 0; y < depthSimMapSize.y(); ++y)
-        {
-            sycl::float2& depthSim_hmh = inout_depthSimMap_hmh(x, y);
-            depthSim_hmh.x() = depth;
-            depthSim_hmh.y() = sim;
-        }
-    }
+    std::fill(inout_depthSimMap_hmh.getBuffer(),
+              inout_depthSimMap_hmh.getBuffer() + inout_depthSimMap_hmh.getUnitsTotal(),
+              sycl::float2(depth, sim));
 }
 
 void mergeNormalMapTiles(int rc, const mvsUtils::MultiViewParams& mp, int scale, int step, const std::string& name)
@@ -474,5 +488,5 @@ void exportDepthSimMapTilePatternObj(int rc,
     ALICEVISION_LOG_INFO("Save debug tiles pattern obj (rc: " << rc << ", view id: " << mp.getViewId(rc) << ") done.");
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

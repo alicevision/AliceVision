@@ -26,7 +26,7 @@
 #include <cstring>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 using SyclColorBaseType = unsigned char;
@@ -333,7 +333,7 @@ template<class Type, unsigned Dim>
 class SyclHostMemoryHeap : public SyclMemorySizeBase<Type, Dim>
 {
     Type* buffer = nullptr;
-    sycl::queue& queue;
+    sycl::queue queue;
 
   public:
     SyclHostMemoryHeap(sycl::queue& queue)
@@ -359,7 +359,7 @@ class SyclHostMemoryHeap : public SyclMemorySizeBase<Type, Dim>
     void initBuffer() { memset(buffer, 0, this->getBytesPadded()); }
 
     // see below with copy() functions
-    inline sycl::event copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite);
+    inline sycl::event copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::queue& queue, sycl::event prerequisite);
     inline void copyFrom(const image::Image<image::RGBfColor>& img);
     inline void copyTo(image::Image<image::RGBfColor>& img) const;
 
@@ -442,7 +442,7 @@ template<class Type, unsigned Dim>
 class SyclDeviceMemoryPitched : public SyclMemorySizeBase<Type, Dim>
 {
     Type* buffer = nullptr;
-    sycl::queue& queue;
+    sycl::queue queue;
 
   public:
     SyclDeviceMemoryPitched(sycl::queue& queue)
@@ -468,10 +468,10 @@ class SyclDeviceMemoryPitched : public SyclMemorySizeBase<Type, Dim>
     ~SyclDeviceMemoryPitched() { deallocate(); }
 
     // see below with copy() functions
-    inline sycl::event copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite);
-    inline sycl::event copyFrom(const SyclHostMemoryHeap<Type, Dim>& src, sycl::event prerequisite);
-    inline sycl::event copyFrom(const image::Image<image::RGBAfColor>& img, sycl::event prerequisite);
-    inline sycl::event copyTo(image::Image<image::RGBAfColor>& img, sycl::event prerequisite);
+    inline sycl::event copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::queue& queue, sycl::event prerequisite);
+    inline sycl::event copyFrom(const SyclHostMemoryHeap<Type, Dim>& src, sycl::queue& queue, sycl::event prerequisite);
+    inline sycl::event copyFrom(const image::Image<image::RGBAfColor>& img, sycl::queue& queue, sycl::event prerequisite);
+    inline sycl::event copyTo(image::Image<image::RGBAfColor>& img, sycl::queue& queue, sycl::event prerequisite);
 
     Type* getBuffer() { return buffer; }
     sycl::queue& getQueue() { return queue; }
@@ -522,8 +522,9 @@ class SyclDeviceMemoryPitched : public SyclMemorySizeBase<Type, Dim>
 template<class Type, unsigned Dim>
 class SyclDevicePitchedAccessBase
 {
-protected:
+public:
     Type* const buffer;
+protected:
     const sycl::vec<uint, Dim> _dims;
 
     explicit SyclDevicePitchedAccessBase(const SyclDeviceMemoryPitched<Type, Dim>& owner) :
@@ -663,25 +664,39 @@ public:
 };
 
 /*********************************************************************************
+ * helper function for using texture cache on devices where it is available
+ *********************************************************************************/
+
+template<class Type>
+inline Type __readonly_load(const Type* const __restrict__ ptr)
+{
+__acpp_if_target_hiplike(
+	return __ldg(ptr);
+)
+    // generic fallthrough
+    return *ptr;
+}
+
+/*********************************************************************************
  * copyFrom member functions
  *********************************************************************************/
 
 template<class Type, unsigned Dim>
-sycl::event SyclDeviceMemoryPitched<Type, Dim>::copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite)
+sycl::event SyclDeviceMemoryPitched<Type, Dim>::copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::queue& queue, sycl::event prerequisite)
 {
     assert(this->getSize() == src.getSize());
-    return this->queue.copy(src.getBuffer(), this->getBuffer(), src.getUnitsTotal(), prerequisite);
+    return queue.copy(src.getBuffer(), this->getBuffer(), src.getUnitsTotal(), prerequisite);
 }
 
 template<class Type, unsigned Dim>
-sycl::event SyclDeviceMemoryPitched<Type, Dim>::copyFrom(const SyclHostMemoryHeap<Type, Dim>& src, sycl::event prerequisite)
+sycl::event SyclDeviceMemoryPitched<Type, Dim>::copyFrom(const SyclHostMemoryHeap<Type, Dim>& src, sycl::queue& queue, sycl::event prerequisite)
 {
     assert(this->getSize() == src.getSize());
-    return this->queue.copy(src.getBuffer(), this->getBuffer(), src.getUnitsTotal(), prerequisite);
+    return queue.copy(src.getBuffer(), this->getBuffer(), src.getUnitsTotal(), prerequisite);
 }
 
 template<class Type, unsigned Dim>
-inline sycl::event SyclHostMemoryHeap<Type, Dim>::copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::event prerequisite)
+inline sycl::event SyclHostMemoryHeap<Type, Dim>::copyFrom(const SyclDeviceMemoryPitched<Type, Dim>& src, sycl::queue& queue, sycl::event prerequisite)
 {
     bool canMemcopy = true;
 
@@ -699,7 +714,7 @@ inline sycl::event SyclHostMemoryHeap<Type, Dim>::copyFrom(const SyclDeviceMemor
     }
 
     if(Dim == 1 || canMemcopy)
-        return this->queue.copy(src.getBuffer(), this->getBuffer(), std::min(src.getUnitsTotal(), this->getUnitsTotal()), prerequisite);
+        return queue.copy(src.getBuffer(), this->getBuffer(), std::min(src.getUnitsTotal(), this->getUnitsTotal()), prerequisite);
     else
     {
         const SyclDevicePitchedAccess acc{src};
@@ -716,7 +731,7 @@ inline sycl::event SyclHostMemoryHeap<Type, Dim>::copyFrom(const SyclDeviceMemor
 
         Type* buffer = this->getBuffer();
 
-        return this->queue.submit([&] (sycl::handler& h) {
+        return queue.submit([&] (sycl::handler& h) {
             h.depends_on(prerequisite);
 
             h.parallel_for(range, [=] (sycl::id<Dim> id) {
@@ -739,6 +754,7 @@ inline sycl::event SyclHostMemoryHeap<Type, Dim>::copyFrom(const SyclDeviceMemor
 template<>
 inline sycl::event SyclDeviceMemoryPitched<sycl::float4, 2>::copyFrom(
                         const image::Image<image::RGBAfColor>& img,
+                        sycl::queue& queue,
                         sycl::event prerequisite)
 {
     static constexpr size_t size = sizeof(sycl::float4);
@@ -748,16 +764,16 @@ inline sycl::event SyclDeviceMemoryPitched<sycl::float4, 2>::copyFrom(
     assert(img.rows() <= this->getSize()[1]);
 
     if(img.width() == this->getUnitsInDim(0))
-        return this->getQueue().memcpy(this->getBytePtr(),
-                                       (unsigned char*)img.data(),
-                                       img.size()*sizeof(sycl::float4),
-                                       prerequisite);
+        return queue.memcpy(this->getBytePtr(),
+                            (unsigned char*)img.data(),
+                            img.size()*sizeof(sycl::float4),
+                            prerequisite);
     else
         for(int r = 0; r < img.rows(); r++)
-            prerequisite = this->getQueue().memcpy(this->getBytePtr() + r * this->getSize()[0] * size,
-                                                   (unsigned char*)img.data() + r * img.cols() * size,
-                                                   img.cols()*sizeof(sycl::float4),
-                                                   prerequisite);
+            prerequisite = queue.memcpy(this->getBytePtr() + r * this->getSize()[0] * size,
+                                        (unsigned char*)img.data() + r * img.cols() * size,
+                                        img.cols()*sizeof(sycl::float4),
+                                        prerequisite);
     return prerequisite;
 }
 
@@ -806,6 +822,7 @@ inline void SyclHostMemoryHeap<sycl::float3, 2>::copyFrom(const image::Image<ima
 template<>
 inline sycl::event SyclDeviceMemoryPitched<sycl::float4, 2>::copyTo(
                         image::Image<image::RGBAfColor>& img,
+                        sycl::queue& queue,
                         sycl::event prerequisite)
 {
     static constexpr size_t size = sizeof(sycl::float4);
@@ -815,16 +832,16 @@ inline sycl::event SyclDeviceMemoryPitched<sycl::float4, 2>::copyTo(
     assert(img.rows() <= this->getSize()[1]);
 
     if(img.width() == this->getUnitsInDim(0))
-        return this->getQueue().memcpy((unsigned char*)img.data(),
-                                       this->getBytePtr(),
-                                       img.size()*sizeof(sycl::float4),
-                                       prerequisite);
+        return queue.memcpy((unsigned char*)img.data(),
+                            this->getBytePtr(),
+                            img.size()*sizeof(sycl::float4),
+                            prerequisite);
     else
         for(int r = 0; r < img.rows(); r++)
-            prerequisite = this->getQueue().memcpy((unsigned char*)img.data() + r * img.cols() * size,
-                                                   this->getBytePtr() + r * this->getSize()[0] * size,
-                                                   img.cols()*sizeof(sycl::float4),
-                                                   prerequisite);
+            prerequisite = queue.memcpy((unsigned char*)img.data() + r * img.cols() * size,
+                                        this->getBytePtr() + r * this->getSize()[0] * size,
+                                        img.cols()*sizeof(sycl::float4),
+                                        prerequisite);
     return prerequisite;
 }
 
@@ -870,5 +887,5 @@ inline void SyclHostMemoryHeap<sycl::float3, 2>::copyTo(image::Image<image::RGBf
     }
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

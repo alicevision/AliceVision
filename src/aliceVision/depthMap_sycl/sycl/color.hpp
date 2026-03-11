@@ -15,7 +15,7 @@
 #define ALICEVISION_DEPTHMAP_TC_MIN_ALPHA (255.f * 0.4f) // texture range (0, 255)
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 // color Euclidean distance - porting note, replaced by sycl::distance
 
@@ -167,7 +167,8 @@ inline float CostYKfromLab(const int dx,
     //);
 
     // euclidean distance in Lab, assuming linear RGB
-    const float deltaC = sycl::distance(c1, c2) * invGammaC;
+    const float deltaC = sycl::distance(sycl::float3(c1.x(), c1.y(), c1.z()),
+                                        sycl::float3(c2.x(), c2.y(), c2.z())) * invGammaC;
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
     // spatial distance to the center of the patch (in pixels)
@@ -175,7 +176,7 @@ inline float CostYKfromLab(const int dx,
     // float deltaP = sqrtf(float(dx * dx + dy * dy));
     const float deltaP = sycl::sqrt(float(dx * dx + dy * dy)) * invGammaP;
 
-    return sycl::half_precision::exp(-deltaC - deltaP); // Yoon & Kweon
+    return sycl::half_precision::exp(-(deltaC + deltaP)); // Yoon & Kweon
     // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
     // return __expf(-((deltaC * deltaC / 2) * (invGammaC * invGammaC))) * sqrtf(__expf(-(((deltaP * deltaP / 2) * (invGammaP * invGammaP)))); // DCB
 }
@@ -195,10 +196,11 @@ inline float CostYKfromLab(const int dx,
  inline float CostYKfromLab(const sycl::float4 c1, const sycl::float4 c2, const float invGammaC)
 {
     // euclidean distance in Lab, assuming linear RGB
-    const float deltaC = sycl::distance(c1, c2);
+    const float deltaC = sycl::distance(sycl::float3(c1.x(), c1.y(), c1.z()),
+                                        sycl::float3(c2.x(), c2.y(), c2.z())) * invGammaC;
 
-    return sycl::half_precision::exp(-(deltaC * invGammaC)); // Yoon & Kweon
+    return sycl::half_precision::exp(-(deltaC)); // Yoon & Kweon
 }
 
-} // namespace depthMap
+} // namespace depthMap_sycl
 } // namespace aliceVision

@@ -7,8 +7,8 @@
 #pragma once
 
 #include <aliceVision/mvsData/ROI.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceMipmapImage.hpp>
 
@@ -48,8 +48,8 @@ extern void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upscal
  * @param[in] stream the stream for gpu execution
  */
 extern void cuda_depthThicknessSmoothThickness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThicknessMap_dmp,
-                                               const SgmParams& sgmParams,
-                                               const RefineParams& refineParams,
+                                               const depthMapCommon::SgmParams& sgmParams,
+                                               const depthMapCommon::RefineParams& refineParams,
                                                const ROI& roi,
                                                cudaStream_t stream);
 
@@ -67,7 +67,7 @@ extern void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<float
                                                    const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp,
                                                    const int rcDeviceCameraParamsId,
                                                    const DeviceMipmapImage& rcDeviceMipmapImage,
-                                                   const RefineParams& refineParams,
+                                                   const depthMapCommon::RefineParams& refineParams,
                                                    const ROI& roi,
                                                    cudaStream_t stream);
 
@@ -107,7 +107,7 @@ extern void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<floa
                                                     const CudaDeviceMemoryPitched<float2, 2>& in_refineDepthSimMap_dmp,
                                                     const int rcDeviceCameraParamsId,
                                                     const DeviceMipmapImage& rcDeviceMipmapImage,
-                                                    const RefineParams& refineParams,
+                                                    const depthMapCommon::RefineParams& refineParams,
                                                     const ROI& roi,
                                                     cudaStream_t stream);
 

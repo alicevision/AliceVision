@@ -11,13 +11,91 @@
 #include <aliceVision/depthMap_sycl/sycl/DeviceMipmapImage.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
+
+size_t hash_device(const sycl::device& device);
+
+template<typename T>
+class PerDevice
+{
+public:
+    /**
+     * @brief If the item associated with the device is already initialized, return it. Otherwise, construct it in-place
+     * @param[in] device the device to identify sycl device/context pair
+     * @param[in] args any arguments to pass to the constructor of the item (can be omitted)
+     */
+    template<typename... Args>
+    inline T& getOrConstruct(const sycl::device& device, Args&&... args)
+    {
+        // get unique id
+        const size_t id = hash_device(device);
+
+        // find the current SingleDeviceCache
+        auto it = _perDevice.find(id);
+
+        // check found
+        if (it == _perDevice.end())
+        {
+            // modification of top level container must be protected by lock
+            std::lock_guard lkg{_lock};
+            it = _perDevice.find(id); // check if another thread has added it in the meantime
+            if(it != _perDevice.end())
+            {
+                return it->second;
+            }
+            it = _perDevice.emplace(std::piecewise_construct,
+                                    std::forward_as_tuple(id),
+                                    std::forward_as_tuple(args...)
+                                    ).first;
+        }
+
+        // return current class reference
+        return it->second;
+    }
+
+    /**
+     * @brief Clear the item associated with the current device
+     * @param[in] queue the queue to identify sycl device/context pair
+     */
+    inline void erase(const sycl::device& device)
+    {
+        std::lock_guard lkg{_lock};
+        // get unique id
+        const size_t id = hash_device(device);
+        _perDevice.erase(id);
+    }
+
+private:
+    std::unordered_map<std::size_t, T> _perDevice;  // <sycl::device hash, item>
+    std::mutex _lock; // to prevent concurrent modification of the map container
+
+public:
+    PerDevice() = default;
+    ~PerDevice() = default;
+};
+
+/*
+ * @struct SingleDeviceCache
+ * @brief This class keeps the cache data for a single gpu device.
+ */
+struct SingleDeviceCache
+{
+    // ctors and dtors must be public, so that PerDevice can construct them in-place
+    SingleDeviceCache() = default;
+    ~SingleDeviceCache() = default;
+
+private: // only allow global singleton to actually use a cache instance
+    friend class DeviceCache;
+
+    std::unordered_map<int, std::pair<DeviceMipmapImage, std::atomic<unsigned int>>> mipmaps_ctd;  //< <camId, <DeviceMipmapImage, nbUsers>> cached device mipmap images
+    std::mutex _lock; // to prevent concurrent modification of the map container
+};
 
 /**
  * @class Device cache
  * @brief This singleton allows to access the current device cache.
  */
-class DeviceCache
+class DeviceCache : private PerDevice<SingleDeviceCache>
 {
   public:
     static DeviceCache& getInstance()
@@ -34,9 +112,10 @@ class DeviceCache
 
     /**
      * @brief Clear the current device cache.
-     * @param[in] queue the queue to identify sycl device/context pair
+     * @note Does not synchronize with other threads!
+     * @param[in] device the device to identify sycl device/context pair
      */
-    void clear(const sycl::queue& queue);
+    inline void clear(const sycl::device& device) { erase(device); };
 
     /**
      * @brief Add a mipmap image in current device cache.
@@ -59,44 +138,26 @@ class DeviceCache
      * @brief Request a mipmap image in current device cache.
      * @param[in] camId the camera index in the ImagesCache / MultiViewParams
      * @param[in] mp the multi-view parameters
-     * @param[in] queue the queue to identify sycl device/context pair
+     * @param[in] device the device to identify sycl device/context pair
      * @return DeviceMipmapImage
      */
-    const DeviceMipmapImage& requestMipmapImage(int camId, const mvsUtils::MultiViewParams& mp, const sycl::queue& queue);
+    const DeviceMipmapImage& requestMipmapImage(int camId, const mvsUtils::MultiViewParams& mp, const sycl::device& device);
 
     /**
      * @brief Reduce user count of a MipmapImage, and free it's memory if it has no users
      * @param[in] camId the camera index in the ImagesCache / MultiViewParams
-     * @param[in] queue the queue to identify sycl device/context pair
+     * @param[in] device the device to identify sycl device/context pair
      * @return DeviceMipmapImage
      */
-    void freeMipmapImage(int camId, sycl::queue& queue);
+    void freeMipmapImage(int camId, const sycl::device& device);
 
   private:
     // private members
 
-    /*
-     * @struct SingleDeviceCache
-     * @brief This class keeps the cache data for a single gpu device.
-     */
-    struct SingleDeviceCache
-    {
-        std::unordered_map<int, std::pair<DeviceMipmapImage, unsigned int>> mipmaps_ctd;  //< <camId, <DeviceMipmapImage, nbUsers>> cached device mipmap images
-    };
-    std::unordered_map<std::size_t, SingleDeviceCache> _cachePerDevice;  // <sycl::queue hash, SingleDeviceCache>
-
-    // Singleton, private default constructor
+    // singleton: private default constructor and destructor
     DeviceCache() = default;
-
-    // Singleton, private default destructor
     ~DeviceCache() = default;
-
-    /**
-     * @brief Get the SingleDeviceCache associated to the current queue
-     * @return SingleDeviceCache
-     */
-    SingleDeviceCache& getCurrentDeviceCache(const sycl::queue& queue);
 };
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

@@ -10,7 +10,7 @@
 #include <sycl/sycl.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @class IDeviceJob
@@ -24,7 +24,7 @@ class IDeviceJob
      * @param[in] queue the SYCL queue on which to execute
      * @param[in] cams the list of cameras
      */
-    virtual void compute(sycl::queue& queue, const std::vector<int>& cams) = 0;
+    virtual void compute(const sycl::device& device, const std::vector<int>& cams) = 0;
 };
 
 /**
@@ -33,7 +33,7 @@ class IDeviceJob
  * @param[in,out] devicejob the object that wraps computation (should use IDeviceJob interface)
  * @param[in] nbDevicesToUse the number of devices to use
  */
-void computeOnMultiDevices(const std::vector<int>& cams, IDeviceJob& devicejob, int nbDevicesToUse);
+void computeOnMultiDevices(std::vector<int> cams, IDeviceJob& devicejob, int nbDevicesToUse);
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

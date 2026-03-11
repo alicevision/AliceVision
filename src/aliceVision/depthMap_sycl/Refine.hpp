@@ -10,7 +10,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap_sycl/Tile.hpp>
-#include <aliceVision/depthMap_sycl/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
@@ -18,7 +18,7 @@
 #include <string>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @class Depth map estimation Refine
@@ -35,7 +35,7 @@ class Refine
      * @param[in,out] allocationSuccess whether we successfully allocate memory
      * @param[in] queue the queue for device execution
      */
-    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, bool& allocationSuccess, sycl::queue& queue);
+    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const depthMapCommon::RefineParams& refineParams, bool& allocationSuccess, sycl::queue& queue);
 
     // no default constructor
     Refine() = delete;
@@ -91,7 +91,7 @@ class Refine
 
     const mvsUtils::MultiViewParams& _mp;     //< Multi-view parameters
     const mvsUtils::TileParams& _tileParams;  //< tile workflow parameters
-    const RefineParams& _refineParams;        //< Refine parameters
+    const depthMapCommon::RefineParams& _refineParams;        //< Refine parameters
 
     // private members in device memory
 
@@ -105,5 +105,5 @@ class Refine
     sycl::queue _queue;                                            //< queue for device execution
 };
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

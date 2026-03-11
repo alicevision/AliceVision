@@ -3,26 +3,24 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
-
+#include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+#include <aliceVision/depthMapCommon/DepthMapParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA)
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 #include <aliceVision/depthMap/DepthMapEstimator.hpp>
-#include <aliceVision/depthMap/DepthMapParams.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
 #include <aliceVision/gpu/gpu.hpp>
-#else
+#endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA)
 #include <aliceVision/depthMap_sycl/computeOnMultiDevices.hpp>
 #include <aliceVision/depthMap_sycl/DepthMapEstimator.hpp>
-#include <aliceVision/depthMap_sycl/DepthMapParams.hpp>
-#include <aliceVision/depthMap_sycl/SgmParams.hpp>
-#include <aliceVision/depthMap_sycl/RefineParams.hpp>
 #endif
 
 #include <boost/program_options.hpp>
@@ -78,13 +76,13 @@ int aliceVision_main(int argc, char* argv[])
     mvsUtils::TileParams tileParams;
 
     // DepthMap (global) parameters
-    depthMap::DepthMapParams depthMapParams;
+    depthMapCommon::DepthMapParams depthMapParams;
 
     // Semi Global Matching Parameters
-    depthMap::SgmParams sgmParams;
+    depthMapCommon::SgmParams sgmParams;
 
     // Refine Parameters
-    depthMap::RefineParams refineParams;
+    depthMapCommon::RefineParams refineParams;
 
     // intermediate results
     bool exportIntermediateDepthSimMaps = false;
@@ -96,6 +94,13 @@ int aliceVision_main(int argc, char* argv[])
 
     // number of GPUs to use (0 means use all GPUs)
     int nbGPUs = 0;
+
+    // which backend to use. 0 CUDA 1 SYCL
+#if !(ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA))
+    int backend = 1;
+#else
+    int backend = 0;
+#endif
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -203,7 +208,7 @@ int aliceVision_main(int argc, char* argv[])
          "Enable/Disable depth/similarity map post-process color optimization.")
         ("autoAdjustSmallImage", po::value<bool>(&depthMapParams.autoAdjustSmallImage)->default_value(depthMapParams.autoAdjustSmallImage),
          "Automatically adjust depth map parameters if images are smaller than one tile (maxTCamsPerTile=maxTCams, adjust step if needed).")
-        ("customPatchPatternSubparts", po::value<std::vector<depthMap::CustomPatchPatternParams::SubpartParams>>(&depthMapParams.customPatchPattern.subpartsParams)->multitoken()->default_value(depthMapParams.customPatchPattern.subpartsParams),
+        ("customPatchPatternSubparts", po::value<std::vector<depthMapCommon::CustomPatchPatternParams::SubpartParams>>(&depthMapParams.customPatchPattern.subpartsParams)->multitoken()->default_value(depthMapParams.customPatchPattern.subpartsParams),
          "User custom patch pattern subparts for similarity volume computation.")
         ("customPatchPatternGroupSubpartsPerLevel", po::value<bool>(&depthMapParams.customPatchPattern.groupSubpartsPerLevel)->default_value(depthMapParams.customPatchPattern.groupSubpartsPerLevel),
          "Group all custom patch pattern subparts with the same image level.")
@@ -222,7 +227,9 @@ int aliceVision_main(int argc, char* argv[])
         ("exportTilePattern", po::value<bool>(&depthMapParams.exportTilePattern)->default_value(depthMapParams.exportTilePattern),
          "Export workflow tile pattern.")
         ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
-         "Number of GPUs to use (0 means use all GPUs).");
+         "Number of GPUs/Devices to use (0 means use all available).")
+        ("backend", po::value<int>(&backend)->default_value(backend),
+         "Which backend to use. 0 selects CUDA, 1 selects SYCL. Using a backend requires that it was enabled at compiletime");
     // clang-format on
 
     CmdLine cmdline("Dense Reconstruction.\n"
@@ -250,15 +257,18 @@ int aliceVision_main(int argc, char* argv[])
     refineParams.exportIntermediateTopographicCutVolumes = exportIntermediateTopographicCutVolumes;
     refineParams.exportIntermediateVolume9pCsv = exportIntermediateVolume9pCsv;
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    // print GPU Information
-    ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
-
-    // check if the gpu support CUDA compute capability 2.0
-    if (!gpu::gpuSupportCUDA(2, 0))
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA)
+    if(backend == 0)
     {
-        ALICEVISION_LOG_ERROR("This program needs a CUDA-Enabled GPU (with at least compute capability 2.0).");
-        return EXIT_FAILURE;
+        // print GPU Information
+        ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
+
+        // check if the gpu support CUDA compute capability 2.0
+        if (!gpu::gpuSupportCUDA(2, 0))
+        {
+            ALICEVISION_LOG_ERROR("This program needs a CUDA-Enabled GPU (with at least compute capability 2.0).");
+            return EXIT_FAILURE;
+        }
     }
 #endif
 
@@ -433,15 +443,28 @@ int aliceVision_main(int argc, char* argv[])
         }
     }
 
-    // initialize depth map estimator
-    depthMap::DepthMapEstimator depthMapEstimator(mp, tileParams, depthMapParams, sgmParams, refineParams);
-
     // estimate depth maps
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    depthMap::computeOnMultiGPUs(cams, depthMapEstimator, nbGPUs);
-#else
-    depthMap::computeOnMultiDevices(cams, depthMapEstimator, nbGPUs);
+    switch (backend)
+    {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA)
+        case 0:
+        {
+            depthMap::DepthMapEstimator depthMapEstimator(mp, tileParams, depthMapParams, sgmParams, refineParams);
+            depthMap::computeOnMultiGPUs(cams, depthMapEstimator, nbGPUs);
+            break;
+        }
 #endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_SYCL)
+        case 1:
+        {
+            depthMap_sycl::DepthMapEstimator depthMapEstimator(mp, tileParams, depthMapParams, sgmParams, refineParams);
+            depthMap_sycl::computeOnMultiDevices(cams, depthMapEstimator, nbGPUs);
+            break;
+        }
+#endif
+        default:
+            ALICEVISION_THROW_ERROR("Invalid/unsupported backend selected for computation");
+    }
 
     ALICEVISION_COMMANDLINE_END
 }

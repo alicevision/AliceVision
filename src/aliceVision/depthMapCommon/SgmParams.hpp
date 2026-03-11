@@ -6,43 +6,52 @@
 
 #pragma once
 
+#include <string>
+
 namespace aliceVision {
-namespace depthMap {
+namespace depthMapCommon {
 
 /**
- * @brief Refine Parameters
+ * @brief Semi Global Matching Parameters
  */
-struct RefineParams
+struct SgmParams
 {
     // user parameters
 
-    int scale = 1;
-    int stepXY = 1;
-    int wsh = 3;
-    int halfNbDepths = 15;
-    int nbSubsamples = 10;
+    int scale = 2;
+    int stepXY = 2;
+    int stepZ = -1;
+    int wsh = 4;
+    int maxDepths = 1500;
     int maxTCamsPerTile = 4;
-    int optimizationNbIterations = 100;
-    double sigma = 15.0;
-    double gammaC = 15.5;
+    double seedsRangeInflate = 0.2;
+    double depthThicknessInflate = 0.0;
+    double maxSimilarity = 1.0;
+    double gammaC = 5.5;
     double gammaP = 8.0;
-    bool interpolateMiddleDepth = false;
+    double p1 = 10;
+    double p2Weighting = 100.0;
+    bool useSfmSeeds = true;
+    bool depthListPerTile = false;
     bool useConsistentScale = false;
     bool useCustomPatchPattern = false;
-    bool useRefineFuse = true;
-    bool useColorOptimization = true;
 
     // intermediate results export parameters
 
     bool exportIntermediateDepthSimMaps = false;
     bool exportIntermediateNormalMaps = false;
+    bool exportIntermediateVolumes = false;
     bool exportIntermediateCrossVolumes = false;
     bool exportIntermediateTopographicCutVolumes = false;
     bool exportIntermediateVolume9pCsv = false;
+    static constexpr bool exportDepthsTxtFiles = false;
 
     // constant parameters
 
-    const bool useSgmNormalMap = false;  // for experimentation purposes
+    static constexpr bool updateUninitializedSim = true;  // should always be true, false for debug purposes
+    static constexpr float prematchingMaxDepthScale = 1.5f;
+    static constexpr double seedsRangePercentile = 0.999;
+    static constexpr bool doSgmOptimizeVolume = true;
 };
 
 }  // namespace depthMap

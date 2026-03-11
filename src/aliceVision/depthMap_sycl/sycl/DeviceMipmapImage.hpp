@@ -10,7 +10,7 @@
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @class Device mipmap image
@@ -102,12 +102,16 @@ private:
         sycl::uint2 dims; //< dimension of a particular level
     };
 
+    static inline void getNextLevelInfo(LevelInfo& info) {
+        info.offset += info.dims.x()*info.dims.y();
+        info.dims = sycl::uint2(divUp(info.dims.x(), 2), divUp(info.dims.y(), 2));
+    }
+
     inline LevelInfo getLevelInfo(const unsigned int level) const {
         LevelInfo info = {0, _dims};
         for(int i = 0; i < level; i++)
         {
-            info.offset += info.dims.x()*info.dims.y();
-            info.dims = sycl::uint2(divUp(info.dims.x(), 2), divUp(info.dims.y(), 2));
+            getNextLevelInfo(info);
         }
         return info;
     }
@@ -121,48 +125,52 @@ private:
         return _imgAcc(info.offset + getAddress<2>(info.dims, coords));
     }
 
-public:
-    explicit MipmapImageAccess(const DeviceMipmapImage& owner) :
-        _levels(owner.getLevels()),
-        _dims(owner.getWidth(), owner.getHeight()),
-        _imgAcc(SyclDevicePitchedAccess(owner.getImage()))
-    {};
-
-    inline SyclRGBA bilinear(sycl::float2 tex_coords, const unsigned int level) const {
-        const LevelInfo info = getLevelInfo(level);
+    inline SyclRGBA bilinear(sycl::float2 tex_coords, const LevelInfo& info) const {
         tex_coords *= info.dims.convert<float>();
-        tex_coords = sycl::clamp(tex_coords, sycl::float2(0.f), (info.dims - 1).convert<float>());
+        tex_coords = sycl::clamp(tex_coords, sycl::float2(0.f), (info.dims - 1).convert<float>() - 1.e-4f);
 
         const sycl::float2 coordsf = sycl::floor(tex_coords);
         const sycl::uint2 BLc = coordsf.convert<uint>();
-        const sycl::uint2 TRc = sycl::ceil(tex_coords).convert<uint>();
 
-        const SyclRGBA bl = this->operator()(BLc, info);
-        const SyclRGBA br = this->operator()(sycl::uint2(TRc.x(), BLc.y()), info);
-        const SyclRGBA tl = this->operator()(sycl::uint2(BLc.x(), TRc.y()), info);
-        const SyclRGBA tr = this->operator()(TRc, info);
+        const SyclRGBA* const BL_ptr = _imgAcc.buffer + info.offset + getAddress<2>(info.dims, BLc);
+        const SyclRGBA* const TL_ptr = BL_ptr + info.dims.x();
 
         const sycl::float2 mix = tex_coords - coordsf;
 
-        const SyclRGBA b = sycl::mix(bl, br, mix.x()); // Bottom
-        const SyclRGBA t = sycl::mix(tl, tr, mix.x()); // Top
+        return sycl::mix(sycl::mix(__readonly_load(BL_ptr), __readonly_load(BL_ptr + 1), mix.x()), // Bottom
+                         sycl::mix(__readonly_load(TL_ptr), __readonly_load(TL_ptr + 1), mix.x()), // Top
+                         mix.y());
+    };
 
-        return sycl::mix(b, t, mix.y());
+public:
+    explicit MipmapImageAccess(const DeviceMipmapImage& owner) :
+        _dims(owner.getDimensions(owner.getMinDownscale())[0], owner.getDimensions(owner.getMinDownscale())[1]),
+        _imgAcc(SyclDevicePitchedAccess(owner.getImage()))
+    {};
+
+    __attribute__((flatten))
+    inline SyclRGBA bilinear(const sycl::float2& tex_coords, const unsigned int level) const {
+        const LevelInfo info = getLevelInfo(level);
+        return bilinear(tex_coords, info);
     };
 
     /**
      * @brief Perform trilinear filtering between two levels
      * @param coords normalized xy
-     * @param level level to sample
+     * @param level level to sample. UB if larger than max allowable level
      */
-    inline const SyclRGBA trilinear(const sycl::float2& coords, const float level) const {
-        const float levelUp = sycl::floor(level);
-        const float levelDown = sycl::ceil(level);
+    __attribute__((flatten))
+    inline const SyclRGBA trilinear(const sycl::float2& coords, float level) const {
 
-        const SyclRGBA valueUp = bilinear(coords, int(levelUp));
-        const SyclRGBA valueDown = bilinear(coords, int(levelDown));
+        const float levelf = sycl::floor(level);
 
-        return sycl::mix(valueUp, valueDown, level-levelUp);
+        LevelInfo info = getLevelInfo(uint(levelf));
+
+        const SyclRGBA valueUp = bilinear(coords, info);
+        getNextLevelInfo(info);
+        const SyclRGBA valueDown = bilinear(coords, info);
+
+        return sycl::mix(valueUp, valueDown, level-levelf);
     }
 
     /**
@@ -170,17 +178,17 @@ public:
      * @param coords unnormalized xy *Already scaled to particular level*
      * @param level level to sample
      */
-    inline SyclRGBA& operator()(const sycl::uint2& coords, const int level) const {
+    __attribute__((flatten))
+    inline SyclRGBA& operator()(const sycl::uint2& coords, const unsigned int level) const {
         const LevelInfo info = getLevelInfo(level);
-        return _imgAcc(info.offset + getAddress<2>(info.dims, coords));
+        return this->operator()(coords, info);
     }
 
 private:
     // private members
+    const sycl::uint2 _dims;                                           //< original image buffer size (min downscale)
     const SyclDevicePitchedAccess<SyclRGBA, 1> _imgAcc;                //< accessor in device memory
-    const sycl::uint2 _dims;                                           //< original image buffer size (no downscale)
-    const size_t _levels;                                              //< downscale levels
 };
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

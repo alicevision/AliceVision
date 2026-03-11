@@ -17,7 +17,19 @@
 #include <string>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
+
+/**
+* @brief helper function to construct a queue with all the properties we need
+*/
+sycl::queue constructQueue(const sycl::device& device);
+
+/**
+ * @brief helper function for consistent debug naming
+ */
+inline std::basic_string<char> getDeviceName(const sycl::device& device) {
+    return device.get_info<sycl::info::device::name>() + ' ' + std::to_string(device.get_info<sycl::info::device::vendor_id>());
+};
 
 /**
  * @brief Copy an image from device memory to host memory and write on disk.
@@ -148,6 +160,8 @@ void writeDepthSimMapFromTileList(int rc,
                                   const mvsUtils::TileParams& tileParams,
                                   const std::vector<ROI>& tileRoiList,
                                   const std::vector<SyclHostMemoryHeap<sycl::float2, 2>>& in_depthSimMapTiles_hmh,
+                                  std::vector<std::mutex>& unlockList,
+                                  const std::vector<std::shared_future<void>>& waitList,
                                   int scale,
                                   int step,
                                   const std::string& name = "");
@@ -212,5 +226,5 @@ void exportDepthSimMapTilePatternObj(int rc,
                                      const std::vector<ROI>& tileRoiList,
                                      const std::vector<std::pair<float, float>>& tileMinMaxDepthsList);
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

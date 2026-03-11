@@ -39,7 +39,7 @@ int indexOfNearestSorted(const std::vector<float>& in_vector, const float value)
     return std::distance(in_vector.begin(), it);
 }
 
-SgmDepthList::SgmDepthList(const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const Tile& tile)
+SgmDepthList::SgmDepthList(const mvsUtils::MultiViewParams& mp, const depthMapCommon::SgmParams& sgmParams, const Tile& tile)
   : _mp(mp),
     _sgmParams(sgmParams),
     _tile(tile)

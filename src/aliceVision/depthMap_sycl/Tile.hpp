@@ -12,7 +12,7 @@
 #include <ostream>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @struct Depth Map Tile Structure

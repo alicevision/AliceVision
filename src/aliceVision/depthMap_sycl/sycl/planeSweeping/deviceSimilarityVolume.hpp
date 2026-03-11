@@ -8,15 +8,15 @@
 
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/depthMap_sycl/SgmParams.hpp>
-#include <aliceVision/depthMap_sycl/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
 #include <aliceVision/depthMap_sycl/sycl/DeviceMipmapImage.hpp>
 #include <aliceVision/depthMap_sycl/sycl/CameraParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @brief Initialize all the given similarity volume in device memory to the given value.
@@ -26,7 +26,7 @@ namespace depthMap {
  * @param[in] prerequisite the event to schedule after
  */
 template<typename T>
-inline sycl::event sycl_volumeInitialize(SyclDeviceMemoryPitched<T, 3>& inout_volume_dmp, T value, sycl::event prerequisite)
+inline sycl::event sycl_volumeInitialize(SyclDeviceMemoryPitched<T, 3>& inout_volume_dmp, const T value, sycl::event prerequisite)
 {
     return inout_volume_dmp.getQueue().template fill<T>(inout_volume_dmp.getBuffer(), value, inout_volume_dmp.getUnitsTotal(), prerequisite);
 }
@@ -77,7 +77,7 @@ sycl::event sycl_volumeComputeSimilarity(SyclDeviceMemoryPitched<TSim, 3>& out_v
                                          const CameraParams& tcParams,
                                          const DeviceMipmapImage& rcDeviceMipmapImage,
                                          const DeviceMipmapImage& tcDeviceMipmapImage,
-                                         const SgmParams& sgmParams,
+                                         const depthMapCommon::SgmParams& sgmParams,
                                          const Range& depthRange,
                                          const ROI& roi,
                                          sycl::queue& queue,
@@ -105,7 +105,7 @@ sycl::event sycl_volumeRefineSimilarity(SyclDeviceMemoryPitched<TSimRefine, 3>& 
                                         const CameraParams& tcParams,
                                         const DeviceMipmapImage& rcDeviceMipmapImage,
                                         const DeviceMipmapImage& tcDeviceMipmapImage,
-                                        const RefineParams& refineParams,
+                                        const depthMapCommon::RefineParams& refineParams,
                                         const Range& depthRange,
                                         const ROI& roi,
                                         sycl::queue& queue, sycl::event prerequisite);
@@ -130,7 +130,7 @@ sycl::event sycl_volumeOptimize(SyclDeviceMemoryPitched<TSim, 3>& out_volSimFilt
                                 SyclDeviceMemoryPitched<TSimAcc, 1>& inout_volAxisAcc_dmp,
                                 const SyclDeviceMemoryPitched<TSim, 3>& in_volSim_dmp,
                                 const DeviceMipmapImage& rcDeviceMipmapImage,
-                                const SgmParams& sgmParams,
+                                const depthMapCommon::SgmParams& sgmParams,
                                 const int lastDepthIndex,
                                 const ROI& roi,
                                 sycl::queue& queue,
@@ -154,7 +154,7 @@ sycl::event sycl_volumeRetrieveBestDepthUseSim(SyclDeviceMemoryPitched<sycl::flo
                                                const SyclDeviceMemoryPitched<float, 1>& in_depths_dmp,
                                                const SyclDeviceMemoryPitched<TSim, 3>& in_volSim_dmp,
                                                const CameraParams& rcCameraParams,
-                                               const SgmParams& sgmParams,
+                                               const depthMapCommon::SgmParams& sgmParams,
                                                const Range& depthRange,
                                                const ROI& roi,
                                                sycl::queue& queue,
@@ -176,7 +176,7 @@ sycl::event sycl_volumeRetrieveBestDepthNoSim(SyclDeviceMemoryPitched<sycl::floa
                                               const SyclDeviceMemoryPitched<float, 1>& in_depths_dmp,
                                               const SyclDeviceMemoryPitched<TSim, 3>& in_volSim_dmp,
                                               const CameraParams& rcCameraParams,
-                                              const SgmParams& sgmParams,
+                                              const depthMapCommon::SgmParams& sgmParams,
                                               const Range& depthRange,
                                               const ROI& roi,
                                               sycl::queue& queue,
@@ -196,9 +196,9 @@ sycl::event sycl_volumeRetrieveBestDepthNoSim(SyclDeviceMemoryPitched<sycl::floa
 sycl::event sycl_volumeRefineBestDepth(SyclDeviceMemoryPitched<sycl::float2, 2>& out_refineDepthSimMap_dmp,
                                        const SyclDeviceMemoryPitched<sycl::float2, 2>& in_sgmDepthPixSizeMap_dmp,
                                        const SyclDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp,
-                                       const RefineParams& refineParams,
+                                       const depthMapCommon::RefineParams& refineParams,
                                        const ROI& roi,
                                        sycl::queue& queue, sycl::event prerequisites);
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

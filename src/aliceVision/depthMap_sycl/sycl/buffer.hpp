@@ -9,7 +9,7 @@
 #include <sycl/sycl.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
 * @brief
@@ -48,6 +48,6 @@ inline constexpr uint getAddress<3>(const sycl::uint3& dims, const sycl::uint3& 
 };
 
 
-} // namespace depthMap
+} // namespace depthMap_sycl
 } // namespace aliceVision
 

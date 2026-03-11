@@ -14,7 +14,7 @@
 #include <aliceVision/depthMap_sycl/sycl/PatchPattern.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 struct Patch
 {
@@ -289,7 +289,7 @@ inline void computeRcTcMipmapLevels(float& out_rcMipmapLevel,
 
 inline int angleBetwUnitV1andUnitV2(const sycl::float3& V1, const sycl::float3& V2)
 {
-    return static_cast<int>(sycl::round(sycl::fabs(sycl::acos(sycl::dot(V1, V2)) / (std::numbers::pi / 180.0f))));
+    return (int)sycl::fabs(sycl::acos(sycl::dot(V1, V2)) / (std::numbers::pi / 180.0f));
 }
 
 /*
@@ -453,7 +453,7 @@ inline float compNCCby3DptsYK(const CameraParams& rcDeviceCamParams,
     const sycl::float2 tp = project3DPoint(tcDeviceCamParams.P, patch.p);
 
     // image 2d coordinates margin
-    const float dd = wsh + 2.0f; // TODO: FACA
+    const float dd = float(wsh) + 2.0f; // TODO: FACA
 
     // check R and T image 2d coordinates
     if((rp.x() < dd) || (rp.x() > float(rcLevelSize.x() - 1) - dd) ||
@@ -472,7 +472,6 @@ inline float compNCCby3DptsYK(const CameraParams& rcDeviceCamParams,
     // initialize R and T mipmap image level at the given mipmap image level
     float rcMipmapLevel = mipmapLevel;
     float tcMipmapLevel = mipmapLevel;
-
 
     // update R and T mipmap image level in order to get consistent scale patch comparison
     if(useConsistentScale)
@@ -499,7 +498,7 @@ inline float compNCCby3DptsYK(const CameraParams& rcDeviceCamParams,
         for(int xp = -wsh; xp <= wsh; ++xp)
         {
             // get 3d point
-            const sycl::float3 p = patch.p + patch.x * float(patch.d * float(xp)) + patch.y * float(patch.d * float(yp));
+            const sycl::float3 p = patch.p + patch.x * patch.d * float(xp) + patch.y * patch.d * float(yp);
 
             // get R and T image 2d coordinates from 3d point
             const sycl::float2 rpc = project3DPoint(rcDeviceCamParams.P, p);
@@ -737,5 +736,5 @@ inline float compNCCby3DptsYK_customPatchPattern(const CameraParams& rcDeviceCam
     return (fsim / wsum);
 }
 
-} // namespace depthMap
+} // namespace depthMap_sycl
 } // namespace aliceVision

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/depthMap_sycl/CustomPatchPatternParams.hpp>
+#include <aliceVision/depthMapCommon/CustomPatchPatternParams.hpp>
 
 // maximum number of patch pattern subparts
 // note: each patch pattern subpart gives one similarity
@@ -16,7 +16,7 @@
 #define ALICEVISION_DEVICE_PATCH_MAX_COORDS_PER_SUBPARTS 24
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @struct PatchPatternSubpart
@@ -69,7 +69,7 @@ private:
  * @brief Build user custom patch pattern singelton
  * @param[in] patchParams the user custom patch pattern parameters
  */
-inline void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams)
+inline void buildCustomPatchPattern(const depthMapCommon::CustomPatchPatternParams& patchParams)
 {
     // check at least one patch subpart
     if (patchParams.subpartsParams.empty())
@@ -224,10 +224,10 @@ inline void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams)
             if (subpartParams.isCircle)
             {
                 const float radiusValue = subpartParams.radius;
-                const float angleDifference = (M_PI * 2.f) / subpart.nbCoordinates;
+                const float angleDifference = (M_PI * 2.f) / subpartParams.nbCoordinates;
 
                 // compute patch pattern relative coordinates
-                for (int j = 0; j < subpart.nbCoordinates; ++j)
+                for (int j = 0; j < subpartParams.nbCoordinates; ++j)
                 {
                     sycl::float2& coords = subpart.coordinates[j];
 
@@ -290,5 +290,5 @@ inline void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams)
     }
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

@@ -15,10 +15,11 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA)
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 #include <aliceVision/depthMap/NormalMapEstimator.hpp>
-#else
+#endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_SYCL)
 #include <aliceVision/depthMap_sycl/computeOnMultiDevices.hpp>
 #include <aliceVision/depthMap_sycl/NormalMapEstimator.hpp>
 #endif
@@ -58,6 +59,13 @@ int aliceVision_main(int argc, char* argv[])
     int nNearestCams = 10;
     bool computeNormalMaps = false;
 
+    // for testing both cuda and sycl
+#if !(ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA))
+    int backend = 1;
+#else
+    int backend = 0;
+#endif
+
     // clang-format off
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
@@ -91,7 +99,9 @@ int aliceVision_main(int argc, char* argv[])
         ("nNearestCams", po::value<int>(&nNearestCams)->default_value(nNearestCams),
          "Number of nearest cameras.")
         ("computeNormalMaps", po::value<bool>(&computeNormalMaps)->default_value(computeNormalMaps),
-         "Compute normal maps per depth map.");
+         "Compute normal maps per depth map.")
+         ("backend", po::value<int>(&backend)->default_value(backend),
+         "Which backend to use. 0 selects CUDA, 1 selects SYCL. Using a backend requires that it was enabled at compiletime");;
     // clang-format on
 
     CmdLine cmdline("This program filters depth maps to remove values that are not consistent with other depth maps.\n"
@@ -153,15 +163,28 @@ int aliceVision_main(int argc, char* argv[])
     {
         int nbGPUs = 0;
 
-        // initialize depth map estimator
-        depthMap::NormalMapEstimator normalMapEstimator(mp);
-
         // estimate normal maps
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-        depthMap::computeOnMultiGPUs(cams, normalMapEstimator, nbGPUs);
-#else
-        depthMap::computeOnMultiDevices(cams, normalMapEstimator, nbGPUs);
+        switch (backend)
+        {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA)
+            case 0:
+            {
+                depthMap::NormalMapEstimator normalMapEstimator(mp);
+                depthMap::computeOnMultiGPUs(cams, normalMapEstimator, nbGPUs);
+                break;
+            }
 #endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_SYCL)
+            case 1:
+            {
+                depthMap_sycl::NormalMapEstimator normalMapEstimator(mp);
+                depthMap_sycl::computeOnMultiDevices(cams, normalMapEstimator, nbGPUs);
+                break;
+            }
+#endif
+            default:
+                ALICEVISION_THROW_ERROR("Invalid/unsupported backend selected for computation");
+        }
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

@@ -10,8 +10,8 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap_sycl/Tile.hpp>
-#include <aliceVision/depthMap_sycl/RefineParams.hpp>
-#include <aliceVision/depthMap_sycl/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
 #include <aliceVision/depthMap_sycl/SgmDepthList.hpp>
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
@@ -20,7 +20,7 @@
 #include <string>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @class Depth map estimation Semi-Global Matching
@@ -41,7 +41,7 @@ class Sgm
      */
     Sgm(const mvsUtils::MultiViewParams& mp,
         const mvsUtils::TileParams& tileParams,
-        const SgmParams& sgmParams,
+        const depthMapCommon::SgmParams& sgmParams,
         bool computeDepthSimMap,
         bool computeNormalMap,
         bool& allocationSuccess,
@@ -75,7 +75,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] refineParams the Refine parameters
      */
-    sycl::event smoothThicknessMap(const Tile& tile, const RefineParams& refineParams, sycl::event prerequisite);
+    sycl::event smoothThicknessMap(const Tile& tile, const depthMapCommon::RefineParams& refineParams, sycl::event prerequisite);
 
   private:
     // private methods
@@ -121,7 +121,7 @@ class Sgm
 
     const mvsUtils::MultiViewParams& _mp;     //< Multi-view parameters
     const mvsUtils::TileParams& _tileParams;  //< tile workflow parameters
-    const SgmParams& _sgmParams;              //< Semi Global Matching parameters
+    const depthMapCommon::SgmParams& _sgmParams;              //< Semi Global Matching parameters
     const bool _computeDepthSimMap;           //< needs to compute a final depth/sim map
     const bool _computeNormalMap;             //< needs to compute a final normal map
 
@@ -140,5 +140,5 @@ class Sgm
     sycl::queue _queue;                                       //< queue for device execution
 };
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

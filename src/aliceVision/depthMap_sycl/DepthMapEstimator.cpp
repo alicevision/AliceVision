@@ -12,27 +12,27 @@
 #include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/depthMap_sycl/depthMapUtils.hpp>
-#include <aliceVision/depthMap_sycl/DepthMapParams.hpp>
+#include <aliceVision/depthMapCommon/DepthMapParams.hpp>
 #include <aliceVision/depthMap_sycl/SgmDepthList.hpp>
-#include <aliceVision/depthMap_sycl/Sgm.hpp>
-#include <aliceVision/depthMap_sycl/Refine.hpp>
-#include <aliceVision/depthMap_sycl/sycl/DeviceCache.hpp>
 #include <aliceVision/depthMap_sycl/sycl/PatchPattern.hpp>
 
+#define ALICEVISION_DEPTHMAP_MAX_ALLOC_RETRIES 8
+
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 DepthMapEstimator::DepthMapEstimator(const mvsUtils::MultiViewParams& mp,
                                      const mvsUtils::TileParams& tileParams,
-                                     const DepthMapParams& depthMapParams,
-                                     const SgmParams& sgmParams,
-                                     const RefineParams& refineParams)
+                                     const depthMapCommon::DepthMapParams& depthMapParams,
+                                     const depthMapCommon::SgmParams& sgmParams,
+                                     const depthMapCommon::RefineParams& refineParams)
   : _mp(mp),
     _tileParams(tileParams),
     _depthMapParams(depthMapParams),
     _sgmParams(sgmParams),
     _refineParams(refineParams),
-    _ic(mp, image::EImageColorSpace::LINEAR) // share host cache between devices
+    _ic(mp, image::EImageColorSpace::LINEAR), // share host cache between devices
+    _deviceCache(DeviceCache::getInstance()) // get device cache instance
 {
     // compute maximum downscale (scaleStep)
     const int maxDownscale = std::max(_sgmParams.scale * _sgmParams.stepXY, _refineParams.scale * _refineParams.stepXY);
@@ -52,69 +52,112 @@ DepthMapEstimator::DepthMapEstimator(const mvsUtils::MultiViewParams& mp,
                                               << "\t- stepXY: " << _refineParams.stepXY);
 }
 
-void DepthMapEstimator::getTilesList(const std::vector<int>& cams, std::vector<Tile>& tiles)
+DepthMapEstimator::ComputeObject& DepthMapEstimator::ComputeObjectBuffer::getComputeObject(
+                                const mvsUtils::MultiViewParams& mp,
+                                const mvsUtils::TileParams& tileParams,
+                                const depthMapCommon::SgmParams& sgmParams,
+                                const depthMapCommon::RefineParams& refineParams,
+                                const bool constructRefine,
+                                const bool computeDepthSimMap,
+                                const bool computeNormalMap,
+                                const sycl::device& device)
+{
+    // keep track of object with least users, in case (due to memory pressure) we need to return an object already in use
+    ComputeObject* leastUserObj = nullptr;
+
+    // try to use existing objects
+    containerLock.lock_shared();
+    for(auto& obj : objects)
+    {
+        if(obj.lock.try_lock()) { obj.users++; return obj; }
+        else if(leastUserObj == nullptr || obj.users < leastUserObj->users) leastUserObj = &obj;
+    }
+    containerLock.unlock_shared();
+
+    // try to construct new object
+    {
+        std::unique_lock lkg(containerLock);
+        ComputeObject* returnObj = nullptr;
+        bool allocationSuccess = true;
+
+        sycl::queue queue = constructQueue(device);
+
+        if(constructRefine) returnObj = &objects.emplace_back(
+            queue,
+            std::forward_as_tuple(mp, tileParams, sgmParams, computeDepthSimMap, computeNormalMap, allocationSuccess, queue),
+            std::forward_as_tuple(std::in_place, mp, tileParams, refineParams, allocationSuccess, queue)
+        );
+        else returnObj = &objects.emplace_back(
+            queue,
+            std::forward_as_tuple(mp, tileParams, sgmParams, computeDepthSimMap, computeNormalMap, allocationSuccess, queue),
+            std::forward_as_tuple(std::nullopt)
+        );
+
+        if(allocationSuccess) { returnObj->users++; returnObj->lock.lock(); return *returnObj; }
+        else
+        {
+            // delete the stale object
+            objects.pop_back();
+            if(objects.size() == 0)
+            {
+                // failure state: can't allocate a single set of compute objects
+                const auto deviceName = queue.get_device().get_info<sycl::info::device::name>();
+                ALICEVISION_THROW_ERROR(deviceName << ": Not enough memory to compute a single tile!");
+            }
+        }
+    }
+
+    // use existing object
+    leastUserObj->users++;
+    leastUserObj->lock.lock();
+    return *leastUserObj;
+}
+
+void DepthMapEstimator::getTiles(const int cam, std::vector<Tile>& tiles)
 {
     const int nbTilesPerCamera = _tileRoiList.size();
+    assert(tiles.size() == nbTilesPerCamera);
 
-    // tiles list should be empty
-    assert(tiles.empty());
+    // get R camera Tcs list
+    const std::vector<int> tCams = _mp.findNearestCamsFromLandmarks(cam, _depthMapParams.maxTCams).getDataWritable();
 
-    // reserve memory
-    tiles.reserve(cams.size() * nbTilesPerCamera);
+    // get R camera ROI
+    const ROI rcImageRoi(Range(0, _mp.getWidth(cam)), Range(0, _mp.getHeight(cam)));
 
-    for (int rc : cams)
+    for (std::size_t i = 0; i < nbTilesPerCamera; ++i)
     {
-        // "warm up" cpu cache
-        _ic.refreshImage_async(rc);
-        // get R camera Tcs list
-        const std::vector<int> tCams = _mp.findNearestCamsFromLandmarks(rc, _depthMapParams.maxTCams).getDataWritable();
-        _ic.refreshImages_async(tCams);
+        Tile& t = tiles.at(i);
 
-        // get R camera ROI
-        const ROI rcImageRoi(Range(0, _mp.getWidth(rc)), Range(0, _mp.getHeight(rc)));
+        t.id = i;
+        t.nbTiles = nbTilesPerCamera;
+        t.rc = cam;
+        t.roi = intersect(_tileRoiList.at(i), rcImageRoi);
 
-        for (std::size_t i = 0; i < nbTilesPerCamera; ++i)
+        if (t.roi.isEmpty())
         {
-            Tile t;
+            // do nothing, this ROI cannot intersect the R camera ROI.
+        }
+        else if (_depthMapParams.chooseTCamsPerTile)
+        {
+            // find nearest T cameras per tile
+            t.sgmTCams = _mp.findTileNearestCams(cam, _sgmParams.maxTCamsPerTile, tCams, t.roi);
 
-            t.id = i;
-            t.nbTiles = nbTilesPerCamera;
-            t.rc = rc;
-            t.roi = intersect(_tileRoiList.at(i), rcImageRoi);
-
-            if (t.roi.isEmpty())
-            {
-                // do nothing, this ROI cannot intersect the R camera ROI.
-            }
-            else if (_depthMapParams.chooseTCamsPerTile)
-            {
-                // find nearest T cameras per tile
-                t.sgmTCams = _mp.findTileNearestCams(rc, _sgmParams.maxTCamsPerTile, tCams, t.roi);
-
-                if (_depthMapParams.useRefine)
-                    t.refineTCams = _mp.findTileNearestCams(rc, _refineParams.maxTCamsPerTile, tCams, t.roi);
-            }
-            else
-            {
-                // use previously selected T cameras from the entire image
-                t.sgmTCams = tCams;
-                t.refineTCams = tCams;
-            }
-            tiles.push_back(t);
+            if (_depthMapParams.useRefine)
+                t.refineTCams = _mp.findTileNearestCams(cam, _refineParams.maxTCamsPerTile, tCams, t.roi);
+        }
+        else
+        {
+            // use previously selected T cameras from the entire image
+            t.sgmTCams = tCams;
+            t.refineTCams = tCams;
         }
     }
 }
 
-void DepthMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams)
+void DepthMapEstimator::compute(const sycl::device& device, const std::vector<int>& cams)
 {
     // Used for debug messages
-    const auto deviceName = queue.get_device().get_info<sycl::info::device::name>();
-
-    // build tile list order by R camera
-    ALICEVISION_LOG_DEBUG(deviceName << ": building tile metadata in memory");
-    std::vector<Tile> tiles;
-    getTilesList(cams, tiles);
-    ALICEVISION_LOG_DEBUG(deviceName << ": need to process " << tiles.size() << " tiles");
+    const auto deviceName = getDeviceName(device);
 
     // constants
     //const bool hasRcSameDownscale = (_sgmParams.scale == _refineParams.scale);  // we only need one camera params per image
@@ -124,19 +167,12 @@ void DepthMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams
     //  (1 + _depthMapParams.maxTCams) + (hasRcWithoutDownscale ? 0 : 1);  // number of Sgm camera parameters per R camera
     //const int nbCameraParamsPerRefine =
     //  (_depthMapParams.useRefine && !hasRcSameDownscale) ? (1 + _depthMapParams.maxTCams) : 0;  // number of Refine camera parameters per R camera
-    const int nbTilesPerCamera = static_cast<int>(_tileRoiList.size());
-
-    const int nbTiles = tiles.size();                           // number of tiles
-    const int firstTileRc = tiles.at(0).rc;
-    const int nbRc = divideRoundUp(nbTiles, nbTilesPerCamera);  // number of R cameras in the same batch
+    const int nbTiles = _tileRoiList.size();
 
     //const int nbCamerasParams = nbRc * (nbCameraParamsPerSgm + nbCameraParamsPerRefine);  // number of camera parameters
     //const int nbMipmapImages = nbRc * (1 + _depthMapParams.maxTCams);                     // number of camera mipmap image in the same batch
     const int minMipmapDownscale = std::min(_refineParams.scale, _sgmParams.scale);
     const int maxMipmapDownscale = std::max(_refineParams.scale, _sgmParams.scale) * std::pow(2, 6);  // we add 6 downscale levels
-
-    // Get device cache
-    DeviceCache& deviceCache = DeviceCache::getInstance();
 
     // Build custom patch pattern in global instance
     if (_sgmParams.useCustomPatchPattern || _refineParams.useCustomPatchPattern)
@@ -144,30 +180,22 @@ void DepthMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams
 
     // porting note: we are replacing CUDA constant memory with SYCL specialization constants
 
-    // containers to keep track of sgm and refine objects in device memory
-    std::unordered_map<uint, Sgm> sgmPerTile;
-    std::unordered_map<uint, Refine> refinePerTile;
-	std::vector<uint> freeCompObj;
-    sgmPerTile.reserve(nbTiles);
-    if (_depthMapParams.useRefine) refinePerTile.reserve(nbTiles);
-    freeCompObj.reserve(nbTiles);
+    // Sgm and refine objects for computation
+    ComputeObjectBuffer& objBuffer = _objectBuffers.getOrConstruct(device);
 
     // allocate final deth/similarity map tile list in host memory
-    ALICEVISION_LOG_DEBUG(deviceName <<": Allocating final deth/similarity map tile list in host memory");
-    std::vector<std::vector<SyclHostMemoryHeap<sycl::float2, 2>>> depthSimMapTilePerCam(nbRc);
-    std::vector<std::vector<std::pair<float, float>>> depthMinMaxTilePerCam(nbRc);
+    ALICEVISION_LOG_DEBUG(deviceName <<": Allocating final depth/similarity map tile list in host memory");
+    std::vector<SyclHostMemoryHeap<sycl::float2, 2>> depthSimMapPerTile{};
+    std::vector<std::pair<float, float>> depthMinMaxPerTile(nbTiles);
 
-    for (int i = 0; i < nbRc; ++i)
     {
-        auto& depthSimMapTiles = depthSimMapTilePerCam.at(i);
-        auto& depthMinMaxTiles = depthMinMaxTilePerCam.at(i);
+        // dummy queue for allocation
+        sycl::queue queue = constructQueue(device);
 
-        depthSimMapTiles.reserve(nbTilesPerCamera);
-        depthMinMaxTiles.resize(nbTilesPerCamera);
-
-        for (int j = 0; j < nbTilesPerCamera; ++j)
+        depthSimMapPerTile.reserve(nbTiles);
+        for (int j = 0; j < nbTiles; ++j)
         {
-            auto& ref = depthSimMapTiles.emplace_back(queue);
+            auto& ref = depthSimMapPerTile.emplace_back(queue);
             if (_depthMapParams.useRefine)
                 ref.allocate(SyclSize<2>(divideRoundUp(_tileParams.bufferWidth, _refineParams.scale * _refineParams.stepXY), divideRoundUp(_tileParams.bufferHeight, _refineParams.scale * _refineParams.stepXY)));
             else  // final depth/similarity map is SGM only
@@ -175,126 +203,106 @@ void DepthMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams
         }
     }
 
-    // events for waiting on individual tiles or entire images
-    std::vector<std::vector<sycl::event>> tileStatuses(nbRc);
-    for (int i = 0; i < nbRc; ++i)
+    // locks to protect above memory from being overwritten until it is flushed
+    std::vector<std::mutex> bufferPerTileLocks(nbTiles);
+
+    // allocate and compute tile metadata list
+    std::vector<std::vector<Tile>> tilesPerCamera(cams.size());
+    for (int i = 0; i < cams.size(); i++)
     {
-        tileStatuses.at(i).resize(nbTilesPerCamera);
+        const int cam = cams.at(i);
+        std::vector<Tile>& tiles = tilesPerCamera.at(i);
+        ALICEVISION_LOG_TRACE(deviceName << ": constructing tile information for camera id " << cam);
+        tiles.resize(nbTiles);
+        getTiles(cam, tiles);
     }
 
-    // progress counters
-    uint tilesDispatched = 0;
-    uint tilesFinished = 0;
+    // keep track of state of last camera
+    std::optional<std::future<void>> asyncObject;
 
-    // switch between dispatch and collection until we finish
-    ALICEVISION_LOG_DEBUG(deviceName << ": begining dispatch-execute-writeback loop (i.e. main computation)");
-    while (tilesFinished < nbTiles)
+    // keep trak of state of tiles
+    std::vector<std::shared_future<void>> tileStatuses(nbTiles);
+
+    // dump for futures (their destructor blocks for task to finish)
+    std::list<std::future<void>> futures;
+
+    // iterate through cameras
+    ALICEVISION_LOG_DEBUG(deviceName << ": begining computation");
+    for(int i = 0; i < cams.size(); i++)
     {
-        ALICEVISION_LOG_TRACE(deviceName <<": have dispatched " << tilesDispatched << " tiles, of which finished " << tilesFinished);
-        // dispatch as many tiles as possible with current memory
-        while (tilesDispatched < nbTiles)
-        {
-            ALICEVISION_LOG_TRACE(deviceName << ": trying to dispatch tile " << tilesDispatched << " out of " << tiles.size() - 1);
-            Tile& tile = tiles.at(tilesDispatched);
-            const int tileIndex = tile.rc - firstTileRc;
-            ALICEVISION_LOG_TRACE(deviceName << ": tile has index " << tileIndex << ", rc " << tile.rc << " and id " << tile.id);
+        const int& cam = cams.at(i);
+        std::vector<Tile>& tiles = tilesPerCamera.at(i);
 
-            // event for dependency ordering
-            sycl::event tileProcessed{};
+        ALICEVISION_LOG_TRACE(deviceName << ": computing camera id " << cam);
+        // dispatch as many tiles as possible with current memory
+        for(Tile& tile : tiles) tileStatuses.at(tile.id) = std::async(std::launch::async, [&, tileStatuses] ()
+        {
+            if(tileStatuses.at(tile.id).valid()) tileStatuses.at(tile.id).wait(); // finish tile of previous camera before continueing
+            ALICEVISION_LOG_TRACE(deviceName << ": computing tile of camera id " << tile.rc << " with tile id " << tile.id);
 
             // do not compute empty ROI
             // some images in the dataset may be smaller than others
             if (tile.roi.isEmpty())
             {
                 ALICEVISION_LOG_TRACE(deviceName << ": skipping empty tile");
-                tilesDispatched++;
-                continue;
+                return;
             }
 
             // get tile result depth/similarity map in host memory
-            SyclHostMemoryHeap<sycl::float2, 2>& tileDepthSimMap_hmh = depthSimMapTilePerCam.at(tileIndex).at(tile.id);
+            SyclHostMemoryHeap<sycl::float2, 2>& tileDepthSimMap_hmh = depthSimMapPerTile.at(tile.id);
 
             // check T cameras
             if (tile.sgmTCams.empty() || (_depthMapParams.useRefine && tile.refineTCams.empty()))  // no T camera found
             {
                 ALICEVISION_LOG_TRACE(deviceName << ": skipping tile with no T camera");
+                bufferPerTileLocks.at(tile.id).lock(); // make sure we have flushed memory
                 resetDepthSimMap(tileDepthSimMap_hmh);
-                tilesDispatched++;
-                continue;
+                return;
             }
 
-            // track if we run out of memory
-            bool success = true;
+            // get compute objects for computing this tile
+            ComputeObject& compObj = objBuffer.getComputeObject(_mp, _tileParams, _sgmParams, _refineParams, _depthMapParams.useRefine, !_depthMapParams.useRefine, _refineParams.useSgmNormalMap, device);
+            sycl::queue& queue = compObj.queue;
+            Sgm& sgm = compObj.sgm;
+            std::optional<Refine>& refineOpt = compObj.refineOpt;
 
+            // Track how many times we try to allocate images
+            int retryAlloc = ALICEVISION_DEPTHMAP_MAX_ALLOC_RETRIES;
             // add Sgm R camera to Device cache
-            deviceCache.addMipmapImage(tile.rc, minMipmapDownscale, maxMipmapDownscale, _ic, _mp, success, queue);
+            while(retryAlloc > 0)
+            {
+                // track if we run out of memory
+                bool success = true;
+                _deviceCache.addMipmapImage(tile.rc, minMipmapDownscale, maxMipmapDownscale, _ic, _mp, success, queue);
 
-            // add Sgm T cameras to Device cache
-            for (const int tc : tile.sgmTCams)
-            {
-                deviceCache.addMipmapImage(tc, minMipmapDownscale, maxMipmapDownscale, _ic, _mp, success, queue);
-            }
-
-            // Check if we need new objects
-            auto sgmIt = sgmPerTile.begin();
-            auto refineIt = refinePerTile.begin();
-            uint objectIndex;
-            bool createNewObjects = freeCompObj.empty();
-            if (!createNewObjects)
-            {
-                objectIndex = freeCompObj.back();
-                freeCompObj.pop_back();
-            }
-
-            // allocate sgm object if needed
-            if (createNewObjects)
-            {
-                // need a new compute object
-                sgmIt = sgmPerTile.emplace(std::piecewise_construct,
-                                           std::forward_as_tuple(tilesDispatched),
-                                           std::forward_as_tuple(_mp, _tileParams, _sgmParams, !_depthMapParams.useRefine, _refineParams.useSgmNormalMap, success, queue)).first;
-            }
-            else
-            {
-                auto node = sgmPerTile.extract(objectIndex);
-                node.key() = tilesDispatched;
-                sgmIt = sgmPerTile.insert(std::move(node)).position;
-            }
-
-            if (_depthMapParams.useRefine)
-            {
-                // add Refine T cameras to Device cache
-                for (const int tc : tile.refineTCams)
+                // add Sgm T cameras to Device cache
+                for (const int tc : tile.sgmTCams)
                 {
-                    deviceCache.addMipmapImage(tc, minMipmapDownscale, maxMipmapDownscale, _ic, _mp, success, queue);
+                    _deviceCache.addMipmapImage(tc, minMipmapDownscale, maxMipmapDownscale, _ic, _mp, success, queue);
                 }
 
-                // allocate refine object
-                if (createNewObjects)
+                if (_depthMapParams.useRefine)
                 {
-                    refineIt = refinePerTile.emplace(std::piecewise_construct,
-                                                     std::forward_as_tuple(tilesDispatched),
-                                                     std::forward_as_tuple(_mp, _tileParams, _refineParams, success, queue)).first;
+                    // add Refine T cameras to Device cache
+                    for (const int tc : tile.refineTCams)
+                    {
+                        _deviceCache.addMipmapImage(tc, minMipmapDownscale, maxMipmapDownscale, _ic, _mp, success, queue);
+                    }
                 }
-                else
+
+                if(!success)
                 {
-                    auto node = refinePerTile.extract(objectIndex);
-                    node.key() = tilesDispatched;
-                    refineIt = refinePerTile.insert(std::move(node)).position;
+                    ALICEVISION_LOG_DEBUG(deviceName << ": very low on memory. Trying to reclaim");
+                    // wait on a previous tile to finish computation
+                    tileStatuses.at((tile.id - retryAlloc) % nbTiles).wait();
+
+                    retryAlloc--;
+                    if (retryAlloc <= 0) ALICEVISION_THROW_ERROR(deviceName << ": Not enough device memory to hold all camera views for a single tile");
                 }
+                else break;
             }
 
-            if (!success)
-            {
-                if (tilesDispatched == 0) ALICEVISION_THROW_ERROR(deviceName << ": Not enough device memory to compute a single tile!");
-                ALICEVISION_LOG_TRACE(deviceName << ": Pausing allocation at tile " << tilesDispatched << " due to memory limits.");
-                // Delete stale compute objects
-                sgmPerTile.erase(tilesDispatched);
-                if(_depthMapParams.useRefine) refinePerTile.erase(tilesDispatched);
-                break;
-            }
-
-            ALICEVISION_LOG_TRACE(deviceName << ": begining computation of tile " << tilesDispatched << " after having finished allocation");
+            ALICEVISION_LOG_TRACE(deviceName << ": begining computation of tile " << tile.id << " after having finished allocation");
 
             // build tile SGM depth list
             SgmDepthList sgmDepthList(_mp, _sgmParams, tile);
@@ -305,17 +313,17 @@ void DepthMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams
             // check number of depths
             if (sgmDepthList.getDepths().empty())  // no depth found
             {
+                bufferPerTileLocks.at(tile.id).lock(); // make sure we have flushed memory
                 resetDepthSimMap(tileDepthSimMap_hmh);
-                depthMinMaxTilePerCam.at(tileIndex).at(tile.id) = {0.f, 0.f};
-                tilesDispatched++;
-                continue;
+                depthMinMaxPerTile.at(tile.id) = {0.f, 0.f};
+                return;
             }
 
             // remove T cameras with no depth found.
             sgmDepthList.removeTcWithNoDepth(tile);
 
             // store min/max depth
-            depthMinMaxTilePerCam.at(tileIndex).at(tile.id) = sgmDepthList.getMinMaxDepths();
+            depthMinMaxPerTile.at(tile.id) = sgmDepthList.getMinMaxDepths();
 
             // log debug camera / depth information
             sgmDepthList.logRcTcDepthInformation();
@@ -324,117 +332,98 @@ void DepthMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams
             sgmDepthList.checkStartingAndStoppingDepth();
 
             // compute Semi-Global Matching
-            Sgm& sgm = sgmIt->second;
-            ALICEVISION_LOG_TRACE(deviceName << ": begining semi-global matching of tile " << tilesDispatched);
-            sycl::event rcComputed = sgm.sgmRc(tile, sgmDepthList, sycl::event());
+            sgm.sgmRc(tile, sgmDepthList, sycl::event());
 
             if (_depthMapParams.useRefine)
             {
                 // smooth SGM thickness map
                 // in order to be a proper Refine input parameter
-                sycl::event smoothComputed = sgm.smoothThicknessMap(tile, _refineParams, rcComputed);
+                sgm.smoothThicknessMap(tile, _refineParams, sycl::event());
 
                 // compute Refine
-                Refine& refine = refineIt->second;
-                sycl::event refineComputed = refine.refineRc(tile, sgm.getDeviceDepthThicknessMap(), sgm.getDeviceNormalMap(), smoothComputed);
+                Refine& refine = refineOpt.value();
+                refine.refineRc(tile, sgm.getDeviceDepthThicknessMap(), sgm.getDeviceNormalMap(), sycl::event());
 
                 // copy Refine depth/similarity map from device to host
-                sycl::event writeback = tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), refineComputed);
-
-                // set appropriate event for waiting on the tile
-                tileStatuses.at(tileIndex).at(tile.id) = writeback;
+                bufferPerTileLocks.at(tile.id).lock(); // make sure we have flushed memory
+                tileDepthSimMap_hmh.copyFrom(refine.getDeviceDepthSimMap(), queue, sycl::event());
             }
             else
             {
                 // copy Sgm depth/similarity map from device to host
-                sycl::event writeback = tileDepthSimMap_hmh.copyFrom(sgm.getDeviceDepthSimMap(), rcComputed);
-
-                // set appropriate event for waiting on the tile
-                tileStatuses.at(tileIndex).at(tile.id) = writeback;
+                bufferPerTileLocks.at(tile.id).lock(); // make sure we have flushed memory
+                tileDepthSimMap_hmh.copyFrom(sgm.getDeviceDepthSimMap(), queue, sycl::event());
             }
 
-            tilesDispatched++;
+            ALICEVISION_LOG_TRACE(deviceName << ": freeing compute objects for tile " << tile.id);
+            compObj.release(); // let another tile be computed with this set of objects
 
-            const Tile& running = tiles.at(tilesFinished);
-            if(tileStatuses.at(running.rc - firstTileRc).at(running.id).get_info<sycl::info::event::command_execution_status>() == sycl::info::event_command_status::complete) // If we have work that is finished, free that memory
-                break;
+            // wait on computation before exiting
+            ALICEVISION_LOG_TRACE(deviceName << ": waiting for computation of tile " << tile.id);
+            queue.wait();
+
+            // free up cache when finished
+            futures.emplace_back(std::async(std::launch::async, [&] ()
+            {
+                // free Sgm R camera
+                _deviceCache.freeMipmapImage(tile.rc, device);
+
+                ALICEVISION_LOG_TRACE(deviceName << ": freeing images for tile " << tile.id);
+
+                // free Sgm T cameras to Device cache
+                for (const int tc : tile.sgmTCams)
+                {
+                    _deviceCache.freeMipmapImage(tc, device);
+                }
+
+                if (_depthMapParams.useRefine)
+                {
+                    // add Refine T cameras to Device cache
+                    for (const int tc : tile.refineTCams)
+                    {
+                        _deviceCache.freeMipmapImage(tc, device);
+                    }
+                }
+            }));
+        });
+
+        // only have at most two cameras computing at the same time
+        if (asyncObject.has_value())
+        {
+            ALICEVISION_LOG_TRACE(deviceName << ": holding for completion of previous camera");
+            asyncObject.value().wait();
         }
 
-        ALICEVISION_LOG_TRACE(deviceName << ": begining readback of tile " << tilesFinished);
-        // read back a tile, free memory where possible
-        const Tile& readback = tiles.at(tilesFinished);
-        const int readbackIndex = readback.rc - firstTileRc;
-
-        // wait on computation
-        tileStatuses.at(readbackIndex).at(readback.id).wait();
-
-        if (sgmPerTile.contains(tilesFinished)) // Don't liberate objects that don't exist
+        // asynchronously write images to disk
+        asyncObject.emplace(std::async(std::launch::async, [&, tileStatuses] ()
         {
-            if(freeCompObj.size() < nbTiles - tilesFinished)
-            {
-                // add tile intex to vector of compute objects that are free to use
-                freeCompObj.emplace_back(tilesFinished);
-            }
+            if (_depthMapParams.useRefine)
+                writeDepthSimMapFromTileList(cam, _mp, _tileParams, _tileRoiList,
+                                             depthSimMapPerTile, bufferPerTileLocks, tileStatuses,
+                                             _refineParams.scale, _refineParams.stepXY);
             else
-            {
-                // free objects
-                sgmPerTile.erase(tilesFinished);
-                if(_depthMapParams.useRefine) refinePerTile.erase(tilesFinished);
-            }
-        }
+                writeDepthSimMapFromTileList(cam, _mp, _tileParams, _tileRoiList,
+                                             depthSimMapPerTile, bufferPerTileLocks, tileStatuses,
+                                             _sgmParams.scale, _sgmParams.stepXY);
 
-        ALICEVISION_LOG_TRACE(deviceName << ": freeing images for tile " << tilesFinished);
-
-        // free Sgm R camera
-        deviceCache.freeMipmapImage(readback.rc, queue);
-
-        // free Sgm T cameras to Device cache
-        for (const int tc : readback.sgmTCams)
-        {
-            deviceCache.freeMipmapImage(tc, queue);
-        }
-
-        if (_depthMapParams.useRefine)
-        {
-            // add Refine T cameras to Device cache
-            for (const int tc : readback.refineTCams)
-            {
-                deviceCache.freeMipmapImage(tc, queue);
-            }
-        }
-
-        ALICEVISION_LOG_TRACE(deviceName << ": tile " << tilesFinished << " finished");
-
-        tilesFinished++;
+            if (_depthMapParams.exportTilePattern)
+                exportDepthSimMapTilePatternObj(cam, _mp, _tileRoiList, depthMinMaxPerTile);
+        }));
     }
 
-    // find first and last tile R camera
-    const int firstRc = tiles.at(0).rc;
-    int lastRc = tiles.at(tiles.size() - 1).rc;
-
-    // write depth/sim map result
-#pragma omp parallel for
-    for (int c = firstRc; c <= lastRc; ++c)
-    {
-        const int batchCamIndex = c % nbRc;
-
-        if (_depthMapParams.useRefine)
-            writeDepthSimMapFromTileList(
-              c, _mp, _tileParams, _tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), _refineParams.scale, _refineParams.stepXY);
-        else
-            writeDepthSimMapFromTileList(
-              c, _mp, _tileParams, _tileRoiList, depthSimMapTilePerCam.at(batchCamIndex), _sgmParams.scale, _sgmParams.stepXY);
-
-        if (_depthMapParams.exportTilePattern)
-            exportDepthSimMapTilePatternObj(c, _mp, _tileRoiList, depthMinMaxTilePerCam.at(batchCamIndex));
-    }
+    // wait for computation to finish
+    asyncObject.value().wait();
+    ALICEVISION_LOG_TRACE(deviceName << ": finished waiting on computation");
 
     // merge intermediate results tiles if needed and desired
-    if (tiles.size() > cams.size())
+    if (nbTiles > 1 &&
+        (_sgmParams.exportIntermediateDepthSimMaps || _sgmParams.exportIntermediateNormalMaps ||
+         (_depthMapParams.useRefine &&
+          (_refineParams.exportIntermediateDepthSimMaps || _refineParams.exportIntermediateNormalMaps)
+          )))
     {
         ALICEVISION_LOG_DEBUG(deviceName << ": merging tiles into images");
         // merge tiles if needed and desired
-#pragma omp parallel for
         for (int rc : cams)
         {
             if (_sgmParams.exportIntermediateDepthSimMaps)
@@ -463,11 +452,7 @@ void DepthMapEstimator::compute(sycl::queue& queue, const std::vector<int>& cams
             }
         }
     }
-
-    // some objects contains SYCL objects, which should be freed to avoid memory leaks
-    ALICEVISION_LOG_DEBUG(deviceName << ": cleaning up");
-    DeviceCache::getInstance().clear(queue);
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

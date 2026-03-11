@@ -14,7 +14,7 @@
 #include <aliceVision/depthMap_sycl/sycl/buffer.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 float DeviceMipmapImage::getLevel(unsigned int downscale) const
 {
@@ -50,13 +50,11 @@ DeviceMipmapImage::DeviceMipmapImage(const SyclDeviceMemoryPitched<sycl::float4,
     mipmapImage(
                 [&]{
                     size_t size = 0;
-                    const SyclSize<2> in_size = in_img_dmp.getSize();
 
                     for(size_t d = minDownscale; d <= maxDownscale; d *= 2)
                     {
-                        size_t x = divideRoundUp(in_size[0], d);
-                        size_t y = divideRoundUp(in_size[1], d);
-                        size += x * y;
+                        SyclSize<2> dims{divideRoundUp(in_img_dmp.getSize().x(), d), divideRoundUp(in_img_dmp.getSize().y(), d)};
+                        size += dims[0] * dims[1];
                     }
 
                     return SyclSize<1>(size);
@@ -65,9 +63,9 @@ DeviceMipmapImage::DeviceMipmapImage(const SyclDeviceMemoryPitched<sycl::float4,
                 queue),
     _minDownscale(minDownscale),
     _maxDownscale(maxDownscale),
+    _levels(std::log2(maxDownscale / minDownscale) + 1),
     _width(in_img_dmp.getSize().x()),
-    _height(in_img_dmp.getSize().y()),
-    _levels(std::log2(maxDownscale / minDownscale) + 1)
+    _height(in_img_dmp.getSize().y())
 {
     if (not allocSuccess) return;
     sycl::event sync{};
@@ -83,5 +81,5 @@ DeviceMipmapImage::DeviceMipmapImage(const SyclDeviceMemoryPitched<sycl::float4,
     sync.wait();
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

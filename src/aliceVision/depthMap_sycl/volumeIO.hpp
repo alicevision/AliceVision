@@ -6,8 +6,8 @@
 
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/depthMap_sycl/SgmParams.hpp>
-#include <aliceVision/depthMap_sycl/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @brief Export 9 similarity values over the entire depth in a CSV file.
@@ -29,7 +29,7 @@ namespace depthMap {
 void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                                 const std::vector<float>& in_depths,
                                 const std::string& name,
-                                const SgmParams& sgmParams,
+                                const depthMapCommon::SgmParams& sgmParams,
                                 const std::string& filepath,
                                 const ROI& roi);
 
@@ -43,7 +43,7 @@ void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_
  */
 void exportSimilaritySamplesCSV(const SyclHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
                                 const std::string& name,
-                                const RefineParams& refineParams,
+                                const depthMapCommon::RefineParams& refineParams,
                                 const std::string& filepath,
                                 const ROI& roi);
 
@@ -61,7 +61,7 @@ void exportSimilarityVolume(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                             const std::vector<float>& in_depths,
                             const mvsUtils::MultiViewParams& mp,
                             int camIndex,
-                            const SgmParams& sgmParams,
+                            const depthMapCommon::SgmParams& sgmParams,
                             const std::string& filepath,
                             const ROI& roi);
 
@@ -79,7 +79,7 @@ void exportSimilarityVolumeCross(const SyclHostMemoryHeap<TSim, 3>& in_volumeSim
                                  const std::vector<float>& in_depths,
                                  const mvsUtils::MultiViewParams& mp,
                                  int camIndex,
-                                 const SgmParams& sgmParams,
+                                 const depthMapCommon::SgmParams& sgmParams,
                                  const std::string& filepath,
                                  const ROI& roi);
 
@@ -97,7 +97,7 @@ void exportSimilarityVolumeCross(const SyclHostMemoryHeap<TSimRefine, 3>& in_vol
                                  const SyclHostMemoryHeap<sycl::float2, 2>& in_depthSimMapSgmUpscale_hmh,
                                  const mvsUtils::MultiViewParams& mp,
                                  int camIndex,
-                                 const RefineParams& refineParams,
+                                 const depthMapCommon::RefineParams& refineParams,
                                  const std::string& filepath,
                                  const ROI& roi);
 
@@ -115,7 +115,7 @@ void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSim, 3>& in_
                                           const std::vector<float>& in_depths,
                                           const mvsUtils::MultiViewParams& mp,
                                           int camIndex,
-                                          const SgmParams& sgmParams,
+                                          const depthMapCommon::SgmParams& sgmParams,
                                           const std::string& filepath,
                                           const ROI& roi);
 
@@ -133,7 +133,7 @@ void exportSimilarityVolumeTopographicCut(const SyclHostMemoryHeap<TSimRefine, 3
                                           const SyclHostMemoryHeap<sycl::float2, 2>& in_depthSimMapSgmUpscale_hmh,
                                           const mvsUtils::MultiViewParams& mp,
                                           int camIndex,
-                                          const RefineParams& refineParams,
+                                          const depthMapCommon::RefineParams& refineParams,
                                           const std::string& filepath,
                                           const ROI& roi);
 
@@ -151,5 +151,5 @@ void exportColorVolume(const SyclHostMemoryHeap<sycl::float4, 3>& in_volumeSim_h
                        const std::string& filepath,
                        const ROI& roi);
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

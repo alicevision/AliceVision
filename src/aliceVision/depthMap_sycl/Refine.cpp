@@ -18,9 +18,9 @@
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/deviceSimilarityVolume.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
-    Refine::Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, bool& allocationSuccess, sycl::queue& queue)
+    Refine::Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const depthMapCommon::RefineParams& refineParams, bool& allocationSuccess, sycl::queue& queue)
   : _mp(mp),
     _tileParams(tileParams),
     _refineParams(refineParams),
@@ -90,7 +90,7 @@ sycl::event Refine::refineRc(const Tile& tile,
         CameraParams camParams = getCameraParameters(tile.rc, _refineParams.scale, _mp);
 
         // get R device mipmap image from cache
-        const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue);
+        const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue.get_device());
 
         // compute upscaled SGM depth/pixSize map
         // - upscale SGM depth/thickness map
@@ -146,7 +146,7 @@ sycl::event Refine::refineRc(const Tile& tile,
     else
     {
         ALICEVISION_LOG_INFO(tile << "Color optimize depth/sim map disabled.");
-        depthMap = _optimizedDepthSimMap_dmp.copyFrom(_refinedDepthSimMap_dmp, depthMap);
+        depthMap = _optimizedDepthSimMap_dmp.copyFrom(_refinedDepthSimMap_dmp, _queue, depthMap);
     }
 
     // export intermediate normal map (if requested by user)
@@ -176,7 +176,7 @@ sycl::event Refine::refineAndFuseDepthSimMap(const Tile& tile, sycl::event prere
     DeviceCache& deviceCache = DeviceCache::getInstance();
 
     // get R device mipmap image from cache
-    const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue);
+    const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue.get_device());
 
     // construct R image params
     const CameraParams rcParams = getCameraParameters(tile.rc, _refineParams.scale, _mp);
@@ -188,7 +188,7 @@ sycl::event Refine::refineAndFuseDepthSimMap(const Tile& tile, sycl::event prere
         const int tc = tile.refineTCams.at(tci);
 
         // get T device mipmap image from cache
-        const DeviceMipmapImage& tcDeviceMipmapImage = deviceCache.requestMipmapImage(tc, _mp, _queue);
+        const DeviceMipmapImage& tcDeviceMipmapImage = deviceCache.requestMipmapImage(tc, _mp, _queue.get_device());
 
         // construct T image params
         const CameraParams tcParams = getCameraParameters(tc, _refineParams.scale, _mp);
@@ -244,7 +244,7 @@ sycl::event Refine::optimizeDepthSimMap(const Tile& tile, sycl::event prerequisi
     CameraParams camParams = getCameraParameters(tile.rc, _refineParams.scale, _mp);
 
     // get R device mipmap image from cache
-    const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue);
+    const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue.get_device());
 
     sycl::event gradientDescent = sycl_depthSimMapOptimizeGradientDescent(
                                             _optimizedDepthSimMap_dmp,  // output depth/sim map optimized
@@ -299,11 +299,11 @@ void Refine::exportVolumeInformation(const Tile& tile, const std::string& name)
 
     // copy device similarity volume to host memory
     SyclHostMemoryHeap<TSimRefine, 3> volumeSim_hmh(_volumeRefineSim_dmp.getSize(), _queue);
-    volumeSim_hmh.copyFrom(_volumeRefineSim_dmp, sycl::event()).wait();
+    volumeSim_hmh.copyFrom(_volumeRefineSim_dmp, _queue, sycl::event()).wait();
 
     // copy device SGM upscale depth/sim map to host memory
     SyclHostMemoryHeap<sycl::float2, 2> depthPixSizeMapSgmUpscale_hmh(_sgmDepthPixSizeMap_dmp.getSize(), _queue);
-    depthPixSizeMapSgmUpscale_hmh.copyFrom(_sgmDepthPixSizeMap_dmp, sycl::event()).wait();
+    depthPixSizeMapSgmUpscale_hmh.copyFrom(_sgmDepthPixSizeMap_dmp, _queue, sycl::event()).wait();
 
     if (_refineParams.exportIntermediateCrossVolumes)
     {
@@ -340,5 +340,5 @@ void Refine::exportVolumeInformation(const Tile& tile, const std::string& name)
     }
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

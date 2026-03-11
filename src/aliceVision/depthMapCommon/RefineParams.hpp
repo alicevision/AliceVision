@@ -7,7 +7,7 @@
 #pragma once
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMapCommon {
 
 /**
  * @brief Refine Parameters
@@ -42,7 +42,7 @@ struct RefineParams
 
     // constant parameters
 
-    const bool useSgmNormalMap = false;  // for experimentation purposes
+    static constexpr bool useSgmNormalMap = false;  // for experimentation purposes
 };
 
 }  // namespace depthMap

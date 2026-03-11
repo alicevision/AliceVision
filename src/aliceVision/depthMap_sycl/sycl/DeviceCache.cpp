@@ -9,53 +9,22 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/depthMap_sycl/sycl/CameraParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/matrix.hpp>
-
-inline static size_t hash_queue(const sycl::queue& queue) {
-    const sycl::device& device = queue.get_device();
-    // get unique id
-    size_t id;
-    {
-        const std::hash<std::string> strhsr{};
-        const std::hash<uint> inthsr{};
-        const sycl::platform& platform = device.get_platform();
-        id = inthsr(device.get_info<sycl::info::device::vendor_id>()) +
-            strhsr(platform.get_info<sycl::info::platform::name>()); // + has the advantage of avoiding collisions around zero, unlike xor. It's also fast, and commutativity is not a problem for our usecase
-    }
-    return id;
-}
+#include <aliceVision/depthMap_sycl/depthMapUtils.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
-DeviceCache::SingleDeviceCache& DeviceCache::getCurrentDeviceCache(const sycl::queue& queue)
-{
+size_t hash_device(const sycl::device& device) {
+    // get platform
+    const sycl::platform& platform = device.get_platform();
+
+    // hasher objects
+    static constexpr std::hash<std::string> strhsr{};
+    static constexpr std::hash<uint> inthsr{};
+
     // get unique id
-    const size_t id = hash_queue(queue);
-
-    // Used for debug messages
-    //const auto deviceName = queue.get_device().get_info<sycl::info::device::name>();
-    //ALICEVISION_LOG_TRACE(deviceName << ": has hash " << id);
-
-    // find the current SingleDeviceCache
-    auto it = _cachePerDevice.find(id);
-
-    // check found
-    if (it == _cachePerDevice.end())
-    {
-        it = _cachePerDevice.emplace(std::piecewise_construct,
-                                     std::forward_as_tuple(id),
-                                     std::forward_as_tuple()
-                                     ).first;
-    }
-
-    // return current SingleDeviceCache reference
-    return it->second;
-}
-
-void DeviceCache::clear(const sycl::queue& queue)
-{
-    const size_t id = hash_queue(queue);
-    _cachePerDevice.erase(id);
+    return inthsr(device.get_info<sycl::info::device::vendor_id>()) +
+        strhsr(platform.get_info<sycl::info::platform::name>()); // + has the advantage of avoiding collisions around zero, unlike xor. It's also fast, and commutativity is not a problem for our usecase
 }
 
 void DeviceCache::addMipmapImage(int camId,
@@ -68,15 +37,16 @@ void DeviceCache::addMipmapImage(int camId,
 {
     if (not allocSuccess) return;
     // Used for debug messages
-    const auto deviceName = queue.get_device().get_info<sycl::info::device::name>();
+    const auto deviceName = getDeviceName(queue.get_device());
 
     // get current device cache
-    SingleDeviceCache& currentDeviceCache = getCurrentDeviceCache(queue);
+    SingleDeviceCache& currentDeviceCache = getOrConstruct(queue.get_device());
 
     // get view id for logs
     const IndexT viewId = mp.getViewId(camId);
 
     // check if the camera is already in cache
+    std::lock_guard lkg{currentDeviceCache._lock};
     auto mipmap_ctd = currentDeviceCache.mipmaps_ctd.find(camId);
     if (mipmap_ctd != currentDeviceCache.mipmaps_ctd.end())
     {
@@ -96,7 +66,7 @@ void DeviceCache::addMipmapImage(int camId,
     if(not allocSuccess) return;
 
     // copy image from imageCache to SYCL device-side image buffer
-    img_dmp.copyFrom(*img, sycl::event()).wait();
+    img_dmp.copyFrom(*img, queue, sycl::event()).wait();
 
     ALICEVISION_LOG_TRACE(deviceName << ": Building mipmap image in device memory (id: " << camId << ", view id: " << viewId << ").");
 
@@ -114,10 +84,10 @@ void DeviceCache::addMipmapImage(int camId,
     ALICEVISION_LOG_TRACE(deviceName << ": Built mipmap image in device memory (id: " << camId << ", view id: " << viewId << ").");
 }
 
-const DeviceMipmapImage& DeviceCache::requestMipmapImage(int camId, const mvsUtils::MultiViewParams& mp, const sycl::queue& queue)
+const DeviceMipmapImage& DeviceCache::requestMipmapImage(int camId, const mvsUtils::MultiViewParams& mp, const sycl::device& device)
 {
     // get current device cache
-    SingleDeviceCache& currentDeviceCache = getCurrentDeviceCache(queue);
+    SingleDeviceCache& currentDeviceCache = getOrConstruct(device);
 
     // get view id for logs
     const IndexT viewId = mp.getViewId(camId);
@@ -133,12 +103,13 @@ const DeviceMipmapImage& DeviceCache::requestMipmapImage(int camId, const mvsUti
     return mipmap_ctd->second.first;
 }
 
-void DeviceCache::freeMipmapImage(int camId, sycl::queue& queue)
+void DeviceCache::freeMipmapImage(int camId, const sycl::device& device)
 {
     // get current device cache
-    SingleDeviceCache& currentDeviceCache = getCurrentDeviceCache(queue);
+    SingleDeviceCache& currentDeviceCache = getOrConstruct(device);
 
     // check if the mipmap image is in the cache
+    std::lock_guard lkg{currentDeviceCache._lock};
     auto mipmap_ctd = currentDeviceCache.mipmaps_ctd.find(camId);
     if (mipmap_ctd == currentDeviceCache.mipmaps_ctd.end())
     {
@@ -151,5 +122,5 @@ void DeviceCache::freeMipmapImage(int camId, sycl::queue& queue)
 }
 
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

@@ -13,7 +13,7 @@
 #include <map>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 inline void move3DPointByRcPixSize(sycl::float3& p,
                                    const CameraParams& rcParams,
@@ -39,9 +39,9 @@ inline float depthPlaneToDepth(const CameraParams& camParams,
                                const sycl::float2& pix)
 {
     const sycl::float3 planep = camParams.C + camParams.ZVect * fpPlaneDepth;
-    sycl::float3 v = sycl::normalize(M3x3mulV2(camParams.iP, pix));
-    sycl::float3 p = linePlaneIntersect(camParams.C, v, planep, camParams.ZVect);
-    return sycl::length(camParams.C - p);
+    const sycl::float3 v = sycl::normalize(M3x3mulV2(camParams.iP, pix));
+    const sycl::float3 p = linePlaneIntersect(camParams.C, v, planep, camParams.ZVect);
+    return sycl::distance(camParams.C, p);
 }
 
 sycl::event sycl_volumeAdd(SyclDeviceMemoryPitched<TSimRefine, 3>& inout_volume_dmp,
@@ -77,9 +77,9 @@ sycl::event sycl_volumeUpdateUninitializedSimilarity(const SyclDeviceMemoryPitch
         h.depends_on(prerequisite);
 
         h.parallel_for(in_volBestSim_dmp.getUnitsTotal(), [=](auto idx) {
-            TSim* inout_val = inout_v_ptr + idx;
-            if (*inout_val >= 255.f)
-                *inout_val = in_v_ptr[idx];
+            TSim& inout_val = inout_v_ptr[idx];
+            if (inout_val >= 255.f)
+                inout_val = in_v_ptr[idx];
         });
     });
 }
@@ -91,7 +91,7 @@ sycl::event sycl_volumeComputeSimilarity(SyclDeviceMemoryPitched<TSim, 3>& out_v
                                          const CameraParams& tcParams,
                                          const DeviceMipmapImage& rcDeviceMipmapImage,
                                          const DeviceMipmapImage& tcDeviceMipmapImage,
-                                         const SgmParams& sgmParams,
+                                         const depthMapCommon::SgmParams& sgmParams,
                                          const Range& depthRange,
                                          const ROI& roi,
                                          sycl::queue& queue, sycl::event prerequisite)
@@ -112,42 +112,42 @@ sycl::event sycl_volumeComputeSimilarity(SyclDeviceMemoryPitched<TSim, 3>& out_v
 
     // bits we can calculate outside of the kernel
     const int stepXY = sgmParams.stepXY;
-    const float wsh = sgmParams.wsh;
-    const bool useCustomPatchPattern = sgmParams.useConsistentScale;
-    const bool useConsistentScale = sgmParams.useCustomPatchPattern;
+    const int wsh = sgmParams.wsh;
+    const bool useConsistentScale = sgmParams.useConsistentScale;
     const float invGammaC = (1.f / float(sgmParams.gammaC)); // inverted gammaC
     const float invGammaP = (1.f / float(sgmParams.gammaP)); // inverted gammaP
-    const PatchPattern& patchPattern = PatchPattern::getGlobalPatchPattern();
 
     // kernel launch
-    return queue.submit([&](sycl::handler& h) {
-        h.depends_on(prerequisite);
+    if(sgmParams.useCustomPatchPattern)
+    {
+        const PatchPattern& patchPattern = PatchPattern::getGlobalPatchPattern();
 
-        h.parallel_for(sycl::range<3>(roi.width(), roi.height(), depthRange.size()), [=](sycl::id<3> id) {
+        return queue.submit([&](sycl::handler& h) {
+            h.depends_on(prerequisite);
 
-            // corresponding volume coordinates
-            const sycl::uint3 v = sycl::uint3(id[0],
-                                              id[1],
-                                              id[2] + depthRange.begin);
+            h.parallel_for(sycl::range<1>(roi.width() * roi.height() * depthRange.size()), [=](sycl::id<1> id) {
 
-            // corresponding image coordinates
-            const sycl::float2 icoords = sycl::float2(roi.x.begin + v.x(), roi.y.begin + v.y()) * float(stepXY);
+                // corresponding volume coordinates
+                const sycl::uint3 v = sycl::uint3(id[0] / (depthRange.size() * roi.height()),
+                                                  id[0] / depthRange.size() % roi.height(),
+                                                  id[0] % depthRange.size() + depthRange.begin);
 
-            // corresponding depth plane
-            const float depthPlane = in_depths_acc(v.z());
+                // corresponding image coordinates
+                const sycl::float2 icoords = (sycl::uint2(v.x() + roi.x.begin, v.y() + roi.y.begin) * stepXY).convert<float>();
 
-            // compute patch
-            Patch patch;
-            volume_computePatch(patch, rcParams, tcParams, depthPlane, icoords);
+                // corresponding depth plane
+                const float depthPlane = __readonly_load(&in_depths_acc(v.z()));
 
-            // we do not need positive and filtered similarity values
-            constexpr bool invertAndFilter = false;
+                // compute patch
+                Patch patch;
+                volume_computePatch(patch, rcParams, tcParams, depthPlane, icoords);
 
-            float fsim = std::numeric_limits<float>::infinity();
+                // we do not need positive and filtered similarity values
+                constexpr bool invertAndFilter = false;
 
-            // compute patch similarity
-            if(useCustomPatchPattern)
-            {
+                float fsim;
+
+                // compute patch similarity
                 fsim = compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcParams,
                                                                             tcParams,
                                                                             rcDeviceMipmapAcc,
@@ -160,9 +160,74 @@ sycl::event sycl_volumeComputeSimilarity(SyclDeviceMemoryPitched<TSim, 3>& out_v
                                                                             useConsistentScale,
                                                                             patch,
                                                                             patchPattern);
-            }
-            else
-            {
+
+                if(fsim == std::numeric_limits<float>::infinity()) // invalid similarity
+                {
+                    fsim = 255.0f; // 255 is the invalid similarity value
+                }
+                else // valid similarity
+                {
+                    // remap similarity value
+                    constexpr const float fminVal = -1.0f;
+                    constexpr const float fmaxVal = 1.0f;
+                    constexpr const float fmultiplier = 1.0f / (fmaxVal - fminVal);
+
+                    fsim = (fsim - fminVal) * fmultiplier;
+
+#ifdef TSIM_USE_FLOAT
+                    // no clamp
+#else
+                    fsim = sycl::clamp(fsim, 0.f, 1.f);
+#endif
+                    // convert from (0, 1) to (0, 254)
+                    // needed to store in the volume in uchar
+                    // 255 is reserved for the similarity initialization, i.e. undefined values
+                    fsim *= 254.0f;
+                }
+
+                TSim& fsim_1st = out_volBestSim_acc(v);
+                TSim& fsim_2nd = out_volSecBestSim_acc(v);
+
+                if(fsim < fsim_1st)
+                {
+                    fsim_2nd = fsim_1st;
+                    fsim_1st = TSim(fsim);
+                }
+                else if(fsim < fsim_2nd)
+                {
+                    fsim_2nd = TSim(fsim);
+                }
+            });
+        });
+    }
+    else
+    {
+        return queue.submit([&](sycl::handler& h) {
+            h.depends_on(prerequisite);
+
+            h.parallel_for(sycl::range<1>(roi.width() * roi.height() * depthRange.size()), [=](sycl::id<1> id) {
+
+                // corresponding volume coordinates
+                const sycl::uint3 v = sycl::uint3(id[0] / (depthRange.size() * roi.height()),
+                                                  id[0] / depthRange.size() % roi.height(),
+                                                  id[0] % depthRange.size() + depthRange.begin);
+
+                // corresponding image coordinates
+                const sycl::float2 icoords = (sycl::uint2(v.x() + roi.x.begin, v.y() + roi.y.begin) * stepXY).convert<float>();
+
+                // corresponding depth plane
+                const float depthPlane = __readonly_load(&in_depths_acc(v.z()));
+
+                // compute patch
+                Patch patch;
+                volume_computePatch(patch, rcParams, tcParams, depthPlane, icoords);
+
+                // we do not need positive and filtered similarity values
+                constexpr bool invertAndFilter = false;
+
+                float fsim;
+
+                // compute patch similarity
                 fsim = compNCCby3DptsYK<invertAndFilter>(rcParams,
                                                          tcParams,
                                                          rcDeviceMipmapAcc,
@@ -175,47 +240,46 @@ sycl::event sycl_volumeComputeSimilarity(SyclDeviceMemoryPitched<TSim, 3>& out_v
                                                          invGammaP,
                                                          useConsistentScale,
                                                          patch);
-            }
-            if(fsim == std::numeric_limits<float>::infinity()) // invalid similarity
-            {
-                fsim = 255.0f; // 255 is the invalid similarity value
-            }
-            else // valid similarity
-            {
-                // remap similarity value
-                constexpr const float fminVal = -1.0f;
-                constexpr const float fmaxVal = 1.0f;
-                constexpr const float fmultiplier = 1.0f / (fmaxVal - fminVal);
 
-                fsim = (fsim - fminVal) * fmultiplier;
+                if(fsim == std::numeric_limits<float>::infinity()) // invalid similarity
+                {
+                    fsim = 255.0f; // 255 is the invalid similarity value
+                }
+                else // valid similarity
+                {
+                    // remap similarity value
+                    constexpr const float fminVal = -1.0f;
+                    constexpr const float fmaxVal = 1.0f;
+                    constexpr const float fmultiplier = 1.0f / (fmaxVal - fminVal);
+
+                    fsim = (fsim - fminVal) * fmultiplier;
 
 #ifdef TSIM_USE_FLOAT
-                // no clamp
+                    // no clamp
 #else
-                fsim = sycl::clamp(fsim, 0.f, 1.f);
+                    fsim = sycl::clamp(fsim, 0.f, 1.f);
 #endif
-                // convert from (0, 1) to (0, 254)
-                // needed to store in the volume in uchar
-                // 255 is reserved for the similarity initialization, i.e. undefined values
-                fsim *= 254.0f;
-            }
+                    // convert from (0, 1) to (0, 254)
+                    // needed to store in the volume in uchar
+                    // 255 is reserved for the similarity initialization, i.e. undefined values
+                    fsim *= 254.0f;
+                }
 
-            TSim& fsim_1st = out_volBestSim_acc(v);
-            TSim& fsim_2nd = out_volSecBestSim_acc(v);
+                TSim& fsim_1st = out_volBestSim_acc(v);
+                TSim& fsim_2nd = out_volSecBestSim_acc(v);
 
-            const TSim tfsim = TSim(fsim);
-
-            if(fsim < fsim_1st)
-            {
-                fsim_2nd = fsim_1st;
-                fsim_1st = tfsim;
-            }
-            else if(fsim < fsim_2nd)
-            {
-                fsim_2nd = tfsim;
-            }
+                if(fsim < fsim_1st)
+                {
+                    fsim_2nd = fsim_1st;
+                    fsim_1st = TSim(fsim);
+                }
+                else if(fsim < fsim_2nd)
+                {
+                    fsim_2nd = TSim(fsim);
+                }
+            });
         });
-    });
+    }
 }
 
 sycl::event sycl_volumeRefineSimilarity(SyclDeviceMemoryPitched<TSimRefine, 3>& inout_volSim_dmp,
@@ -225,7 +289,7 @@ sycl::event sycl_volumeRefineSimilarity(SyclDeviceMemoryPitched<TSimRefine, 3>& 
                                         const CameraParams& tcParams,
                                         const DeviceMipmapImage& rcDeviceMipmapImage,
                                         const DeviceMipmapImage& tcDeviceMipmapImage,
-                                        const RefineParams& refineParams,
+                                        const depthMapCommon::RefineParams& refineParams,
                                         const Range& depthRange,
                                         const ROI& roi,
                                         sycl::queue& queue, sycl::event prerequisite)
@@ -257,80 +321,83 @@ sycl::event sycl_volumeRefineSimilarity(SyclDeviceMemoryPitched<TSimRefine, 3>& 
     // bits we can calculate outside of the kernel
     const int volDimZ = inout_volSim_dmp.getSize().z();
     const int stepXY = refineParams.stepXY;
-    const float wsh = refineParams.wsh;
-    const bool useCustomPatchPattern = refineParams.useConsistentScale;
-    const bool useConsistentScale = refineParams.useCustomPatchPattern;
+    const int wsh = refineParams.wsh;
+    const bool useConsistentScale = refineParams.useConsistentScale;
     const float invGammaC = (1.f / float(refineParams.gammaC)); // inverted gammaC
     const float invGammaP = (1.f / float(refineParams.gammaP)); // inverted gammaP
-    const PatchPattern& patchPattern = PatchPattern::getGlobalPatchPattern();
 
     // kernel launch
-    return queue.submit([&](sycl::handler& h) {
-        h.depends_on(prerequisite);
+    if(refineParams.useCustomPatchPattern)
+    {
+        const PatchPattern& patchPattern = PatchPattern::getGlobalPatchPattern();
 
-        h.parallel_for(sycl::range<3>(roi.width(), roi.height(), depthRange.size()), [=](sycl::id<3> id) {
-            // corresponding volume coordinates
-            const sycl::uint3 v = sycl::uint3(id[0], id[1], id[2] + depthRange.begin);
+        return queue.submit([&](sycl::handler& h) {
+            h.depends_on(prerequisite);
 
-            // corresponding image coordinates
-            const sycl::float2 icoords = sycl::float2(roi.x.begin + v.x(), roi.y.begin + v.y()) * float(stepXY);
+            h.parallel_for(sycl::range<1>(roi.width() * roi.height() * depthRange.size()), [=](sycl::id<1> id) {
 
-            // corresponding input sgm depth/pixSize (middle depth)
-            const sycl::float2 in_sgmDepthPixSize = in_sgmDepthPixSizeMap_acc(sycl::uint2(v.x(), v.y()));
+                // corresponding volume coordinates
+                const sycl::uint3 v = sycl::uint3(id[0] / (depthRange.size() * roi.height()),
+                                                  id[0] / depthRange.size() % roi.height(),
+                                                  id[0] % depthRange.size() + depthRange.begin);
 
-            // sgm depth (middle depth) invalid or masked
-            if(in_sgmDepthPixSize.x() <= 0.0f)
-                return;
+                // corresponding image coordinates
+                const sycl::float2 icoords = sycl::float2(roi.x.begin + v.x(), roi.y.begin + v.y()) * float(stepXY);
 
-            // initialize rc 3d point at sgm depth (middle depth)
-            sycl::float3 p = get3DPointForPixelAndDepthFromRC(rcParams, icoords, in_sgmDepthPixSize.x());
+                // corresponding input sgm depth/pixSize (middle depth)
+                const sycl::float2 in_sgmDepthPixSize = __readonly_load(&in_sgmDepthPixSizeMap_acc(sycl::uint2(v.x(), v.y())));
 
-            // compute relative depth index offset from z center
-            const int relativeDepthIndexOffset = v.z() - ((volDimZ - 1) / 2);
+                // sgm depth (middle depth) invalid or masked
+                if(in_sgmDepthPixSize.x() <= 0.0f)
+                    return;
 
-            if(relativeDepthIndexOffset != 0)
-            {
-                // not z center
-                // move rc 3d point by relative depth index offset * sgm pixSize
-                const float pixSizeOffset = relativeDepthIndexOffset * in_sgmDepthPixSize.y(); // input sgm pixSize
-                move3DPointByRcPixSize(p, rcParams, pixSizeOffset);
-            }
+                // initialize rc 3d point at sgm depth (middle depth)
+                sycl::float3 p = get3DPointForPixelAndDepthFromRC(rcParams, icoords, in_sgmDepthPixSize.x());
 
-            // compute patch
-            Patch patch;
-            patch.p = p;
-            patch.d = computePixSize(rcParams, p);
+                // compute relative depth index offset from z center
+                const int relativeDepthIndexOffset = v.z() - ((volDimZ - 1) / 2);
 
-            // computeRotCSEpip
-            {
-                // vector from the reference camera to the 3d point
-                sycl::float3 v1 = sycl::normalize(rcParams.C - patch.p);
-                // vector from the target camera to the 3d point
-                sycl::float3 v2 = sycl::normalize(tcParams.C - patch.p);
+                if(relativeDepthIndexOffset != 0)
+                {
+                    // not z center
+                    // move rc 3d point by relative depth index offset * sgm pixSize
+                    const float pixSizeOffset = relativeDepthIndexOffset * in_sgmDepthPixSize.y(); // input sgm pixSize
+                    move3DPointByRcPixSize(p, rcParams, pixSizeOffset);
+                }
 
-                // y has to be orthogonal to the epipolar plane
-                // n has to be on the epipolar plane
-                // x has to be on the epipolar plane
+                // compute patch
+                Patch patch;
+                patch.p = p;
+                patch.d = computePixSize(rcParams, p);
 
-                patch.y = sycl::normalize(sycl::cross(v1, v2));
+                // computeRotCSEpip
+                {
+                    // vector from the reference camera to the 3d point
+                    sycl::float3 v1 = sycl::normalize(rcParams.C - patch.p);
+                    // vector from the target camera to the 3d point
+                    sycl::float3 v2 = sycl::normalize(tcParams.C - patch.p);
 
-                // initialize patch normal from input normal map
-                if(useNormalMap)
-                    patch.n = in_sgmNormalMap_acc(sycl::uint2(v.x(), v.y()));
-                else
-                    patch.n = sycl::normalize(v1 + v2);
+                    // y has to be orthogonal to the epipolar plane
+                     // n has to be on the epipolar plane
+                    // x has to be on the epipolar plane
 
-                patch.x = sycl::normalize(sycl::cross(patch.y, patch.n));
-            }
+                    patch.y = sycl::normalize(sycl::cross(v1, v2));
 
-            // we need positive and filtered similarity values
-            constexpr bool invertAndFilter = true;
+                    // initialize patch normal from input normal map
+                    if(useNormalMap)
+                        patch.n = __readonly_load(&in_sgmNormalMap_acc(sycl::uint2(v.x(), v.y())));
+                    else
+                        patch.n = sycl::normalize(v1 + v2);
 
-            float fsimInvertedFiltered = std::numeric_limits<float>::infinity();
+                    patch.x = sycl::normalize(sycl::cross(patch.y, patch.n));
+                }
 
-            // compute similarity
-            if(useCustomPatchPattern)
-            {
+                // we need positive and filtered similarity values
+                constexpr bool invertAndFilter = true;
+
+                float fsimInvertedFiltered;
+
+                // compute similarity
                 fsimInvertedFiltered =
                     compNCCby3DptsYK_customPatchPattern<invertAndFilter>(rcParams,
                                                                          tcParams,
@@ -344,9 +411,95 @@ sycl::event sycl_volumeRefineSimilarity(SyclDeviceMemoryPitched<TSimRefine, 3>& 
                                                                          useConsistentScale,
                                                                          patch,
                                                                          patchPattern);
-            }
-            else
-            {
+
+                if(fsimInvertedFiltered == std::numeric_limits<float>::infinity()) // invalid similarity
+                {
+                    // do nothing
+                    return;
+                }
+
+                // get output similarity pointer
+                TSimRefine& outSimRef = inout_volSim_acc(v);
+
+                // add the output similarity value
+#ifdef TSIM_REFINE_USE_HALF
+                // note: using built-in half addition can give bad results on some gpus
+                outSimRef = TSimRefine(float(outSimRef) + fsimInvertedFiltered); // perform the addition in float
+#else
+                outSimRef += TSimRefine(fsimInvertedFiltered);
+#endif
+            });
+        });
+    }
+    else // No custom patch pattern
+    {
+        return queue.submit([&](sycl::handler& h) {
+            h.depends_on(prerequisite);
+
+            h.parallel_for(sycl::range<1>(roi.width() * roi.height() * depthRange.size()), [=](sycl::id<1> id) {
+
+                // corresponding volume coordinates
+                const sycl::uint3 v = sycl::uint3(id[0] / (depthRange.size() * roi.height()),
+                                                  id[0] / depthRange.size() % roi.height(),
+                                                  id[0] % depthRange.size() + depthRange.begin);
+
+                // corresponding image coordinates
+                const sycl::float2 icoords = sycl::float2(roi.x.begin + v.x(), roi.y.begin + v.y()) * float(stepXY);
+
+                // corresponding input sgm depth/pixSize (middle depth)
+                const sycl::float2 in_sgmDepthPixSize = __readonly_load(&in_sgmDepthPixSizeMap_acc(sycl::uint2(v.x(), v.y())));
+
+                // sgm depth (middle depth) invalid or masked
+                if(in_sgmDepthPixSize.x() <= 0.0f)
+                    return;
+
+                // initialize rc 3d point at sgm depth (middle depth)
+                sycl::float3 p = get3DPointForPixelAndDepthFromRC(rcParams, icoords, in_sgmDepthPixSize.x());
+
+                // compute relative depth index offset from z center
+                const int relativeDepthIndexOffset = v.z() - ((volDimZ - 1) / 2);
+
+                if(relativeDepthIndexOffset != 0)
+                {
+                    // not z center
+                    // move rc 3d point by relative depth index offset * sgm pixSize
+                    const float pixSizeOffset = relativeDepthIndexOffset * in_sgmDepthPixSize.y(); // input sgm pixSize
+                    move3DPointByRcPixSize(p, rcParams, pixSizeOffset);
+                }
+
+                // compute patch
+                Patch patch;
+                patch.p = p;
+                patch.d = computePixSize(rcParams, p);
+
+                // computeRotCSEpip
+                {
+                    // vector from the reference camera to the 3d point
+                    sycl::float3 v1 = sycl::normalize(rcParams.C - patch.p);
+                    // vector from the target camera to the 3d point
+                    sycl::float3 v2 = sycl::normalize(tcParams.C - patch.p);
+
+                    // y has to be orthogonal to the epipolar plane
+                     // n has to be on the epipolar plane
+                    // x has to be on the epipolar plane
+
+                    patch.y = sycl::normalize(sycl::cross(v1, v2));
+
+                    // initialize patch normal from input normal map
+                    if(useNormalMap)
+                        patch.n = __readonly_load(&in_sgmNormalMap_acc(sycl::uint2(v.x(), v.y())));
+                    else
+                        patch.n = sycl::normalize(v1 + v2);
+
+                    patch.x = sycl::normalize(sycl::cross(patch.y, patch.n));
+                }
+
+                // we need positive and filtered similarity values
+                constexpr bool invertAndFilter = true;
+
+                float fsimInvertedFiltered;
+
+                // compute similarity
                 fsimInvertedFiltered =
                     compNCCby3DptsYK<invertAndFilter>(rcParams,
                                                       tcParams,
@@ -360,26 +513,26 @@ sycl::event sycl_volumeRefineSimilarity(SyclDeviceMemoryPitched<TSimRefine, 3>& 
                                                       invGammaP,
                                                       useConsistentScale,
                                                       patch);
-            }
 
-            if(fsimInvertedFiltered == std::numeric_limits<float>::infinity()) // invalid similarity
-            {
-                // do nothing
-                return;
-            }
+                if(fsimInvertedFiltered == std::numeric_limits<float>::infinity()) // invalid similarity
+                {
+                    // do nothing
+                    return;
+                }
 
-            // get output similarity pointer
-            TSimRefine& outSimRef = inout_volSim_acc(v);
+                // get output similarity pointer
+                TSimRefine& outSimRef = inout_volSim_acc(v);
 
-            // add the output similarity value
+                // add the output similarity value
 #ifdef TSIM_REFINE_USE_HALF
-            // note: using built-in half addition can give bad results on some gpus
-            outSimRef = TSimRefine(float(outSimRef) + fsimInvertedFiltered); // perform the addition in float
+                // note: using built-in half addition can give bad results on some gpus
+                outSimRef = TSimRefine(float(outSimRef) + fsimInvertedFiltered); // perform the addition in float
 #else
-            outSimRef += TSimRefine(fsimInvertedFiltered);
+                outSimRef += TSimRefine(fsimInvertedFiltered);
 #endif
+            });
         });
-    });
+    }
 }
 
 // helper function
@@ -401,7 +554,7 @@ inline sycl::event volumeCopyYSlice(SyclDevicePitchedAccess<outType, 2>& out_2dI
             v[axisT.x()] = x;
             v[axisT.y()] = y;
             v[axisT.z()] = z;
-            out_2dImg(sycl::uint2(x, z)) = in_3dVol(v);
+            out_2dImg(sycl::uint2(x, z)) = __readonly_load(&in_3dVol(v));
         });
      });
 }
@@ -437,7 +590,7 @@ sycl::event sycl_volumeAggregatePath(SyclDeviceMemoryPitched<TSim, 3>& out_volAg
                                      const SyclSize<2>& rcLevelDim_h,
                                      const float rcMipmapLevel,
                                      const SyclSize<3>& axisT_S,
-                                     const SgmParams& sgmParams,
+                                     const depthMapCommon::SgmParams& sgmParams,
                                      const int lastDepthIndex,
                                      const int filteringIndex,
                                      const bool invY,
@@ -461,7 +614,7 @@ sycl::event sycl_volumeAggregatePath(SyclDeviceMemoryPitched<TSim, 3>& out_volAg
 
     const float P1 = sgmParams.p1;
     const float _P2 = sgmParams.p2Weighting;
-    const float step = sgmParams.stepXY;
+    const int step = sgmParams.stepXY;
 
     // find texture offset
     const int beginX = (axisT.x() == 0) ? roiXbegin : roiYbegin;
@@ -520,11 +673,11 @@ sycl::event sycl_volumeAggregatePath(SyclDeviceMemoryPitched<TSim, 3>& out_volAg
             h.depends_on(prerequisite);
 
             h.parallel_for(ColZ, [=](sycl::id<1> id) {
-                TSimAcc bestCst = ym1Acc(sycl::uint2(id[0], 0));
+                TSimAcc bestCst = __readonly_load(&ym1Acc(sycl::uint2(id[0], 0)));
 
                 for(int z = 1; z < volDimZ; ++z)
                 {
-                    const TSimAcc cst = ym1Acc(sycl::uint2(id[0], z));
+                    const TSimAcc cst = __readonly_load(&ym1Acc(sycl::uint2(id[0], z)));
                     bestCst = sycl::min(bestCst, cst);
                 }
                 bestSimInYm1_acc(id[0]) = bestCst;
@@ -583,10 +736,10 @@ sycl::event sycl_volumeAggregatePath(SyclDeviceMemoryPitched<TSim, 3>& out_volAg
                         P2 = sigmoid(80.f, 255.f, 80.f, _P2, deltaC);
                     }
 
-                    const TSimAcc bestCostInColM1 = bestSimInYm1_acc(x);
-                    const TSimAcc pathCostMDM1 = ym1Acc(sycl::uint2(x, z - 1)); // M1: minus 1 over depths
-                    const TSimAcc pathCostMD = ym1Acc(c);
-                    const TSimAcc pathCostMDP1 = ym1Acc(sycl::uint2(x, z + 1)); // P1: plus 1 over depths
+                    const TSimAcc bestCostInColM1 = __readonly_load(&bestSimInYm1_acc(x));
+                    const TSimAcc pathCostMDM1 = __readonly_load(&ym1Acc(sycl::uint2(x, z - 1))); // M1: minus 1 over depths
+                    const TSimAcc pathCostMD = __readonly_load(&ym1Acc(c));
+                    const TSimAcc pathCostMDP1 = __readonly_load(&ym1Acc(sycl::uint2(x, z + 1))); // P1: plus 1 over depths
                     const float minCost = multi_fmin(float(pathCostMD),
                                                      float(pathCostMDM1 + P1),
                                                      float(pathCostMDP1 + P1),
@@ -621,7 +774,7 @@ sycl::event sycl_volumeOptimize(SyclDeviceMemoryPitched<TSim, 3>& out_volSimFilt
                                 SyclDeviceMemoryPitched<TSimAcc, 1>& inout_volAxisAcc_dmp,
                                 const SyclDeviceMemoryPitched<TSim, 3>& in_volSim_dmp,
                                 const DeviceMipmapImage& rcDeviceMipmapImage,
-                                const SgmParams& sgmParams,
+                                const depthMapCommon::SgmParams& sgmParams,
                                 const int lastDepthIndex,
                                 const ROI& roi,
                                 sycl::queue& queue, sycl::event prerequisite)
@@ -658,7 +811,8 @@ sycl::event sycl_volumeOptimize(SyclDeviceMemoryPitched<TSim, 3>& out_volSimFilt
         {'Y', {0, 1, 2}}, // XYZ
     };
 
-    for(char axis : sgmParams.filteringAxes)
+    constexpr char filteringAxes[2] = {'Y', 'X'};
+    for(char axis : filteringAxes)
     {
         const SyclSize<3>& axisT = mapAxes.at(axis);
         updateAggrVolume(axisT, false); // without transpose
@@ -672,7 +826,7 @@ sycl::event sycl_volumeRetrieveBestDepthUseSim(SyclDeviceMemoryPitched<sycl::flo
                                                const SyclDeviceMemoryPitched<float, 1>& in_depths_dmp,
                                                const SyclDeviceMemoryPitched<TSim, 3>& in_volSim_dmp,
                                                const CameraParams& rcParams,
-                                               const SgmParams& sgmParams,
+                                               const depthMapCommon::SgmParams& sgmParams,
                                                const Range& depthRange,
                                                const ROI& roi,
                                                sycl::queue& queue, sycl::event prerequisite)
@@ -718,7 +872,7 @@ sycl::event sycl_volumeRetrieveBestDepthUseSim(SyclDeviceMemoryPitched<sycl::flo
             for(int vz = depthRange.begin; vz < depthRange.end; ++vz)
             {
                 const sycl::uint3 v3 = sycl::uint3(v.x(), v.y(), vz);
-                const float simAtZ = in_volSim_acc(v3);
+                const float simAtZ = __readonly_load(&in_volSim_acc(v3));
 
                 if(simAtZ < bestSim)
                 {
@@ -747,9 +901,9 @@ sycl::event sycl_volumeRetrieveBestDepthUseSim(SyclDeviceMemoryPitched<sycl::flo
             // get best best depth current, previous and next plane depth values
             // note: float3 struct is useful for depth interpolation
             sycl::float3 depthPlanes;
-            depthPlanes.x() = in_depths_acc(bestZIdx_m1);  // best depth previous plane
-            depthPlanes.y() = in_depths_acc(bestZIdx);     // best depth plane
-            depthPlanes.z() = in_depths_acc(bestZIdx_p1);  // best depth next plane
+            depthPlanes.x() = __readonly_load(&in_depths_acc(bestZIdx_m1));  // best depth previous plane
+            depthPlanes.y() = __readonly_load(&in_depths_acc(bestZIdx));     // best depth plane
+            depthPlanes.z() = __readonly_load(&in_depths_acc(bestZIdx_p1));  // best depth next plane
 
             const float bestDepth_m1 = depthPlaneToDepth(rcParams, depthPlanes.x(), pix); // previous best depth
             const float bestDepth    = depthPlaneToDepth(rcParams, depthPlanes.y(), pix); // best depth
@@ -760,9 +914,9 @@ sycl::event sycl_volumeRetrieveBestDepthUseSim(SyclDeviceMemoryPitched<sycl::flo
             // note: disable by default
 
             sycl::float3 sims;
-            sims.x() = in_volSim_acc(sycl::vec3(v.x(), v.y(), bestZIdx_m1));
-            sims.y() = bestSim;
-            sims.z() = in_volSim_acc(sycl::vec3(v.x(), v.y(), bestZIdx_p1));
+            sims.x() = __readonly_load(&in_volSim_acc(sycl::vec3(v.x(), v.y(), bestZIdx_m1)));
+            sims.y() = __readonly_load(&bestSim);
+            sims.z() = __readonly_load(&in_volSim_acc(sycl::vec3(v.x(), v.y(), bestZIdx_p1)));
 
             // convert sims from (0, 255) to (-1, +1)
             sims = (sims / 255.0f) * 2.0f - 1.0f;
@@ -798,7 +952,7 @@ sycl::event sycl_volumeRetrieveBestDepthNoSim(SyclDeviceMemoryPitched<sycl::floa
                                               const SyclDeviceMemoryPitched<float, 1>& in_depths_dmp,
                                               const SyclDeviceMemoryPitched<TSim, 3>& in_volSim_dmp,
                                               const CameraParams& rcParams,
-                                              const SgmParams& sgmParams,
+                                              const depthMapCommon::SgmParams& sgmParams,
                                               const Range& depthRange,
                                               const ROI& roi,
                                               sycl::queue& queue, sycl::event prerequisite)
@@ -910,7 +1064,7 @@ sycl::event sycl_volumeRetrieveBestDepthNoSim(SyclDeviceMemoryPitched<sycl::floa
 sycl::event sycl_volumeRefineBestDepth(SyclDeviceMemoryPitched<sycl::float2, 2>& out_refineDepthSimMap_dmp,
                                        const SyclDeviceMemoryPitched<sycl::float2, 2>& in_sgmDepthPixSizeMap_dmp,
                                        const SyclDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp,
-                                       const RefineParams& refineParams,
+                                       const depthMapCommon::RefineParams& refineParams,
                                        const ROI& roi,
                                        sycl::queue& queue, sycl::event prerequisite)
 {
@@ -918,7 +1072,7 @@ sycl::event sycl_volumeRefineBestDepth(SyclDeviceMemoryPitched<sycl::float2, 2>&
     const int halfNbSamples = refineParams.nbSubsamples * refineParams.halfNbDepths;
     const int halfNbDepths = refineParams.halfNbDepths;
     const int samplesPerPixSize = refineParams.nbSubsamples;
-    const float twoTimesSigmaPowerTwo = float(2.0 * refineParams.sigma * refineParams.sigma);
+    const float invTwoTimesSigmaPowerTwo = 1.f / float(2.0 * refineParams.sigma * refineParams.sigma);
     const int volDimZ = in_volSim_dmp.getSize().z();
 
     // Accessors
@@ -973,7 +1127,7 @@ sycl::event sycl_volumeRefineBestDepth(SyclDeviceMemoryPitched<sycl::float2, 2>&
 
                     // apply gaussian
                     // see: https://www.desmos.com/calculator/ribalnoawq
-                    sampleSim += simSum * sycl::exp(-(zs - sample) * (zs - sample) / twoTimesSigmaPowerTwo);
+                    sampleSim += simSum * sycl::exp(-sycl::pown(float(zs - sample), 2) * invTwoTimesSigmaPowerTwo);
                 }
 
                 if(sampleSim < bestSampleSim)
@@ -1000,5 +1154,5 @@ sycl::event sycl_volumeRefineBestDepth(SyclDeviceMemoryPitched<sycl::float2, 2>&
     });
 }
 
-} // namespace depthMap
+} // namespace depthMap_sycl
 } // namespace aliceVision

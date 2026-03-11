@@ -8,7 +8,7 @@
 
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
 #include <aliceVision/depthMap/Tile.hpp>
 
 namespace aliceVision {
@@ -26,7 +26,7 @@ class SgmDepthList
      * @param[in] sgmParams the Semi Global Matching parameters
      * @param[in] tile The given tile for depth list computation
      */
-    SgmDepthList(const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const Tile& tile);
+    SgmDepthList(const mvsUtils::MultiViewParams& mp, const depthMapCommon::SgmParams& sgmParams, const Tile& tile);
 
     // default destructor
     ~SgmDepthList() = default;
@@ -118,7 +118,7 @@ class SgmDepthList
     // private members
 
     const mvsUtils::MultiViewParams& _mp;  //< Multi-view parameters
-    const SgmParams& _sgmParams;           //< Semi Global Matching parameters
+    const depthMapCommon::SgmParams& _sgmParams;           //< Semi Global Matching parameters
     const Tile& _tile;                     //< Tile for depth list computation
 
     std::vector<float> _depths;          //< R camera depth list

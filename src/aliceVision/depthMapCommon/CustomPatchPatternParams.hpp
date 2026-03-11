@@ -4,14 +4,40 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "CustomPatchPatternParams.hpp"
+#pragma once
 
+#include <vector>
+#include <iostream>
 #include <boost/algorithm/string.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMapCommon {
 
-std::istream& operator>>(std::istream& is, CustomPatchPatternParams::SubpartParams& sp)
+/**
+ * @struct Custom patch pattern parameters
+ * @brief Wrap user custom patch pattern parameters.
+ */
+struct CustomPatchPatternParams
+{
+    /**
+     * @struct Custom patch pattern subpart parameters
+     * @brief Wrap user custom patch pattern subpart parameters.
+     */
+    struct SubpartParams
+    {
+        bool isCircle;
+        int level;
+        int nbCoordinates;
+        float radius;
+        float weight;
+    };
+
+    std::vector<SubpartParams> subpartsParams;
+    bool groupSubpartsPerLevel;
+};
+
+// note: istream/ostream operators useful for command-line
+inline std::istream& operator>>(std::istream& is, CustomPatchPatternParams::SubpartParams& sp)
 {
     // note: order is important here
     std::string token;
@@ -38,7 +64,7 @@ std::istream& operator>>(std::istream& is, CustomPatchPatternParams::SubpartPara
     return is;
 }
 
-std::ostream& operator<<(std::ostream& os, const CustomPatchPatternParams::SubpartParams& sp)
+inline std::ostream& operator<<(std::ostream& os, const CustomPatchPatternParams::SubpartParams& sp)
 {
     // note: order is important here
     os << ((sp.isCircle) ? "circle" : "full") << ":" << sp.radius << ":" << sp.nbCoordinates << ":" << sp.level << ":" << sp.weight;

@@ -3,8 +3,8 @@
 
 # Add library function
 function(alicevision_add_library library_name)
-    set(options USE_CUDA)
-    set(options USE_SYCL)
+    set(options USE_CUDA USE_SYCL HEADER_ONLY)
+
     set(singleValues "")
     set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_LINKS PUBLIC_INCLUDE_DIRS PRIVATE_INCLUDE_DIRS PUBLIC_DEFINITIONS PRIVATE_DEFINITIONS RESOURCES)
 
@@ -50,6 +50,13 @@ function(alicevision_add_library library_name)
 
     if (LIBRARY_USE_SYCL)
         add_sycl_to_target(TARGET ${library_name} SOURCES ${LIBRARY_SOURCES})
+        if(CMAKE_COMPILER_IS_GNUCXX)
+          target_link_options(${library_name} PUBLIC "-lomp")
+        endif()
+    endif()
+
+    if (LIBRARY_HEADER_ONLY)
+        set_target_properties(${library_name} PROPERTIES LINKER_LANGUAGE CXX)
     endif()
 
     if (ALICEVISION_REMOVE_ABSOLUTE)

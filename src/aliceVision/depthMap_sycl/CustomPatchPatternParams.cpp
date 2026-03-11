@@ -9,7 +9,7 @@
 #include <boost/algorithm/string.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 std::istream& operator>>(std::istream& is, CustomPatchPatternParams::SubpartParams& sp)
 {

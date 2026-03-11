@@ -13,21 +13,10 @@
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
 
-static auto async_handler_object = [] (sycl::exception_list exceptions) {
-  for (auto e : exceptions) {
-    try {
-      std::rethrow_exception(e);
-    } catch (sycl::exception const &e) {
-        ALICEVISION_LOG_INFO("Caught asynchronous SYCL exception " << e.code() << ": \""
-                             << e.what() << "\" Warning: Only allocation faliures will dealt with!");
-    }
-  }
-};
-
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
-void computeOnMultiDevices(const std::vector<int>& cams, IDeviceJob& devicejob, int nbDevicesToUse)
+void computeOnMultiDevices(std::vector<int> cams, IDeviceJob& devicejob, int nbDevicesToUse)
 {
     // aspect_selector finds the "best" device that supports the features we need
     // sycl::detail::select_devices is an AdaptiveCpp unique but it's functionality is easy to replicate should we need to
@@ -46,89 +35,72 @@ void computeOnMultiDevices(const std::vector<int>& cams, IDeviceJob& devicejob, 
             })));
 #endif
 
-    for (sycl::device d : devices)
-            ALICEVISION_LOG_DEBUG("Found possible device: " << d.get_info<sycl::info::device::name>());
+    for (const sycl::device& d : devices)
+        ALICEVISION_LOG_DEBUG("Found possible device: " << d.get_info<sycl::info::device::name>());
 
     const int nbDevices = devices.size();
-    if (nbDevices == 0) ALICEVISION_LOG_ERROR("Could not find a suitable device for computation.");
-    const int nbCPUThreads = omp_get_max_threads();
+    if (nbDevices == 0) [[unlikely]] ALICEVISION_LOG_ERROR("Could not find a suitable device for computation."); // shouldn't ever happen
 
-    ALICEVISION_LOG_INFO("Number of compute devices: " << nbDevices << ", number of CPU threads: " << nbCPUThreads);
+    ALICEVISION_LOG_INFO("Number of compute devices: " << nbDevices);
 
-    int nbThreads = std::min(nbDevices, nbCPUThreads);
-
-    if (nbDevicesToUse > 0)
+    if (nbDevicesToUse == 0)
     {
         // Use the user specified limit on the number of Devices to use
-        nbThreads = std::min(nbThreads, nbDevicesToUse);
+        nbDevicesToUse = nbDevices == 2 ? 1 /* exactly two devices means one host CPU and one accelerator device */ : nbDevices;
     }
 
-    if (nbThreads == 1)
+    if (nbDevicesToUse == 1)
     {
         const sycl::device& device = devices[0];
         ALICEVISION_LOG_INFO("Using device " << device.get_info<sycl::info::device::name>());
-        sycl::queue queue = sycl::queue(device, async_handler_object, {sycl::property::queue::in_order()});
-        devicejob.compute(queue, cams);
+        devicejob.compute(device, cams);
     }
     else
     {
-        // loadsharing algorithm to balance differently powered devices
-        // we need to do floating point division regardless, so there is no point in storing values as ints
-        float totalCapacity = 0;
-        float allocatedCapacity = 0;
-        std::vector<float> deviceCapacities(nbThreads);
-        std::vector<std::vector<int>> deviceCams(nbThreads);
+        // lock to protect list of cameras
+        std::mutex cams_lock{};
 
-        for (int i = 0; i<nbThreads; i++)
-        {
-            const sycl::device& device = devices.at(i);
-
-            // functional if perhaps crude
-            // note that AdaptiveCPP's OpenMP CPU backend has max_clock_frequency 0, which means we will only use it if it's the only device available. Preliminary testing shows that trying to use it alongside other devices just slows everything down
-            const float deviceCapacity = device.get_info<sycl::info::device::max_compute_units>()*device.get_info<sycl::info::device::max_clock_frequency>();
-
-            ALICEVISION_LOG_DEBUG("Device " << device.get_info<sycl::info::device::name>()
-                                  << " has relative power measure of " << deviceCapacity
-                                  << " with " << device.get_info<sycl::info::device::max_compute_units>() << " CUs"
-                                  << " at " << device.get_info<sycl::info::device::max_clock_frequency>() << "MHz");
-
-            totalCapacity += deviceCapacity;
-            deviceCapacities.at(i) = deviceCapacity;
-        }
-        ALICEVISION_LOG_DEBUG("Total relative capacity selected for computation is " << totalCapacity);
-
-        for (int i = 0; i<nbThreads; i++)
-        {
-            auto start = cams.begin() + lround(allocatedCapacity/totalCapacity*cams.size());
-            allocatedCapacity += deviceCapacities.at(i);
-            auto end = (i == nbThreads - 1) ? cams.end() : cams.begin() + lround(allocatedCapacity/totalCapacity*cams.size()); // end refers to the past-the-end element, no need to subtract one
-            deviceCams.at(i) = std::vector<int>(start,end);
-        }
-
-        // backup max threads to keep potentially previously set value
-        int previous_count_threads = omp_get_max_threads();
-
-#pragma omp parallel default(shared) num_threads(nbThreads)
+        // atomic global finished counter
+        std::atomic<uint> global_finished = 0;
+#pragma omp parallel num_threads(nbDevicesToUse) default(shared)
         {
             const int cpuThreadId = omp_get_thread_num();
-            const int deviceId = cpuThreadId % nbThreads;
-            const std::vector<int>& camsToCompute = deviceCams.at(deviceId);
+            const int deviceId = cpuThreadId % devices.size();
             const sycl::device& device = devices.at(deviceId);
-            if(camsToCompute.size()>0) // Check to make sure we have been assigned at least one image
-            {
-                sycl::queue queue = sycl::queue(device, async_handler_object, {sycl::property::queue::in_order()}); // AdaptiveCpp reccomends in-order queues for performance, they also make code cleaner
 
-                ALICEVISION_LOG_INFO("CPU thread " << cpuThreadId << " (of " << nbThreads << ") uses device " << deviceId << " with name " << device.get_info<sycl::info::device::name>());
-                ALICEVISION_LOG_DEBUG("Device " << deviceId << " with name " << device.get_info<sycl::info::device::name>() << " has work share " << deviceCapacities.at(deviceId)/totalCapacity << " or " << camsToCompute.size() << " (of " << cams.size() << ", factor " << float(camsToCompute.size())/float(cams.size()) <<") cameras");
-
-                devicejob.compute(queue, camsToCompute);
-            }
+            if(device.is_cpu())
+               ALICEVISION_LOG_DEBUG("Ignoring host cpu device as it needs to handle i/o and dispatch");
             else
-                ALICEVISION_LOG_INFO("CPU thread " << cpuThreadId << " (of " << nbThreads << ") is using device " << deviceId << " with name " << device.get_info<sycl::info::device::name>() << " whic has been evaluated to weak to be helpful, and will not be executing any work");
+            {
+                ALICEVISION_LOG_DEBUG("CPU thread " << cpuThreadId << " (of " << nbDevicesToUse << ") uses device " << deviceId << " with name " << device.get_info<sycl::info::device::name>());
+
+                uint thread_finished = 0;
+
+                cams_lock.lock();
+                while(cams.size() > 0)
+                {
+                    if(thread_finished != 0 && thread_finished * cams.size() / global_finished == 0) // this comparison is protected by the mutex
+                    {
+                        // we are not going to benefit overall computation time by taking another camera, so exit
+                        global_finished -= thread_finished; // Remove our contributions as we will no longer be doing any work
+                        break;
+                    }
+                    int cam = cams.back();
+                    cams.pop_back();
+                    cams_lock.unlock();
+
+                    devicejob.compute(device, std::vector{cam});
+
+                    thread_finished++;
+                    global_finished++;
+
+                    cams_lock.lock();
+                }
+                cams_lock.unlock();
+            }
         }
-        omp_set_num_threads(previous_count_threads);
     }
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

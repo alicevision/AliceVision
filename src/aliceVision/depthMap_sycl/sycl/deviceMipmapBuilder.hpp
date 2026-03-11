@@ -19,11 +19,10 @@ inline sycl::event sycl_mipmapBuildNextLevel(DeviceMipmapImage& mipmapImage,
 {
     // consts we can calculate outside of the kernel
     const int level = mipmapImage.getLevelInt(downscale);
-
+    assert(level >= 1);
     const SyclSize<2> size_h = mipmapImage.getDimensions(downscale);
     const sycl::uint2 size = sycl::uint2(size_h.x(), size_h.y());
-    const SyclSize<2> size_prev_h = mipmapImage.getDimensions(downscale / 2);
-    const sycl::uint2 size_prev = sycl::uint2(size_prev_h.x(), size_prev_h.y());
+    const sycl::float2 invSize = 1.f / size.convert<float>();
 
     // Accessors
     const MipmapImageAccess mipmapAcc{mipmapImage};
@@ -33,30 +32,23 @@ inline sycl::event sycl_mipmapBuildNextLevel(DeviceMipmapImage& mipmapImage,
         h.depends_on(prerequisite);
 
         h.parallel_for(sycl::range<1>(size_h.x() * size_h.y()), [=](auto idx) {
-            sycl::float4 sumColor{0};
+            SyclRGBA sumColor{0};
             float sumFactor = 0.0f;
             const sycl::uint2 coords = sycl::uint2(idx[0] % size.x(), idx[0] / size.x());
 
-#pragma unroll
             for(int j = -TRadius; j <= TRadius; j++)
             {
-#pragma unroll
                 for(int i = -TRadius; i <= TRadius; i++)
                 {
                     // Local offset
                     const sycl::int2 offset = sycl::int2(i, j);
 
-                    // sample coordinates (double as previous level is twice the size)
-                    const sycl::uint2 uv = sycl::clamp(
-                        ((coords * 2).convert<int>() + offset).convert<uint>(),
-                        sycl::uint2(0),
-                        size_prev - 1); // clamp to avoid out-of-bounds
-
                     // domain factor
                     const float factor = gauss(i) * gauss(j);
 
                     // current pixel color
-                    const sycl::float4 color = mipmapAcc(uv, level - 1).convert<float>();
+                    const SyclRGBA color = mipmapAcc.bilinear((coords.convert<int>() + offset).convert<float>() * invSize,
+                                                               level - 1);
 
                     // sum color
                     sumColor += color * factor;
@@ -66,14 +58,14 @@ inline sycl::event sycl_mipmapBuildNextLevel(DeviceMipmapImage& mipmapImage,
                 }
             }
 
-            mipmapAcc(coords, level) = (sumColor / sumFactor).convert<SyclColorBaseType>();
+            mipmapAcc(coords, level) = (sumColor / sumFactor);
         });
     });
 }
 
 inline sycl::event sycl_mipmapFirstLevelCopy(const SyclDeviceMemoryPitched<sycl::float4, 2>& in_img_dmp,
                                              DeviceMipmapImage& mipmapImage,
-                                             uint downscale,
+                                             int downscale,
                                              sycl::queue& queue, sycl::event prerequisite)
 {
     // consts we can calculate outside of the kernel
@@ -104,7 +96,7 @@ inline sycl::event sycl_mipmapFirstLevelCopy(const SyclDeviceMemoryPitched<sycl:
                 {
                     for(int i = -downscale; i <= downscale; i++)
                     {
-                        const sycl::float4 sampPix = in_img_acc(((coords * downscale).convert<int>() + sycl::int2(i, j)).convert<uint>());
+                        const sycl::float4 sampPix = __readonly_load(&in_img_acc((coords.convert<int>() * downscale + sycl::int2(i, j)).convert<uint>()));
 
                         const float factor = gauss(i) * gauss(j); // domain factor
 
@@ -116,7 +108,7 @@ inline sycl::event sycl_mipmapFirstLevelCopy(const SyclDeviceMemoryPitched<sycl:
             }
             else
             {
-                inPix = in_img_acc(coords);
+                inPix = __readonly_load(&in_img_acc(coords));
             }
 
             // compute output CIELAB

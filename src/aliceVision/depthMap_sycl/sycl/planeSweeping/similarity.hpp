@@ -9,7 +9,7 @@
 #define TSIM_REFINE_USE_HALF
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /*
  * @note TSim is the similarity type for volume in device memory.
@@ -31,5 +31,5 @@ using TSimRefine = sycl::half;
 using TSimRefine = float;
 #endif
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

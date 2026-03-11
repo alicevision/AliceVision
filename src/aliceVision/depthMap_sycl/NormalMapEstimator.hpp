@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @brief Normal Map Estimator
@@ -42,7 +42,7 @@ class NormalMapEstimator : public IDeviceJob
      * @param[in] queue the SYCL queue to dispatch to
      * @param[in] cams the list of cameras
      */
-    void compute(sycl::queue& queue, const std::vector<int>& cams) override;
+    void compute(const sycl::device& device, const std::vector<int>& cams) override;
 
   private:
     // private members
@@ -50,5 +50,5 @@ class NormalMapEstimator : public IDeviceJob
     const mvsUtils::MultiViewParams& _mp;  //< multi-view parameters
 };
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

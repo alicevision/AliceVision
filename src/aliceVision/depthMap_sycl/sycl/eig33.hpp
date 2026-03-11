@@ -7,7 +7,7 @@
 #pragma once
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 // Symmetric Householder reductio3 to tridiago3al form.
 
@@ -332,7 +332,7 @@ struct sycl_stat3d
         count += w;
     }
 
-    inline const void getEigenVectorsDesc(sycl::float3& cg, /*sycl::float3& v1, sycl::float3& v2, */sycl::float3& v3/*, float& d1, float& d2, float& d3*/)
+    inline void getEigenVectorsDesc(sycl::float3& cg, /*sycl::float3& v1, sycl::float3& v2, */sycl::float3& v3/*, float& d1, float& d2, float& d3*/) const
     {
         double V[3][3], d[3];
 
@@ -368,7 +368,7 @@ struct sycl_stat3d
         */
     }
 
-    inline const bool computePlaneByPCA(sycl::float3& p, sycl::float3& n)
+    inline bool computePlaneByPCA(sycl::float3& p, sycl::float3& n) const
     {
         if(count < 3.0) return false;
 
@@ -384,5 +384,5 @@ struct sycl_stat3d
     }
 };
 
-} // namespace depthMap
+} // namespace depthMap_sycl
 } // namespace aliceVision

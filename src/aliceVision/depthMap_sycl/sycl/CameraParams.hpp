@@ -12,7 +12,7 @@
 #include <aliceVision/depthMap_sycl/sycl/matrix.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 struct CameraParams
 {
@@ -124,5 +124,5 @@ inline CameraParams getCameraParameters(int camId, int downscale, const mvsUtils
     return params;
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

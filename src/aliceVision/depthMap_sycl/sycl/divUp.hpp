@@ -7,7 +7,7 @@
 #pragma once
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 /**
  * @brief Round a / b to nearest higher integer value.
@@ -17,5 +17,5 @@ namespace depthMap {
  */
 inline constexpr unsigned int divUp(const unsigned int a, const unsigned int b) { return a / b + (a % b != 0); } // quozient and remainder should be calculated in the same instruction
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

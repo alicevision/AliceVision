@@ -20,7 +20,7 @@
 #include <boost/accumulators/statistics.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 int indexOfNearestSorted(const std::vector<float>& in_vector, const float value)
 {
@@ -39,7 +39,7 @@ int indexOfNearestSorted(const std::vector<float>& in_vector, const float value)
     return std::distance(in_vector.begin(), it);
 }
 
-SgmDepthList::SgmDepthList(const mvsUtils::MultiViewParams& mp, const SgmParams& sgmParams, const Tile& tile)
+SgmDepthList::SgmDepthList(const mvsUtils::MultiViewParams& mp, const depthMapCommon::SgmParams& sgmParams, const Tile& tile)
   : _mp(mp),
     _sgmParams(sgmParams),
     _tile(tile)
@@ -295,7 +295,7 @@ void SgmDepthList::getMinMaxMidNbDepthFromSfM(float& out_min, float& out_max, fl
     for (const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
     {
         const sfmData::Landmark& landmark = landmarkPair.second;
-        const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
+        const Point3d point(landmark.getX()(0), landmark.getX()(1), landmark.getX()(2));
 
         // find rc observation
         const auto it = landmark.getObservations().find(viewId);
@@ -367,7 +367,7 @@ void SgmDepthList::getRcTcDepthRangeFromSfM(int tc, double& out_zmin, double& ou
     for (const auto& landmarkPair : _mp.getInputSfMData().getLandmarks())
     {
         const sfmData::Landmark& landmark = landmarkPair.second;
-        const Point3d point(landmark.X(0), landmark.X(1), landmark.X(2));
+        const Point3d point(landmark.getX()(0), landmark.getX()(1), landmark.getX()(2));
 
         // no tc observation
         if (landmark.getObservations().find(tcViewId) == landmark.getObservations().end())
@@ -696,5 +696,5 @@ void SgmDepthList::exportTxtFiles(const std::vector<std::vector<float>>& dephtsP
     }
 }
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

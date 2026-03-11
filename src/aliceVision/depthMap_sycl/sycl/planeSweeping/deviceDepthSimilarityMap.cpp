@@ -20,7 +20,7 @@ inline float orientedPointPlaneDistanceNormalizedNormal(const sycl::float3& poin
 }
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 inline sycl::float2 getCellSmoothStepEnergy(const CameraParams& rcDeviceCamParams,
                                             const SyclDevicePitchedAccess<sycl::float2, 2>& in_depth_acc,
@@ -45,19 +45,19 @@ inline sycl::float2 getCellSmoothStepEnergy(const CameraParams& rcDeviceCamParam
                                           max).convert<uint>(); // Bottom
 
     // get associated depths from depth texture
-    const float dT = in_depth_acc(cellT).x();
+    const float dT = __readonly_load(&in_depth_acc(cellT).x());
 
     // get pixel depth from the depth texture
-    const float d0 = in_depth_acc(cell0).x();
+    const float d0 = __readonly_load(&in_depth_acc(cell0).x());
 
     // early exit: depth is <= 0
     if(d0 <= 0.0f)
         return out;
 
     // get rest of associated depths
-    const float dB = in_depth_acc(cellB).x();
-    const float dL = in_depth_acc(cellL).x();
-    const float dR = in_depth_acc(cellR).x();
+    const float dB = __readonly_load(&in_depth_acc(cellB).x());
+    const float dL = __readonly_load(&in_depth_acc(cellL).x());
+    const float dR = __readonly_load(&in_depth_acc(cellR).x());
 
     // get associated 3D points
     const sycl::float3 p0 = get3DPointForPixelAndDepthFromRC(rcDeviceCamParams, (cell0 + offsetRoi).convert<float>(), d0);
@@ -126,7 +126,7 @@ sycl::event sycl_depthSimMapCopyDepthOnly(SyclDeviceMemoryPitched<sycl::float2, 
         h.parallel_for(sycl::range(depthSimMapDim.x(), depthSimMapDim.y()), [=] (sycl::id<2> id) {
             const sycl::uint2 coords = sycl::uint2(id[0], id[1]);
             sycl::float2& out = out_depthSimMap_acc(coords);
-            out.x() = in_depthSimMap_acc(coords).x();
+            out.x() = __readonly_load(&in_depthSimMap_acc(coords).x());
             out.y() = defaultSim;
         });
     });
@@ -156,14 +156,14 @@ sycl::event sycl_normalMapUpscale(SyclDeviceMemoryPitched<sycl::float3, 2>& out_
             const sycl::uint2 nearest = sycl::min(sycl::floor(coords.convert<float>()*ratio).convert<uint>(),
                                                   (dims.convert<float>()*ratio).convert<uint>() - 1);
 
-            out_upscaledMap_acc(coords) = in_map_acc(nearest);
+            out_upscaledMap_acc(coords) = __readonly_load(&in_map_acc(nearest));
         });
     });
 }
 
 sycl::event sycl_depthThicknessSmoothThickness(SyclDeviceMemoryPitched<sycl::float2, 2>& inout_depthThicknessMap_dmp,
-                                               const SgmParams& sgmParams,
-                                               const RefineParams& refineParams,
+                                               const depthMapCommon::SgmParams& sgmParams,
+                                               const depthMapCommon::RefineParams& refineParams,
                                                const ROI& roi,
                                                sycl::queue& queue, sycl::event prerequisite)
 {
@@ -173,7 +173,7 @@ sycl::event sycl_depthThicknessSmoothThickness(SyclDeviceMemoryPitched<sycl::flo
     const sycl::uint2 dims = sycl::uint2(roi.width(), roi.height());
 
     // min/max number of Refine samples in SGM thickness area
-    const float minNbRefineSamples = 2.f;
+    constexpr float minNbRefineSamples = 2.f;
     const float maxNbRefineSamples = sycl::max(sgmScaleStep / float(refineScaleStep), minNbRefineSamples);
 
     // min/max SGM thickness inflate factor
@@ -244,7 +244,7 @@ sycl::event sycl_computeSgmUpscaledDepthPixSizeMap(SyclDeviceMemoryPitched<sycl:
                                                    const SyclDeviceMemoryPitched<sycl::float2, 2>& in_sgmDepthThicknessMap_dmp,
                                                    const CameraParams& camParams,
                                                    const DeviceMipmapImage& rcDeviceMipmapImage,
-                                                   const RefineParams& refineParams,
+                                                   const depthMapCommon::RefineParams& refineParams,
                                                    const ROI& roi,
                                                    sycl::queue& queue, sycl::event prerequisite)
 {
@@ -400,7 +400,7 @@ sycl::event sycl_depthMapComputeNormal(SyclDeviceMemoryPitched<sycl::float3, 2>&
 
 
             // corresponding input depth
-            const float in_depth = in_depthMap_acc(rCoords).x(); // use only depth
+            const float in_depth = __readonly_load(&in_depthMap_acc(rCoords).x()); // use only depth
 
             // corresponding output normal
             sycl::float3& out_normalRef = out_normalMap_acc(rCoords);
@@ -429,7 +429,7 @@ sycl::event sycl_depthMapComputeNormal(SyclDeviceMemoryPitched<sycl::float3, 2>&
                     const int roiXp = int(rCoords.x()) + xp;
                     if(roiXp < 0 || roiXp >= roiSize.x()) continue;
 
-                    const float depthP = in_depthMap_acc(sycl::int2(roiXp, roiYp).convert<uint>()).x();  // use only depth
+                    const float depthP = __readonly_load(&in_depthMap_acc(sycl::int2(roiXp, roiYp).convert<uint>()).x());  // use only depth
 
                     if((depthP > 0.0f) && (sycl::fabs(depthP - in_depth) < 30.0f * pixSize))
                     {
@@ -468,7 +468,7 @@ sycl::event sycl_depthSimMapOptimizeGradientDescent(SyclDeviceMemoryPitched<sycl
                                                     const SyclDeviceMemoryPitched<sycl::float2, 2>& in_refineDepthSimMap_dmp,
                                                     const CameraParams& camParams,
                                                     const DeviceMipmapImage& rcDeviceMipmapImage,
-                                                    const RefineParams& refineParams,
+                                                    const depthMapCommon::RefineParams& refineParams,
                                                     const ROI& roi,
                                                     sycl::queue& queue, sycl::event prerequisite)
 {
@@ -479,7 +479,7 @@ sycl::event sycl_depthSimMapOptimizeGradientDescent(SyclDeviceMemoryPitched<sycl
     const sycl::float2 invLevelSize = 1.f / levelSize.convert<float>();
 
     // initialize depth/sim map optimized with SGM depth/pixSize map
-    prerequisite = out_optimizeDepthSimMap_dmp.copyFrom(in_sgmDepthPixSizeMap_dmp, prerequisite);
+    prerequisite = out_optimizeDepthSimMap_dmp.copyFrom(in_sgmDepthPixSizeMap_dmp, queue, prerequisite);
 
     // Constants
     const int stepXY = refineParams.stepXY;
@@ -594,5 +594,5 @@ sycl::event sycl_depthSimMapOptimizeGradientDescent(SyclDeviceMemoryPitched<sycl
     return prerequisite;
 }
 
-} // namespace depthMap
+} // namespace depthMap_sycl
 } // namespace aliceVision

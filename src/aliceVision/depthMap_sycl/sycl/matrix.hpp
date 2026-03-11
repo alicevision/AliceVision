@@ -11,7 +11,7 @@
 // mn MATRIX ADDRESSING: mxy = x*n+y (x-row,y-col), (m-number of rows, n-number of columns)
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 inline sycl::float3 M3x3mulV3(const sycl::marray<float, 9>& M3x3, const sycl::float3& V)
 {
@@ -249,5 +249,5 @@ static constexpr T multi_fmin(T a, T b, T c, T d) { return sycl::fmin(sycl::fmin
 template<typename T, typename... Rest>
 static constexpr T multi_fmin(T a, T b, Rest... rest) { return multi_fmin(sycl::fmin(a, b), rest...); }
 
-} // namespace depthMap
+} // namespace depthMap_sycl
 } // namespace aliceVision

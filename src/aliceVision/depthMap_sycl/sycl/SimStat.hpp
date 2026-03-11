@@ -7,7 +7,7 @@
 #pragma once
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMap_sycl {
 
 struct simStat
 {
@@ -19,7 +19,7 @@ struct simStat
     float count;
     float wsum;
 
-    simStat()
+    constexpr simStat()
     {
         xsum = 0.0f;
         ysum = 0.0f;
@@ -42,21 +42,20 @@ struct simStat
         return *this;
     }
 
-    float computeSimSub(simStat& ss)
+    float computeSimSub(simStat& ss) const
     {
         // NCC
-        float avx = ss.xsum / ss.count;
-        float avy = ss.ysum / ss.count;
-        float dx = xsum - 2.0f * avx * xsum + count * avx;
-        float dy = ysum - 2.0f * avy * ysum + count * avy;
-        float d = dx * dy;
-        float u = xysum - avx * ysum - avy * xsum + count * avx * avy;
+        const float avx = ss.xsum / ss.count;
+        const float avy = ss.ysum / ss.count;
+        const float dx = xsum - 2.0f * avx * xsum + count * avx;
+        const float dy = ysum - 2.0f * avy * ysum + count * avy;
+        const float d = dx * dy;
+        const float u = xysum - avx * ysum - avy * xsum + count * avx * avy;
 
         float sim = 1.0f;
         if(sycl::fabs(d) > 0.0f)
-        {
-            sim = -(u / sycl::sqrt(d));
-        }
+            sim = - (u * sycl::rsqrt(d));
+
         return sim;
     }
 
@@ -98,12 +97,12 @@ struct simStat
      * @brief Compute Normalized Cross-Correlation.
      * @return similarity value in range (-1, 0) or 1 if infinity
      */
-    float computeWSim()
+    float computeWSim() const
      {
          // NCC
 
          // without optimization
-         // const float rawSim = getVarianceXYW() / sqrtf(getVarianceXW() * getVarianceYW());
+         // const float rawSim = getVarianceXYW() / sycl::sqrt(getVarianceXW() * getVarianceYW());
          const float rawSim = getVarianceXYW() * sycl::half_precision::rsqrt(getVarianceXW() * getVarianceYW());
 
          const float sim = sycl::isfinite(rawSim) ? -rawSim : 1.0f;
@@ -116,17 +115,17 @@ struct simStat
         count += 1.0f;
         xsum += g.x();
         ysum += g.y();
-        xxsum += g.x() * g.x();
-        yysum += g.y() * g.y();
-        xysum += g.x() * g.y();
+        xxsum = sycl::fma(g.x(), g.x(), xxsum);
+        yysum = sycl::fma(g.y(), g.y(), yysum);
+        xysum = sycl::fma(g.x(), g.y(), xysum);
     }
 
     void update(const sycl::float2& g, float w)
     {
         wsum += w;
         count += 1.0f;
-        xsum += w * g.x();
-        ysum += w * g.y();
+        xsum = sycl::fma(w, g.x(), xsum);
+        ysum = sycl::fma(w, g.y(), ysum);
         xxsum += w * g.x() * g.x();
         yysum += w * g.y() * g.y();
         xysum += w * g.x() * g.y();
@@ -134,23 +133,12 @@ struct simStat
 
     void update(const float gx, const float gy)
     {
-        count += 1.0f;
-        xsum += gx;
-        ysum += gy;
-        xxsum += gx * gx;
-        yysum += gy * gy;
-        xysum += gx * gy;
+        update(sycl::float2(gx, gy));
     }
 
     void update(const float gx, const float gy, float w)
     {
-        wsum += w;
-        count += 1.0f;
-        xsum += w * gx;
-        ysum += w * gy;
-        xxsum += w * gx * gx;
-        yysum += w * gy * gy;
-        xysum += w * gx * gy;
+        update(sycl::float2(gx, gy), w);
     }
 
     void update(const sycl::float3& c1, const sycl::float3& c2)
@@ -161,5 +149,5 @@ struct simStat
     }
 };
 
-} // namespace depthMap
+} // namespace depthMap_sycl
 } // namespace aliceVision

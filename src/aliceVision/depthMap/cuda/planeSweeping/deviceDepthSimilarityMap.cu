@@ -70,8 +70,8 @@ __host__ void cuda_normalMapUpscale(CudaDeviceMemoryPitched<float3, 2>& out_upsc
 }
 
 __host__ void cuda_depthThicknessSmoothThickness(CudaDeviceMemoryPitched<float2, 2>& inout_depthThicknessMap_dmp,
-                                               const SgmParams& sgmParams,
-                                               const RefineParams& refineParams,
+                                               const depthMapCommon::SgmParams& sgmParams,
+                                               const depthMapCommon::RefineParams& refineParams,
                                                const ROI& roi,
                                                cudaStream_t stream)
 {
@@ -107,7 +107,7 @@ __host__ void cuda_computeSgmUpscaledDepthPixSizeMap(CudaDeviceMemoryPitched<flo
                                                      const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthThicknessMap_dmp,
                                                      const int rcDeviceCameraParamsId,
                                                      const DeviceMipmapImage& rcDeviceMipmapImage,
-                                                     const RefineParams& refineParams,
+                                                     const depthMapCommon::RefineParams& refineParams,
                                                      const ROI& roi,
                                                      cudaStream_t stream)
 {
@@ -197,7 +197,7 @@ __host__ void cuda_depthSimMapOptimizeGradientDescent(CudaDeviceMemoryPitched<fl
                                                       const CudaDeviceMemoryPitched<float2, 2>& in_refineDepthSimMap_dmp,
                                                       const int rcDeviceCameraParamsId,
                                                       const DeviceMipmapImage& rcDeviceMipmapImage,
-                                                      const RefineParams& refineParams,
+                                                      const depthMapCommon::RefineParams& refineParams,
                                                       const ROI& roi,
                                                       cudaStream_t stream)
 {
