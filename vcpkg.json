@@ -46,7 +46,7 @@
     },
     {
       "name":"openimageio",
-      "features": ["opencolorio","libraw","gif","openjpeg"],
+      "features": ["opencolorio","libraw","gif","openjpeg", "pybind11"],
       "default-features": false
     },
     {
@@ -103,6 +103,9 @@
     {
       "name": "cctag",
       "version": "1.0.4"
+    {
+      "name": "python3",
+      "version": "3.11.10#0"
     }
   ]
 }
