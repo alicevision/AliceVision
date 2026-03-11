@@ -30,7 +30,7 @@
     "expat",
     "flann",
     "nanoflann",
-    "onnxruntime-gpu",
+    "onnxruntime",
     "openmesh",
     "tbb",
     "cuda",
