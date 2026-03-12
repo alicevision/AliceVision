@@ -213,7 +213,7 @@ class LineKernel : public IRansacKernel<robustEstimation::MatrixModel<Vec2>>
     inline double unormalizeError(double val) const override { return std::sqrt(val); }
 
   private:
-    const Mat2X& _xs;
+    const Mat2X _xs;
     double _logalpha0;
 };
 
