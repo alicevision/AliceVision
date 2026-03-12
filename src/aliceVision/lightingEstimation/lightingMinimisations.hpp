@@ -38,15 +38,6 @@ void pointSourceModelRefinement(
     Eigen::Vector3f &lightPosition, 
     float &lightIntensity);
 
-void pointSourceGammaModelRefinement(
-    const Eigen::MatrixX3f& points, 
-    const Eigen::MatrixX3f& normals, 
-    const Eigen::VectorXf& pixelsIntensity, 
-    double epsilon, 
-    Eigen::Vector3f &lightPosition, 
-    float &lightIntensity,
-    float &gamma);
-
 void coloredPointSourceModelRefinement(
 	const Eigen::MatrixX3f& points, 
 	const Eigen::MatrixX3f& normals, 
@@ -64,6 +55,12 @@ void LEDModelRefinement(
 	Eigen::Vector3f &lightingDirection, 
 	Eigen::Vector3f &lightingRGBIntensity,
 	Eigen::Vector3f &lightingRGBAnisotropy);
+
+void proportion_in_shadow(
+	const Eigen::MatrixX3f& points, 
+	const Eigen::MatrixX3f& normals, 
+	const Eigen::MatrixX3f& pixelsRGBf, 
+	Eigen::Vector3f &lightingPosition);
 
 } // namespace lightingEstimation
 } // namespace aliceVision
