@@ -275,7 +275,7 @@ bool saveJSON(const Lightings& lightings, const std::string& filename)
                 cell.put_value<float>(pointLighting->getLightRGBIntensity()(i));
                 rgbIntensityNode.push_back(std::make_pair("", cell));
             }
-            lightTree.add_child("rgbintensity", rgbIntensityNode);
+            lightTree.add_child("intensity", rgbIntensityNode);
 
             // Light rgb anisotropy
             bpt::ptree rgbAnisotropyNode;
@@ -286,7 +286,7 @@ bool saveJSON(const Lightings& lightings, const std::string& filename)
                 cell.put_value<float>(pointLighting->getLightRGBAnisotropy()(i));
                 rgbAnisotropyNode.push_back(std::make_pair("", cell));
             }
-            lightTree.add_child("rgbanisotropy", rgbAnisotropyNode);
+            lightTree.add_child("anisotropy", rgbAnisotropyNode);
         }
 		else
 		{
@@ -380,12 +380,12 @@ bool loadJSON(const std::string& filename, Lightings& lightings)
 				currentDirection.push_back(direction.second.get_value<float>());
 			}
 
-			for (auto& rgbintensity : itLight->second.get_child("rgbintensity"))
+			for (auto& rgbintensity : itLight->second.get_child("intensity"))
 			{
 				currentRGBIntensity.push_back(rgbintensity.second.get_value<float>());
 			}
 
-			for (auto& rgbanisotropy : itLight->second.get_child("rgbanisotropy"))
+			for (auto& rgbanisotropy : itLight->second.get_child("anisotropy"))
 			{
 				currentRGBAnisotropy.push_back(rgbanisotropy.second.get_value<float>());
 			}

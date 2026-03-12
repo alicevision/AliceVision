@@ -98,16 +98,19 @@ struct CoarseDirectionnalEstimation {
 
 	Eigen::MatrixX3f normals;
 	Eigen::VectorXf pixelsIntensity;
+	double var;
 
 	// constructor
-	CoarseDirectionnalEstimation(const Eigen::MatrixX3f& normals_, const Eigen::VectorXf& pixelsIntensity_)
-		: normals(normals_), pixelsIntensity(pixelsIntensity_)
+	CoarseDirectionnalEstimation(const Eigen::MatrixX3f& normals_, const Eigen::VectorXf& pixelsIntensity_, double var_=0.01)
+		: normals(normals_), pixelsIntensity(pixelsIntensity_), var(var_)
 	{}
 
     template<typename T>
     bool operator()(T const* const* parameters, T* residual) const
     {
 		const T* x = parameters[0];
+
+		T varCeres = T(var);
 
 		// getting light direction
 		Eigen::Matrix<T, 3, 1> vecLightDir;
@@ -117,10 +120,21 @@ struct CoarseDirectionnalEstimation {
 		Eigen::Matrix<T, Eigen::Dynamic, 3> normalsCeres = normals.cast<T>();
 		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelsIntensityCeres = pixelsIntensity.cast<T>();
 
+		// light intensity
+		T lightIntensity = vecLightDir.norm();
+		// light direction
+		Eigen::Matrix<T, Eigen::Dynamic, 1> vecLightDirNorm = vecLightDir / lightIntensity;
+
+		// dot product between light direction and normal
+		Eigen::Matrix<T, Eigen::Dynamic, 1> dotLightNormalIntensityEstimated = normalsCeres * vecLightDirNorm;
+
 		// intensity estimation per point
-		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (normalsCeres * vecLightDir).cwiseMax(T(0));
+		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (dotLightNormalIntensityEstimated).cwiseMax(T(0)) * lightIntensity;
+
+		// ponderating from distance to 0
+		Eigen::Matrix<T, Eigen::Dynamic, 1> ponderation = (dotLightNormalIntensityEstimated.cwiseProduct(dotLightNormalIntensityEstimated) / varCeres * (T(-0.5))).array().exp();
 		// residual computation
-		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = pixelsIntensityCeres - pixelIntensityEstimated;
+		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = ponderation.cwiseProduct(pixelsIntensityCeres - pixelIntensityEstimated);
 
 		// set residual
 		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorVec.rows());
@@ -196,6 +210,7 @@ struct CoarsePunctualEstimation {
     Eigen::Vector3f lightingDirection;
 	double lightingIntensity;
     Eigen::Vector3f sceneCenter;
+	double var;
 
 	// constructor
 	CoarsePunctualEstimation(
@@ -204,13 +219,15 @@ struct CoarsePunctualEstimation {
         const Eigen::VectorXf& pixelsIntensity_, 
         const Eigen::Vector3f& lightingDirection_, 
 		double lightingIntensity_,
-        const Eigen::Vector3f& sceneCenter_)
+        const Eigen::Vector3f& sceneCenter_,
+		double var_=0.01)
 		: points(points_), 
 		normals(normals_), 
 		pixelsIntensity(pixelsIntensity_), 
 		lightingDirection(lightingDirection_), 
 		lightingIntensity(lightingIntensity_), 
-		sceneCenter(sceneCenter_)
+		sceneCenter(sceneCenter_),
+		var(var_)
 	{}
 
     template<typename T>
@@ -219,6 +236,8 @@ struct CoarsePunctualEstimation {
 		const T* x = parameters[0];
 
         T d = x[0];
+
+		T varCeres = T(var);
 
 		// data conversion
 		Eigen::Matrix<T, Eigen::Dynamic, 3> pointsCeres = points.cast<T>();
@@ -230,18 +249,29 @@ struct CoarsePunctualEstimation {
 
         // light position
         Eigen::Matrix<T, 3, 1> q = sceneCenterCeres + d * lightingDirectionCeres;
+
 		// directionnal light estimation per point
 		Eigen::Matrix<T, Eigen::Dynamic, 3> vecSourcePoint = (pointsCeres.rowwise() - q.transpose()) * (-1.0);
 		// compute norm
 		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePoint = vecSourcePoint.rowwise().norm();
-		// norm to the cube
-		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePointCube = normSourcePoint.cwiseProduct(normSourcePoint).cwiseProduct(normSourcePoint);
+		// norm to the square
+		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePointSquare = normSourcePoint.cwiseProduct(normSourcePoint);
+
 		// per point light direction
-		Eigen::Matrix<T, Eigen::Dynamic, 3> vecLightDir = vecSourcePoint.array().colwise() / normSourcePointCube.array() * phi * d * d;
-		// intensity estimation per point
-		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (vecLightDir.cwiseProduct(normalsCeres)).rowwise().sum().cwiseMax(T(0));
+		Eigen::Matrix<T, Eigen::Dynamic, 3> vecLightDir = vecSourcePoint.array().colwise() / normSourcePoint.array();
+		// per point light intensity
+		Eigen::Matrix<T, Eigen::Dynamic, 1> vecLightIntensity = phi * d * d / normSourcePointSquare.array();
+
+		// dot product between light direction and normal
+		Eigen::Matrix<T, Eigen::Dynamic, 1> dotLightNormalIntensityEstimated = (vecLightDir.cwiseProduct(normalsCeres)).rowwise().sum();
+
+		// per pixel intensity estimation
+		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = dotLightNormalIntensityEstimated.cwiseMax(T(0)).cwiseProduct(vecLightIntensity);
+
+		// ponderating from distance to 0
+		Eigen::Matrix<T, Eigen::Dynamic, 1> ponderation = (dotLightNormalIntensityEstimated.cwiseProduct(dotLightNormalIntensityEstimated) / varCeres * (T(-0.5))).array().exp();
 		// residual computation
-		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = pixelsIntensityCeres - pixelIntensityEstimated;
+		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = ponderation.cwiseProduct(pixelsIntensityCeres - pixelIntensityEstimated);
 
 		// set residual
 		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorVec.rows());
@@ -319,7 +349,7 @@ struct PointSourceModelRefinement {
 	double var;
 
 	// constructor
-	PointSourceModelRefinement(const Eigen::MatrixX3f& points_, const Eigen::MatrixX3f& normals_, const Eigen::VectorXf& pixelsIntensity_, double var_=2./255.)
+	PointSourceModelRefinement(const Eigen::MatrixX3f& points_, const Eigen::MatrixX3f& normals_, const Eigen::VectorXf& pixelsIntensity_, double var_=0.01)
 		: points(points_), normals(normals_), pixelsIntensity(pixelsIntensity_), var(var_)
 	{}
 
@@ -344,22 +374,25 @@ struct PointSourceModelRefinement {
 
 		// directionnal light estimation per point
 		Eigen::Matrix<T, Eigen::Dynamic, 3> vecSourcePoint = (pointsCeres.rowwise() - q.transpose()) * (-1.0);
+
 		// compute norm
 		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePoint = vecSourcePoint.rowwise().norm();
-		// norm to the cube
-		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePointCube = normSourcePoint.cwiseProduct(normSourcePoint).cwiseProduct(normSourcePoint);
 		// norm to the square
 		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePointSquare = normSourcePoint.cwiseProduct(normSourcePoint);
+
 		// per point light direction
 		Eigen::Matrix<T, Eigen::Dynamic, 3> vecLightDir = vecSourcePoint.array().colwise() / normSourcePoint.array();
 		// per point light intensity
 		Eigen::Matrix<T, Eigen::Dynamic, 1> vecLightInt = phi / normSourcePointSquare.array();
+
 		// dot product between light direction and normal
 		Eigen::Matrix<T, Eigen::Dynamic, 1> dotLightNormalIntensityEstimated = (vecLightDir.cwiseProduct(normalsCeres)).rowwise().sum();
+
+		// intensity estimation per point
+		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = dotLightNormalIntensityEstimated.cwiseProduct(vecLightInt).cwiseMax(T(0));
+
 		// ponderating from distance to 0
 		Eigen::Matrix<T, Eigen::Dynamic, 1> ponderation = (dotLightNormalIntensityEstimated.cwiseProduct(dotLightNormalIntensityEstimated) / varCeres * (T(-0.5))).array().exp();
-		// intensity estimation per point
-		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (dotLightNormalIntensityEstimated.cwiseProduct(vecLightInt)).cwiseMax(T(0));
 		// residual computation
 		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = ponderation.cwiseProduct((pixelsIntensityCeres.array() - pixelIntensityEstimated.array()).matrix());
 
@@ -442,7 +475,7 @@ struct ColoredPointSourceModelRefinement {
 	double var;
 
 	// constructor
-	ColoredPointSourceModelRefinement(const Eigen::MatrixX3f& points_, const Eigen::MatrixX3f& normals_, const Eigen::MatrixX3f& pixelsRGBIntensity_, double var_=2.0/255.)
+	ColoredPointSourceModelRefinement(const Eigen::MatrixX3f& points_, const Eigen::MatrixX3f& normals_, const Eigen::MatrixX3f& pixelsRGBIntensity_, double var_=0.01)
 		: points(points_), normals(normals_), pixelsRGBIntensity(pixelsRGBIntensity_), var(var_)
 	{}
 
@@ -468,20 +501,23 @@ struct ColoredPointSourceModelRefinement {
 
 		// directionnal light estimation per point
 		Eigen::Matrix<T, Eigen::Dynamic, 3> vecSourcePoint = (pointsCeres.rowwise() - q.transpose()) * (-1.0);
+
 		// compute norm
 		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePoint = vecSourcePoint.rowwise().norm();
-		// norm to the cube
-		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePointCube = normSourcePoint.cwiseProduct(normSourcePoint).cwiseProduct(normSourcePoint);
 		// norm to the square
 		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePointSquare = normSourcePoint.cwiseProduct(normSourcePoint);
+
 		// per point light direction
 		Eigen::Matrix<T, Eigen::Dynamic, 3> vecLightDir = vecSourcePoint.array().colwise() / normSourcePoint.array();
+
 		// dot product between light direction and normal
-		Eigen::Matrix<T, Eigen::Dynamic, 1> dotLightNormalIntensityEstimated = (vecLightDir.cwiseProduct(normalsCeres)).rowwise().sum();
-		// ponderating from distance to 0
-		Eigen::Matrix<T, Eigen::Dynamic, 1> ponderation = (dotLightNormalIntensityEstimated.cwiseProduct(dotLightNormalIntensityEstimated) / varCeres * (T(-0.5))).array().exp();
+		Eigen::Matrix<T, Eigen::Dynamic, 1> dotLightNormalIntensityEstimated = vecLightDir.cwiseProduct(normalsCeres).rowwise().sum();
+
 		// rgb intensity estimation per point
 		Eigen::Matrix<T, Eigen::Dynamic, 3> pixelRGBIntensityEstimated = ((dotLightNormalIntensityEstimated * phi.transpose()).array().colwise() / normSourcePointSquare.array()).cwiseMax(T(0));
+
+		// ponderating from distance to 0
+		Eigen::Matrix<T, Eigen::Dynamic, 1> ponderation = (dotLightNormalIntensityEstimated.cwiseProduct(dotLightNormalIntensityEstimated) / varCeres * (T(-0.5))).array().exp();
 		// residual computation
 		Eigen::Matrix<T, Eigen::Dynamic, 3> errorVec = (pixelsRGBIntensityCeres.array() - pixelRGBIntensityEstimated.array()).colwise() * ponderation.array();
 
@@ -566,10 +602,11 @@ struct LEDModelResidual {
 	Eigen::MatrixX3f points;
 	Eigen::MatrixX3f normals;
 	Eigen::MatrixX3f pixelsRGBf;
+	double var;
 
 	// constructor
-	LEDModelResidual(const Eigen::MatrixX3f& points_, const Eigen::MatrixX3f& normals_, const Eigen::MatrixX3f& pixelsRGBf_)
-		: points(points_), normals(normals_), pixelsRGBf(pixelsRGBf_)
+	LEDModelResidual(const Eigen::MatrixX3f& points_, const Eigen::MatrixX3f& normals_, const Eigen::MatrixX3f& pixelsRGBf_, double var_=0.01)
+		: points(points_), normals(normals_), pixelsRGBf(pixelsRGBf_), var(var_)
 	{}
 
     template<typename T>
@@ -579,6 +616,8 @@ struct LEDModelResidual {
 		const T* p1 = parameters[1];
 		const T* p2 = parameters[2];
 		const T* p3 = parameters[3];
+
+		T varCeres = T(var);
 
 		// getting light position
 		Eigen::Matrix<T, 3, 1> q;
@@ -600,27 +639,39 @@ struct LEDModelResidual {
 
 		// directionnal light estimation per point
 		Eigen::Matrix<T, Eigen::Dynamic, 3> vecSourcePoint = (pointsCeres.rowwise() - q.transpose()) * (-1.0);
+
 		// compute norm
 		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePoint = vecSourcePoint.rowwise().norm();
 		// norm to the square
 		Eigen::Matrix<T, Eigen::Dynamic, 1> normSourcePointSquare = normSourcePoint.cwiseProduct(normSourcePoint);
+
 		// per point light direction
-		Eigen::Matrix<T, Eigen::Dynamic, 3> vecSigma = vecSourcePoint.array().colwise() / normSourcePoint.array();
+		Eigen::Matrix<T, Eigen::Dynamic, 3> vecLightDir = vecSourcePoint.array().colwise() / normSourcePoint.array();
+
 		// per point sigma . d
-		Eigen::Matrix<T, Eigen::Dynamic, 1> sigma_dot_d = (vecSigma * d).array().abs();
+		Eigen::Matrix<T, Eigen::Dynamic, 1> sigma_dot_d = (vecLightDir * d).array().abs();
+
 		// per point anisotropy
 		Eigen::Matrix<T, Eigen::Dynamic, 3> anisotropy(pointsCeres.rows(), 3);
 		anisotropy(Eigen::placeholders::all, 0) = sigma_dot_d.array().pow(mu(0));
 		anisotropy(Eigen::placeholders::all, 1) = sigma_dot_d.array().pow(mu(1));
 		anisotropy(Eigen::placeholders::all, 2) = sigma_dot_d.array().pow(mu(2));
+
 		// per point intensity
 		Eigen::Matrix<T, Eigen::Dynamic, 3> vecRGBintensity = (anisotropy.array().rowwise() * phi.transpose().array()).colwise() / normSourcePointSquare.array();
+
+		// dot product between light direction and normal
+		Eigen::Matrix<T, Eigen::Dynamic, 1> dotLightNormalIntensityEstimated = vecLightDir.cwiseProduct(normalsCeres).rowwise().sum();
+
 		// intensity estimation per point
-		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (vecSigma.cwiseProduct(normalsCeres)).rowwise().sum().cwiseMax(T(0));
-		// intensity estimation per point
+		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = dotLightNormalIntensityEstimated.rowwise().sum().cwiseMax(T(0));
+		// rgb intensity estimation per point
 		Eigen::Matrix<T, Eigen::Dynamic, 3> pixelRGBfEstimated = vecRGBintensity.array().colwise() * pixelIntensityEstimated.array();
+
+		// ponderating from distance to 0
+		Eigen::Matrix<T, Eigen::Dynamic, 1> ponderation = (dotLightNormalIntensityEstimated.cwiseProduct(dotLightNormalIntensityEstimated) / varCeres * (T(-0.5))).array().exp();
 		// residual computation
-		Eigen::Matrix<T, Eigen::Dynamic, 3> errorVec = pixelsRGBfCeres - pixelRGBfEstimated;
+		Eigen::Matrix<T, Eigen::Dynamic, 3> errorVec = (pixelsRGBfCeres - pixelRGBfEstimated).array().colwise() * ponderation.array();
 
 		// set residual
 		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 3>> residualVec(residual, errorVec.rows(), 3);
