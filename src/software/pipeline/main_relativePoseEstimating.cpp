@@ -38,6 +38,7 @@
 #include <boost/program_options.hpp>
 
 #include <aliceVision/sfm/pipeline/relativePoses.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <cstdlib>
 

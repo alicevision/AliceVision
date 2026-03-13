@@ -22,6 +22,7 @@
 #include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicyLegacy.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 #include <aliceVision/sfmData/MeshPointFetcher.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 
 #include <boost/program_options.hpp>

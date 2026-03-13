@@ -11,6 +11,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
 #include <aliceVision/sfm/utils/poseFilter.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 

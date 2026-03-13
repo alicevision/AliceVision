@@ -12,6 +12,7 @@
 #include <boost/program_options.hpp>
 #include <aliceVision/stl/hash.hpp>
 #include <aliceVision/geometry/Intersection.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <fstream>
 
 // These constants define the current software version.

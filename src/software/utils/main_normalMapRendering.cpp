@@ -12,6 +12,7 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/mesh/MeshIntersection.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <filesystem>
 

@@ -13,6 +13,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/mesh/MeshIntersection.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <filesystem>
 

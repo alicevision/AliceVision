@@ -22,6 +22,7 @@
 #include <aliceVision/panorama/remapBbox.hpp>
 #include <aliceVision/panorama/warper.hpp>
 #include <aliceVision/panorama/distance.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <filesystem>
 

@@ -13,6 +13,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionProcess.hpp>
 #include <aliceVision/track/TracksHandler.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/json.hpp>
