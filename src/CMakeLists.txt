@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.30)
 message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 
 # ==============================================================================
@@ -143,9 +143,9 @@ if (WIN32)
         else()
             set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
         endif()
-        add_compile_options(/bigobj)
-        add_compile_options(/MP)
-        add_compile_options(/GR)   # See policy CMP0117: Enable RTTI on MSVC
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/bigobj>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/MP>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/GR>)   # See policy CMP0117: Enable RTTI on MSVC
     endif()
 endif()
 
@@ -662,45 +662,55 @@ option(ALICEVISION_USE_NVTX_PROFILING "Use CUDA NVTX for profiling." OFF)
 option(ALICEVISION_NVCC_WARNINGS      "Switch on several additional warnings for CUDA nvcc." OFF)
 
 set(ALICEVISION_HAVE_CUDA 0)
+set(ALICEVISION_CUDA_LIBRARIES "")
+set(ALICEVISION_NVTX_LIBRARY "")
 
 if (NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
 
-    if (BUILD_SHARED_LIBS)
-        message(STATUS "BUILD_SHARED_LIBS ON")
-        # Need to declare CUDA_USE_STATIC_CUDA_RUNTIME as an option to ensure that it is not overwritten in FindCUDA.
-        option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
-        set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
+    include(CheckLanguage)
+    check_language(CUDA)
+
+    if (NOT CMAKE_CUDA_COMPILER)
+        if (ALICEVISION_USE_CUDA STREQUAL "ON")
+            message(SEND_ERROR "Failed to find a CUDA compiler.")
+        endif()
     else()
-        message(STATUS "BUILD_SHARED_LIBS OFF")
-        option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" ON)
-        set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
-    endif()
+        if (BUILD_SHARED_LIBS)
+            message(STATUS "BUILD_SHARED_LIBS ON")
+            set(CMAKE_CUDA_RUNTIME_LIBRARY Shared)
+        else()
+            message(STATUS "BUILD_SHARED_LIBS OFF")
+            set(CMAKE_CUDA_RUNTIME_LIBRARY Static)
+        endif()
 
-    find_package(CUDA 11.0)
+        enable_language(CUDA)
+        find_package(CUDAToolkit 11.0 QUIET)
 
-    if (CUDA_FOUND)
-        set(ALICEVISION_HAVE_CUDA 1)
-        message(STATUS "CUDA found.")
-    elseif (ALICEVISION_USE_CUDA STREQUAL "ON")
-        message(SEND_ERROR "Failed to find CUDA (>= 11.0).")
+        if (CUDAToolkit_FOUND)
+            set(ALICEVISION_HAVE_CUDA 1)
+            list(APPEND ALICEVISION_CUDA_LIBRARIES CUDA::cudart)
+            if (TARGET CUDA::cudadevrt)
+                list(APPEND ALICEVISION_CUDA_LIBRARIES CUDA::cudadevrt)
+            endif()
+            message(STATUS "CUDA found: ${CUDAToolkit_VERSION}")
+        elseif (ALICEVISION_USE_CUDA STREQUAL "ON")
+            message(SEND_ERROR "Failed to find CUDA Toolkit (>= 11.0).")
+        endif()
     endif()
 endif()
 
 if (ALICEVISION_HAVE_CUDA)
-    set(CUDA_SEPARABLE_COMPILATION ON)
     message("Build Mode: ${CMAKE_BUILD_TYPE}")
 
-    set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
-    # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
-    if (CUDA_VERSION_MAJOR VERSION_GREATER_EQUAL 12)
+    if (CUDAToolkit_VERSION_MAJOR VERSION_GREATER_EQUAL 12)
         set(ALICEVISION_CUDA_CC_LIST_BASIC 50 52 60 61 62 70 72 75 80 86 87 89 90)
-    elseif (CUDA_VERSION VERSION_GREATER_EQUAL 11.8)
+    elseif (CUDAToolkit_VERSION VERSION_GREATER_EQUAL 11.8)
         set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80 86 87 89 90)
-    elseif (CUDA_VERSION VERSION_GREATER_EQUAL 11.5)
+    elseif (CUDAToolkit_VERSION VERSION_GREATER_EQUAL 11.5)
         set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80 86 87)
-    elseif (CUDA_VERSION VERSION_GREATER_EQUAL 11.1)
+    elseif (CUDAToolkit_VERSION VERSION_GREATER_EQUAL 11.1)
         set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80 86)
-    elseif (CUDA_VERSION_MAJOR GREATER_EQUAL 11)
+    elseif (CUDAToolkit_VERSION_MAJOR GREATER_EQUAL 11)
         set(ALICEVISION_CUDA_CC_LIST_BASIC 35 50 52 60 61 62 70 72 75 80)
     else()
         message(SEND_ERROR "Requires CUDA >= 11.0.")
@@ -708,47 +718,53 @@ if (ALICEVISION_HAVE_CUDA)
     set(ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CUDA_CC_LIST_BASIC}
         CACHE STRING "CUDA CC versions to compile")
 
-    # Add all requested CUDA CCs to the command line for offline compilation
+    # Add all requested CUDA CCs to the CMake CUDA architecture list.
     list(SORT ALICEVISION_CUDA_CC_LIST)
-    foreach (ALICEVISION_CC_VERSION ${ALICEVISION_CUDA_CC_LIST})
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CC_VERSION},code=sm_${ALICEVISION_CC_VERSION}")
-    endforeach()
 
-    # Use the highest request CUDA CC for CUDA JIT compilation
+    # Use the highest requested CUDA CC for PTX JIT compatibility.
     list(LENGTH ALICEVISION_CUDA_CC_LIST ALICEVISION_CC_LIST_LEN)
     MATH(EXPR ALICEVISION_CC_LIST_LEN "${ALICEVISION_CC_LIST_LEN}-1")
     list(GET ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CC_LIST_LEN} ALICEVISION_CUDA_CC_LIST_LAST)
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CUDA_CC_LIST_LAST},code=compute_${ALICEVISION_CUDA_CC_LIST_LAST}")
-
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++20")
+    set(CMAKE_CUDA_ARCHITECTURES
+        "${ALICEVISION_CUDA_CC_LIST};${ALICEVISION_CUDA_CC_LIST_LAST}-virtual"
+        CACHE STRING "CUDA architectures used to build AliceVision" FORCE
+    )
 
     # default stream legacy implies that the 0 stream synchronizes all streams
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;legacy")
+    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:--default-stream=legacy>)
     # default stream per-thread implies that each host thread has one non-synchronizing 0-stream
-    # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
+    # add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
     # print local memory usage per kernel: -Xptxas;-v
     #   -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
-    message(STATUS "CUDA Version is ${CUDA_VERSION}")
+    message(STATUS "CUDA Version is ${CUDAToolkit_VERSION}")
+    add_compile_options(
+        $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:Debug>>:-G>
+        $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:Debug>>:-g>
+    )
     if (UNIX)
-        set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
+        add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:-D_FORCE_INLINES>)
     endif()
     if (ALICEVISION_NVCC_WARNINGS)
-        set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
-        set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
-        set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
-        set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
+        add_compile_options(
+            $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:Release>>:-Xptxas=-warn-lmem-usage>
+            $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:Release>>:-Xptxas=-warn-spills>
+            $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:Release>>:-Xptxas=--warn-on-local-memory-usage>
+            $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:Release>>:-Xptxas=--warn-on-spills>
+        )
     endif()
-
-    # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
-    cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
     # If user activates NVTX profiling, add library and flags
     if (ALICEVISION_USE_NVTX_PROFILING)
         message(STATUS "PROFILING CPU/GPU CODE: NVTX is in use")
-        cuda_find_library_local_first(CUDA_NVTX_LIBRARY nvToolsExt "NVTX library")
-        add_definitions(-DALICEVISION_USE_NVTX)
-        include_directories(${CUDA_INCLUDE_DIRS})
-        set(ALICEVISION_NVTX_LIBRARY ${CUDA_NVTX_LIBRARY})
+        if (TARGET CUDA::nvToolsExt)
+            add_definitions(-DALICEVISION_USE_NVTX)
+            set(ALICEVISION_NVTX_LIBRARY CUDA::nvToolsExt)
+        elseif (TARGET CUDA::nvtx3)
+            add_definitions(-DALICEVISION_USE_NVTX)
+            set(ALICEVISION_NVTX_LIBRARY CUDA::nvtx3)
+        else()
+            message(WARNING "NVTX profiling requested but no NVTX CMake target was found in CUDAToolkit.")
+        endif()
     endif()
 endif()
 

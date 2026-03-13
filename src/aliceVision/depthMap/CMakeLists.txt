@@ -129,12 +129,11 @@ alicevision_add_library(aliceVision_depthMap
         aliceVision_mvsUtils
         aliceVision_system
         assimp::assimp
+        CUDA::cudart
     PRIVATE_LINKS
         aliceVision_gpu
         aliceVision_sfmData
         aliceVision_sfmDataIO
-    PUBLIC_INCLUDE_DIRS
-        ${CUDA_INCLUDE_DIRS}
 )
 
 # target_compile_definitions(aliceVision_depthMap PUBLIC TSIM_USE_FLOAT)

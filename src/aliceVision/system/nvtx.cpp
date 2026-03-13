@@ -1,8 +1,17 @@
 #ifdef ALICEVISION_USE_NVTX
 
     #include <sstream>
-    #include <nvToolsExtCuda.h>
     #include <filesystem>
+
+    #if __has_include(<nvtx3/nvToolsExt.h>)
+        #include <nvtx3/nvToolsExt.h>
+    #elif __has_include(<nvToolsExtCuda.h>)
+        #include <nvToolsExtCuda.h>
+    #elif __has_include(<nvToolsExt.h>)
+        #include <nvToolsExt.h>
+    #else
+        #error "ALICEVISION_USE_NVTX is enabled but no NVTX headers were found."
+    #endif
 
     #include "aliceVision/system/nvtx.hpp"
 

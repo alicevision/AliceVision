@@ -218,12 +218,8 @@ jobs:
           mkdir -p ${{ env.ALICEVISION_ROOT }}
 
       - name: Download zip file with prebuilt binaries
-        uses: suisei-cn/actions-download-file@v1.6.0
-        id: vcpkgDownload
-        with:
-          url: "https://github.com/alicevision/vcpkg/releases/download/2025.09.10/x64-windows-release.zip"
-          target: "${{ env.dependenciesDir }}"
-          filename: installed.zip
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/alicevision/vcpkg/releases/download/2026.03.11/x64-windows-release.zip" -OutFile "${{ env.archivePath }}"
 
       - name: vcpkg - Unzip prebuilt binaries
         run: |
@@ -234,11 +230,11 @@ jobs:
           rm ${{ env.archivePath }}
 
       - name: Get CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.21
+        uses: Jimver/cuda-toolkit@v0.2.30
         id: cuda-toolkit
         with:
           cuda: '12.8.0'
-          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev"]'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev", "visual_studio_integration"]'
 
 
       - uses: lukka/get-cmake@latest

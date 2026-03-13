@@ -18,24 +18,19 @@ find_path(ONNXRuntime_INCLUDE_DIR
 )
 
 # Check that we found everything we need
-if (NOT ONNXRuntime_LIBRARY)
-  message(FATAL_ERROR "Failed to find ONNX Runtime library")
+if (ONNXRuntime_LIBRARY AND ONNXRuntime_INCLUDE_DIR)
+
+  # Export the target for downstream use
+  add_library(ONNXRuntime::ONNXRuntime INTERFACE IMPORTED)
+  set_target_properties(ONNXRuntime::ONNXRuntime PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${ONNXRuntime_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES "${ONNXRuntime_LIBRARY}"
+  )
+
+  # Export variables for use in downstream projects
+  set(ONNXRuntime_FOUND TRUE)
+  set(ONNXRuntime_INCLUDE_DIRS "${ONNXRuntime_INCLUDE_DIR}")
+  set(ONNXRuntime_LIBRARIES "${ONNXRuntime_LIBRARY}")
+  mark_as_advanced(ONNXRuntime_INCLUDE_DIRS ONNXRuntime_LIBRARIES)
+
 endif()
-
-if (NOT ONNXRuntime_INCLUDE_DIR)
-  message(FATAL_ERROR "Failed to find ONNX Runtime headers")
-endif()
-
-# Export the target for downstream use
-add_library(ONNXRuntime::ONNXRuntime INTERFACE IMPORTED)
-set_target_properties(ONNXRuntime::ONNXRuntime PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${ONNXRuntime_INCLUDE_DIR}"
-  INTERFACE_LINK_LIBRARIES "${ONNXRuntime_LIBRARY}"
-)
-
-# Export variables for use in downstream projects
-set(ONNXRuntime_FOUND TRUE)
-set(ONNXRuntime_INCLUDE_DIRS "${ONNXRuntime_INCLUDE_DIR}")
-set(ONNXRuntime_LIBRARIES "${ONNXRuntime_LIBRARY}")
-mark_as_advanced(ONNXRuntime_INCLUDE_DIRS ONNXRuntime_LIBRARIES)
-
