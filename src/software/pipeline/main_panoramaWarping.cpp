@@ -8,6 +8,7 @@
 #include <boost/program_options.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 // Image related
 #include <aliceVision/image/Image.hpp>

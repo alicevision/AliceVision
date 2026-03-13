@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/Texturing.hpp>

@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/panorama/panoramaMap.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/panorama/compositer.hpp>
 #include <aliceVision/panorama/alphaCompositer.hpp>
 #include <aliceVision/panorama/laplacianCompositer.hpp>
