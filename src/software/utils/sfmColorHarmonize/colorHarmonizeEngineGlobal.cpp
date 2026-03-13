@@ -9,6 +9,7 @@
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
 #include <aliceVision/system/ProgressDisplay.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 

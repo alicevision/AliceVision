@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/system/main.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/hardwareContext.hpp>
 

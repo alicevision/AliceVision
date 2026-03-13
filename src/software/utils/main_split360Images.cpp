@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>

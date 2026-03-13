@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/image/Image.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/keyframe/KeyframeSelector.hpp>
 #include <aliceVision/system/Logger.hpp>

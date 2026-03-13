@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/types.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
 
 #include <aliceVision/system/Timer.hpp>
