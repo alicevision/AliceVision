@@ -33,7 +33,6 @@
 #include <aliceVision/sfm/pipeline/bootstrapping/Bootstrap.hpp>
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 #include <aliceVision/sfmData/MeshPointFetcher.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <cstdlib>
 #include <random>

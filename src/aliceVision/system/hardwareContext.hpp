@@ -8,6 +8,7 @@
 
 #include "Logger.hpp"
 #include "Timer.hpp"
+#include <aliceVision/alicevision_omp.hpp>
 
 namespace aliceVision {
 

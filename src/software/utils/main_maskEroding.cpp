@@ -8,7 +8,6 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Parallelization.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 

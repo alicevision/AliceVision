@@ -21,7 +21,6 @@
 #include <aliceVision/track/trackIO.hpp>
 #include <aliceVision/track/TracksHandler.hpp>
 #include <aliceVision/dataio/json.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 #include <filesystem>

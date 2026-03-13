@@ -20,7 +20,6 @@
 #include <aliceVision/hdr/rgbCurve.hpp>
 #include <aliceVision/hdr/hdrMerge.hpp>
 #include <aliceVision/hdr/brackets.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 // Command line parameters
 #include <boost/program_options.hpp>

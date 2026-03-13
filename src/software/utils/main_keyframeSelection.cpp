@@ -10,7 +10,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 

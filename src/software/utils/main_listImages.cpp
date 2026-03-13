@@ -10,7 +10,6 @@
 #include <aliceVision/system/Parallelization.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <boost/program_options.hpp>
 
 #include <filesystem>

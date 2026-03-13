@@ -18,7 +18,6 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 

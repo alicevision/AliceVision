@@ -28,7 +28,6 @@
 
 // Numeric utils
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 // IO
 #include <filesystem>

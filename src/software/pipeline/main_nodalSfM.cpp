@@ -42,7 +42,6 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

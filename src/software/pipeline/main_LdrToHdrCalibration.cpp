@@ -26,7 +26,6 @@
 #include <aliceVision/hdr/LaguerreBACalibration.hpp>
 #include <aliceVision/hdr/sampling.hpp>
 #include <aliceVision/hdr/brackets.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 // Command line parameters
 #include <boost/algorithm/string.hpp>

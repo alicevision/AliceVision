@@ -14,7 +14,6 @@
 
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmDataIO/ExternalAlembicImporter.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/program_options.hpp>

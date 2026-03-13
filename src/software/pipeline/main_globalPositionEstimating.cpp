@@ -18,7 +18,6 @@
 #include <aliceVision/track/TracksHandler.hpp>
 
 #include <aliceVision/sfm/pipeline/positioning/GlobalPositioning.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 #include <filesystem>

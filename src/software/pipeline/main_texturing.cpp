@@ -19,7 +19,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <geogram/basic/common.h>
 

@@ -15,7 +15,6 @@
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/track/trackIO.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 

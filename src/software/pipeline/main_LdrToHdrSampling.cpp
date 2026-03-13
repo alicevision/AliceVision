@@ -21,7 +21,6 @@
 // HDR Related
 #include <aliceVision/hdr/sampling.hpp>
 #include <aliceVision/hdr/brackets.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 // Image Processing
 #include <OpenImageIO/imageio.h>

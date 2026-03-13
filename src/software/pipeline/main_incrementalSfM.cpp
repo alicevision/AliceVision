@@ -20,7 +20,6 @@
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/program_options.hpp>
 
