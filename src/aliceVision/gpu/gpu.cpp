@@ -113,7 +113,9 @@ std::string gpuInformationCUDA()
                      << "\t- id:                      " << i << std::endl
                      << "\t- name:                    " << deviceProperties.name << std::endl
                      << "\t- compute capability:      " << deviceProperties.major << "." << deviceProperties.minor << std::endl
+                     #if CUDART_VERSION < 13000 //clockRate removed in CUDA 13
                      << "\t- clock frequency (kHz):   " << deviceProperties.clockRate << std::endl
+                     #endif
                      << "\t- total device memory:     " << deviceProperties.totalGlobalMem / (1024 * 1024) << " MB " << std::endl
                      << "\t- device memory available: " << avail / (1024 * 1024) << " MB " << std::endl
                      << "\t- per-block shared memory: " << deviceProperties.sharedMemPerBlock << std::endl

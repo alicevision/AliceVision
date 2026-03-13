@@ -6,7 +6,11 @@ option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" ON)
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 option(AV_USE_CUDA "Enable CUDA" ON)
-option(AV_USE_OPENMP "Enable OpenMP" $<$<CXX_COMPILER_ID:"AppleClang">,OFF,ON>) # disable by default for AppleClang
+option(AV_USE_OPENMP "Enable OpenMP" ON) # disabled below for AppleClang
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    set(AV_USE_OPENMP OFF CACHE BOOL "Enable OpenMP" FORCE)
+endif()
+
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(ALICEVISION_INSTALL_MESHROOM_PLUGIN "Install AliceVision's plugin for Meshroom" ON)
 
