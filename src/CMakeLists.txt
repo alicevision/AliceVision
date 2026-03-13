@@ -253,6 +253,9 @@ endif()
 if (ALICEVISION_USE_OPENMP STREQUAL "OFF")
     set(ALICEVISION_HAVE_OPENMP 0)
 else() # ON OR AUTO
+    if (MSVC)
+        set(OpenMP_RUNTIME_MSVC "llvm")
+    endif()
     find_package(OpenMP)
 
     if (OPENMP_FOUND)
