@@ -1,41 +1,24 @@
-__version__ = "3.3"
+__version__ = "4.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import COLORSPACES, EXR_STORAGE_DATA_TYPE, RAW_COLOR_INTERPRETATION, VERBOSE_LEVEL
 
 import os.path
+from pyalicevision import parallelization as avpar
 
 
 def outputImagesValueFunct(attr):
-    basename = os.path.basename(attr.node.input.value)
-    fileStem = os.path.splitext(basename)[0]
-    inputExt = os.path.splitext(basename)[1]
     outputExt = ('.' + attr.node.extension.value) if attr.node.extension.value else None
-
-    if inputExt in ['.abc', '.sfm']:
-        fileStem = '<FILESTEM>' if attr.node.keepImageFilename.value else '<VIEW_ID>'
-        # If we have an SfM in input
-        return "{nodeCacheFolder}/" + fileStem + (outputExt or '.*')
-
-    if inputExt:
-        # If we have one or multiple files in input
-        return "{nodeCacheFolder}/" + fileStem + (outputExt or inputExt)
-
-    if '*' in fileStem:
-        # The fileStem of the input param is a regular expression,
-        # so even if there is no file extension,
-        # we consider that the expression represents files.
-        return "{nodeCacheFolder}/" + fileStem + (outputExt or '.*')
-
-    # No extension and no expression means that the input param is a folder path
-    return "{nodeCacheFolder}/" + '*' + (outputExt or '.*')
+    fileStem = '<FILESTEM>' if attr.node.keepImageFilename.value else '<VIEW_ID>'
+    return "{nodeCacheFolder}/" + fileStem + (outputExt or '.*')
 
 
 class ImageProcessing(desc.AVCommandLineNode):
     commandLine = "aliceVision_imageProcessing {allParams}"
-    size = desc.DynamicNodeSize("input")
-    # parallelization = desc.Parallelization(blockSize=40)
-    # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
+    size = avpar.DynamicViewsSize("input")
+    
+    parallelization = desc.Parallelization(blockSize=30)
+    commandLineRange = '--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}'
 
     category = "Utils"
     documentation = """Convert or apply filtering to the input images."""
@@ -44,24 +27,8 @@ class ImageProcessing(desc.AVCommandLineNode):
         desc.File(
             name="input",
             label="Input",
-            description="SfMData file input, image filenames or regex(es) on the image file path.\n"
-                        "Supported regex:\n"
-                        " - '#' matches a single digit.\n"
-                        " - '@' matches one or more digits.\n"
-                        " - '?' matches one character.\n"
-                        " - '*' matches zero character or more.",
+            description="SfMData file input",
             value="",
-        ),
-        desc.ListAttribute(
-            elementDesc=desc.File(
-                name="inputFolder",
-                label="Input Folder",
-                description="Folder containing images.",
-                value="",
-            ),
-            name="inputFolders",
-            label="Input Images Folders",
-            description="Use images from specific folder(s).",
         ),
         desc.ListAttribute(
             elementDesc=desc.StringParam(
