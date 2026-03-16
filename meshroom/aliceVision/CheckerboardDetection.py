@@ -42,6 +42,12 @@ The detection method also supports nested calibration grids.
             description="Ignore pixel aspect ratio for detection.",
             value=False,
         ),
+        desc.BoolParam(
+            name="useAllSeeds",
+            label="Use all seeds",
+            description="False will ignore seed corner point if it is already part of a detected potential checkerboard.",
+            value=False,
+        ),
         desc.IntParam(
             name="maxLevels",
             label="Maximum scale for pyramid",

@@ -40,6 +40,7 @@ int aliceVision_main(int argc, char* argv[])
     bool doubleSize = false;
     bool useNestedGrids = false;
     bool ignorePixelAspectRatio = false;
+    bool useAllSeeds = false;
     size_t minConsensus = 5;
     size_t maxLevels = 2;
 
@@ -65,6 +66,8 @@ int aliceVision_main(int argc, char* argv[])
          "Double image size prior to processing.")
         ("ignorePixelAspectRatio", po::value<bool>(&ignorePixelAspectRatio)->default_value(ignorePixelAspectRatio), 
          "Ignore pixel aspect ratio.")
+        ("useAllSeeds", po::value<bool>(&useAllSeeds)->default_value(useAllSeeds), 
+         "Use all possible seeds instead of pruning decision tree.")
         ("minConsensus", po::value<size_t>(&minConsensus)->default_value(minConsensus), 
          "Minimum number of shared corners to merge checkerboards.")
         ("maxLevels", po::value<size_t>(&maxLevels)->default_value(maxLevels), 
@@ -161,7 +164,7 @@ int aliceVision_main(int argc, char* argv[])
         // Lookup checkerboard
         calibration::CheckerDetector detect;
         ALICEVISION_LOG_INFO("Launching checkerboard detection");
-        if (!detect.process(source, maxLevels, minConsensus, useNestedGrids, exportDebugImages))
+        if (!detect.process(source, maxLevels, minConsensus, useNestedGrids, useAllSeeds, exportDebugImages))
         {
             ALICEVISION_LOG_ERROR("Detection failed");
             continue;
