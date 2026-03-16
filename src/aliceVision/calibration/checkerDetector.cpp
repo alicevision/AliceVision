@@ -17,6 +17,7 @@
 
 #include <boost/math/constants/constants.hpp>
 
+#include <atomic>
 #include <limits>
 #include <algorithm>
 
@@ -31,7 +32,7 @@ using RowVector = Matrix<Type, 1, Size>;
 namespace aliceVision {
 namespace calibration {
 
-bool CheckerDetector::process(const image::Image<image::RGBColor>& source, size_t maxLevels, size_t minConsensus, bool useNestedGrids, bool debug)
+bool CheckerDetector::process(const image::Image<image::RGBColor>& source, size_t maxLevels, size_t minConsensus, bool useNestedGrids, bool useAllSeeds, bool debug)
 {
     image::Image<float> grayscale;
     image::ConvertPixelType(source, &grayscale);
@@ -119,7 +120,7 @@ bool CheckerDetector::process(const image::Image<image::RGBColor>& source, size_
 
     ALICEVISION_LOG_INFO("[CheckerDetector] extracting checkerboards with " << _corners.size() << " corners");
 
-    buildCheckerboards(_boards, _corners);
+    buildCheckerboards(_boards, _corners, useAllSeeds);
 
     ALICEVISION_LOG_DEBUG("[CheckerDetector] built " << _boards.size() << " checkerboards");
 
@@ -1028,13 +1029,25 @@ bool CheckerDetector::growIteration(CheckerBoard& board, const std::vector<Check
     return false;
 }
 
-void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard>& boards, const std::vector<CheckerBoardCorner>& refinedCorners) const
+void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard>& boards, const std::vector<CheckerBoardCorner>& refinedCorners, bool useAllSeeds) const
 {
-    std::vector<bool> used(refinedCorners.size(), false);
+    std::vector<std::atomic<unsigned char>> used(refinedCorners.size());
+
+    #pragma omp parallel for schedule(dynamic)
     for (IndexT cid = 0; cid < refinedCorners.size(); ++cid)
     {
-        if (used[cid])
-            continue;
+        // Early skip: if this seed corner is already used, no point trying it.
+        // This is a racy read but only serves as a fast-path optimization;
+        // the authoritative check happens inside the critical section below.
+        if (!useAllSeeds)
+        {
+            unsigned char lused = used[cid].load(std::memory_order_relaxed);
+
+            if (lused)
+            {
+                continue;
+            }
+        }
 
         // Check if corner can be used as seed
         CheckerBoard board;
@@ -1042,22 +1055,6 @@ void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard>& boards, cons
         {
             continue;
         }
-
-        // Check if board contains already used corners
-        bool valid = true;
-        for (int i = 0; i < board.rows(); ++i)
-        {
-            for (int j = 0; j < board.cols(); ++j)
-            {
-                if (used[board(i, j)])
-                {
-                    valid = false;
-                }
-            }
-        }
-
-        if (!valid)
-            continue;
 
         // Extend board as much as possible
         while (growIteration(board, refinedCorners)) {}
@@ -1069,25 +1066,17 @@ void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard>& boards, cons
             for (int j = 0; j < board.cols(); ++j)
             {
                 if (board(i, j) == UndefinedIndexT)
+                {
                     continue;
+                }
+
                 count++;
             }
         }
 
         if (count < 10)
-            continue;
-
-        // Update used corners
-        for (int i = 0; i < board.rows(); ++i)
         {
-            for (int j = 0; j < board.cols(); ++j)
-            {
-                if (board(i, j) == UndefinedIndexT)
-                    continue;
-
-                const IndexT id = board(i, j);
-                used[id] = true;
-            }
+            continue;
         }
 
         // Threshold on energy value
@@ -1096,7 +1085,48 @@ void CheckerDetector::buildCheckerboards(std::vector<CheckerBoard>& boards, cons
             continue;
         }
 
-        boards.push_back(board);
+        // Atomically check for corner conflicts and commit the board.
+        // This critical section ensures no two boards can claim the same
+        // corners: the "check used" and "mark used" steps are indivisible.
+        #pragma omp critical
+        {
+            bool valid = true;
+
+            if (!useAllSeeds)
+            {
+                // Check if board contains already used corners
+                for (int i = 0; i < board.rows() && valid; ++i)
+                {
+                    for (int j = 0; j < board.cols() && valid; ++j)
+                    {
+                        if (board(i, j) != UndefinedIndexT && used[board(i, j)].load(std::memory_order_relaxed))
+                        {
+                            valid = false;
+                        }
+                    }
+                }
+            }
+
+            if (valid)
+            {
+                // Mark corners as used
+                if (!useAllSeeds)
+                {
+                    for (int i = 0; i < board.rows(); ++i)
+                    {
+                        for (int j = 0; j < board.cols(); ++j)
+                        {
+                            if (board(i, j) != UndefinedIndexT)
+                            {
+                                used[board(i, j)].store(1, std::memory_order_relaxed);
+                            }
+                        }
+                    }
+                }
+
+                boards.push_back(board);
+            }
+        }
     }
 }
 
