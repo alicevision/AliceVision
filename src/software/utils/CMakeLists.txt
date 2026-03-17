@@ -48,6 +48,7 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               aliceVision_lensCorrectionProfile
+              aliceVision_imageProcessing
               ${Boost_LIBRARIES}
     )
 
