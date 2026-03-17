@@ -72,7 +72,7 @@ jobs:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release --target install '
+          buildWithCMakeArgs: '--config Release --target install --parallel ${{ env.NUM_CORES }}'
           cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.dependenciesDir }}\x64-windows-release\scripts\buildsystems\vcpkg.cmake
                              -DVCPKG_TARGET_TRIPLET=x64-windows-release
                              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
@@ -100,7 +100,7 @@ jobs:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release --target bundle'
+          buildWithCMakeArgs: '--config Release --target bundle --parallel ${{ env.NUM_CORES }}'
           cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
           cmakeBuildType: Release
           buildWithCMake: true
