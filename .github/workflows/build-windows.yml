@@ -1,0 +1,124 @@
+name: Build Windows
+
+on:
+  workflow_call:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    env:
+      buildDir: '${{ github.workspace }}\build\'
+      dependenciesDir: '${{ github.workspace }}\dependencies'
+      archivePath: '${{ github.workspace }}\dependencies\installed.zip'
+      BUILD_TYPE: Release
+      CTEST_OUTPUT_ON_FAILURE: 1
+      ALICEVISION_ROOT: '${{ github.workspace }}\install'
+      ALICEVISION_LIBPATH: '${{ github.workspace }}/install/bundle/bin'
+      PYTHONPATH: '${{ github.workspace }}/install/bundle/lib/python'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+            submodules: recursive
+      
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: x64
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python requirements
+        run: |
+          pip install -r requirements.txt 
+          
+      - name: Create Directories
+        run: |
+          mkdir -p ${{ env.dependenciesDir }}
+          mkdir -p ${{ env.ALICEVISION_ROOT }}
+
+      - name: Download zip file with prebuilt binaries
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/alicevision/vcpkg/releases/download/2026.03.11/x64-windows-release.zip" -OutFile "${{ env.archivePath }}"
+
+      - name: vcpkg - Unzip prebuilt binaries
+        run: |
+          tar -xvzf "${{ env.archivePath }}" -C "${{ env.dependenciesDir }}"
+      
+      - name: vcpkg - Remove zip file with prebuilt binaries
+        run: |
+          rm ${{ env.archivePath }}
+
+      - name: Get CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.30
+        id: cuda-toolkit
+        with:
+          cuda: '12.8.0'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev", "visual_studio_integration"]'
+
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Build
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeBuildType: Release
+          buildWithCMake: true
+          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          buildDirectory: ${{ env.buildDir }}
+          buildWithCMakeArgs: '--config Release --target install '
+          cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.dependenciesDir }}\x64-windows-release\scripts\buildsystems\vcpkg.cmake
+                             -DVCPKG_TARGET_TRIPLET=x64-windows-release
+                             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+                             -A x64 -T host=x64
+                             -DBUILD_SHARED_LIBS=ON
+                             -DTARGET_ARCHITECTURE=core
+                             -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }}
+                             -DALICEVISION_BUILD_TESTS=ON
+                             -DALICEVISION_USE_OPENCV=ON
+                             -DALICEVISION_USE_CUDA=ON
+                             -DALICEVISION_USE_CCTAG=OFF
+                             -DALICEVISION_USE_POPSIFT=OFF
+                             -DALICEVISION_USE_ALEMBIC=ON
+                             -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
+                             -DALICEVISION_BUILD_SEGMENTATION=OFF
+                             -DALICEVISION_BUILD_SWIG_BINDING=ON
+                             -DALICEVISION_INSTALL_MESHROOM_PLUGIN=OFF
+                             -DBOOST_NO_CXX11=ON
+                             -DVCPKG_MANIFEST_MODE=OFF
+                             -DPython3_EXECUTABLE=${{ env.Python3_ROOT_DIR }}\python.exe
+
+      - name: Bundle
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          buildDirectory: ${{ env.buildDir }}
+          buildWithCMakeArgs: '--config Release --target bundle'
+          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
+          cmakeBuildType: Release
+          buildWithCMake: true
+
+      - name: Python Binding - Unit Tests
+        run: |
+          python -m pytest ./pyTests
+
+      - name: Unit Tests
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          buildDirectory: ${{ env.buildDir }}
+          buildWithCMakeArgs: '--config Release --target RUN_TESTS'
+          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
+          # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
+          cmakeBuildType: Release
+          useVcpkgToolchainFile: true
+          buildWithCMake: true
+
