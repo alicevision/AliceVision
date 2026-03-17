@@ -1,17 +1,16 @@
 # =============================================================================
-# deps/cuda.cmake — CUDA toolkit (optional embedded install)
-#
+# deps/cuda.cmake
 # Dependencies: (none)
-# Provides:     CUDA_CMAKE_FLAGS
+# Provides:     CUDA_TARGET, CUDA_CMAKE_FLAGS
 # =============================================================================
 
 if(AV_USE_CUDA AND AV_BUILD_CUDA)
     set(CUDA_TARGET cuda)
 
-    set(_cuda_exe "cuda_${AV_VERSION_CUDA}_${AV_CUDA_DRIVER}_linux.run")
+    set(_cuda_exe "cuda_${DEP_CUDA_VERSION}_${DEP_CUDA_DRIVER}_linux.run")
 
     ExternalProject_Add(${CUDA_TARGET}
-        URL                 ${AV_URL_CUDA}
+        URL                 ${DEP_CUDA_URL}
         DOWNLOAD_NO_EXTRACT 1
         PREFIX              ${BUILD_DIR}
         BUILD_IN_SOURCE     0
@@ -30,9 +29,11 @@ if(AV_USE_CUDA AND AV_BUILD_CUDA)
 
     set(CUDA_CUDART_LIBRARY "")
     set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${CMAKE_INSTALL_PREFIX})
+
     av_register_dep(${CUDA_TARGET})
+
     unset(_cuda_exe)
-else()
+elseif(AV_USE_CUDA)
     # Allow pointing to a pre-installed CUDA toolkit via cache variable
     option(CUDA_TOOLKIT_ROOT_DIR "Path to an existing CUDA toolkit installation" "")
     if(CUDA_TOOLKIT_ROOT_DIR)

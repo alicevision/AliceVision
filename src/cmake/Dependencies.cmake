@@ -1,263 +1,236 @@
 # =============================================================================
 # Dependencies.cmake — AliceVision superbuild orchestrator
 #
-# Layout:
-#   cmake/
-#   ├── Dependencies.cmake          ← this file
-#   ├── versions.cmake              ← all versions / URLs / hashes (DEP_*_VERSION,
-#   │                                 DEP_*_URL, DEP_*_HASH, DEP_*_GIT_REPO, DEP_*_GIT_TAG)
-#   ├── macros.cmake                ← av_add_cmake_dep / av_register_dep
-#   └── deps/
-#       ├── core.cmake              ← zlib, tbb, eigen, expat, boost, pybind11, swig
-#       ├── cuda.cmake              ← cuda toolkit
-#       ├── image_codecs.cmake      ← tiff, png, jpeg, libraw, openexr
-#       ├── video.cmake             ← vpx, ffmpeg
-#       ├── color_image.cmake       ← onnxruntime, opencolorio, openimageio, opencv
-#       ├── math_solvers.cmake      ← lapack, suitesparse, ceres, flann/lz4,
-#       │                             nanoflann, coin/osi/clp, lemon
-#       ├── geometry.cmake          ← geogram, assimp, alembic, e57format,
-#       │                             openmesh, pcl, usd
-#       └── feature_detectors.cmake ← popsift, cctag, apriltag
+# Each external dependency lives in its own file under cmake/deps/.
+# Files are included in dependency order: a lib is always included after
+# all libs it depends on.
 #
-# Include strategy:
-#   Each deps/*.cmake is included conditionally — only when at least one of its
-#   AV_BUILD_* options is ON. Each file still guards individual targets with
-#   its own if(AV_BUILD_*), so fine-grained control is preserved within a group.
-#
-# Variable naming (versions.cmake):
-#   DEP_<LIB>_VERSION  — version string
-#   DEP_<LIB>_URL      — full archive URL
-#   DEP_<LIB>_HASH     — checksum (ALGO=value)
-#   DEP_<LIB>_GIT_REPO — git remote
-#   DEP_<LIB>_GIT_TAG  — git tag / commit
-#
-# To upgrade a library: edit cmake/versions.cmake only.
+# Variable conventions (defined in cmake/DepsVersions.cmake):
+#   DEP_<LIB>_VERSION   — version string
+#   DEP_<LIB>_URL       — full download URL
+#   DEP_<LIB>_HASH      — checksum as <ALGO>=<value>
+#   DEP_<LIB>_GIT_REPO  — git remote URL
+#   DEP_<LIB>_GIT_TAG   — git tag / commit
 # =============================================================================
 
 include(ExternalProject)
 
-# -----------------------------------------------------------------------------
-# Parallel build degree
-# -----------------------------------------------------------------------------
+# ── Build options ─────────────────────────────────────────────────────────────
 
 set(AV_BUILD_DEPENDENCIES_PARALLEL 1
-    CACHE STRING "Parallel jobs for dependency builds (0 = auto-detect)"
+    CACHE STRING "Number of cores to use when building dependencies (0 - use the number of cores of the processor)"
 )
 
 if(AV_BUILD_DEPENDENCIES_PARALLEL EQUAL 0)
-    cmake_host_system_information(
-        RESULT AV_BUILD_DEPENDENCIES_PARALLEL
-        QUERY  NUMBER_OF_LOGICAL_CORES
-    )
+    cmake_host_system_information(RESULT AV_BUILD_DEPENDENCIES_PARALLEL QUERY NUMBER_OF_LOGICAL_CORES)
 endif()
 
-# -----------------------------------------------------------------------------
-# Feature flags
-# -----------------------------------------------------------------------------
-
-set(AV_ONNX_APPLE_ARCH "arm64" CACHE STRING "ONNX Runtime arch on Apple [arm64, x86_64]")
-
 # Core
-option(AV_BUILD_CUDA     "Build embedded CUDA toolkit"   OFF)
-option(AV_BUILD_ZLIB     "Build embedded zlib"           OFF)
-option(AV_BUILD_TBB      "Build embedded TBB"            ON)
-option(AV_BUILD_EIGEN    "Build embedded Eigen"          ON)
-option(AV_BUILD_EXPAT    "Build embedded Expat"          ON)
-option(AV_BUILD_BOOST    "Build embedded Boost"          ON)
-option(AV_BUILD_SWIG     "Build embedded SWIG"           ON)
-option(AV_BUILD_PYBIND11 "Build pybind11"                OFF)
+option(AV_BUILD_ZLIB        "Build zlib"     ON)
+option(AV_BUILD_TBB         "Build TBB"      ON)
+option(AV_BUILD_EIGEN       "Build Eigen"    ON)
+option(AV_BUILD_EXPAT       "Build Expat"    ON)
+option(AV_BUILD_BOOST       "Build Boost"    ON)
+option(AV_BUILD_PYBIND11    "Build pybind11" ON)
+option(AV_BUILD_SWIG        "Build SWIG"     OFF)
+
+# CUDA
+option(AV_USE_CUDA          "Enable CUDA support"        ON)
+option(AV_BUILD_CUDA        "Build/install CUDA toolkit" OFF)
 
 # Image codecs
-option(AV_BUILD_TIFF    "Build embedded libtiff"         ON)
-option(AV_BUILD_PNG     "Build embedded libpng"          ON)
-option(AV_BUILD_JPEG    "Build embedded libjpeg-turbo"   ON)
-option(AV_BUILD_LIBRAW  "Build embedded libraw"          ON)
-option(AV_BUILD_OPENEXR "Build embedded OpenEXR"         ON)
+option(AV_BUILD_TIFF        "Build libtiff"        ON)
+option(AV_BUILD_PNG         "Build libpng"         ON)
+option(AV_BUILD_JPEG        "Build libjpeg-turbo"  ON)
+option(AV_BUILD_LIBRAW      "Build LibRaw"         ON)
+option(AV_BUILD_OPENEXR     "Build OpenEXR"        ON)
 
 # Video
-option(AV_BUILD_VPX    "Build embedded libvpx"           ON)
-option(AV_BUILD_FFMPEG "Build embedded FFmpeg"           ON)
+option(AV_BUILD_VPX         "Build libvpx (ffmpeg codec)" ON)
+option(AV_BUILD_FFMPEG      "Build FFmpeg"                ON)
 
-# Color / Image processing
-option(AV_BUILD_ONNXRUNTIME  "Build embedded ONNX Runtime"    ON)
-option(AV_BUILD_OPENCOLORIO  "Build embedded OpenColorIO"      ON)
-option(AV_BUILD_OPENIMAGEIO  "Build embedded OpenImageIO"      ON)
-option(AV_BUILD_OPENCV       "Build embedded OpenCV"           ON)
+# Color / image processing
+option(AV_BUILD_ONNXRUNTIME  "Build ONNX Runtime"   ON)
+option(AV_BUILD_OPENCOLORIO  "Build OpenColorIO"    ON)
+option(AV_BUILD_OPENIMAGEIO  "Build OpenImageIO"    ON)
+option(AV_BUILD_OPENCV       "Build OpenCV"         ON)
 
-# Math / Solvers
-option(AV_BUILD_LAPACK      "Build embedded LAPACK"           ON)
-option(AV_BUILD_SUITESPARSE "Build embedded SuiteSparse"      ON)
-option(AV_BUILD_CERES       "Build embedded Ceres"            ON)
-option(AV_BUILD_FLANN       "Build embedded FLANN (+ lz4)"    ON)
-option(AV_BUILD_NANOFLANN   "Build embedded NanoFLANN"        ON)
-option(AV_BUILD_COINUTILS   "Build embedded CoinUtils"        ON)
-option(AV_BUILD_OSI         "Build embedded Osi"              ON)
-option(AV_BUILD_CLP         "Build embedded Clp"              ON)
-option(AV_BUILD_LEMON       "Build embedded LEMON"            ON)
+# Math / solvers
+option(AV_BUILD_LAPACK      "Build LAPACK/BLAS"   ON)
+option(AV_BUILD_SUITESPARSE "Build SuiteSparse"   ON)
+option(AV_BUILD_CERES       "Build Ceres"         ON)
+option(AV_BUILD_FLANN       "Build FLANN (+lz4)"  ON)
+option(AV_BUILD_NANOFLANN   "Build nanoflann"     ON)
+option(AV_BUILD_COINUTILS   "Build CoinUtils"     ON)
+option(AV_BUILD_OSI         "Build Osi"           ON)
+option(AV_BUILD_CLP         "Build Clp"           ON)
+option(AV_BUILD_LEMON       "Build LEMON"         ON)
 
 # 3D / Geometry
-option(AV_BUILD_GEOGRAM   "Build embedded Geogram"            ON)
-option(AV_BUILD_ASSIMP    "Build embedded Assimp"             ON)
-option(AV_BUILD_ALEMBIC   "Build embedded Alembic"            ON)
-option(AV_BUILD_E57FORMAT "Build embedded libE57Format"       ON)
-option(AV_BUILD_OPENMESH  "Build embedded OpenMesh"           ON)
-option(AV_BUILD_PCL       "Build embedded PCL"                OFF)
-option(AV_BUILD_USD       "Build embedded USD"                OFF)
+option(AV_BUILD_GEOGRAM     "Build Geogram"   ON)
+option(AV_BUILD_ASSIMP      "Build Assimp"    ON)
+option(AV_BUILD_ALEMBIC     "Build Alembic"   ON)
+option(AV_BUILD_E57FORMAT   "Build E57Format" ON)
+option(AV_BUILD_OPENMESH    "Build OpenMesh"  ON)
+option(AV_BUILD_PCL         "Build PCL"       OFF)
+option(AV_BUILD_USD         "Build USD"       OFF)
 
 # Feature detectors
-option(AV_BUILD_POPSIFT  "Build embedded PopSift"             ON)
-option(AV_BUILD_CCTAG    "Build embedded CCTag"               ON)
-option(AV_BUILD_APRILTAG "Build embedded AprilTag"            ON)
+option(AV_BUILD_POPSIFT     "Build PopSift"   ON)
+option(AV_BUILD_CCTAG       "Build CCTag"     ON)
+option(AV_BUILD_APRILTAG    "Build AprilTag"  ON)
 
-# -----------------------------------------------------------------------------
-# Logging
-# -----------------------------------------------------------------------------
+# ── Log enabled dependencies ──────────────────────────────────────────────────
+
+set(_all_av_options
+    AV_BUILD_ZLIB AV_BUILD_TBB AV_BUILD_EIGEN AV_BUILD_EXPAT
+    AV_BUILD_BOOST AV_BUILD_PYBIND11 AV_BUILD_SWIG
+    AV_USE_CUDA AV_BUILD_CUDA
+    AV_BUILD_TIFF AV_BUILD_PNG AV_BUILD_JPEG AV_BUILD_LIBRAW AV_BUILD_OPENEXR
+    AV_BUILD_VPX AV_BUILD_FFMPEG
+    AV_BUILD_ONNXRUNTIME AV_BUILD_OPENCOLORIO AV_BUILD_OPENIMAGEIO AV_BUILD_OPENCV
+    AV_BUILD_LAPACK AV_BUILD_SUITESPARSE AV_BUILD_CERES
+    AV_BUILD_FLANN AV_BUILD_NANOFLANN
+    AV_BUILD_COINUTILS AV_BUILD_OSI AV_BUILD_CLP AV_BUILD_LEMON
+    AV_BUILD_GEOGRAM AV_BUILD_ASSIMP AV_BUILD_ALEMBIC AV_BUILD_E57FORMAT
+    AV_BUILD_OPENMESH AV_BUILD_PCL AV_BUILD_USD
+    AV_BUILD_POPSIFT AV_BUILD_CCTAG AV_BUILD_APRILTAG
+)
 
 message(STATUS "")
 message(STATUS "=== AliceVision dependency build options ===")
-foreach(_opt
-    AV_BUILD_CUDA     AV_BUILD_ZLIB      AV_BUILD_TBB       AV_BUILD_EIGEN
-    AV_BUILD_EXPAT    AV_BUILD_BOOST     AV_BUILD_SWIG      AV_BUILD_PYBIND11
-    AV_BUILD_TIFF     AV_BUILD_PNG       AV_BUILD_JPEG      AV_BUILD_LIBRAW
-    AV_BUILD_OPENEXR
-    AV_BUILD_VPX      AV_BUILD_FFMPEG
-    AV_BUILD_ONNXRUNTIME AV_BUILD_OPENCOLORIO AV_BUILD_OPENIMAGEIO AV_BUILD_OPENCV
-    AV_BUILD_LAPACK   AV_BUILD_SUITESPARSE AV_BUILD_CERES
-    AV_BUILD_FLANN    AV_BUILD_NANOFLANN
-    AV_BUILD_COINUTILS AV_BUILD_OSI AV_BUILD_CLP AV_BUILD_LEMON
-    AV_BUILD_GEOGRAM  AV_BUILD_ASSIMP    AV_BUILD_ALEMBIC
-    AV_BUILD_E57FORMAT AV_BUILD_OPENMESH AV_BUILD_PCL AV_BUILD_USD
-    AV_BUILD_POPSIFT  AV_BUILD_CCTAG     AV_BUILD_APRILTAG
-    AV_USE_CUDA       AV_USE_OPENMP
-    AV_BUILD_DEPENDENCIES_PARALLEL
-)
-    message(STATUS "  ${_opt}: ${${_opt}}")
+foreach(_opt ${_all_av_options})
+    if(${_opt})
+        message(STATUS "  [ON]  ${_opt}")
+    else()
+        message(STATUS "  [OFF] ${_opt}")
+    endif()
 endforeach()
-if(APPLE)
-    message(STATUS "  AV_ONNX_APPLE_ARCH: ${AV_ONNX_APPLE_ARCH}")
-endif()
+message(STATUS "============================================")
 message(STATUS "")
 
-# -----------------------------------------------------------------------------
-# Build paths shared by all sub-projects
-# -----------------------------------------------------------------------------
+# ── Common setup ──────────────────────────────────────────────────────────────
 
 set(BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
 
+string(TOLOWER "${DEPS_CMAKE_BUILD_TYPE}" DEPS_CMAKE_BUILD_TYPE_LOWERCASE)
+
 set(CMAKE_CORE_BUILD_FLAGS
     -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE}
-    -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
-    -DCMAKE_INSTALL_DO_STRIP:BOOL=${CMAKE_INSTALL_DO_STRIP}
+    -DCMAKE_CXX_STANDARD=20
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_CXX_STANDARD=20
+    -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 )
 
-# Accumulates all built targets; consumed by the aliceVision ExternalProject.
-set(AV_DEPS "")
-
-# -----------------------------------------------------------------------------
-# Load versions / URLs / hashes — single source of truth
-# -----------------------------------------------------------------------------
+set(DEP_DEPS "")
 
 include(${CMAKE_CURRENT_LIST_DIR}/DepsVersions.cmake)
-
-# -----------------------------------------------------------------------------
-# Load shared macros
-# -----------------------------------------------------------------------------
-
 include(${CMAKE_CURRENT_LIST_DIR}/Helpers.cmake)
 
-# -----------------------------------------------------------------------------
-# Build dependency groups (order matters — later groups depend on earlier ones)
-# -----------------------------------------------------------------------------
+# ── Dependencies (included in dependency order) ───────────────────────────────
 
-# ── Core ─────────────────────────────────────────────────────────────────────
-if(AV_BUILD_ZLIB OR AV_BUILD_TBB OR AV_BUILD_EIGEN OR AV_BUILD_EXPAT
-        OR AV_BUILD_BOOST OR AV_BUILD_SWIG OR AV_BUILD_PYBIND11)
-    include(${CMAKE_CURRENT_LIST_DIR}/deps/core.cmake)
-endif()
+# Core — no prerequisites
+include(${CMAKE_CURRENT_LIST_DIR}/deps/zlib.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/tbb.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/eigen.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/expat.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/boost.cmake)      # depends: zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/pybind11.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/swig.cmake)
 
-# ── CUDA ─────────────────────────────────────────────────────────────────────
-if(AV_USE_CUDA)
-    include(${CMAKE_CURRENT_LIST_DIR}/deps/cuda.cmake)
-endif()
+# CUDA — no prerequisites
+include(${CMAKE_CURRENT_LIST_DIR}/deps/cuda.cmake)
 
-# ── Image codecs ─────────────────────────────────────────────────────────────
-if(AV_BUILD_TIFF OR AV_BUILD_PNG OR AV_BUILD_JPEG
-        OR AV_BUILD_LIBRAW OR AV_BUILD_OPENEXR)
-    include(${CMAKE_CURRENT_LIST_DIR}/deps/image_codecs.cmake)
-endif()
+# Image codecs — depend on zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/tiff.cmake)       # depends: zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/png.cmake)        # depends: zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/jpeg.cmake)       # depends: zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/libraw.cmake)     # depends: zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/openexr.cmake)    # depends: zlib
 
-# ── Video ─────────────────────────────────────────────────────────────────────
-if(AV_BUILD_VPX OR AV_BUILD_FFMPEG)
-    include(${CMAKE_CURRENT_LIST_DIR}/deps/video.cmake)
-endif()
+# Video — vpx before ffmpeg
+include(${CMAKE_CURRENT_LIST_DIR}/deps/vpx.cmake)        # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/ffmpeg.cmake)     # depends: vpx
 
-# ── Color / Image processing ─────────────────────────────────────────────────
-if(AV_BUILD_ONNXRUNTIME OR AV_BUILD_OPENCOLORIO
-        OR AV_BUILD_OPENIMAGEIO OR AV_BUILD_OPENCV)
-    include(${CMAKE_CURRENT_LIST_DIR}/deps/color_image.cmake)
-endif()
+# Color / image processing
+include(${CMAKE_CURRENT_LIST_DIR}/deps/onnxruntime.cmake)  # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/opencolorio.cmake)  # depends: expat
+include(${CMAKE_CURRENT_LIST_DIR}/deps/openimageio.cmake)  # depends: boost, openexr, tiff, png, jpeg, libraw, zlib, ffmpeg, pybind11, expat, opencolorio
+include(${CMAKE_CURRENT_LIST_DIR}/deps/opencv.cmake)       # depends: tbb, zlib, openexr, tiff, png, jpeg, libraw, ffmpeg
 
-# ── Math / Solvers ────────────────────────────────────────────────────────────
-if(AV_BUILD_LAPACK OR AV_BUILD_SUITESPARSE OR AV_BUILD_CERES
-        OR AV_BUILD_FLANN OR AV_BUILD_NANOFLANN
-        OR AV_BUILD_COINUTILS OR AV_BUILD_OSI OR AV_BUILD_CLP
-        OR AV_BUILD_LEMON)
-    include(${CMAKE_CURRENT_LIST_DIR}/deps/math_solvers.cmake)
-endif()
+# Math / solvers
+include(${CMAKE_CURRENT_LIST_DIR}/deps/lapack.cmake)       # depends: tbb
+include(${CMAKE_CURRENT_LIST_DIR}/deps/suitesparse.cmake)  # depends: lapack (includes gmp + mpfr inline)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/ceres.cmake)        # depends: eigen, suitesparse
+include(${CMAKE_CURRENT_LIST_DIR}/deps/lz4.cmake)          # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/flann.cmake)        # depends: lz4
+include(${CMAKE_CURRENT_LIST_DIR}/deps/nanoflann.cmake)    # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/coinutils.cmake)    # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/osi.cmake)          # depends: coinutils
+include(${CMAKE_CURRENT_LIST_DIR}/deps/clp.cmake)          # depends: coinutils, osi
+include(${CMAKE_CURRENT_LIST_DIR}/deps/lemon.cmake)        # depends: (none)
 
-# ── 3D / Geometry ─────────────────────────────────────────────────────────────
-if(AV_BUILD_GEOGRAM OR AV_BUILD_ASSIMP OR AV_BUILD_ALEMBIC
-        OR AV_BUILD_E57FORMAT OR AV_BUILD_OPENMESH
-        OR AV_BUILD_PCL OR AV_BUILD_USD)
-    include(${CMAKE_CURRENT_LIST_DIR}/deps/geometry.cmake)
-endif()
+# 3D / Geometry
+include(${CMAKE_CURRENT_LIST_DIR}/deps/geogram.cmake)      # depends: zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/assimp.cmake)       # depends: zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/alembic.cmake)      # depends: boost, openexr, zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/e57format.cmake)    # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/openmesh.cmake)     # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/pcl.cmake)          # depends: eigen, boost, png, flann, lz4, zlib, cuda
+include(${CMAKE_CURRENT_LIST_DIR}/deps/usd.cmake)          # depends: (none)
 
-# ── Feature detectors ────────────────────────────────────────────────────────
-if(AV_BUILD_POPSIFT OR AV_BUILD_CCTAG OR AV_BUILD_APRILTAG)
-    include(${CMAKE_CURRENT_LIST_DIR}/deps/feature_detectors.cmake)
-endif()
+# Feature detectors
+include(${CMAKE_CURRENT_LIST_DIR}/deps/popsift.cmake)      # depends: boost, cuda
+include(${CMAKE_CURRENT_LIST_DIR}/deps/cctag.cmake)        # depends: boost, cuda, opencv, eigen, tbb
+include(${CMAKE_CURRENT_LIST_DIR}/deps/apriltag.cmake)     # depends: (none)
 
-# -----------------------------------------------------------------------------
-# AliceVision main build (superbuild mode)
-# -----------------------------------------------------------------------------
+# ── AliceVision (main project) ────────────────────────────────────────────────
 
 if(AV_BUILD_ALICEVISION)
     ExternalProject_Add(aliceVision
-        PREFIX          ${CMAKE_CURRENT_SOURCE_DIR}
-        BUILD_IN_SOURCE 0
-        BUILD_ALWAYS    1
-        SOURCE_DIR      ${CMAKE_CURRENT_SOURCE_DIR}/src
-        BINARY_DIR      ${BUILD_DIR}/aliceVision_build
-        INSTALL_DIR     ${CMAKE_INSTALL_PREFIX}
-        CONFIGURE_COMMAND
-            ${CMAKE_COMMAND}
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-            -DBUILD_SHARED_LIBS:BOOL=ON
-            -DTARGET_ARCHITECTURE=core
-            -DALICEVISION_ROOT=${ALICEVISION_ROOT}
-            -DALICEVISION_USE_ALEMBIC=ON
-            -DMINIGLOG=ON
-            -DALICEVISION_USE_CCTAG=${AV_BUILD_CCTAG}
-            -DALICEVISION_USE_APRILTAG=${AV_BUILD_APRILTAG}
-            -DALICEVISION_USE_OPENCV=${AV_BUILD_OPENCV}
-            -DALICEVISION_USE_POPSIFT=${AV_BUILD_POPSIFT}
-            -DALICEVISION_USE_CUDA=${AV_USE_CUDA}
-            -DALICEVISION_BUILD_SWIG_BINDING=${AV_USE_SWIG}
-            -DALICEVISION_BUILD_DOC=OFF
-            ${ZLIB_CMAKE_FLAGS}      ${ASSIMP_CMAKE_FLAGS}    ${EIGEN_CMAKE_FLAGS}
-            ${OPENIMAGEIO_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS} ${BOOST_CMAKE_FLAGS}
-            ${ALEMBIC_CMAKE_FLAGS}   ${GEOGRAM_CMAKE_FLAGS}   ${LAPACK_CMAKE_FLAGS}
-            ${CERES_CMAKE_FLAGS}     ${CUDA_CMAKE_FLAGS}      ${POPSIFT_CMAKE_FLAGS}
-            ${OPENCV_CMAKE_FLAGS}    ${CCTAG_CMAKE_FLAGS}     ${APRILTAG_CMAKE_FLAGS}
-            ${EXPAT_CMAKE_FLAGS}     ${COINUTILS_CMAKE_FLAGS} ${OSI_CMAKE_FLAGS}
-            ${CLP_CMAKE_FLAGS}       ${LZ4_CMAKE_FLAGS}       ${FLANN_CMAKE_FLAGS}
-            ${NANOFLANN_CMAKE_FLAGS} ${PCL_CMAKE_FLAGS}       ${USD_CMAKE_FLAGS}
-            ${SWIG_CMAKE_FLAGS}      ${E57FORMAT_CMAKE_FLAGS} ${OPENMESH_CMAKE_FLAGS}
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-            <SOURCE_DIR>
-        DEPENDS ${AV_DEPS}
+        SOURCE_DIR        ${CMAKE_CURRENT_SOURCE_DIR}
+        BINARY_DIR        ${CMAKE_CURRENT_BINARY_DIR}/aliceVision_build
+        INSTALL_DIR       ${CMAKE_INSTALL_PREFIX}
+        BUILD_ALWAYS      1
+        CMAKE_ARGS
+            ${CMAKE_CORE_BUILD_FLAGS}
+            ${ZLIB_CMAKE_FLAGS}
+            ${TBB_CMAKE_FLAGS}
+            ${EIGEN_CMAKE_FLAGS}
+            ${BOOST_CMAKE_FLAGS}
+            ${SWIG_CMAKE_FLAGS}
+            ${TIFF_CMAKE_FLAGS}
+            ${PNG_CMAKE_FLAGS}
+            ${JPEG_CMAKE_FLAGS}
+            ${LIBRAW_CMAKE_FLAGS}
+            ${OPENEXR_CMAKE_FLAGS}
+            ${ILMBASE_CMAKE_FLAGS}
+            ${FFMPEG_CMAKE_FLAGS}
+            ${OPENIMAGEIO_CMAKE_FLAGS}
+            ${OPENCOLORIO_CMAKE_FLAGS}
+            ${OPENCV_CMAKE_FLAGS}
+            ${LAPACK_CMAKE_FLAGS}
+            ${SUITESPARSE_CMAKE_FLAGS}
+            ${CERES_CMAKE_FLAGS}
+            ${FLANN_CMAKE_FLAGS}
+            ${LZ4_CMAKE_FLAGS}
+            ${NANOFLANN_CMAKE_FLAGS}
+            ${COINUTILS_CMAKE_FLAGS}
+            ${OSI_CMAKE_FLAGS}
+            ${CLP_CMAKE_FLAGS}
+            ${LEMON_CMAKE_FLAGS}
+            ${GEOGRAM_CMAKE_FLAGS}
+            ${ASSIMP_CMAKE_FLAGS}
+            ${ALEMBIC_CMAKE_FLAGS}
+            ${E57FORMAT_CMAKE_FLAGS}
+            ${OPENMESH_CMAKE_FLAGS}
+            ${PCL_CMAKE_FLAGS}
+            ${USD_CMAKE_FLAGS}
+            ${POPSIFT_CMAKE_FLAGS}
+            ${CCTAG_CMAKE_FLAGS}
+            ${APRILTAG_CMAKE_FLAGS}
+            ${CUDA_CMAKE_FLAGS}
+        DEPENDS ${DEP_DEPS}
     )
 endif()
