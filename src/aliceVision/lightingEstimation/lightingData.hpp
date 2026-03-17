@@ -40,6 +40,8 @@ class DirectionnalLighting : public Lighting
 
     DirectionnalLighting(const Eigen::Vector3f& lightDirection_, float intensity_);
 
+    DirectionnalLighting(const Eigen::Vector3f& lightDirection_, const Eigen::Vector3f& intensity_);
+
     ~DirectionnalLighting();
 
     DirectionnalLighting* clone() const;

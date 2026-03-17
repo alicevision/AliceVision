@@ -13,12 +13,18 @@
 namespace aliceVision {
 namespace lightingEstimation {
 
-
 void coarseDirectionnalLightEstimation(
     const Eigen::MatrixX3f& normals, 
     const Eigen::VectorXf& pixelsIntensity, 
-    double epsilon, 
+    double var, 
     Eigen::Vector3f &lightingDirection);
+
+void coloredDirectionnalLightEstimation(
+    const Eigen::MatrixX3f& normals, 
+    const Eigen::MatrixX3f& pixelsIntensity, 
+    const Eigen::Vector3f &lightingDirection,
+    double epsilon, 
+    Eigen::Vector3f &lightingIntensity);
 
 void coarsePunctualLightEstimation(
     const Eigen::MatrixX3f& points, 
@@ -27,14 +33,14 @@ void coarsePunctualLightEstimation(
     const Eigen::Vector3f& sceneCenter,
     const Eigen::Vector3f& lightingDirection,
     float lightingIntensity,
-    double epsilon, 
+    double var, 
     float &lightingDistance);
 
 void pointSourceModelRefinement(
     const Eigen::MatrixX3f& points, 
     const Eigen::MatrixX3f& normals, 
     const Eigen::VectorXf& pixelsIntensity, 
-    double epsilon, 
+    double var, 
     Eigen::Vector3f &lightPosition, 
     float &lightIntensity);
 
@@ -42,25 +48,9 @@ void coloredPointSourceModelRefinement(
 	const Eigen::MatrixX3f& points, 
 	const Eigen::MatrixX3f& normals, 
 	const Eigen::MatrixX3f& pixelsRGBIntensity, 
+	const Eigen::Vector3f &lightingPosition, 
 	double epsilon, 
-	Eigen::Vector3f &lightingPosition, 
 	Eigen::Vector3f &lightingRGBIntensity);
-
-void LEDModelRefinement(
-	const Eigen::MatrixX3f& points, 
-	const Eigen::MatrixX3f& normals, 
-	const Eigen::MatrixX3f& pixelsRGBf, 
-	double epsilon, 
-	Eigen::Vector3f &lightingPosition, 
-	Eigen::Vector3f &lightingDirection, 
-	Eigen::Vector3f &lightingRGBIntensity,
-	Eigen::Vector3f &lightingRGBAnisotropy);
-
-void proportion_in_shadow(
-	const Eigen::MatrixX3f& points, 
-	const Eigen::MatrixX3f& normals, 
-	const Eigen::MatrixX3f& pixelsRGBf, 
-	Eigen::Vector3f &lightingPosition);
 
 } // namespace lightingEstimation
 } // namespace aliceVision

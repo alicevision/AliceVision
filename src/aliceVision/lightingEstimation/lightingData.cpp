@@ -29,6 +29,16 @@ DirectionnalLighting::DirectionnalLighting(const Eigen::Vector3f& lightDirection
     intensity(intensity_)
 {}
 
+DirectionnalLighting::DirectionnalLighting(const Eigen::Vector3f& lightDirection_, const Eigen::Vector3f& intensity_)
+  : Lighting(LightType::Directionnal),
+    lightDirection(lightDirection_),
+    intensity(3, 0)
+{
+    intensity[0] = intensity_(0);
+    intensity[1] = intensity_(1);
+    intensity[2] = intensity_(2);
+}
+
 DirectionnalLighting::DirectionnalLighting(const Eigen::Vector3f& lightDirection_, float intensity_)
   : Lighting(LightType::Directionnal),
     lightDirection(lightDirection_),
