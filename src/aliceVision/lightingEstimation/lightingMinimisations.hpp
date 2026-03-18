@@ -16,13 +16,13 @@ namespace lightingEstimation {
  * @param[in] normals Surface normals associated with the observations.
  * @param[in] pixelsIntensity Grayscale intensity observed at each normal.
  * @param[out] lightingDirection Output estimated light direction.
- * @param[in] varTerminator Variance threshold used to identify terminator pixels.
+ * @param[in] epsilonHuberLoss Huber loss threshold used for robust fitting.
  */
 void coarseDirectionnalLightEstimation(
     const Eigen::MatrixX3f& normals, 
     const Eigen::VectorXf& pixelsIntensity, 
     Eigen::Vector3f &lightingDirection, 
-    double varTerminator = 0.01);
+	double epsilonHuberLoss = 2./255.);
 
 /**
  * Estimate RGB directional light intensity for a fixed light direction.

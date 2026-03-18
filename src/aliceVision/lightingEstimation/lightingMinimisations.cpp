@@ -38,19 +38,16 @@ struct CoarseDirectionnalEstimation {
 
 	Eigen::MatrixX3f normals;
 	Eigen::VectorXf pixelsIntensity;
-	double var;
 
 	// constructor
-	CoarseDirectionnalEstimation(const Eigen::MatrixX3f& normals_, const Eigen::VectorXf& pixelsIntensity_, double var_=0.01)
-		: normals(normals_), pixelsIntensity(pixelsIntensity_), var(var_)
+	CoarseDirectionnalEstimation(const Eigen::MatrixX3f& normals_, const Eigen::VectorXf& pixelsIntensity_)
+		: normals(normals_), pixelsIntensity(pixelsIntensity_)
 	{}
 
     template<typename T>
     bool operator()(T const* const* parameters, T* residual) const
     {
 		const T* x = parameters[0];
-
-		T varCeres = T(var);
 
 		// getting light direction
 		Eigen::Matrix<T, 3, 1> vecLightDir;
@@ -60,21 +57,11 @@ struct CoarseDirectionnalEstimation {
 		Eigen::Matrix<T, Eigen::Dynamic, 3> normalsCeres = normals.cast<T>();
 		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelsIntensityCeres = pixelsIntensity.cast<T>();
 
-		// light intensity
-		T lightIntensity = vecLightDir.norm();
-		// light direction
-		Eigen::Matrix<T, Eigen::Dynamic, 1> vecLightDirNorm = vecLightDir / lightIntensity;
-
-		// dot product between light direction and normal
-		Eigen::Matrix<T, Eigen::Dynamic, 1> dotLightNormalIntensityEstimated = normalsCeres * vecLightDirNorm;
-
 		// intensity estimation per point
-		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (dotLightNormalIntensityEstimated).cwiseMax(T(0)) * lightIntensity;
+		Eigen::Matrix<T, Eigen::Dynamic, 1> pixelIntensityEstimated = (normalsCeres * vecLightDir).cwiseMax(T(0));
 
-		// ponderating from distance to 0
-		Eigen::Matrix<T, Eigen::Dynamic, 1> ponderation = (dotLightNormalIntensityEstimated.cwiseProduct(dotLightNormalIntensityEstimated) / varCeres * (T(-0.5))).array().exp();
 		// residual computation
-		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = ponderation.cwiseProduct(pixelsIntensityCeres - pixelIntensityEstimated);
+		Eigen::Matrix<T, Eigen::Dynamic, 1> errorVec = pixelsIntensityCeres - pixelIntensityEstimated;
 
 		// set residual
 		Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>> residualVec(residual, errorVec.rows());
@@ -88,7 +75,7 @@ void coarseDirectionnalLightEstimation(
 	const Eigen::MatrixX3f& normals, 
 	const Eigen::VectorXf& pixelsIntensity, 
 	Eigen::Vector3f &lightingDirection, 
-	double varTerminator)
+	double epsilonHuberLoss)
 {
     std::vector<double> x{lightingDirection[0], lightingDirection[1], lightingDirection[2]};
     double* params[] = { x.data() };
@@ -97,10 +84,12 @@ void coarseDirectionnalLightEstimation(
     ceres::Problem problem;
     auto* dynamic_cost = 
         new ceres::DynamicAutoDiffCostFunction<CoarseDirectionnalEstimation>(
-                new CoarseDirectionnalEstimation(normals, pixelsIntensity, varTerminator));
+                new CoarseDirectionnalEstimation(normals, pixelsIntensity));
 
     dynamic_cost->AddParameterBlock(3);
     dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix));
+
+    ceres::LossFunction* loss = new ceres::HuberLoss(epsilonHuberLoss);
 
     problem.AddResidualBlock(dynamic_cost, nullptr, params, 1);
 

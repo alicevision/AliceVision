@@ -268,7 +268,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 
 		// optimisation with better loss
 		ALICEVISION_LOG_INFO("Initial lightingDirection: " << lightingDirection.transpose());
-		coarseDirectionnalLightEstimation(normalsFull, pixelsIntensityFull, lightingDirection, varTerminator);
+		coarseDirectionnalLightEstimation(normalsFull, pixelsIntensityFull, lightingDirection, epsilonHuberLoss);
 		ALICEVISION_LOG_INFO("Estimated lightingDirection: " << lightingDirection.transpose());
 
 		float lightingIntensity = lightingDirection.norm();
