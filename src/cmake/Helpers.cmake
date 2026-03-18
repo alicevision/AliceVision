@@ -340,6 +340,10 @@ function(alicevision_swig_add_library module_name)
     )
 endfunction()
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> a3e4e73b66a41e0d1aea8b9eedd810aa32581747
 # -----------------------------------------------------------------------------
 # av_register_dep(TARGET)
 #
