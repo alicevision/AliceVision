@@ -84,7 +84,11 @@ struct CoarseDirectionnalEstimation {
     }
 };
 
-void coarseDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const Eigen::VectorXf& pixelsIntensity, double var, Eigen::Vector3f &lightingDirection)
+void coarseDirectionnalLightEstimation(
+	const Eigen::MatrixX3f& normals, 
+	const Eigen::VectorXf& pixelsIntensity, 
+	Eigen::Vector3f &lightingDirection, 
+	double varTerminator)
 {
     std::vector<double> x{lightingDirection[0], lightingDirection[1], lightingDirection[2]};
     double* params[] = { x.data() };
@@ -93,7 +97,7 @@ void coarseDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const Ei
     ceres::Problem problem;
     auto* dynamic_cost = 
         new ceres::DynamicAutoDiffCostFunction<CoarseDirectionnalEstimation>(
-                new CoarseDirectionnalEstimation(normals, pixelsIntensity, var));
+                new CoarseDirectionnalEstimation(normals, pixelsIntensity, varTerminator));
 
     dynamic_cost->AddParameterBlock(3);
     dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix));
@@ -175,7 +179,12 @@ struct ColoredDirectionnalEstimation {
     }
 };
 
-void coloredDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const Eigen::MatrixX3f& pixelsIntensity, const Eigen::Vector3f &lightingDirection, double epsilon, Eigen::Vector3f &lightingIntensity)
+void coloredDirectionnalLightEstimation(
+	const Eigen::MatrixX3f& normals, 
+	const Eigen::MatrixX3f& pixelsIntensity, 
+	const Eigen::Vector3f &lightingDirection, 
+	Eigen::Vector3f &lightingIntensity, 
+	double epsilonHuberLoss)
 {
     std::vector<double> x{lightingIntensity[0], lightingIntensity[1], lightingIntensity[2]};
     double* params[] = { x.data() };
@@ -189,7 +198,7 @@ void coloredDirectionnalLightEstimation(const Eigen::MatrixX3f& normals, const E
     dynamic_cost->AddParameterBlock(3);
     dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix*3));
 
-    ceres::LossFunction* loss = new ceres::HuberLoss(epsilon);
+    ceres::LossFunction* loss = new ceres::HuberLoss(epsilonHuberLoss);
 
     problem.AddResidualBlock(dynamic_cost, loss, params, 1);
 
@@ -314,16 +323,16 @@ void coarsePunctualLightEstimation(
     const Eigen::VectorXf& pixelsIntensity, 
     const Eigen::Vector3f& sceneCenter,
     const Eigen::Vector3f& lightingDirection,
-    float lightingIntensity,
-    double var, 
-    float &lightingDistance)
+    const float lightingIntensity, 
+    float &lightingDistance,
+    double varTerminator)
 {
     int nb_pix = normals.rows();
 
     ceres::Problem problem;
     auto* dynamic_cost = 
         new ceres::DynamicAutoDiffCostFunction<CoarsePunctualEstimation>(
-                new CoarsePunctualEstimation(points, normals, pixelsIntensity, lightingDirection, lightingIntensity, sceneCenter, var));
+                new CoarsePunctualEstimation(points, normals, pixelsIntensity, lightingDirection, lightingIntensity, sceneCenter, varTerminator));
 
     dynamic_cost->AddParameterBlock(1);
     dynamic_cost->SetNumResiduals(static_cast<int>(nb_pix));
@@ -431,16 +440,16 @@ void pointSourceModelRefinement(
 	const Eigen::MatrixX3f& points, 
 	const Eigen::MatrixX3f& normals, 
 	const Eigen::VectorXf& pixelsIntensity, 
-	double var, 
 	Eigen::Vector3f &lightingPosition, 
-	float &lightingIntensity)
+	float &lightingIntensity, 
+	double varTerminator)
 {
     int nb_pix = points.rows();
 
     ceres::Problem problem;
     auto* dynamic_cost = 
         new ceres::DynamicAutoDiffCostFunction<PointSourceModelRefinement>(
-                new PointSourceModelRefinement(points, normals, pixelsIntensity, var));
+                new PointSourceModelRefinement(points, normals, pixelsIntensity, varTerminator));
 
     dynamic_cost->AddParameterBlock(3);
     dynamic_cost->AddParameterBlock(1);
@@ -547,8 +556,8 @@ void coloredPointSourceModelRefinement(
 	const Eigen::MatrixX3f& normals, 
 	const Eigen::MatrixX3f& pixelsRGBIntensity, 
 	const Eigen::Vector3f &lightingPosition, 
-	double epsilon, 
-	Eigen::Vector3f &lightingRGBIntensity)
+	Eigen::Vector3f &lightingRGBIntensity, 
+	double epsilonHuberLoss)
 {
     std::vector<double> p0{lightingRGBIntensity[0], lightingRGBIntensity[1], lightingRGBIntensity[2]};
     int nb_pix = points.rows();

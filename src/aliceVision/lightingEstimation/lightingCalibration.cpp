@@ -268,7 +268,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 
 		// optimisation with better loss
 		ALICEVISION_LOG_INFO("Initial lightingDirection: " << lightingDirection.transpose());
-		coarseDirectionnalLightEstimation(normalsFull, pixelsIntensityFull, varTerminator, lightingDirection);
+		coarseDirectionnalLightEstimation(normalsFull, pixelsIntensityFull, lightingDirection, varTerminator);
 		ALICEVISION_LOG_INFO("Estimated lightingDirection: " << lightingDirection.transpose());
 
 		float lightingIntensity = lightingDirection.norm();
@@ -277,7 +277,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
         {
 			Eigen::Vector3f lightingRGBIntensity = lightingIntensity * Eigen::Vector3f::Ones();
 			ALICEVISION_LOG_INFO("Initial lightingIntensity: " << lightingRGBIntensity.transpose());
-			coloredDirectionnalLightEstimation(normalsFull, pixelsRGBFull, lightingDirection, epsilonHuberLoss, lightingRGBIntensity);
+			coloredDirectionnalLightEstimation(normalsFull, pixelsRGBFull, lightingDirection, lightingRGBIntensity, epsilonHuberLoss);
 			ALICEVISION_LOG_INFO("Estimated lightingIntensity: " << lightingRGBIntensity.transpose());
             lightings.emplace(lightId, std::make_shared<DirectionnalLighting>(lightingDirection, lightingRGBIntensity));
 			return true;
@@ -294,7 +294,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 
 		// optimisation of the position on the line (sceneCenter, lightingDirection)
 		ALICEVISION_LOG_INFO("Initial lightingDistance: " << lightingDistance);
-		coarsePunctualLightEstimation(pointsFull, normalsFull, pixelsIntensityFull, sceneCenter, lightingDirection, lightingIntensity, varTerminator, lightingDistance);
+		coarsePunctualLightEstimation(pointsFull, normalsFull, pixelsIntensityFull, sceneCenter, lightingDirection, lightingIntensity, lightingDistance, varTerminator);
 		ALICEVISION_LOG_INFO("Estimated lightingDistance: " << lightingDistance);
 
 		Eigen::Vector3f lightingPosition = sceneCenter + lightingDistance * lightingDirection;
@@ -302,7 +302,7 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 		
 		ALICEVISION_LOG_INFO("Initial lightingPosition: " << lightingPosition.transpose());
 		ALICEVISION_LOG_INFO("Initial lightingIntensity: " << lightingIntensity);
-		pointSourceModelRefinement(pointsFull, normalsFull, pixelsIntensityFull, varTerminator, lightingPosition, lightingIntensity);
+		pointSourceModelRefinement(pointsFull, normalsFull, pixelsIntensityFull, lightingPosition, lightingIntensity, varTerminator);
 		ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
 		ALICEVISION_LOG_INFO("Estimated lightingIntensity: " << lightingIntensity);
 
@@ -311,8 +311,8 @@ bool lightCalibration(const sfmData::SfMData& sfmData, const CalibrationSpheres&
 			Eigen::Vector3f lightingRGBIntensity = lightingIntensity * Eigen::Vector3f::Ones();
 
 			ALICEVISION_LOG_INFO("Initial lightingRGBIntensity: " << lightingRGBIntensity.transpose());
-			coloredPointSourceModelRefinement(pointsFull, normalsFull, pixelsRGBFull, lightingPosition, epsilonHuberLoss, lightingRGBIntensity);
-			ALICEVISION_LOG_INFO("Estimated lightingPosition: " << lightingPosition.transpose());
+			coloredPointSourceModelRefinement(pointsFull, normalsFull, pixelsRGBFull, lightingPosition, lightingRGBIntensity, epsilonHuberLoss);
+			ALICEVISION_LOG_INFO("Estimated lightingRGBIntensity: " << lightingRGBIntensity.transpose());
 
             lightings.emplace(lightId, std::make_shared<PunctualLighting>(lightingPosition, lightingRGBIntensity));
 			return true;
