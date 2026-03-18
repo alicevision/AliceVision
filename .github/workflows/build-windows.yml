@@ -28,11 +28,22 @@ jobs:
         with:
           arch: x64
 
+      - name: Create Directories
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ env.dependenciesDir }}"
+          New-Item -ItemType Directory -Force -Path "${{ env.ALICEVISION_ROOT }}"
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
       - name: Install Python requirements
         run: |
           pip install -r requirements.txt 
