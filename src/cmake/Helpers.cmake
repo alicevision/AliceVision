@@ -340,7 +340,6 @@ function(alicevision_swig_add_library module_name)
     )
 endfunction()
 
-
 # -----------------------------------------------------------------------------
 # av_register_dep(TARGET)
 #
@@ -415,8 +414,8 @@ macro(av_add_cmake_dep)
             ${CMAKE_COMMAND}
             ${CMAKE_CORE_BUILD_FLAGS}
             ${_D_EXTRA_CMAKE_FLAGS}
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+            -DCMAKE_INSTALL_LIBDIR:PATH=<INSTALL_DIR>/lib
             <SOURCE_DIR>
         BUILD_COMMAND
             ${CMAKE_COMMAND} --build <BINARY_DIR>
