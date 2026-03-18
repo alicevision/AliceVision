@@ -36,7 +36,7 @@ set(DEP_BOOST_HASH     "MD5=2d098ba2e1457708a02de996857c2b10")
 unset(_boost_ver_underscore)
 
 set(DEP_EXPAT_GIT_REPO "https://github.com/libexpat/libexpat.git")
-set(DEP_EXPAT_GIT_TAG  "R_2_5_0")
+set(DEP_EXPAT_GIT_TAG  "R_2_7_4")
 
 set(DEP_PYBIND11_GIT_REPO "https://github.com/pybind/pybind11.git")
 set(DEP_PYBIND11_GIT_TAG  "v2.13.6")
@@ -55,9 +55,8 @@ set(DEP_CUDA_URL       "https://developer.download.nvidia.com/compute/cuda/${DEP
 
 # ── Image codecs ──────────────────────────────────────────────────────────────
 
-set(DEP_TIFF_VERSION   "4.5.0")
-set(DEP_TIFF_URL       "http://download.osgeo.org/libtiff/tiff-${DEP_TIFF_VERSION}.tar.gz")
-set(DEP_TIFF_HASH      "MD5=db9e220a1971acc64487f1d51a20dcaa")
+set(DEP_TIFF_GIT_TAG   "v4.5.1")
+set(DEP_TIFF_GIT_REPO  "https://gitlab.com/libtiff/libtiff.git")
 
 set(DEP_PNG_VERSION    "1.6.39")
 set(DEP_PNG_URL        "https://download.sourceforge.net/libpng/libpng-${DEP_PNG_VERSION}.tar.gz")
@@ -81,9 +80,9 @@ set(DEP_OPENEXR_HASH    "MD5=da5daf4d7954c034921e7201bf815938")
 set(DEP_VPX_GIT_REPO   "https://chromium.googlesource.com/webm/libvpx.git")
 set(DEP_VPX_GIT_TAG    "v1.13.0")
 
-set(DEP_FFMPEG_VERSION "5.1.2")
+set(DEP_FFMPEG_VERSION "6.1.4")
 set(DEP_FFMPEG_URL     "http://ffmpeg.org/releases/ffmpeg-${DEP_FFMPEG_VERSION}.tar.bz2")
-set(DEP_FFMPEG_HASH    "MD5=53ce2a391fe1db4b5ce5c43b9ea9a814")
+set(DEP_FFMPEG_HASH    "MD5=588be1baa8ca8cf6861bcae88020f0f9")
 
 # ── Color / Image processing ──────────────────────────────────────────────────
 
@@ -164,7 +163,7 @@ set(DEP_ALEMBIC_URL     "https://github.com/alembic/alembic/archive/${DEP_ALEMBI
 set(DEP_ALEMBIC_HASH    "MD5=fcd5b5492a005057e11b601b60ac9a49")
 
 set(DEP_E57FORMAT_GIT_REPO "https://github.com/asmaloney/libE57Format.git")
-set(DEP_E57FORMAT_GIT_TAG  "v3.1.1")
+set(DEP_E57FORMAT_GIT_TAG  "v3.2.0")
 
 set(DEP_OPENMESH_VERSION "10.0.0")
 set(DEP_OPENMESH_URL     "https://www.graphics.rwth-aachen.de/media/openmesh_static/Releases/10.0/OpenMesh-${DEP_OPENMESH_VERSION}.tar.bz2")
