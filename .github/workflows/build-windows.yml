@@ -16,6 +16,7 @@ jobs:
       ALICEVISION_ROOT: '${{ github.workspace }}\install'
       ALICEVISION_LIBPATH: '${{ github.workspace }}/install/bundle/bin'
       PYTHONPATH: '${{ github.workspace }}/install/bundle/lib/python'
+      CUDA_ENV_FILE: '${{ github.workspace }}\cuda_env.txt'
 
     steps:
       - name: Checkout
@@ -51,6 +52,16 @@ jobs:
         with:
           path: ${{ env.dependenciesDir }}\x64-windows-release
           key: vcpkg-${{ runner.os }}-${{ env.VCPKG_VERSION }}
+
+      - name: Cache CUDA Toolkit
+        id: cache-cuda
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8
+            C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\BuildCustomizations
+            ${{ env.CUDA_ENV_FILE }}
+          key: cuda-${{ runner.os }}-${{ env.CUDA_VERSION }}
       - name: Install Python requirements
         run: |
           pip install -r requirements.txt 
@@ -76,12 +87,41 @@ jobs:
           rm ${{ env.archivePath }}
 
       - name: Get CUDA Toolkit
+        if: steps.cache-cuda.outputs.cache-hit != 'true'
         uses: Jimver/cuda-toolkit@v0.2.30
         id: cuda-toolkit
         with:
           cuda: '12.8.0'
           sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev", "visual_studio_integration"]'
 
+      - name: Save CUDA path metadata
+        if: steps.cache-cuda.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $nvccCommand = Get-Command nvcc -ErrorAction SilentlyContinue
+          if (!$nvccCommand) {
+            throw "nvcc not found in PATH"
+          }
+          $nvccPath = $nvccCommand.Source
+          if (!(Test-Path $nvccPath)) {
+            throw "nvcc.exe not found at $nvccPath"
+          }
+          $cudaRoot = Split-Path (Split-Path $nvccPath -Parent) -Parent
+          "CUDA_PATH=$cudaRoot" | Out-File -FilePath "${{ env.CUDA_ENV_FILE }}" -Encoding utf8
+          "CUDACXX=$nvccPath" | Out-File -FilePath "${{ env.CUDA_ENV_FILE }}" -Encoding utf8 -Append
+
+      - name: Configure CUDA environment
+        shell: pwsh
+        run: |
+          if (!(Test-Path "${{ env.CUDA_ENV_FILE }}")) {
+            throw "CUDA metadata file not found: ${{ env.CUDA_ENV_FILE }}"
+          }
+          Get-Content "${{ env.CUDA_ENV_FILE }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $cudaRoot = (Get-Content "${{ env.CUDA_ENV_FILE }}" | Where-Object { $_ -like "CUDA_PATH=*" } | Select-Object -First 1).Split("=", 2)[1]
+          if (!(Test-Path "$cudaRoot\bin\nvcc.exe")) {
+            throw "nvcc.exe not found at $cudaRoot\bin\nvcc.exe"
+          }
+          "$cudaRoot\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - uses: lukka/get-cmake@latest
 
