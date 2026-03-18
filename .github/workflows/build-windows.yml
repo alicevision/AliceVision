@@ -16,9 +16,13 @@ jobs:
       ALICEVISION_ROOT: '${{ github.workspace }}\install'
       ALICEVISION_LIBPATH: '${{ github.workspace }}/install/bundle/bin'
       PYTHONPATH: '${{ github.workspace }}/install/bundle/lib/python'
+      SCCACHE_GHA_ENABLED: "true"
       CUDA_ENV_FILE: '${{ github.workspace }}\cuda_env.txt'
 
     steps:
+
+      # ---- PREPARE ENV -----
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -38,6 +42,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+       # ---- CACHES ----
+
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
@@ -62,14 +69,15 @@ jobs:
             C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\BuildCustomizations
             ${{ env.CUDA_ENV_FILE }}
           key: cuda-${{ runner.os }}-${{ env.CUDA_VERSION }}
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      
+      # ---- REQUIREMENTS -----
+
       - name: Install Python requirements
         run: |
           pip install -r requirements.txt 
-          
-      - name: Create Directories
-        run: |
-          mkdir -p ${{ env.dependenciesDir }}
-          mkdir -p ${{ env.ALICEVISION_ROOT }}
 
       - name: Download zip file with prebuilt binaries
         if: steps.cache-vcpkg.outputs.cache-hit != 'true'
@@ -125,6 +133,8 @@ jobs:
 
       - uses: lukka/get-cmake@latest
 
+      # ------ BUILD ----- 
+
       - name: Build
         uses: lukka/run-cmake@v3
         with:
@@ -154,6 +164,8 @@ jobs:
                             -DBOOST_NO_CXX11=ON
                             -DVCPKG_MANIFEST_MODE=OFF
                             -DPython3_EXECUTABLE=${{ env.Python3_ROOT_DIR }}\python.exe
+                            -DCMAKE_C_COMPILER_LAUNCHER=sccache
+                            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Bundle
         uses: lukka/run-cmake@v3
@@ -165,6 +177,8 @@ jobs:
           cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
           cmakeBuildType: Release
           buildWithCMake: true
+
+      # ------ TESTS ------
 
       - name: Python Binding - Unit Tests
         run: |
@@ -178,7 +192,6 @@ jobs:
           buildDirectory: ${{ env.buildDir }}
           buildWithCMakeArgs: '--config Release --target test'
           cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
-          # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
           cmakeBuildType: Release
           useVcpkgToolchainFile: true
           buildWithCMake: true
