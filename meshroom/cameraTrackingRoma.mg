@@ -8,7 +8,7 @@
             "CheckerboardDetection": "2.0",
             "ConvertSfMFormat": "2.0",
             "CopyFiles": "1.3",
-            "DistortionCalibration": "6.0",
+            "DistortionCalibration": "6.1",
             "ExportAlembic": "1.0",
             "ExportDistortion": "2.0",
             "ExportImages": "1.1",

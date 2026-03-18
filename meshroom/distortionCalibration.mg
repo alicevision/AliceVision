@@ -5,7 +5,7 @@
         "nodesVersions": {
             "CameraInit": "12.0",
             "CheckerboardDetection": "2.0",
-            "DistortionCalibration": "6.0",
+            "DistortionCalibration": "6.1",
             "ExportDistortion": "2.0",
             "CopyFiles": "1.3"
         },

@@ -11,7 +11,7 @@
             "DepthMap": "5.0",
             "DepthMapFilter": "4.0",
             "DepthMapTracksInjecting": "1.0",
-            "DistortionCalibration": "6.0",
+            "DistortionCalibration": "6.1",
             "ExportAlembic": "1.0",
             "ExportDistortion": "2.0",
             "ExportImages": "1.1",

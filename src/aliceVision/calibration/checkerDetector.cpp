@@ -1946,5 +1946,34 @@ void CheckerDetector::groupNestedCheckerboards(size_t minConsensus)
     _boards[0] = newboard;
 }
 
+double CheckerDetector::getScore() const
+{
+    double maxScore = 0.0;
+    for (const auto & board :_boards)
+    {
+        size_t countValid = 0;
+        double sumScale = 0.0;
+        for (const auto & item : board.reshaped())
+        {
+            if (item == UndefinedIndexT)
+            {
+                continue;
+            }
+
+            // Scale is between 0 and 1
+            sumScale += _corners[item].scale;
+            countValid++;
+        }
+
+        // The score is the number of valid points in the checkerboard + the mean scale of the corners to disambiguate.
+        double score = (countValid > 0)
+                       ? (double(countValid) + sumScale / double(countValid))
+                       : 0.0;
+        maxScore = std::max(maxScore, score);
+    }
+
+    return maxScore;
+}
+
 }  // namespace calibration
 }  // namespace aliceVision
