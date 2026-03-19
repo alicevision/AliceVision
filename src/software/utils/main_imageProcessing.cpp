@@ -522,6 +522,7 @@ void setupSteps(std::list<std::unique_ptr<ImageProcess>> & steps, const Processi
     {
         steps.push_back(std::make_unique<SharpenProcess>(pParams.sharpen.width, pParams.sharpen.contrast, pParams.sharpen.threshold));
     }
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
     if (pParams.bilateralFilter.enabled)
     {
         steps.push_back(std::make_unique<BilateralFilterProcess>(pParams.bilateralFilter.distance, pParams.bilateralFilter.sigmaColor, pParams.bilateralFilter.sigmaSpace));
@@ -530,6 +531,7 @@ void setupSteps(std::list<std::unique_ptr<ImageProcess>> & steps, const Processi
     {
         steps.push_back(std::make_unique<ClaheFilterProcess>(pParams.claheFilter.tileGridSize, pParams.claheFilter.clipLimit));
     }
+#endif
     if (pParams.fillHoles)
     {
         steps.push_back(std::make_unique<FillHolesProcess>());
@@ -538,10 +540,12 @@ void setupSteps(std::list<std::unique_ptr<ImageProcess>> & steps, const Processi
     {
         steps.push_back(std::make_unique<NoiseProcess>(ENoiseMethod_enumToString(pParams.noise.method), pParams.noise.A, pParams.noise.B, pParams.noise.mono));
     }
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
     if (pParams.nlmFilter.enabled)
     {
         steps.push_back(std::make_unique<NlmFilterProcess>(pParams.nlmFilter.filterStrength, pParams.nlmFilter.filterStrengthColor, pParams.nlmFilter.templateWindowSize, pParams.nlmFilter.searchWindowSize));
     }
+#endif
     if (pParams.applyDcpMetadata || pParams.enableColorTempProcessing)
     {
         steps.push_back(std::make_unique<ColorTemperatureProcess>(pParams.applyDcpMetadata, pParams.useDCPColorMatrixOnly, pParams.enableColorTempProcessing, pParams.correlatedColorTemperature));
