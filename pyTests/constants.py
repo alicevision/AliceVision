@@ -87,7 +87,7 @@ METADATA = {
     "XResolution": "72",
     "YResolution": "72",
     "jpeg:subsampling": "4:2:0",
-    "oiio:ColorSpace": "sRGB"
+    "oiio:ColorSpace": "sRGB",
 }
 
 VIEW_ID = 12345
@@ -95,3 +95,4 @@ INTRINSIC_ID = 33
 POSE_ID = 44
 RIG_ID = 55
 SUBPOSE_ID = 66
+LIGHT_ID = 77
