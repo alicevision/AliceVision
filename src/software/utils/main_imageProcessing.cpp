@@ -525,13 +525,20 @@ void setupSteps(std::list<std::unique_ptr<ImageProcess>> & steps, const Processi
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
     if (pParams.bilateralFilter.enabled)
     {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         steps.push_back(std::make_unique<BilateralFilterProcess>(pParams.bilateralFilter.distance, pParams.bilateralFilter.sigmaColor, pParams.bilateralFilter.sigmaSpace));
+#else
+        ALICEVISION_LOG_ERROR("OpenCV support is not enabled in this AliceVision build. Bilateral filter processing is unavailable and will be bypassed.");
+#endif
     }
     if (pParams.claheFilter.enabled)
     {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         steps.push_back(std::make_unique<ClaheFilterProcess>(pParams.claheFilter.tileGridSize, pParams.claheFilter.clipLimit));
-    }
+#else
+        ALICEVISION_LOG_ERROR("OpenCV support is not enabled in this AliceVision build. Clahe filter processing is unavailable and will be bypassed.");
 #endif
+    }
     if (pParams.fillHoles)
     {
         steps.push_back(std::make_unique<FillHolesProcess>());
