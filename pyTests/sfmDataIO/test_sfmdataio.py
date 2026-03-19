@@ -5,8 +5,19 @@ Collection of unit tests for the SfMDataIO class.
 import os
 
 from pyalicevision import sfmDataIO, sfmData
-from ..constants import SFMDATA_PATH, IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, \
-    IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA
+from ..constants import (
+    SFMDATA_PATH,
+    IMAGE_PATH,
+    VIEW_ID,
+    INTRINSIC_ID,
+    POSE_ID,
+    IMAGE_WIDTH,
+    IMAGE_HEIGHT,
+    RIG_ID,
+    SUBPOSE_ID,
+    LIGHT_ID,
+    METADATA,
+)
 
 ##################
 ### List of functions:
@@ -15,26 +26,41 @@ from ..constants import SFMDATA_PATH, IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID
 # - bool save(SfMData& sfmData, string& filename, ESfMData partFlag) => DONE
 ##################
 
+
 def test_sfmdataio_load():
-    """ Test loading an SfMData file. """
+    """Test loading an SfMData file."""
     data = sfmData.SfMData()
     ret = sfmDataIO.load(data, SFMDATA_PATH, sfmDataIO.ALL)
 
-    assert ret, "Loading the SfMData file should have been successful as it is a valid one"
+    assert (
+        ret
+    ), "Loading the SfMData file should have been successful as it is a valid one"
     assert len(data.getViews()) == 30
 
 
 def test_sfmdataio_save():
-    """ Test loading an SfMData file, editing it, and saving it. """
+    """Test loading an SfMData file, editing it, and saving it."""
     data = sfmData.SfMData()
     ret = sfmDataIO.load(data, SFMDATA_PATH, sfmDataIO.ALL)
 
-    assert ret, "Loading the SfMData file should have been successful as it is a valid one"
+    assert (
+        ret
+    ), "Loading the SfMData file should have been successful as it is a valid one"
 
     views = data.getViews()
     nb_views = len(views)
-    new_view = sfmData.View(IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID,
-        IMAGE_WIDTH, IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA)
+    new_view = sfmData.View(
+        IMAGE_PATH,
+        VIEW_ID,
+        INTRINSIC_ID,
+        POSE_ID,
+        IMAGE_WIDTH,
+        IMAGE_HEIGHT,
+        RIG_ID,
+        SUBPOSE_ID,
+        LIGHT_ID,
+        METADATA,
+    )
     views[VIEW_ID] = new_view
     assert len(data.getViews()) == nb_views + 1
 
@@ -56,11 +82,13 @@ def test_sfmdataio_save():
 
 
 def test_sfmdataio_valid_ids():
-    """ Test loading an SfMData file and checking if it contains valid IDs. """
+    """Test loading an SfMData file and checking if it contains valid IDs."""
     data = sfmData.SfMData()
     ret = sfmDataIO.load(data, SFMDATA_PATH, sfmDataIO.ALL)
 
-    assert ret, "Loading the SfMData file should have been successful as it is a valid one"
+    assert (
+        ret
+    ), "Loading the SfMData file should have been successful as it is a valid one"
     assert sfmDataIO.validIds(data, sfmDataIO.ALL)
 
     # Add a default View object at index 12345
