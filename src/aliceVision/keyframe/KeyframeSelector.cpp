@@ -1469,6 +1469,7 @@ std::shared_ptr<sfmData::View> KeyframeSelector::createView(const std::string& i
                                                 imageHeight,                          // image height
                                                 UndefinedIndexT,                      // rig ID
                                                 UndefinedIndexT,                      // sub-pose ID
+                                                UndefinedIndexT,                      // light ID
                                                 std::map<std::string, std::string>()  // metadata
     );
 

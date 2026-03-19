@@ -159,6 +159,7 @@ bool splitDualFisheye(sfmData::SfMData& outSfmData,
               /* height */ outSide,
               /* rigId */ 0,
               /* subPoseId */ i,
+              /* lightId */ UndefinedIndexT,
               /* metadata */ image::getMapFromMetadata(metadataSource));
             views.emplace(viewId, view);
         }
@@ -260,6 +261,7 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
               /* height */ splitResolution,
               /* rigId */ 0,
               /* subPoseId */ index,
+              /* lightId */ UndefinedIndexT,
               /* metadata */ image::getMapFromMetadata(outMetadataSpec.extra_attribs));
             views.emplace(viewId, view);
         }
