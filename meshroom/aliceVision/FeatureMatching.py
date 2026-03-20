@@ -1,4 +1,4 @@
-__version__ = "2.0"
+__version__ = "2.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -8,7 +8,7 @@ class FeatureMatching(desc.AVCommandLineNode):
     commandLine = "aliceVision_featureMatching {allParams}"
     size = avpar.DynamicViewsSize("input")
     parallelization = desc.Parallelization(blockSize=20)
-    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
+    commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
 
     category = "Sparse Reconstruction"
     documentation = """

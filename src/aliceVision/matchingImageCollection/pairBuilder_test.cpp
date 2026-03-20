@@ -34,20 +34,15 @@ bool checkPairOrder(const IterablePairs& pairs)
 
 BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
 {
-    sfmData::Views views;
     {
         // Empty
-        PairSet pairSet = exhaustivePairs(views);
+        std::set<IndexT> indices;
+        PairSet pairSet = exhaustivePairs(indices);
         BOOST_CHECK_EQUAL(0, pairSet.size());
     }
     {
-        std::vector<IndexT> indexes = {{12, 54, 89, 65}};
-        for (IndexT i : indexes)
-        {
-            views.emplace(i, std::make_shared<sfmData::View>("filepath", i));
-        }
-
-        PairSet pairSet = exhaustivePairs(views);
+        std::set<IndexT> indices = {12, 54, 89, 65};
+        PairSet pairSet = exhaustivePairs(indices);
         BOOST_CHECK(checkPairOrder(pairSet));
         BOOST_CHECK_EQUAL(6, pairSet.size());
         BOOST_CHECK(pairSet.find(std::make_pair(12, 54)) != pairSet.end());

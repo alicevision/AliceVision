@@ -273,7 +273,7 @@ int aliceVision_main(int argc, char** argv)
             PairSet pairs;
                 
             ALICEVISION_LOG_INFO("Load pair list from file: " << imagePairsFile);
-            if (!matchingImageCollection::loadPairsFromFile(imagePairsFile, pairs, 0, -1))
+            if (!matchingImageCollection::loadPairsFromFile(imagePairsFile, pairs))
             {
                 return EXIT_FAILURE;
             }

@@ -5,6 +5,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+/**
+ * @file ImagePairListIO.hpp
+ * @brief Input/Output functions for reading and writing image pair lists.
+ * 
+ * This file provides utilities for loading and saving sets of image pairs
+ * to and from streams and files. Image pairs are used in the matching process
+ * to define which images should be compared for feature matching.
+ */
+
 #include <aliceVision/types.hpp>
 
 #include <iosfwd>
@@ -13,23 +22,29 @@
 namespace aliceVision {
 namespace matchingImageCollection {
 
-/// Load a set of PairSet from a stream
-/// I J K L (pair that link I)
-bool loadPairs(std::istream& stream, PairSet& pairs, int rangeStart = -1, int rangeSize = 0, bool useSymmetry = true);
-
-/// Save a set of PairSet to a stream (one pair per line)
-/// I J
-/// I K
-void savePairs(std::ostream& stream, const PairSet& pairs);
-
-/// Same as loadPairs, but loads from a given file
+/**
+ * @brief Load image pairs from a file.
+ * 
+ * Reads image pair data from the specified file and populates the pairs set.
+ * 
+ * @param[in] sFileName Path to the file containing the pair data
+ * @param[out] pairs Set of image pairs to be populated
+ * @param[in] useSymmetry If true, add (min(i,j), max(i,j)) instead of (i,j) (default: true)
+ * @return true if the file was opened and pairs were successfully loaded, false otherwise
+ */
 bool loadPairsFromFile(const std::string& sFileName,  // filename of the list file,
                        PairSet& pairs,
-                       int rangeStart = -1,
-                       int rangeSize = 0,
                        bool useSymmetry = true);
 
-/// Same as savePairs, but saves to a given file
+/**
+ * @brief Save image pairs to a file.
+ * 
+ * Writes the image pair data to the specified file.
+ * 
+ * @param[in] sFileName Path to the output file
+ * @param[in] pairs Set of image pairs to save
+ * @return true if the file was created and pairs were successfully saved, false otherwise
+ */
 bool savePairsToFile(const std::string& sFileName, const PairSet& pairs);
 
 }  // namespace matchingImageCollection
