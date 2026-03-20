@@ -160,12 +160,13 @@ RUN cmake "${AV_DEV}"                               \
         -DAV_BUILD_ZLIB:BOOL=ON                     \
         -DAV_BUILD_CCTAG:BOOL=ON                    \
         -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
+        -DAV_BUILD_DEPENDENCIES_PARALLEL=0          \
     && mkdir -p "${AV_INSTALL}/lib"                 \
     && ln -sf lib "${AV_INSTALL}/lib64"             \
     && { test -e /usr/local/cuda/lib64/libcublas.so \
          || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \
                   /usr/local/cuda/lib64/libcublas.so; }  \
     && CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh)   \
-    && cmake --build . --parallel "${CPU_CORES}"    \
+    && cmake --build . --parallel 1    \
     && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
     && rm -rf "${AV_BUILD}"
