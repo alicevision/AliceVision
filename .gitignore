@@ -28,7 +28,7 @@ Thumbs.db # Windows
 *.db
 
 # folder receiving the compilation products
-build*
+/build*
 install
 lib
 bin
