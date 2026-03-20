@@ -182,7 +182,7 @@ set(DEP_USD_GIT_TAG  "v23.05")
 # ── Feature detectors ─────────────────────────────────────────────────────────
 
 set(DEP_POPSIFT_GIT_REPO "https://github.com/alicevision/popsift")
-set(DEP_POPSIFT_GIT_TAG  "4b4b2478d5f0cdb6c4215a031572e951c0c2502e")
+set(DEP_POPSIFT_GIT_TAG  "77d1d28624d2849798fc107619507b50cd8cfe10")
 
 set(DEP_CCTAG_GIT_REPO "https://github.com/alicevision/CCTag")
 set(DEP_CCTAG_GIT_TAG  "v1.0.4")
