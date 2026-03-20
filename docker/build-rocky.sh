@@ -27,7 +27,7 @@ DEPS_DOCKER_TAG=${REPO_OWNER}/alicevision-deps:${AV_DEPS_VERSION}-rocky${ROCKY_V
 echo "--== BUILD DEPENDENCIES ==--"
 
 ## DEPENDENCIES
-docker build \
+DOCKER_BUILDKIT=1 docker build --no-cache \
 	--rm \
 	--progress=plain \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \
@@ -46,7 +46,7 @@ DOCKER_TAG=${REPO_OWNER}/alicevision:${AV_VERSION}-rocky${ROCKY_VERSION}-cuda${C
 echo "--== BUILD ALICEVISION ==--"
 
 ## ALICEVISION
-docker build \
+DOCKER_BUILDKIT=1 docker build \
 	--rm \
 	--progress=plain \
 	--build-arg CUDA_VERSION=${CUDA_VERSION} \

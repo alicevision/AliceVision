@@ -1,126 +1,171 @@
+# =============================================================================
+# Dockerfile_rocky_deps
+#
+# Builds all AliceVision third-party dependencies on Rocky Linux + CUDA.
+# Requires BuildKit:  DOCKER_BUILDKIT=1 docker build ...
+#
+# Build example:
+#   DOCKER_BUILDKIT=1 docker build \
+#     --build-arg CUDA_VERSION=12.1.1 \
+#     --build-arg ROCKY_VERSION=9 \
+#     --tag alicevision/alicevision-deps:<version>-rocky9-cuda12.1.1 \
+#     -f docker/Dockerfile_rocky_deps .
+# =============================================================================
+
+# syntax=docker/dockerfile:1.4
+
 ARG CUDA_VERSION
 ARG ROCKY_VERSION
+ARG CMAKE_VERSION=3.31.11
+
 FROM nvidia/cuda:${CUDA_VERSION}-devel-rockylinux${ROCKY_VERSION}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
-# use CUDA_VERSION to select the image version to use
-# see https://hub.docker.com/r/nvidia/cuda/
+# Re-declare ARGs after FROM so they are visible in this build stage
+ARG CMAKE_VERSION
+ARG CUDA_VERSION
+ARG ROCKY_VERSION
+
+# =============================================================================
+# System packages + GCC 12 toolset
 #
-# AV_VERSION=2.2.8.develop
-# CUDA_VERSION=11.0
-# ROCKY_VERSION=20.04
-# docker build \
-#    --build-arg CUDA_VERSION=${CUDA_VERSION} \
-#    --build-arg ROCKY_VERSION=${ROCKY_VERSION} \
-#    --tag alicevision/alicevision-deps:${AV_VERSION}-rocky${ROCKY_VERSION}-cuda${CUDA_TAG} \
-#     -f Dockerfile_rocky_deps .
+# Single RUN to minimise layers.
+# BuildKit cache mount on /var/cache/dnf avoids re-downloading RPMs on rebuild.
+#
+# gcc-toolset-12 installs into /opt/rh/gcc-toolset-12 — it does NOT own
+# /usr/bin/gcc which may already exist as a real file in the CUDA base image.
+# We remove it first: Rocky 9 `alternatives` 1.20 has no --force flag.
+# =============================================================================
+RUN --mount=type=cache,target=/var/cache/dnf \
+    dnf install -y 'dnf-command(config-manager)'                        && \
+    dnf config-manager --set-enabled devel                              && \
+    dnf install -y epel-release                                         && \
+    dnf install -y                                                         \
+        gcc-toolset-12-gcc-c++                                            \
+        gcc-toolset-12-gcc-gfortran                                     && \
+    rm -f /usr/bin/gcc /usr/bin/g++ /usr/bin/cpp                        && \
+    alternatives --install /usr/bin/gcc gcc                               \
+        /opt/rh/gcc-toolset-12/root/usr/bin/gcc    60                  && \
+    alternatives --install /usr/bin/g++ g++                               \
+        /opt/rh/gcc-toolset-12/root/usr/bin/g++    60                  && \
+    alternatives --install /usr/bin/cpp cpp                               \
+        /opt/rh/gcc-toolset-12/root/usr/bin/cpp    60                  && \
+    dnf install -y                                                         \
+        automake                                                          \
+        bison                                                             \
+        ca-certificates                                                   \
+        diffutils                                                         \
+        file                                                              \
+        git                                                               \
+        libasan                                                           \
+        libtool                                                           \
+        libubsan                                                          \
+        openssl-devel                                                     \
+        pcre2-devel                                                       \
+        python3.11-devel                                                  \
+        python3.11-pip                                                    \
+        python3.11-pybind11-devel                                         \
+        texinfo                                                           \
+        unzip                                                             \
+        wget                                                              \
+        which                                                             \
+        xerces-c-devel                                                    \
+        yaml-cpp                                                          \
+        yasm                                                              \
+    && dnf update -y
 
-# OS/Version (FILE): cat /etc/issue.net
-# Cuda version (ENV): $CUDA_VERSION
+# =============================================================================
+# Compiler environment (GCC 12 toolset)
+# =============================================================================
+ENV PATH="/opt/rh/gcc-toolset-12/root/usr/bin:${PATH}" \
+    CC="/opt/rh/gcc-toolset-12/root/usr/bin/gcc"       \
+    CXX="/opt/rh/gcc-toolset-12/root/usr/bin/g++"      \
+    FC="/opt/rh/gcc-toolset-12/root/usr/bin/gfortran"
 
-RUN dnf install -y 'dnf-command(config-manager)'
-RUN dnf config-manager --set-enabled devel
-RUN dnf install -y epel-release
-RUN dnf install -y gcc-toolset-12-gcc-c++
-# RUN dnf remove -y gcc-g++ gcc
-RUN update-alternatives --install /usr/bin/gcc gcc /opt/rh/gcc-toolset-12/root/usr/bin/gcc 60
-RUN update-alternatives --install /usr/bin/g++ g++ /opt/rh/gcc-toolset-12/root/usr/bin/g++ 60
-RUN update-alternatives --install /usr/bin/cpp cpp /opt/rh/gcc-toolset-12/root/usr/bin/cpp 60
-RUN dnf install -y ca-certificates wget cmake git unzip pcre2-devel xerces-c-devel
-RUN dnf install -y python3.11-devel python3.11-pip python3.11-pybind11-devel bison diffutils which file yasm
-RUN dnf install -y gcc-toolset-12-gcc-gfortran libasan libubsan yaml-cpp openssl-devel texinfo libtool automake
-RUN dnf update -y
+RUN gcc --version && g++ --version && gfortran --version
 
-# RUN scl enable gcc-toolset-12 bash
+# =============================================================================
+# Python packages + convenience symlink
+# BuildKit cache mount on pip avoids re-downloading wheels on rebuild.
+# =============================================================================
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python3.11 -m pip install "numpy==1.*"     && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python
 
-# Set it permanently
-ENV PATH="/opt/rh/gcc-toolset-12/root/usr/bin:$PATH"
-ENV CC="/opt/rh/gcc-toolset-12/root/usr/bin/gcc"
-ENV CXX="/opt/rh/gcc-toolset-12/root/usr/bin/g++"
-ENV FC="/opt/rh/gcc-toolset-12/root/usr/bin/gfortran"
+# =============================================================================
+# CMake — official binary distribution (avoids a full source build)
+# =============================================================================
+RUN wget -q "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh" \
+         -O /tmp/cmake-install.sh                              && \
+    chmod +x /tmp/cmake-install.sh                            && \
+    /tmp/cmake-install.sh --skip-license --prefix=/usr/local  && \
+    rm /tmp/cmake-install.sh
 
-RUN gcc --version
-RUN g++ --version
-RUN gfortran --version
-
-RUN python3.11 -m pip install numpy==1.*
-
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6.tar.gz 
-RUN tar -xzf cmake-3.31.6.tar.gz && \
-    cd cmake-3.31.6 && \
-    ./bootstrap --prefix=/usr/local && \
-    make -j 16 && \
-    make install
-
-ENV AV_DEV=/opt/AliceVision_git \
-    AV_BUILD=/tmp/AliceVision_build \
-    AV_INSTALL=/opt/AliceVision_install \
+# =============================================================================
+# AliceVision paths
+# =============================================================================
+ENV AV_DEV="/opt/AliceVision_git"         \
+    AV_BUILD="/tmp/AliceVision_build"     \
+    AV_INSTALL="/opt/AliceVision_install" \
     PATH="/usr/local/bin:${PATH}"
 
-COPY dl/vlfeat_K80L3.SIFT.tree ${AV_INSTALL}/share/aliceVision/
-RUN echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree" >> /etc/profile.d/alicevision.sh
+# =============================================================================
+# Static ML / data assets + environment variables
+# Grouped into one RUN to avoid one layer per echo.
+# =============================================================================
+COPY dl/vlfeat_K80L3.SIFT.tree                 ${AV_INSTALL}/share/aliceVision/
+COPY dl/sphereDetection_Mask-RCNN.onnx         ${AV_INSTALL}/share/aliceVision/
+COPY dl/fcn_resnet50.onnx                      ${AV_INSTALL}/share/aliceVision/
+COPY dl/ColorChartDetectionModel               ${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel/
 
-COPY dl/sphereDetection_Mask-RCNN.onnx ${AV_INSTALL}/share/aliceVision/
-RUN echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx" >> /etc/profile.d/alicevision.sh
+RUN { \
+    echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree"                                 ; \
+    echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx"          ; \
+    echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx"                  ; \
+    echo "export ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel"      ; \
+    } >> /etc/profile.d/alicevision.sh
 
-COPY dl/fcn_resnet50.onnx ${AV_INSTALL}/share/aliceVision/
-RUN echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx" >> /etc/profile.d/alicevision.sh
-
-COPY dl/ColorChartDetectionModel ${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel
-RUN echo "export ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel" >> /etc/profile.d/alicevision.sh
-
+# =============================================================================
+# CPU core detection helper
+# =============================================================================
 COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
-RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh` && echo "Build multithreading number of cores: ${CPU_CORES}"
+RUN CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
+    echo "Build multithreading number of cores: ${CPU_CORES}"
 
-COPY CMakeLists.txt ${AV_DEV}/
-COPY src/cmake/Dependencies.cmake ${AV_DEV}/src/cmake/
+# =============================================================================
+# AliceVision CMake sources + pre-fetched dependency archives
+# COPY instructions ordered from least to most frequently changed to maximise
+# Docker layer cache reuse.
+# =============================================================================
+COPY CMakeLists.txt                        ${AV_DEV}/
+COPY src/cmake/Dependencies.cmake          \
+     src/cmake/DependenciesVersions.cmake  \
+     src/cmake/Helpers.cmake               \
+     ${AV_DEV}/src/cmake/
+COPY src/cmake/deps/                       ${AV_DEV}/src/cmake/deps/
+COPY dl/deps                               ${AV_BUILD}/external/download/
 
-COPY dl/deps ${AV_BUILD}/external/download/
-
-# Symlink to Python3 executable in case a call to "python" instead of "python3" is ever made
-RUN ln -s /usr/bin/python3.11 /usr/bin/python
-
+# =============================================================================
+# Configure + build all dependencies
+#
+# Grouped into one RUN so the large build artefacts (AV_BUILD) are removed
+# in the same layer, keeping the final image size minimal.
+# =============================================================================
 WORKDIR "${AV_BUILD}"
-RUN cmake "${AV_DEV}" \
-     -DCMAKE_BUILD_TYPE=Release \
-     -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
-     -DAV_BUILD_ZLIB:BOOL=ON \
-     -DAV_BUILD_ALICEVISION:BOOL=OFF \
-     -DAV_BUILD_CCTAG:BOOL=ON \
-     -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"
 
-# Symlink lib64 to lib as qtOIIO expects to find OIIO in lib64
-RUN mkdir -p "${AV_INSTALL}/lib" && \
-    ln -s lib "${AV_INSTALL}/lib64"
-
-RUN test -e /usr/local/cuda/lib64/libcublas.so || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so /usr/local/cuda/lib64/libcublas.so
-
-
-# # RUN make -j ${CPU_CORES} cuda
-# RUN make -j ${CPU_CORES} boost
-# RUN make -j ${CPU_CORES} openexr
-# RUN make -j ${CPU_CORES} opencv
-# RUN make -j ${CPU_CORES} eigen
-# RUN make -j ${CPU_CORES} tbb
-# RUN make -j ${CPU_CORES} cctag
-# RUN make -j ${CPU_CORES} popsift
-# RUN make -j ${CPU_CORES} onnxruntime
-# RUN make -j ${CPU_CORES} turbojpeg
-# RUN make -j ${CPU_CORES} assimp
-# RUN make -j ${CPU_CORES} geogram
-# RUN make -j ${CPU_CORES} lapack
-# RUN make -j ${CPU_CORES} suitesparse
-# RUN make -j ${CPU_CORES} ceres
-# RUN make -j ${CPU_CORES} libraw
-# RUN make -j ${CPU_CORES} ffmpeg
-# RUN make -j ${CPU_CORES} openimageio
-# RUN make -j ${CPU_CORES} alembic
-# RUN make -j ${CPU_CORES} ffmpeg
-# RUN make -j ${CPU_CORES} expat
-# RUN make -j ${CPU_CORES} SWIG
-# RUN make -j ${CPU_CORES} E57Format
-
-
-RUN cmake --build . -j ${CPU_CORES} && \
-mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" && \
-rm -rf "${AV_BUILD}"
+RUN cmake "${AV_DEV}"                               \
+        -DCMAKE_BUILD_TYPE=Release                  \
+        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON    \
+        -DAV_BUILD_ALICEVISION:BOOL=OFF             \
+        -DAV_BUILD_ZLIB:BOOL=ON                     \
+        -DAV_BUILD_CCTAG:BOOL=ON                    \
+        -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
+    && mkdir -p "${AV_INSTALL}/lib"                 \
+    && ln -sf lib "${AV_INSTALL}/lib64"             \
+    && { test -e /usr/local/cuda/lib64/libcublas.so \
+         || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \
+                  /usr/local/cuda/lib64/libcublas.so; }  \
+    && CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh)   \
+    && cmake --build . --parallel "${CPU_CORES}"    \
+    && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
+    && rm -rf "${AV_BUILD}"

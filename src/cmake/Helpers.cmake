@@ -384,12 +384,22 @@ macro(av_add_cmake_dep)
         set(_D_DOWNLOAD_DIR "${BUILD_DIR}/download/${_D_TARGET}")
     endif()
 
+    # Tous les répertoires dérivés de BUILD_DIR pour rester cohérents avec PREFIX.
+    # SOURCE_DIR était dans CMAKE_CURRENT_BINARY_DIR (hors PREFIX), ce qui créait
+    # une incohérence : CMake dérive le stamp dir depuis PREFIX mais cherchait
+    # les fichiers de step (download-<target>.cmake, etc.) dans un chemin hors
+    # PREFIX → "Not a file: .../download-tiff.cmake"
+    set(_D_RESOLVED_SOURCE_DIR "${BUILD_DIR}/src/${_D_SOURCE_DIR}")
+    set(_D_RESOLVED_BINARY_DIR "${BUILD_DIR}/${_D_TARGET}_build")
+    set(_D_RESOLVED_STAMP_DIR  "${BUILD_DIR}/src/${_D_TARGET}-stamp")
+    set(_D_RESOLVED_TMP_DIR    "${BUILD_DIR}/src/${_D_TARGET}-tmp")
+
     # Build source arguments depending on fetch method
     set(_D_SRC_ARGS "")
     if(_D_URL)
         list(APPEND _D_SRC_ARGS
-            URL              ${_D_URL}
-            DOWNLOAD_DIR     ${_D_DOWNLOAD_DIR}
+            URL                  ${_D_URL}
+            DOWNLOAD_DIR         ${_D_DOWNLOAD_DIR}
             DOWNLOAD_NO_PROGRESS TRUE
         )
         if(_D_URL_HASH)
@@ -398,8 +408,10 @@ macro(av_add_cmake_dep)
     elseif(_D_GIT_REPOSITORY)
         list(APPEND _D_SRC_ARGS GIT_REPOSITORY ${_D_GIT_REPOSITORY})
         if(_D_GIT_TAG)
-            list(APPEND _D_SRC_ARGS GIT_TAG ${_D_GIT_TAG})
+            list(APPEND _D_SRC_ARGS GIT_TAG      ${_D_GIT_TAG})
         endif()
+        # Shallow clone : plus rapide, économise le réseau
+        list(APPEND _D_SRC_ARGS GIT_SHALLOW TRUE)
     endif()
 
     ExternalProject_Add(${_D_TARGET}
@@ -408,8 +420,10 @@ macro(av_add_cmake_dep)
         BUILD_IN_SOURCE 0
         BUILD_ALWAYS    0
         UPDATE_COMMAND  ""
-        SOURCE_DIR      ${CMAKE_CURRENT_BINARY_DIR}/${_D_SOURCE_DIR}
-        BINARY_DIR      ${BUILD_DIR}/${_D_TARGET}_build
+        SOURCE_DIR      ${_D_RESOLVED_SOURCE_DIR}
+        BINARY_DIR      ${_D_RESOLVED_BINARY_DIR}
+        STAMP_DIR       ${_D_RESOLVED_STAMP_DIR}
+        TMP_DIR         ${_D_RESOLVED_TMP_DIR}
         INSTALL_DIR     ${CMAKE_INSTALL_PREFIX}
         CONFIGURE_COMMAND
             ${CMAKE_COMMAND}
@@ -432,4 +446,8 @@ macro(av_add_cmake_dep)
     # Clean up local variables to avoid leaking between macro calls
     unset(_D_SRC_ARGS)
     unset(_D_DOWNLOAD_DIR)
+    unset(_D_RESOLVED_SOURCE_DIR)
+    unset(_D_RESOLVED_BINARY_DIR)
+    unset(_D_RESOLVED_STAMP_DIR)
+    unset(_D_RESOLVED_TMP_DIR)
 endmacro()
