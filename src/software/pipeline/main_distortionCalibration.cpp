@@ -262,6 +262,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmOutputDataFilepath;
     bool handleSqueeze = true;
     bool isDesqueezed = false;
+    bool bestOnly = false;
     double forcedPixelAspectRatio = 0.0;
 
     std::string undistortionModelName = "3deanamorphic4";
@@ -284,6 +285,11 @@ int aliceVision_main(int argc, char* argv[])
          "Estimate squeeze after estimating distortion")
         ("isDesqueezed", po::value<bool>(&isDesqueezed)->default_value(isDesqueezed),
          "Is the image already desqueezed")
+        ("bestOnly", po::value<bool>(&bestOnly)->default_value(bestOnly),
+         "All detected checkerboards are grouped by intrinsic. Distortion parameters are estimated per intrinsic. "
+         "The default behavior is to use all the detected checkerboards in all the images sharing the same intrinsic"
+         " to calibrate the distortion. By checking this option, the application will only keep one image per intrinsic."
+         " This unique image will be selected automatically based on a quality score.")
         ("forcedPixelAspectRatio", po::value<double>(&forcedPixelAspectRatio)->default_value(forcedPixelAspectRatio),
          "Force pixel aspect ratio value, overriding metadatas. Ignored if less than or equal 0.0.");
     // clang-format on
@@ -401,18 +407,62 @@ int aliceVision_main(int argc, char* argv[])
 
         undistortion->setPixelAspectRatio(pixelAspectRatio);
         undistortion->setDesqueezed(isDesqueezed);
+        
+        std::set<IndexT> usedViews;
+
+        if (!bestOnly)
+        {
+            //Keep all boards from the same intrinsic
+            for (auto& [viewId, view] : sfmData.getViews())
+            {
+                if (view->getIntrinsicId() != intrinsicId)
+                {
+                    continue;
+                }
+
+                usedViews.insert(viewId);
+            }
+        }
+        else 
+        {
+            IndexT bestView = UndefinedIndexT;
+            double bestScore = 0.0;
+
+            for (auto& [viewId, view] : sfmData.getViews())
+            {
+                if (view->getIntrinsicId() != intrinsicId)
+                {
+                    continue;
+                }
+
+                double score = boardsAllImages[viewId].getScore();
+                if (score > bestScore)
+                {
+                    bestView = viewId;
+                    bestScore = score;
+                }
+            }
+            
+            
+            if (bestView != UndefinedIndexT)
+            {
+                ALICEVISION_LOG_INFO("Selecting view #" << bestView << " for intrinsic #" << intrinsicId << ".");
+                usedViews.insert(bestView);
+            }
+        }
+
+        if (usedViews.size() == 0)
+        {
+            ALICEVISION_LOG_INFO("An intrinsic has no associated checkerboard.");
+            continue;
+        }
 
         // Transform checkerboards to line With points
         std::vector<calibration::LineWithPoints> allLinesWithPoints;
-        for (auto& pv : sfmData.getViews())
+        for (auto & viewId : usedViews)
         {
-            if (pv.second->getIntrinsicId() != intrinsicId)
-            {
-                continue;
-            }
-
             std::vector<calibration::LineWithPoints> linesWithPoints;
-            if (!retrieveLines(linesWithPoints, boardsAllImages[pv.first]))
+            if (!retrieveLines(linesWithPoints, boardsAllImages[viewId]))
             {
                 continue;
             }

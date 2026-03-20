@@ -143,6 +143,13 @@ class CheckerDetector
     /// Return a reference to the debug image.
     const image::Image<image::RGBColor>& getDebugImage() const { return _debugImage; }
 
+    /**
+     * @brief Compute a score for the last processed image
+     * The score is a way to sort images according to their detected checkerboards
+     * @return the score for the last processed image
+     */
+    double getScore() const;
+
   private:
     /**
      * @brief Extract corners positions from the image at the given scale.

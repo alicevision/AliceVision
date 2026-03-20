@@ -1,4 +1,4 @@
-__version__ = '6.0'
+__version__ = '6.1'
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -30,6 +30,12 @@ class DistortionCalibration(desc.AVCommandLineNode):
             description="model used to estimate undistortion.",
             value="3deanamorphic4",
             values=["3deanamorphic4", "3declassicld", "3deradial4"],
+        ),
+        desc.BoolParam(
+            name="bestOnly",
+            label="Keep best image",
+            description="All detected checkerboards across images sharing the same intrinsic are used for distortion calibration. Once this option is enabled, only the best image is selected to optimize the intrinsics rather than utilizing all available images.",
+            value=False,
         ),
         desc.BoolParam(
             name="handleSqueeze",
