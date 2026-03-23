@@ -327,11 +327,10 @@ bool ResizeProcess::processInternal(const sfmData::SfMData & sfmData, sfmData::V
 
 	view.getImage().setWidth(image.width());
 	view.getImage().setHeight(image.height());
+	view.getImage().addMetadata("PixelAspectRatio", "1");
 
 	if (camera)
 	{
-		camera->setWidth(nw);
-		camera->setHeight(nh);
 		camera->rescale(widthScaleFactor, heightScaleFactor);
 	}
 
