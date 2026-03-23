@@ -274,7 +274,7 @@ void Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDep
 
 void Sgm::optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDepthList)
 {
-    ALICEVISION_LOG_INFO(tile << "SGM Optimizing volume (filtering axes: " << _sgmParams.filteringAxes << ").");
+    ALICEVISION_LOG_INFO(tile << "SGM Optimizing volume.");
 
     // downscale the region of interest
     const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);

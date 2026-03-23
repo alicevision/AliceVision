@@ -416,7 +416,8 @@ __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFi
         {'Y', {0, 1, 2}}, // XYZ
     };
 
-    for(char axis : sgmParams.filteringAxes)
+    const char filteringAxes[2] = {'Y', 'X'};
+    for(char axis : filteringAxes)
     {
         const CudaSize<3>& axisT = mapAxes.at(axis);
         updateAggrVolume(axisT, false); // without transpose

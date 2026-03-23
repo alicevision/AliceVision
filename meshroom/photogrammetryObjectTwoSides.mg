@@ -6,7 +6,7 @@
             "CameraInit": "12.0",
             "ConvertSfMFormat": "2.0",
             "CopyFiles": "1.3",
-            "DepthMap": "5.0",
+            "Depthmap": "5.1",
             "DepthMapFilter": "4.0",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",

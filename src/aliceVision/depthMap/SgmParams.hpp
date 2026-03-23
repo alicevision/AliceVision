@@ -31,7 +31,6 @@ struct SgmParams
     double gammaP = 8.0;
     double p1 = 10;
     double p2Weighting = 100.0;
-    std::string filteringAxes = "YX";
     bool useSfmSeeds = true;
     bool depthListPerTile = false;
     bool useConsistentScale = false;
