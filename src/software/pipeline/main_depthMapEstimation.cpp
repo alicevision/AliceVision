@@ -155,8 +155,6 @@ int aliceVision_main(int argc, char* argv[])
          "Semi Global Matching: P2 weighting parameter for SGM filtering.")
         ("sgmMaxDepths", po::value<int>(&sgmParams.maxDepths)->default_value(sgmParams.maxDepths),
          "Semi Global Matching: Maximum number of depths in the similarity volume.")
-        ("sgmFilteringAxes", po::value<std::string>(&sgmParams.filteringAxes)->default_value(sgmParams.filteringAxes),
-         "Semi Global Matching: Define axes for the filtering of the similarity volume.")
         ("sgmDepthListPerTile", po::value<bool>(&sgmParams.depthListPerTile)->default_value(sgmParams.depthListPerTile),
          "Semi Global Matching: Select the list of depth planes per tile or globally to the image.")
         ("sgmUseConsistentScale", po::value<bool>(&sgmParams.useConsistentScale)->default_value(sgmParams.useConsistentScale),

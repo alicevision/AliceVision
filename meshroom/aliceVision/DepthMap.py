@@ -1,4 +1,4 @@
-__version__ = "5.0"
+__version__ = "5.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -238,13 +238,6 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
                     description="Maximum number of depths in the similarity volume.",
                     value=1500,
                     range=(1, 5000, 1),
-                    advanced=True,
-                ),
-                desc.StringParam(
-                    name="sgmFilteringAxes",
-                    label="Filtering Axes",
-                    description="Define axes for the filtering of the similarity volume.",
-                    value="YX",
                     advanced=True,
                 ),
                 desc.BoolParam(

@@ -8,7 +8,7 @@
             "ConvertDistortion": "1.0",
             "ConvertSfMFormat": "2.0",
             "CopyFiles": "1.3",
-            "DepthMap": "5.0",
+            "Depthmap": "5.1",
             "DepthMapFilter": "4.0",
             "ExportAlembic": "1.0",
             "ExportDistortion": "2.0",

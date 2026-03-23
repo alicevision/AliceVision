@@ -5,7 +5,7 @@
         "nodesVersions": {
             "CameraInit": "12.0",
             "CopyFiles": "1.3",
-            "DepthMap": "5.0",
+            "Depthmap": "5.1",
             "DepthMapFilter": "4.0",
             "ExportImages": "1.0",
             "FeatureExtraction": "1.3",
