@@ -24,6 +24,6 @@ if(AV_BUILD_SWIG)
 
     set(SWIG_CMAKE_FLAGS
         -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig/${DEP_SWIG_VERSION}
-        -DSWIG_EXECUTABLE=${CMAKE_INSTALL_PREFIX}/bin-deps
+        -DSWIG_EXECUTABLE=${CMAKE_INSTALL_PREFIX}/bin-deps/swig
     )
 endif()
