@@ -13,7 +13,11 @@
 
 namespace aliceVision {
 
-/// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
-PairSet exhaustivePairs(const sfmData::Views& views, int rangeStart = -1, int rangeSize = 0);
+/**
+ * @brief Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
+ * @param views the sfmData views indices list
+ * @return a generated set of pairs
+ */
+PairSet exhaustivePairs(const std::set<IndexT> & viewIds);
 
 };  // namespace aliceVision

@@ -18,3 +18,4 @@ using namespace aliceVision;
 %} 
 
 %include <aliceVision/matchingImageCollection/ImagePairListIO.hpp>
+ 

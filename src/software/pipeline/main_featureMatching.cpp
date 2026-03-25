@@ -34,6 +34,7 @@
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
+#include <aliceVision/system/Parallelization.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -45,7 +46,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 using namespace aliceVision::camera;
@@ -103,8 +104,8 @@ int aliceVision_main(int argc, char** argv)
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
     float distRatio = 0.8f;
     std::vector<std::string> predefinedPairList;
-    int rangeStart = -1;
-    int rangeSize = 0;
+    int rangeIteration = 0;
+    int rangeBlocksCount = 1;
     std::string nearestMatchingMethod = "ANN_L2";
     robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
     double geometricErrorMax = 0.0;  //< the maximum reprojection error allowed for image matching with geometric validation
@@ -182,10 +183,10 @@ int aliceVision_main(int argc, char** argv)
          "Export debug files (svg, dot).")
         ("maxMatches", po::value<std::size_t>(&numMatchesToKeep)->default_value(numMatchesToKeep),
          "Maximum number pf matches to keep.")
-        ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
-         "Range image index start.")
-        ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-         "Range size.")
+        ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration),
+         "chunk index.")
+        ("rangeBlocksCount", po::value<int>(&rangeBlocksCount)->default_value(rangeBlocksCount),
+         "Total number of chunks.")
         ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
          "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
@@ -245,38 +246,60 @@ int aliceVision_main(int argc, char** argv)
     //    - Keep correspondences only if NearestNeighbor ratio is ok
 
     // from matching mode compute the pair list that have to be matched
-    PairSet pairs;
-    std::set<IndexT> filter;
+    PairSet allPairs;
+    
 
     // We assume that there is only one pair for (I,J) and (J,I)
     if (predefinedPairList.empty())
     {
-        pairs = exhaustivePairs(sfmData.getViews(), rangeStart, rangeSize);
+        allPairs = exhaustivePairs(sfmData.getViewsKeys());
     }
     else
     {
         for (const std::string& imagePairsFile : predefinedPairList)
         {
             ALICEVISION_LOG_INFO("Load pair list from file: " << imagePairsFile);
-            if (!matchingImageCollection::loadPairsFromFile(imagePairsFile, pairs, rangeStart, rangeSize))
+            if (!matchingImageCollection::loadPairsFromFile(imagePairsFile, allPairs))
+            {
                 return EXIT_FAILURE;
+            }
         }
     }
 
-    if (pairs.empty())
+    if (allPairs.empty())
     {
         ALICEVISION_LOG_INFO("No image pair to match.");
         // if we only compute a selection of matches, we may have no match.
-        return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
+        return rangeBlocksCount > 1 ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
-    ALICEVISION_LOG_INFO("Number of pairs: " << pairs.size());
+    ALICEVISION_LOG_INFO("Number of pairs: " << allPairs.size());
+
+    int chunkStart, chunkEnd;
+    if (!rangeComputation(chunkStart, chunkEnd, rangeIteration, rangeBlocksCount, allPairs.size()))
+    {
+        ALICEVISION_LOG_INFO("Nothing to compute in this chunk");
+        return EXIT_SUCCESS;
+    }
+
+    ALICEVISION_LOG_INFO("A total of " << allPairs.size() << " pairs has to be processed.");
+    ALICEVISION_LOG_INFO("Current chunk will analyze pairs from " << chunkStart << " to " << chunkEnd << ".");
 
     // filter creation
-    for (const auto& pair : pairs)
+    // Keep only pairs in the chunk
+    int pos = 0;
+    PairSet pairs;
+    std::set<IndexT> filter;
+    for (const auto& pair : allPairs)
     {
-        filter.insert(pair.first);
-        filter.insert(pair.second);
+        if (pos >= chunkStart && pos < chunkEnd)
+        {
+            pairs.insert(pair);
+            filter.insert(pair.first);
+            filter.insert(pair.second);
+        }
+
+        pos++;
     }
 
     PairwiseMatches mapPutativesMatches;
@@ -357,7 +380,7 @@ int aliceVision_main(int argc, char** argv)
     {
         ALICEVISION_LOG_INFO("No putative feature matches.");
         // If we only compute a selection of matches, we may have no match.
-        return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
+        return rangeBlocksCount > 1 ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
     if (geometricFilterType == EGeometricFilterType::HOMOGRAPHY_GROWING)
@@ -375,10 +398,10 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    // when a range is specified, generate a file prefix to reflect the current iteration (rangeStart/rangeSize)
+    // when a range is specified, generate a file prefix to reflect the current iteration
     // => with matchFilePerImage: avoids overwriting files if a view is present in several iterations
     // => without matchFilePerImage: avoids overwriting the unique resulting file
-    const std::string filePrefix = rangeSize > 0 ? std::to_string(rangeStart / rangeSize) + "." : "";
+    const std::string filePrefix = std::to_string(rangeIteration) + ".";
 
     ALICEVISION_LOG_INFO(std::to_string(mapPutativesMatches.size()) << " putative image pair matches");
 
@@ -389,33 +412,12 @@ int aliceVision_main(int argc, char** argv)
 
     // export putative matches
     if (savePutativeMatches)
+    {
         Save(mapPutativesMatches, (fs::path(matchesFolder) / "putativeMatches").string(), fileExtension, matchFilePerImage, filePrefix);
+    }
 
     ALICEVISION_LOG_INFO("Task (Regions Matching) done in (s): " + std::to_string(timer.elapsed()));
 
-    /*
-    // TODO: DELI
-    if(exportDebugFiles)
-    {
-      //-- export putative matches Adjacency matrix
-      PairwiseMatchingToAdjacencyMatrixSVG(sfmData.getViews().size(),
-        mapPutativesMatches,
-        (fs::path(matchesFolder) / "PutativeAdjacencyMatrix.svg").string());
-      //-- export view pair graph once putative graph matches have been computed
-      {
-        std::set<IndexT> set_ViewIds;
-
-        std::transform(sfmData.getViews().begin(), sfmData.getViews().end(),
-          std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
-
-        graph::indexedGraph putativeGraph(set_ViewIds, getPairs(mapPutativesMatches));
-
-        graph::exportToGraphvizData(
-          (fs::path(matchesFolder) / "putative_matches.dot").string(),
-          putativeGraph.g);
-      }
-    }
-    */
 
 #ifdef ALICEVISION_DEBUG_MATCHING
     {
