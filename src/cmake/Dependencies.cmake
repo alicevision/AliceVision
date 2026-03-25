@@ -231,6 +231,6 @@ if(AV_BUILD_ALICEVISION)
             ${CCTAG_CMAKE_FLAGS}
             ${APRILTAG_CMAKE_FLAGS}
             ${CUDA_CMAKE_FLAGS}
-        DEPENDS ${DEP_DEPS}
+        DEPENDS ${AV_DEPS}
     )
 endif()
