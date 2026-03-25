@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -22,6 +22,12 @@ class ListImages(desc.AVCommandLineNode):
             label="Input Files",
             description="Set of paths to image files and/or folders.",
             exposed=True,
+        ),
+        desc.BoolParam(
+            name="isSequence",
+            label="Images are a sequence",
+            description="The images provided as input are part of a sequence with temporal coherency.",
+            value=False,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

@@ -10,6 +10,7 @@
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/camera/Equidistant.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/sfmData/ImageGroup.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
 
@@ -37,6 +38,9 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
 
     if (view.getFrameId() != UndefinedIndexT)
         viewTree.put("frameId", view.getFrameId());
+
+    if (view.getImageGroupId() != UndefinedIndexT)
+        viewTree.put("imageGroupId", view.getImageGroupId());
 
     if (view.getIntrinsicId() != UndefinedIndexT)
         viewTree.put("intrinsicId", view.getIntrinsicId());
@@ -90,6 +94,7 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
     }
 
     view.setFrameId(viewTree.get<IndexT>("frameId", UndefinedIndexT));
+    view.setImageGroupId(viewTree.get<IndexT>("imageGroupId", UndefinedIndexT));
     view.setIntrinsicId(viewTree.get<IndexT>("intrinsicId", UndefinedIndexT));
     view.setResectionId(viewTree.get<IndexT>("resectionId", UndefinedIndexT));
     view.setIndependantPose(viewTree.get<bool>("isPoseIndependant", true));
@@ -144,6 +149,24 @@ void loadAncestor(IndexT& ancestorId, std::shared_ptr<sfmData::ImageInfo>& ances
     if (ancestorTree.count("metadata"))
         for (bpt::ptree::value_type& metaDataNode : ancestorTree.get_child("metadata"))
             ancestor->addMetadata(metaDataNode.first, metaDataNode.second.data());
+}
+
+void saveImageGroup(const std::string& name, IndexT imageGroupId, const sfmData::ImageGroup & group, bpt::ptree& parentTree)
+{
+    bpt::ptree imageGroupTree;
+    imageGroupTree.put("imageGroupId", imageGroupId);
+    imageGroupTree.put("imageGroupType", sfmData::ImageGroup::typeToString(group.getType()));
+    parentTree.push_back(std::make_pair(name, imageGroupTree));
+}
+
+void loadImageGroup(sfmData::ImageGroups & groups, bpt::ptree& imageGroupTree)
+{
+    IndexT imageGroupId = imageGroupTree.get<IndexT>("imageGroupId");
+    std::string typeString = imageGroupTree.get<std::string>("imageGroupType");
+    sfmData::ImageGroup::Type type = sfmData::ImageGroup::stringToType(typeString);
+
+    sfmData::ImageGroup::sptr group = sfmData::ImageGroup::create(type);
+    groups.emplace(imageGroupId, group);
 }
 
 void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::shared_ptr<camera::IntrinsicBase>& intrinsic, bpt::ptree& parentTree)
@@ -688,9 +711,24 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
         bpt::ptree viewsTree;
 
         for (const auto& viewPair : sfmData.getViews())
+        {
             saveView("", *(viewPair.second), viewsTree);
+        }
 
         fileTree.add_child("views", viewsTree);
+    }
+
+    // imageGroups
+    if (saveViews && !sfmData.getImageGroups().empty())
+    {
+        bpt::ptree igTree;
+
+        for (const auto& [idImageGroup, imageGroup] : sfmData.getImageGroups().valueRange())
+        {
+            saveImageGroup("", idImageGroup, imageGroup, igTree);
+        }
+
+        fileTree.add_child("imageGroups", igTree);
     }
 
     // ancestors
@@ -908,6 +946,18 @@ bool loadJSON(sfmData::SfMData& sfmData,
                 loadView(*view, viewNode.second);
                 views.emplace(view->getViewId(), view);
             }
+        }
+    }
+
+    // imageGroups
+    if (loadViews && fileTree.count("imageGroups"))
+    {
+        sfmData::ImageGroups & groups = sfmData.getImageGroups();     
+        
+        for (bpt::ptree::value_type& igNode : fileTree.get_child("imageGroups"))
+        {
+            bpt::ptree& igTree = igNode.second;
+            loadImageGroup(groups, igTree);
         }
     }
 

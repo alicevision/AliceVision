@@ -191,5 +191,17 @@ void regenerateViewUIDs(Views& views, std::map<std::size_t, std::size_t>& oldIdT
     views.swap(newViews);
 }
 
+IndexT computeGlobalId(const Views & views)
+{
+    std::size_t uid = 0;
+
+    for (const auto & [id, _]: views)
+    {
+        stl::hash_combine(uid, id);
+    }
+
+    return uid;
+}
+
 }  // namespace sfmData
 }  // namespace aliceVision

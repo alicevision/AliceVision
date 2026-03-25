@@ -3,7 +3,7 @@
         "releaseVersion": "2026.1.0+develop",
         "fileVersion": "2.0",
         "nodesVersions": {
-            "CameraInit": "12.0",
+            "CameraInit": "12.1",
             "ConvertDistortion": "1.0",
             "ConvertSfMFormat": "2.0",
             "CopyFiles": "1.3",

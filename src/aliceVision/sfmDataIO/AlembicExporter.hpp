@@ -76,13 +76,15 @@ class AlembicExporter
      * @param[in] pose The camera pose (nullptr if undefined)
      * @param[in] intrinsic The camera intrinsic (nullptr if undefined)
      * @param[in] uncertainty The camera uncertainty values (nullptr if undefined)
+     * @param[in] imageGroup The image group  for this view (nullptr if undefined)
      * @param[in,out] parent The Alembic parent node
      */
     void addCamera(const std::string& name,
                    const sfmData::View& view,
                    const sfmData::CameraPose* pose = nullptr,
                    std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr,
-                   const Vec6* uncertainty = nullptr);
+                   const Vec6* uncertainty = nullptr,
+                   const sfmData::ImageGroup * imageGroup = nullptr);
 
     /**
      * @brief Add a keyframe to the animated camera

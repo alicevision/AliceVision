@@ -14,6 +14,7 @@
 #include <aliceVision/sfmData/ConstraintPoint.hpp>
 #include <aliceVision/sfmData/RotationPrior.hpp>
 #include <aliceVision/sfmData/SurveyPoint.hpp>
+#include <aliceVision/sfmData/ImageGroup.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
@@ -28,6 +29,9 @@ namespace sfmData {
 
 /// Define a collection of View
 using Views = SharedPtrMap<View>;
+
+/// Define a collection of ImageGroup
+using ImageGroups = SharedPtrMap<ImageGroup>;
 
 /// Define a collection of Image Info
 using ImageInfos = SharedPtrMap<ImageInfo>;
@@ -168,6 +172,13 @@ class SfMData
      */
     const RotationPriors& getRotationPriors() const { return _rotationpriors; }
     RotationPriors& getRotationPriors() { return _rotationpriors; }
+
+    /**
+     * @brief Get ImageGroups
+     * @return ImageGroups
+     */
+    const ImageGroups& getImageGroups() const { return _imageGroups; }
+    ImageGroups& getImageGroups() { return _imageGroups; }
 
     /**
      * @brief Get relative features folder paths
@@ -721,6 +732,11 @@ class SfMData
     void clear();
 
     /**
+    * @brief Remove image groups which are unused
+    */
+    void removeUnusedImageGroups();
+
+    /**
     * @brief Remove intrinsics which are unused
     */
     void removeUnusedIntrinsics();
@@ -791,6 +807,8 @@ class SfMData
     RotationPriors _rotationpriors;
     /// Survey points
     SurveyPoints _surveyPoints;
+    /// Image groups
+    ImageGroups _imageGroups;
 
     /**
      * @brief Get Rig pose of a given camera view

@@ -3,6 +3,9 @@ set(sfmData_files_headers
     SfMData.hpp
     CameraPose.hpp
     Landmark.hpp
+    ImageGroup.hpp
+    ImageSet.hpp
+    ImageSequence.hpp
     View.hpp
     Rig.hpp
     uid.hpp
@@ -25,6 +28,7 @@ set(sfmData_files_sources
     exif.cpp
     ImageInfo.cpp
     Landmark.cpp
+    ImageGroup.cpp
     Observation.cpp
 )
 

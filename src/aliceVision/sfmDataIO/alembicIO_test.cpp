@@ -43,6 +43,7 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
         view->getImage().addMetadata("A", "A");
         view->getImage().addMetadata("B", "B");
         view->getImage().addMetadata("C", "C");
+        view->setImageGroupId(156);
 
         view->addAncestor(static_cast<IndexT>(11));
         view->addAncestor(static_cast<IndexT>(22));
@@ -69,6 +70,8 @@ SfMData createTestScene(IndexT singleViewsCount, IndexT pointCount, IndexT rigCo
               i, camera::createPinhole(camera::EDISTORTION::DISTORTION_NONE, camera::EUNDISTORTION::UNDISTORTION_NONE, 1000, 1000, 36.0, 36.0, std::rand() % 10000, std::rand() % 10000));
         }
     }
+
+    sfm_data.getImageGroups().emplace(156, sfmData::ImageGroup::create(sfmData::ImageGroup::Type::ImageSet));
 
     sfmData::ImageInfo ancestorImg_1("path_1.jpg", 1024, 640);
     ancestorImg_1.addMetadata("D", "D");

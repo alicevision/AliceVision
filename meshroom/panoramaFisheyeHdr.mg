@@ -3,7 +3,7 @@
         "releaseVersion": "2026.1.0+develop",
         "fileVersion": "2.0",
         "nodesVersions": {
-            "CameraInit": "12.0",
+            "CameraInit": "12.1",
             "CopyFiles": "1.3",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",

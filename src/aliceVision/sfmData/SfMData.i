@@ -19,6 +19,7 @@
 %include <aliceVision/sfmData/RotationPrior.i>
 %include <aliceVision/sfmData/View.i>
 %include <aliceVision/sfmData/Landmark.i>
+%include <aliceVision/sfmData/ImageGroup.i>
 
 %include <aliceVision/sfmData/SfMData.hpp>
 
