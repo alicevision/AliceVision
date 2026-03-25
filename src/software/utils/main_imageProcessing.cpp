@@ -524,11 +524,19 @@ void setupSteps(std::list<std::unique_ptr<ImageProcess>> & steps, const Processi
     }
     if (pParams.bilateralFilter.enabled)
     {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         steps.push_back(std::make_unique<BilateralFilterProcess>(pParams.bilateralFilter.distance, pParams.bilateralFilter.sigmaColor, pParams.bilateralFilter.sigmaSpace));
+#else
+        ALICEVISION_LOG_ERROR("OpenCV support is not enabled in this AliceVision build. Bilateral filter processing is unavailable and will be bypassed.");
+#endif
     }
     if (pParams.claheFilter.enabled)
     {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
         steps.push_back(std::make_unique<ClaheFilterProcess>(pParams.claheFilter.tileGridSize, pParams.claheFilter.clipLimit));
+#else
+        ALICEVISION_LOG_ERROR("OpenCV support is not enabled in this AliceVision build. Clahe filter processing is unavailable and will be bypassed.");
+#endif
     }
     if (pParams.fillHoles)
     {
@@ -539,9 +547,13 @@ void setupSteps(std::list<std::unique_ptr<ImageProcess>> & steps, const Processi
         steps.push_back(std::make_unique<NoiseProcess>(ENoiseMethod_enumToString(pParams.noise.method), pParams.noise.A, pParams.noise.B, pParams.noise.mono));
     }
     if (pParams.nlmFilter.enabled)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
     {
         steps.push_back(std::make_unique<NlmFilterProcess>(pParams.nlmFilter.filterStrength, pParams.nlmFilter.filterStrengthColor, pParams.nlmFilter.templateWindowSize, pParams.nlmFilter.searchWindowSize));
     }
+#else
+        ALICEVISION_LOG_ERROR("OpenCV support is not enabled in this AliceVision build. Nlm filter processing is unavailable and will be bypassed.");
+#endif
     if (pParams.applyDcpMetadata || pParams.enableColorTempProcessing)
     {
         steps.push_back(std::make_unique<ColorTemperatureProcess>(pParams.applyDcpMetadata, pParams.useDCPColorMatrixOnly, pParams.enableColorTempProcessing, pParams.correlatedColorTemperature));
