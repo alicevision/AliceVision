@@ -25,6 +25,8 @@ if(AV_BUILD_DEPENDENCIES_PARALLEL EQUAL 0)
     cmake_host_system_information(RESULT AV_BUILD_DEPENDENCIES_PARALLEL QUERY NUMBER_OF_LOGICAL_CORES)
 endif()
 
+set(AV_ONNX_APPLE_ARCH "arm64" CACHE STRING "Version to download OFF Apple [arm64, x86_64]")
+
 # Core
 option(AV_BUILD_ZLIB        "Build zlib"     ON)
 option(AV_BUILD_TBB         "Build TBB"      ON)
