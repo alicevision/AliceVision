@@ -5,7 +5,7 @@
 # Files are included in dependency order: a lib is always included after
 # all libs it depends on.
 #
-# Variable conventions (defined in cmake/DepsVersions.cmake):
+# Variable conventions (defined in cmake/DependenciesVersions.cmake):
 #   DEP_<LIB>_VERSION   — version string
 #   DEP_<LIB>_URL       — full download URL
 #   DEP_<LIB>_HASH      — checksum as <ALGO>=<value>
