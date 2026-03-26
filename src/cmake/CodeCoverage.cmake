@@ -87,6 +87,11 @@
 #     - fix append_coverage_compiler_flags_to_target to correctly add flags
 #     - replace "-fprofile-arcs -ftest-coverage" with "--coverage" (equivalent)
 #
+# 2025-03-19, AliceVision contributors
+#     - Replace CheckCXXCompilerFlag / CheckCCompilerFlag with the unified
+#       CheckCompilerFlag module (CMake 3.19+, required >= 3.30)
+#     - Remove local copies of CheckCCompilerFlag.cmake and CheckCXXCompilerFlag.cmake
+#
 # USAGE:
 #
 # 1. Copy this file into your cmake modules path.
@@ -167,16 +172,19 @@ endforeach()
 set(COVERAGE_COMPILER_FLAGS "-g --coverage"
     CACHE INTERNAL "")
 
+# Use the unified CheckCompilerFlag module (CMake 3.19+) instead of the
+# language-specific CheckCXXCompilerFlag / CheckCCompilerFlag modules.
+include(CheckCompilerFlag)
+include(CheckCCompilerFlag)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-    include(CheckCXXCompilerFlag)
-    check_cxx_compiler_flag(-fprofile-abs-path HAVE_cxx_fprofile_abs_path)
+    check_compiler_flag(CXX -fprofile-abs-path HAVE_cxx_fprofile_abs_path)
     if(HAVE_cxx_fprofile_abs_path)
         set(COVERAGE_CXX_COMPILER_FLAGS "${COVERAGE_COMPILER_FLAGS} -fprofile-abs-path")
     endif()
 endif()
 if(CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
-    include(CheckCCompilerFlag)
-    check_c_compiler_flag(-fprofile-abs-path HAVE_c_fprofile_abs_path)
+    check_compiler_flag(C -fprofile-abs-path HAVE_c_fprofile_abs_path)
     if(HAVE_c_fprofile_abs_path)
         set(COVERAGE_C_COMPILER_FLAGS "${COVERAGE_COMPILER_FLAGS} -fprofile-abs-path")
     endif()
