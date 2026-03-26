@@ -941,12 +941,6 @@ int aliceVision_main(int argc, char* argv[])
         extChunkEnd = selectedViews.size();
     }
 
-    if (steps.size() == 0)
-    {
-        extChunkStart = 0;
-        extChunkEnd = 0;
-    }
-
     // Loop over selected views for this chunk
     for (int pos = extChunkStart; pos < extChunkEnd; pos++)
     {
