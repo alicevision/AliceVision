@@ -597,7 +597,7 @@ bool computeSimilarityFromCommonLandmarks(const sfmData::SfMData& sfmDataA,
 
     if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, S, t, R, inliers, true))
     {
-        std::cout << "merde" << std::endl;
+        ALICEVISION_LOG_DEBUG("Failed to compute similarity transform from markers.");
         return false;
     }
 
@@ -644,7 +644,7 @@ bool computeSimilarityFromPairs(const std::vector<Vec3> & ptsA,
 
     if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, S, t, R, inliers, true))
     {
-        std::cout << "merde" << std::endl;
+        ALICEVISION_LOG_DEBUG("Failed to compute similarity transform from point pairs.");
         return false;
     }
 
