@@ -91,9 +91,9 @@ class Matrix3x4
         }
         else
         {
-            ALICEVISION_LOG_INFO(m11 << " " << m12 << " " << m13 << " " << m14);
-            ALICEVISION_LOG_INFO(m21 << " " << m22 << " " << m23 << " " << m24);
-            ALICEVISION_LOG_INFO(m31 << " " << m32 << " " << m33 << " " << m34);
+            ALICEVISION_LOG_ERROR(m11 << " " << m12 << " " << m13 << " " << m14);
+            ALICEVISION_LOG_ERROR(m21 << " " << m22 << " " << m23 << " " << m24);
+            ALICEVISION_LOG_ERROR(m31 << " " << m32 << " " << m33 << " " << m34);
             throw std::runtime_error("Matrix3x4::decomposeProjectionMatrix: affine camera.");
         }
 

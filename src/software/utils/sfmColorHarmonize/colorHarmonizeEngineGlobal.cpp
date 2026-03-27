@@ -210,7 +210,7 @@ bool ColorHarmonizationEngineGlobal::process()
         //-- Edges names:
         std::pair<std::string, std::string> p_imaNames;
         p_imaNames = make_pair(_fileNames[viewI], _fileNames[viewJ]);
-        ALICEVISION_LOG_DEBUG("Current edge: " << fs::path(p_imaNames.first).filename().string() << "\t"
+        ALICEVISION_LOG_DEBUG("Current edge: " << fs::path(p_imaNames.first).filename().string() << " - "
                                               << fs::path(p_imaNames.second).filename().string());
 
         //-- Compute the masks from the data selection:
