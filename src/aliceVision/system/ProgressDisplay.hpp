@@ -63,9 +63,15 @@ class ProgressDisplay
     std::shared_ptr<ProgressDisplayImpl> _impl;
 };
 
-/// Creates console-based progress bar
+/// Creates console-based progress bar (output to the given stream)
 ProgressDisplay createConsoleProgressDisplay(unsigned long expectedCount,
                                              std::ostream& os,
+                                             const std::string& s1 = "\n",  // leading strings
+                                             const std::string& s2 = "",
+                                             const std::string& s3 = "");
+
+/// Creates console-based progress bar (output to stdout)
+ProgressDisplay createConsoleProgressDisplay(unsigned long expectedCount,
                                              const std::string& s1 = "\n",  // leading strings
                                              const std::string& s2 = "",
                                              const std::string& s3 = "");

@@ -67,7 +67,7 @@ PairSet FrustumFilter::getFrustumIntersectionPairs() const
     std::transform(z_near_z_far_perView.begin(), z_near_z_far_perView.end(), std::back_inserter(viewIds), stl::RetrieveKey());
 
     auto progressDisplay =
-      system::createConsoleProgressDisplay(viewIds.size() * (viewIds.size() - 1) / 2, std::cout, "\nCompute frustum intersection\n");
+      system::createConsoleProgressDisplay(viewIds.size() * (viewIds.size() - 1) / 2, "\nCompute frustum intersection\n");
 
 // Exhaustive comparison (use the fact that the intersect function is symmetric)
 #pragma omp parallel for

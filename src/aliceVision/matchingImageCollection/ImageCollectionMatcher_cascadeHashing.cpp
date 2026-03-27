@@ -33,7 +33,7 @@ void Match(std::mt19937& gen,
            PairwiseMatches& map_PutativesMatches  // the pairwise photometric corresponding points
 )
 {
-    auto progressDisplay = system::createConsoleProgressDisplay(pairs.size(), std::cout);
+    auto progressDisplay = system::createConsoleProgressDisplay(pairs.size());
 
     // Collect used view indexes
     std::set<IndexT> used_index;

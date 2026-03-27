@@ -81,7 +81,7 @@ void Database::sanityCheck(std::size_t N, std::map<std::size_t, DocMatches>& mat
     matches.clear();
     // since we already know the size of the vectors, in order to parallelize the
     // query allocate the whole memory
-    auto display = system::createConsoleProgressDisplay(database_.size(), std::cout);
+    auto display = system::createConsoleProgressDisplay(database_.size());
 
     // #pragma omp parallel for default(none) shared(database_)
     for (const auto& doc : database_)

@@ -12,6 +12,7 @@
 #include <aliceVision/numeric/BoxStats.hpp>
 
 #include <aliceVision/utils/Histogram.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -129,10 +130,8 @@ inline void EvaluteToGT(const std::vector<Vec3>& vec_camCenterGT,
 
     computeSimilarity(vec_camCenterGT, vec_camCenterComputed, randomNumberGenerator, vec_camPosComputed_T, &scale, &R, &t);
 
-    std::cout << "\nEstimated similarity transformation between the sequences\n";
-    std::cout << "R\n" << R << std::endl;
-    std::cout << "t\n" << t << std::endl;
-    std::cout << "scale\n" << scale << std::endl;
+    ALICEVISION_LOG_INFO("Estimated similarity transformation between the sequences\n"
+                         << "R\n" << R << "\nt\n" << t << "\nscale\n" << scale);
 
     // Compute statistics and export them
     // -a. distance between camera center
@@ -149,7 +148,7 @@ inline void EvaluteToGT(const std::vector<Vec3>& vec_camCenterGT,
             trajectoryLength += (vec_camCenterGT[i] - vec_camCenterGT[i + 1]).norm();
     }
 
-    std::cout << std::endl << "\nTrajectory length: " << trajectoryLength;
+    ALICEVISION_LOG_INFO("Trajectory length: " << trajectoryLength);
 
     // -b. angle between rotation matrix
     std::vector<double> vec_angularErrors;
@@ -172,10 +171,10 @@ inline void EvaluteToGT(const std::vector<Vec3>& vec_camCenterGT,
     //  copy(vec_angularErrors.begin(), vec_angularErrors.end(), std::ostream_iterator<double>(std::cout, " , "));
 
     BoxStats<double> statsBaseline(vec_baselineErrors.begin(), vec_baselineErrors.end());
-    std::cout << std::endl << "\nBaseline error statistics:\n" << statsBaseline;
+    ALICEVISION_LOG_INFO("Baseline error statistics:\n" << statsBaseline);
 
     BoxStats<double> statsAngular(vec_angularErrors.begin(), vec_angularErrors.end());
-    std::cout << std::endl << "\nAngular error statistics:\n" << statsAngular;
+    ALICEVISION_LOG_INFO("Angular error statistics:\n" << statsAngular);
 
     // Export camera position (viewable)
     exportToPly(vec_camCenterGT, vec_camPosComputed_T, (fs::path(sOutPath) / "camera_Registered.ply").string());

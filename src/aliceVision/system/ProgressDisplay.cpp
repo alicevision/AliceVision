@@ -6,6 +6,7 @@
 
 #include "ProgressDisplay.hpp"
 #include <boost/timer/progress_display.hpp>
+#include <iostream>
 #include <mutex>
 
 namespace aliceVision {
@@ -68,6 +69,14 @@ ProgressDisplay createConsoleProgressDisplay(unsigned long expectedCount,
 {
     auto impl = std::make_shared<ProgressDisplayImplBoostProgress>(expectedCount, os, s1, s2, s3);
     return ProgressDisplay(impl);
+}
+
+ProgressDisplay createConsoleProgressDisplay(unsigned long expectedCount,
+                                             const std::string& s1,
+                                             const std::string& s2,
+                                             const std::string& s3)
+{
+    return createConsoleProgressDisplay(expectedCount, std::cout, s1, s2, s3);
 }
 
 }  // namespace system

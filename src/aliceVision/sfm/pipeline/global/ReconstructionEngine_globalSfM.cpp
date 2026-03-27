@@ -468,7 +468,7 @@ void ReconstructionEngine_globalSfM::computeRelativeRotations(rotationAveraging:
         poseWiseMatches[Pair(v1->getPoseId(), v2->getPoseId())].insert(pair);
     }
 
-    auto progressDisplay = system::createConsoleProgressDisplay(poseWiseMatches.size(), std::cout, "\n- Relative pose computation -\n");
+    auto progressDisplay = system::createConsoleProgressDisplay(poseWiseMatches.size(), "\n- Relative pose computation -\n");
 #pragma omp parallel for schedule(dynamic)
     // Compute the relative pose from pairwise point matches:
     for (int i = 0; i < poseWiseMatches.size(); ++i)

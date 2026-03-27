@@ -387,7 +387,7 @@ void GlobalSfMTranslationAveragingSolver::computePutativeTranslationEdgesCoverag
         aliceVision::sfm::MutexSet<myEdge> mMutexSet;
 
         auto progressDisplay =
-          system::createConsoleProgressDisplay(vecEdges.size(), std::cout, "\nRelative translations computation (edge coverage algorithm)\n");
+          system::createConsoleProgressDisplay(vecEdges.size(), "\nRelative translations computation (edge coverage algorithm)\n");
 
         // set number of threads, 1 if openMP is not enabled
         std::vector<translationAveraging::RelativeInfoVec> initialEstimates(omp_get_max_threads());

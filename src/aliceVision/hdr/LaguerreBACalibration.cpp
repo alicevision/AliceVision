@@ -15,7 +15,6 @@
 #include <ceres/ceres.h>
 
 #include <utility>
-#include <iostream>
 #include <cassert>
 #include <numeric>
 
@@ -242,14 +241,14 @@ void LaguerreBACalibration::process(const std::vector<std::vector<ImageSample>>&
     ceres::Solver::Summary summary;
     ceres::Solve(solverOptions, &problem, &summary);
 
-    std::cout << summary.FullReport() << std::endl;
+    ALICEVISION_LOG_DEBUG(summary.FullReport());
 
     for (unsigned int channel = 0; channel < 3; ++channel)
     {
         std::vector<float>& curve = response.getCurve(channel);
         const double step = 1.0 / double(curve.size());
 
-        std::cout << laguerreParam[channel] << std::endl;
+        ALICEVISION_LOG_DEBUG("Laguerre parameter[" << channel << "]: " << laguerreParam[channel]);
         for (unsigned int i = 0; i < curve.size(); ++i)
         {
             curve[i] = laguerreFunctionInv(laguerreParam[channel], i * step);

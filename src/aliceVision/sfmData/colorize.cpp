@@ -22,7 +22,7 @@ namespace sfmData {
 
 void colorizeTracks(SfMData& sfmData)
 {
-    auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout, "\nCompute scene structure color\n");
+    auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), "\nCompute scene structure color\n");
 
     std::vector<std::reference_wrapper<Landmark>> remainingLandmarksToColor;
     remainingLandmarksToColor.reserve(sfmData.getLandmarks().size());
