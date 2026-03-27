@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "2.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -8,22 +8,25 @@ class ExportUSD(desc.AVCommandLineNode):
     commandLine = "aliceVision_exportUSD {allParams}"
     size = desc.DynamicNodeSize("input")
 
-    category = "Utils"
-    documentation = """ Export a mesh (OBJ file) to USD format. """
+    category = "Export"
+    documentation = """
+Convert cameras from an SfM scene into an animated camera in USD format.
+Based on the input image filenames, this node detects video sequences and creates the corresponding animated camera.
+"""
 
     inputs = [
         desc.File(
             name="input",
-            label="Input",
-            description="Input mesh file.",
+            label="Input SfMData",
+            description="SfMData file containing a complete SfM.",
             value="",
         ),
-        desc.ChoiceParam(
-            name="fileType",
-            label="USD File Format",
-            description="Output USD file format.",
-            value="usda",
-            values=["usda", "usdc", "usdz"]
+        desc.FloatParam(
+            name="frameRate",
+            label="Camera Frame Rate",
+            description="Define the camera's frames per second.",
+            value=24.0,
+            range=(1.0, 60.0, 1.0),
         ),
         desc.ChoiceParam(
             name="verboseLevel",
@@ -37,8 +40,8 @@ class ExportUSD(desc.AVCommandLineNode):
     outputs = [
         desc.File(
             name="output",
-            label="Output",
-            description="Path to the output file.",
-            value="{nodeCacheFolder}/output.{fileTypeValue}",
-        ),
+            label="USD filename",
+            description="Output usd filename",
+            value="{nodeCacheFolder}/animated.usda",
+        )
     ]
