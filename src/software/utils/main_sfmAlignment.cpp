@@ -7,6 +7,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
+#include <aliceVision/matching/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
@@ -16,11 +18,12 @@
 
 #include <string>
 #include <sstream>
+#include <random>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
@@ -40,6 +43,7 @@ enum class EAlignmentMethod : unsigned char
     FROM_CAMERAS_METADATA,
     FROM_MARKERS,
     FROM_LANDMARKS,
+    FROM_FEATURE_MATCHES,
 };
 
 /**
@@ -63,6 +67,8 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
             return "from_markers";
         case EAlignmentMethod::FROM_LANDMARKS:
             return "from_landmarks";
+        case EAlignmentMethod::FROM_FEATURE_MATCHES:
+            return "from_featureMatches";
     }
     throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -89,6 +95,8 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
         return EAlignmentMethod::FROM_MARKERS;
     if (method == "from_landmarks")
         return EAlignmentMethod::FROM_LANDMARKS;
+    if (method == "from_featurematches")
+        return EAlignmentMethod::FROM_FEATURE_MATCHES;
     throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -115,6 +123,8 @@ int aliceVision_main(int argc, char** argv)
     EAlignmentMethod alignmentMethod = EAlignmentMethod::FROM_CAMERAS_VIEWID;
     std::string fileMatchingPattern;
     std::vector<std::string> metadataMatchingList = {"Make", "Model", "Exif:BodySerialNumber", "Exif:LensSerialNumber"};
+    std::vector<std::string> matchesFolders;
+    std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
     std::string outputViewsAndPosesFilepath;
 
     // clang-format off
@@ -135,12 +145,17 @@ int aliceVision_main(int argc, char** argv)
          "\t- from_cameras_poseid: Align cameras with same pose ID.\n"
          "\t- from_cameras_filepath: Align cameras with a filepath matching, using --fileMatchingPattern.\n"
          "\t- from_cameras_metadata: Align cameras with matching metadata, using --metadataMatchingList.\n"
-         "\t- from_landmarks: Alilgn using landmarks sharing features.\n"
-         "\t- from_markers: Align from markers with the same ID.\n")
+         "\t- from_landmarks: Align using landmarks sharing features.\n"
+         "\t- from_markers: Align from markers with the same ID.\n"
+         "\t- from_featureMatches: Align using feature matches to find corresponding landmarks, using --matchesFolders.\n")
         ("fileMatchingPattern", po::value<std::string>(&fileMatchingPattern)->default_value(fileMatchingPattern),
          "Matching pattern for the from_cameras_filepath method.\n")
         ("metadataMatchingList", po::value<std::vector<std::string>>(&metadataMatchingList)->multitoken()->default_value(metadataMatchingList),
          "List of metadata that should match to create the correspondences.\n")
+        ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
+         "Path to folder(s) in which computed matches are stored. Used by the from_featureMatches method.\n")
+        ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+         feature::EImageDescriberType_informations().c_str())
         ("applyScale", po::value<bool>(&applyScale)->default_value(applyScale),
          "Apply scale transformation.")
         ("applyRotation", po::value<bool>(&applyRotation)->default_value(applyRotation),
@@ -216,6 +231,25 @@ int aliceVision_main(int argc, char** argv)
         case EAlignmentMethod::FROM_LANDMARKS:
         {
             hasValidSimilarity = sfm::computeSimilarityFromCommonLandmarks(sfmData, sfmDataInRef, randomNumberGenerator, &S, &R, &t);
+            break;
+        }
+        case EAlignmentMethod::FROM_FEATURE_MATCHES:
+        {
+            const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
+
+            matching::PairwiseMatches pairwiseMatches;
+            if (!matching::Load(pairwiseMatches, std::set<IndexT>(), matchesFolders, describerTypes, 0, 0))
+            {
+                std::stringstream ss("Unable to read the matches file(s) from:\n");
+                for (const std::string& folder : matchesFolders)
+                {
+                    ss << "\t- " << folder << "\n";
+                }
+                ALICEVISION_LOG_WARNING(ss.str());
+                return EXIT_FAILURE;
+            }
+
+            hasValidSimilarity = sfm::computeSimilarityFromCommonLandmarks(sfmData, sfmDataInRef, pairwiseMatches, randomNumberGenerator, &S, &R, &t);
             break;
         }
     }
