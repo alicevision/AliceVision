@@ -74,6 +74,17 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
+    # Image pairs merging
+    # - merge multiple image pair lists into one
+    alicevision_add_software(aliceVision_imagePairsMerging
+        SOURCE main_imagePairsMerging.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_matchingImageCollection
+              Boost::program_options
+    )
+
     # Feature matching
     # - putative matches and geometric filtered matches
     alicevision_add_software(aliceVision_featureMatching
