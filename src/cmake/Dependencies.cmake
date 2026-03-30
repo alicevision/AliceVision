@@ -34,7 +34,7 @@ option(AV_BUILD_EIGEN       "Build Eigen"    ON)
 option(AV_BUILD_EXPAT       "Build Expat"    ON)
 option(AV_BUILD_BOOST       "Build Boost"    ON)
 option(AV_BUILD_PYBIND11    "Build pybind11" ON)
-option(AV_BUILD_SWIG        "Build SWIG"     OFF)
+option(AV_BUILD_SWIG        "Build SWIG"     ON)
 
 # CUDA
 option(AV_USE_CUDA          "Enable CUDA support"        ON)
