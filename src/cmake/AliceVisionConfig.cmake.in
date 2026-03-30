@@ -69,7 +69,7 @@ endif()
 set(ALICEVISION_HAVE_POPSIFT @ALICEVISION_HAVE_POPSIFT@)
 
 if(ALICEVISION_HAVE_POPSIFT)
-  find_dependency(PopSift 1.0.0)
+  find_dependency(PopSift 0.10)
 endif()
 
 # whether it is built with OpenCV
