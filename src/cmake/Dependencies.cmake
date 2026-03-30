@@ -75,7 +75,8 @@ option(AV_BUILD_ALEMBIC     "Build Alembic"   ON)
 option(AV_BUILD_E57FORMAT   "Build E57Format" ON)
 option(AV_BUILD_OPENMESH    "Build OpenMesh"  ON)
 option(AV_BUILD_PCL         "Build PCL"       OFF)
-option(AV_BUILD_USD         "Build USD"       OFF)
+option(AV_BUILD_OPENSUBDIV  "Build OpenSubdiv" ON)
+option(AV_BUILD_USD         "Build USD"        ON)
 
 # Feature detectors
 option(AV_BUILD_POPSIFT     "Build PopSift"   ON)
@@ -95,7 +96,7 @@ set(_all_av_options
     AV_BUILD_FLANN AV_BUILD_NANOFLANN
     AV_BUILD_COINUTILS AV_BUILD_OSI AV_BUILD_CLP AV_BUILD_LEMON
     AV_BUILD_GEOGRAM AV_BUILD_ASSIMP AV_BUILD_ALEMBIC AV_BUILD_E57FORMAT
-    AV_BUILD_OPENMESH AV_BUILD_PCL AV_BUILD_USD
+    AV_BUILD_OPENMESH AV_BUILD_PCL AV_BUILD_USD AV_BUILD_OPENSUBDIV
     AV_BUILD_POPSIFT AV_BUILD_CCTAG AV_BUILD_APRILTAG
 )
 
@@ -180,7 +181,8 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/alembic.cmake)      # depends: boost, ope
 include(${CMAKE_CURRENT_LIST_DIR}/deps/e57format.cmake)    # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/openmesh.cmake)     # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/pcl.cmake)          # depends: eigen, boost, png, flann, lz4, zlib, cuda
-include(${CMAKE_CURRENT_LIST_DIR}/deps/usd.cmake)          # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/opensubdiv.cmake)   # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/usd.cmake)          # depends: (opensubdiv)
 
 # Feature detectors
 include(${CMAKE_CURRENT_LIST_DIR}/deps/popsift.cmake)      # depends: boost, cuda
@@ -228,6 +230,7 @@ if(AV_BUILD_ALICEVISION)
             ${E57FORMAT_CMAKE_FLAGS}
             ${OPENMESH_CMAKE_FLAGS}
             ${PCL_CMAKE_FLAGS}
+            ${OPENSUBDIV_CMAKE_FLAGS}
             ${USD_CMAKE_FLAGS}
             ${POPSIFT_CMAKE_FLAGS}
             ${CCTAG_CMAKE_FLAGS}

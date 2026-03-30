@@ -7,7 +7,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: "alicevision/alicevision-deps:2026.02.17-rocky9-cuda12.1.1"
+      image: "alicevision/alicevision-deps:2026.03.30-rocky9-cuda12.1.1"
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
@@ -41,6 +41,7 @@ jobs:
            -DALICEVISION_USE_CCTAG=ON \
            -DALICEVISION_USE_POPSIFT=ON \
            -DALICEVISION_USE_ALEMBIC=ON \
+           -DALICEVISION_USE_USD=ON \
            -DOpenCV_DIR="${DEPS_INSTALL_DIR}/share/OpenCV" \
            -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
            -DAlembic_DIR="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \

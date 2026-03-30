@@ -70,6 +70,7 @@ option(ALICEVISION_USE_ONNX_GPU "Use CUDA with ONNX Runtime" ON)
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
+trilean_option(ALICEVISION_USE_USD "Enable USD" AUTO)
 option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
 mark_as_advanced(FORCE ALICEVISION_USE_OCVSIFT)
 

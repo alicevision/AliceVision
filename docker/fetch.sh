@@ -89,7 +89,8 @@ for dep in \
     suitesparse \
     tbb \
     turbojpeg \
-    onnxruntime
+    onnxruntime \
+    usd
 do
     STAMP="external/src/${dep}-stamp/download-${dep}.cmake"
     if [ -f "${STAMP}" ]; then
@@ -100,8 +101,17 @@ do
 done
 
 # OpenCV lives under a different prefix (legacy layout kept as-is)
-cmake -P "opencv-prefix/src/opencv-stamp/download-opencv.cmake"
-cmake -P "opencv_contrib-prefix/src/opencv_contrib-stamp/download-opencv_contrib.cmake"
+if [ -f "opencv-prefix/src/opencv-stamp/download-opencv.cmake" ]; then
+    cmake -P "opencv-prefix/src/opencv-stamp/download-opencv.cmake"
+else
+    echo "WARNING: opencv download script not found — skipping opencv"
+fi
+
+if [ -f "opencv_contrib-prefix/src/opencv_contrib-stamp/download-opencv_contrib.cmake" ]; then
+    cmake -P "opencv_contrib-prefix/src/opencv_contrib-stamp/download-opencv_contrib.cmake"
+else
+    echo "WARNING: opencv_contrib download script not found — skipping opencv_contrib"
+fi
 
 # ---------------------------------------------------------------------------
 # Git-based deps → gitclone-<dep>.cmake  (no download-*.cmake for these)

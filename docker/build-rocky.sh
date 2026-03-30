@@ -6,8 +6,8 @@ test -e docker/fetch.sh || {
 	exit 1
 }
 
-test -z "$AV_DEPS_VERSION" && AV_DEPS_VERSION=2025.09.12
-test -z "$AV_VERSION" && AV_VERSION="$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse --short HEAD)"
+test -z "$AV_DEPS_VERSION" && AV_DEPS_VERSION=2026.03.30
+test -z "$AV_VERSION" && AV_VERSION="develop-$(git rev-parse --short HEAD)"
 test -z "$CUDA_VERSION" && CUDA_VERSION=12.1.1
 test -z "$ROCKY_VERSION" && ROCKY_VERSION=9
 test -z "$REPO_OWNER" && REPO_OWNER=alicevision
