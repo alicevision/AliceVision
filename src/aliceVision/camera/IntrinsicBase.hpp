@@ -471,17 +471,18 @@ class IntrinsicBase
     void setState(EEstimatorParameterState state) { _state = state; }
 
   protected:
+    std::string _serialNumber;
+    double _sensorWidth = 36.0;
+    double _sensorHeight = 24.0;
+    unsigned int _w = 0;
+    unsigned int _h = 0;
+
     /// initialization mode
     EInitMode _initializationMode = EInitMode::NONE;
+
     /// intrinsic lock
     bool _locked = false;
     EEstimatorParameterState _state = EEstimatorParameterState::REFINED;
-
-    unsigned int _w = 0;
-    unsigned int _h = 0;
-    double _sensorWidth = 36.0;
-    double _sensorHeight = 24.0;
-    std::string _serialNumber;
 };
 
 /**
