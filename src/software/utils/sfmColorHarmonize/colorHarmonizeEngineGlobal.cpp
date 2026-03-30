@@ -8,6 +8,7 @@
 #include "colorHarmonizeEngineGlobal.hpp"
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -111,13 +112,6 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(const std::string
 
 ColorHarmonizationEngineGlobal::~ColorHarmonizationEngineGlobal() {}
 
-inline void pauseProcess()
-{
-    unsigned char i;
-    std::cout << "\nPause : type key and press enter: ";
-    std::cin >> i;
-}
-
 bool ColorHarmonizationEngineGlobal::process()
 {
     const std::string vecHarmonizeMethod[1] = {"quantifiedGainCompensation"};
@@ -132,7 +126,7 @@ bool ColorHarmonizationEngineGlobal::process()
         return false;
     if (_pairwiseMatches.empty())
     {
-        std::cout << std::endl << "Matches file is empty" << std::endl;
+        ALICEVISION_LOG_ERROR("Matches file is empty.");
         return false;
     }
 
@@ -161,7 +155,7 @@ bool ColorHarmonizationEngineGlobal::process()
     //-------------------
     if (!cleanGraph())
     {
-        std::cout << std::endl << "There is no largest CC in the graph" << std::endl;
+        ALICEVISION_LOG_ERROR("There is no largest connected component in the graph.");
         return false;
     }
 
@@ -190,8 +184,8 @@ bool ColorHarmonizationEngineGlobal::process()
         mapCameraNodeToCameraIndex[*iterSet] = std::distance(setIndexImage.begin(), iterSet);
     }
 
-    std::cout << "\nRemaining cameras after CC filter : \n"
-              << mapCameraIndexTocameraNode.size() << " from a total of " << _fileNames.size() << std::endl;
+    ALICEVISION_LOG_INFO("Remaining cameras after CC filter: " << mapCameraIndexTocameraNode.size()
+                                                               << " from a total of " << _fileNames.size());
 
     size_t bin = 256;
     double minvalue = 0.0;
@@ -216,8 +210,8 @@ bool ColorHarmonizationEngineGlobal::process()
         //-- Edges names:
         std::pair<std::string, std::string> p_imaNames;
         p_imaNames = make_pair(_fileNames[viewI], _fileNames[viewJ]);
-        std::cout << "Current edge : " << fs::path(p_imaNames.first).filename().string() << "\t" << fs::path(p_imaNames.second).filename().string()
-                  << std::endl;
+        ALICEVISION_LOG_DEBUG("Current edge: " << fs::path(p_imaNames.first).filename().string() << " - "
+                                              << fs::path(p_imaNames.second).filename().string());
 
         //-- Compute the masks from the data selection:
         Image<unsigned char> maskI(_imageSize[viewI].first, _imageSize[viewI].second);
@@ -263,7 +257,7 @@ bool ColorHarmonizationEngineGlobal::process()
             }
             break;
             default:
-                std::cout << "Selection method unsupported" << std::endl;
+                ALICEVISION_LOG_ERROR("Selection method unsupported.");
                 return false;
         }
 
@@ -315,7 +309,7 @@ bool ColorHarmonizationEngineGlobal::process()
         edgeB = relativeColorHistogramEdge(mapCameraNodeToCameraIndex[viewI], mapCameraNodeToCameraIndex[viewJ], histoI.GetHist(), histoJ.GetHist());
     }
 
-    std::cout << "\n -- \n SOLVE for color consistency with linear programming\n --" << std::endl;
+    ALICEVISION_LOG_INFO("Solve for color consistency with linear programming.");
     //-- Solve for the gains and offsets:
     std::vector<size_t> vecIndexToFix;
     vecIndexToFix.push_back(mapCameraNodeToCameraIndex[_imgRef]);
@@ -367,27 +361,26 @@ bool ColorHarmonizationEngineGlobal::process()
         lpSolver.getSolution(vecSolutionB);
     }
 
-    std::cout << std::endl
-              << " ColorHarmonization solving on a graph with: " << _pairwiseMatches.size() << " edges took (s): " << timer.elapsed() << std::endl
-              << "LInfinity fitting error: \n"
-              << "- for the red channel is: " << vecSolutionR.back() << " gray level(s)" << std::endl
-              << "- for the green channel is: " << vecSolutionG.back() << " gray level(s)" << std::endl
-              << "- for the blue channel is: " << vecSolutionB.back() << " gray level(s)" << std::endl;
+    ALICEVISION_LOG_INFO("ColorHarmonization solving on a graph with: " << _pairwiseMatches.size() << " edges took (s): " << timer.elapsed()
+                         << "\nLInfinity fitting error:"
+                         << "\n- for the red channel is: " << vecSolutionR.back() << " gray level(s)"
+                         << "\n- for the green channel is: " << vecSolutionG.back() << " gray level(s)"
+                         << "\n- for the blue channel is: " << vecSolutionB.back() << " gray level(s)");
 
-    std::cout << "\n\nFound solution_r:\n";
-    std::copy(vecSolutionR.begin(), vecSolutionR.end(), std::ostream_iterator<double>(std::cout, " "));
+    {
+        std::ostringstream ossr, ossg, ossb;
+        std::copy(vecSolutionR.begin(), vecSolutionR.end(), std::ostream_iterator<double>(ossr, " "));
+        std::copy(vecSolutionG.begin(), vecSolutionG.end(), std::ostream_iterator<double>(ossg, " "));
+        std::copy(vecSolutionB.begin(), vecSolutionB.end(), std::ostream_iterator<double>(ossb, " "));
+        ALICEVISION_LOG_DEBUG("Found solution_r: " << ossr.str());
+        ALICEVISION_LOG_DEBUG("Found solution_g: " << ossg.str());
+        ALICEVISION_LOG_DEBUG("Found solution_b: " << ossb.str());
+    }
 
-    std::cout << "\n\nFound solution_g:\n";
-    std::copy(vecSolutionG.begin(), vecSolutionG.end(), std::ostream_iterator<double>(std::cout, " "));
-
-    std::cout << "\n\nFound solution_b:\n";
-    std::copy(vecSolutionB.begin(), vecSolutionB.end(), std::ostream_iterator<double>(std::cout, " "));
-    std::cout << std::endl;
-
-    std::cout << "\n\nThere is :\n" << setIndexImage.size() << " images to transform." << std::endl;
+    ALICEVISION_LOG_INFO("There are " << setIndexImage.size() << " images to transform.");
 
     //-> convert solution to gain offset and creation of the LUT per image
-    auto progressDisplay = system::createConsoleProgressDisplay(setIndexImage.size(), std::cout);
+    auto progressDisplay = system::createConsoleProgressDisplay(setIndexImage.size());
     for (std::set<size_t>::const_iterator iterSet = setIndexImage.begin(); iterSet != setIndexImage.end(); ++iterSet, ++progressDisplay)
     {
         const size_t imaNum = *iterSet;
@@ -499,8 +492,7 @@ bool ColorHarmonizationEngineGlobal::cleanGraph()
     graph::exportToGraphvizData((fs::path(_outputDirectory) / "initialGraph").string(), putativeGraph.g);
 
     const int connectedComponentCount = lemon::countConnectedComponents(putativeGraph.g);
-    std::cout << "\n"
-              << "ColorHarmonizationEngineGlobal::CleanGraph() :: => connected Component cardinal: " << connectedComponentCount << std::endl;
+    ALICEVISION_LOG_INFO("ColorHarmonizationEngineGlobal::CleanGraph() => connected component cardinal: " << connectedComponentCount);
 
     if (connectedComponentCount > 1)  // If more than one CC, keep the largest
     {
@@ -516,7 +508,7 @@ bool ColorHarmonizationEngineGlobal::cleanGraph()
                 count = iter->second.size();
                 iterLargestCC = iter;
             }
-            std::cout << "Connected component of size : " << iter->second.size() << std::endl;
+            ALICEVISION_LOG_DEBUG("Connected component of size: " << iter->second.size());
         }
 
         //-- Remove all nodes that are not listed in the largest CC
@@ -553,10 +545,8 @@ bool ColorHarmonizationEngineGlobal::cleanGraph()
     // Save the graph after cleaning:
     graph::exportToGraphvizData((fs::path(_outputDirectory) / "cleanedGraph").string(), putativeGraph.g);
 
-    std::cout << "\n"
-              << "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n"
-              << "Cardinal of edges: " << lemon::countEdges(putativeGraph.g) << std::endl
-              << std::endl;
+    ALICEVISION_LOG_INFO("Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n"
+                         << "Cardinal of edges: " << lemon::countEdges(putativeGraph.g));
 
     return true;
 }

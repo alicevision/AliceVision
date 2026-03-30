@@ -10,8 +10,8 @@
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/system/Logger.hpp>
 
-#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <algorithm>
@@ -597,7 +597,7 @@ void smoothIntegration(const image::Image<image::RGBfColor>& normals,
                        const image::Image<float>& z0,
                        const image::Image<float>& maskZ0)
 {
-    std::cout << "WIP" << std::endl;
+    ALICEVISION_LOG_INFO("WIP: frankot_chellappa with calibration not yet implemented.");
 }
 
 void convertZtoDistance(const aliceVision::image::Image<float>& zMap, aliceVision::image::Image<float>& distanceMap, const Eigen::Matrix3f& K)

@@ -39,7 +39,7 @@ void ImageCollectionMatcher_generic::Match(std::mt19937& randomNumberGenerator,
     const bool b_multithreaded_pair_search = (_matcherType == CASCADE_HASHING_L2);
     // -> set to true for CASCADE_HASHING_L2, since OpenMP instructions are not used in this matcher
 
-    auto progressDisplay = system::createConsoleProgressDisplay(pairs.size(), std::cout);
+    auto progressDisplay = system::createConsoleProgressDisplay(pairs.size());
 
     // Sort pairs according the first index to minimize the MatcherT build operations
     typedef std::map<size_t, std::vector<size_t>> Map_vectorT;

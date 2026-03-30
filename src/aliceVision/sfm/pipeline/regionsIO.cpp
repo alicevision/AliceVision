@@ -207,7 +207,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
     featuresFolders.erase(last, featuresFolders.end());
 
     auto progressDisplay =
-      system::createConsoleProgressDisplay(sfmData.getViews().size() * imageDescriberTypes.size(), std::cout, "Loading regions\n");
+      system::createConsoleProgressDisplay(sfmData.getViews().size() * imageDescriberTypes.size(), "Loading regions\n");
 
     std::atomic_bool invalid(false);
 
@@ -268,7 +268,7 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
     for (auto it = featuresFolders.begin(); it != featuresFolders.end(); ++it)
         ALICEVISION_LOG_DEBUG("\t - " << *it);
 
-    auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), std::cout, "Loading features\n");
+    auto progressDisplay = system::createConsoleProgressDisplay(sfmData.getViews().size(), "Loading features\n");
 
     // read for each view the corresponding features and store them as PointFeatures
     std::atomic_bool invalid(false);

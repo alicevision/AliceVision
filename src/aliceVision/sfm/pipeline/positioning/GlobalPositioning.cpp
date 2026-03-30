@@ -53,7 +53,7 @@ bool GlobalPositioning::process(sfmData::SfMData & sfmData, std::mt19937 & gener
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
 
-        std::cout << summary.FullReport() << std::endl;
+        ALICEVISION_LOG_DEBUG(summary.FullReport());
 
         if (!summary.IsSolutionUsable())
         {

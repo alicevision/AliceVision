@@ -15,6 +15,7 @@
 #include <aliceVision/photometricStereo/photometricDataIO.hpp>
 
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
@@ -53,7 +54,7 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
         if (currentMetadata.find("Exif:DateTimeDigitized") == currentMetadata.end())
         {
-            std::cout << "No metadata case" << std::endl;
+            ALICEVISION_LOG_DEBUG("No metadata case: Exif:DateTimeDigitized is missing.");
             viewMap[sfmData.getView(viewIt.first).getImage().getImagePath()] = sfmData.getView(viewIt.first);
         }
         else

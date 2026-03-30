@@ -50,7 +50,7 @@ void robustModelEstimation(PairwiseMatches& out_geometricMatches,
 {
     out_geometricMatches.clear();
 
-    auto progressDisplay = system::createConsoleProgressDisplay(putativeMatches.size(), std::cout, "Robust Model Estimation\n");
+    auto progressDisplay = system::createConsoleProgressDisplay(putativeMatches.size(), "Robust Model Estimation\n");
 
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int)putativeMatches.size(); ++i)
@@ -109,7 +109,7 @@ void robustModelEstimation(PairwiseGeometricInfo& out_geometricInfos,
 {
     out_geometricInfos.clear();
 
-    auto progressDisplay = system::createConsoleProgressDisplay(putativeMatches.size(), std::cout, "Robust Model Estimation\n");
+    auto progressDisplay = system::createConsoleProgressDisplay(putativeMatches.size(), "Robust Model Estimation\n");
 
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int)putativeMatches.size(); ++i)

@@ -9,6 +9,7 @@
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 
@@ -90,9 +91,9 @@ class Matrix3x4
         }
         else
         {
-            std::cout << m11 << m12 << m13 << m14 << std::endl;
-            std::cout << m21 << m22 << m23 << m24 << std::endl;
-            std::cout << m31 << m32 << m33 << m34 << std::endl;
+            ALICEVISION_LOG_ERROR(m11 << " " << m12 << " " << m13 << " " << m14);
+            ALICEVISION_LOG_ERROR(m21 << " " << m22 << " " << m23 << " " << m24);
+            ALICEVISION_LOG_ERROR(m31 << " " << m32 << " " << m33 << " " << m34);
             throw std::runtime_error("Matrix3x4::decomposeProjectionMatrix: affine camera.");
         }
 

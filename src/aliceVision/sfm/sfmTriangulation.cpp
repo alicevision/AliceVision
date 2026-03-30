@@ -37,7 +37,7 @@ void StructureComputationBlind::triangulate(sfmData::SfMData& sfmData, std::mt19
     std::deque<IndexT> rejectedId;
     system::ProgressDisplay progressDisplay;
     if (_bConsoleVerbose)
-        progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout, "Blind triangulation progress:\n");
+        progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), "Blind triangulation progress:\n");
 
 #pragma omp parallel
     for (sfmData::Landmarks::iterator iterTracks = sfmData.getLandmarks().begin(); iterTracks != sfmData.getLandmarks().end(); ++iterTracks)
@@ -118,7 +118,7 @@ void StructureComputationRobust::robustTriangulation(sfmData::SfMData& sfmData, 
 
     system::ProgressDisplay progressDisplay;
     if (_bConsoleVerbose)
-        progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), std::cout, "Robust triangulation progress:\n");
+        progressDisplay = system::createConsoleProgressDisplay(sfmData.getLandmarks().size(), "Robust triangulation progress:\n");
 
 #pragma omp parallel
     for (sfmData::Landmarks::iterator iterTracks = sfmData.getLandmarks().begin(); iterTracks != sfmData.getLandmarks().end(); ++iterTracks)
