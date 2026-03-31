@@ -56,6 +56,11 @@
       "name": "opencv4",
       "features": ["eigen", "contrib", "nonfree", "cuda", "dnn"],
       "default-features": false
+    },
+    {
+      "name": "usd",
+      "features": [],
+      "default-features": false
     }
   ],
   "overrides": [
@@ -110,6 +115,10 @@
     {
       "name": "python3",
       "version": "3.11.10#0"
-    }
+    },
+    {
+      "name": "usd",
+      "version": "25.2"
+    }  
   ]
 }

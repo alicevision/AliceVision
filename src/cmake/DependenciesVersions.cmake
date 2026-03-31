@@ -177,7 +177,10 @@ set(DEP_PCL_URL     "https://github.com/PointCloudLibrary/pcl/archive/refs/tags/
 set(DEP_PCL_HASH    "MD5=987a5f6e440407a2bcae10c1022568b0")
 
 set(DEP_USD_GIT_REPO "https://github.com/PixarAnimationStudios/USD.git")
-set(DEP_USD_GIT_TAG  "v23.05")
+set(DEP_USD_GIT_TAG  "v25.08")
+
+set(DEP_OPENSUBDIV_GIT_REPO "https://github.com/PixarAnimationStudios/OpenSubdiv.git")
+set(DEP_OPENSUBDIV_GIT_TAG  "v3_7_0")
 
 # ── Feature detectors ─────────────────────────────────────────────────────────
 

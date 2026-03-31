@@ -430,7 +430,7 @@ macro(av_add_cmake_dep)
             ${CMAKE_CORE_BUILD_FLAGS}
             ${_D_EXTRA_CMAKE_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-            -DCMAKE_INSTALL_LIBDIR:PATH=<INSTALL_DIR>/lib
+            -DCMAKE_INSTALL_LIBDIR:PATH=lib
             <SOURCE_DIR>
         BUILD_COMMAND
             ${CMAKE_COMMAND} --build <BINARY_DIR>

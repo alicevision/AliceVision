@@ -72,6 +72,7 @@ RUN --mount=type=cache,target=/var/cache/dnf \
         xerces-c-devel                                                    \
         yaml-cpp                                                          \
         yasm                                                              \
+        ninja-build                                                       \
     && dnf update -y
 
 # =============================================================================
@@ -153,7 +154,9 @@ COPY dl/deps                               ${AV_BUILD}/external/download/
 # =============================================================================
 WORKDIR "${AV_BUILD}"
 
-RUN cmake "${AV_DEV}"                               \
+RUN mkdir -p "${AV_INSTALL}/bin"                 \
+    && mkdir -p "${AV_INSTALL}/lib"                  \
+    && cmake "${AV_DEV}"                               \
         -DCMAKE_BUILD_TYPE=Release                  \
         -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON    \
         -DAV_BUILD_ALICEVISION:BOOL=OFF             \
@@ -161,7 +164,6 @@ RUN cmake "${AV_DEV}"                               \
         -DAV_BUILD_CCTAG:BOOL=ON                    \
         -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
         -DAV_BUILD_DEPENDENCIES_PARALLEL=0          \
-    && mkdir -p "${AV_INSTALL}/lib"                 \
     && ln -sf lib "${AV_INSTALL}/lib64"             \
     && { test -e /usr/local/cuda/lib64/libcublas.so \
          || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \

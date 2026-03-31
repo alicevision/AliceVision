@@ -9,28 +9,24 @@
 if(AV_BUILD_USD)
     set(USD_TARGET pxr)
 
-    ExternalProject_Add(${USD_TARGET}
-        GIT_REPOSITORY  ${DEP_USD_GIT_REPO}
-        GIT_TAG         ${DEP_USD_GIT_TAG}
-        PREFIX          ${BUILD_DIR}
-        BUILD_IN_SOURCE 0
-        BUILD_ALWAYS    0
-        UPDATE_COMMAND  ""
-        CONFIGURE_COMMAND ""
-        INSTALL_COMMAND   ""
-        SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/usd
-        BINARY_DIR        ${BUILD_DIR}/usd_build
-        INSTALL_DIR       ${CMAKE_INSTALL_PREFIX}
-        BUILD_COMMAND
-            python ${CMAKE_CURRENT_BINARY_DIR}/usd/build_scripts/build_usd.py
-                --build-shared
-                --no-examples --no-tools --no-ptex --no-prman
-                --no-openimageio --no-opencolorio --no-alembic
-                --no-draco --no-materialx
-                --no-tutorials --no-tests --no-docs --no-python
-                <INSTALL_DIR>
+    av_add_cmake_dep(
+        TARGET         ${USD_TARGET}
+        SOURCE_DIR     usd
+        GIT_REPOSITORY ${DEP_USD_GIT_REPO}
+        GIT_TAG        ${DEP_USD_GIT_TAG}
+        EXTRA_CMAKE_FLAGS     
+            -DPXR_BUILD_TESTS=OFF
+            -DPXR_BUILD_EXAMPLES=OFF
+            -DPXR_BUILD_TUTORIALS=OFF
+            -DPXR_BUILD_USD_TOOLS=OFF
+            -DPXR_BUILD_IMAGING=ON
+            -DPXR_BUILD_USD_IMAGING=ON
+            -DPXR_ENABLE_PYTHON_SUPPORT=OFF   
+            -DPXR_ENABLE_GL_SUPPORT=OFF
+        DEPENDS
+            ${TBB_TARGET}
+            ${OPENSUBDIV_TARGET}
     )
 
-    set(USD_CMAKE_FLAGS -Dpxr_DIR:PATH=${CMAKE_INSTALL_PREFIX})
-    av_register_dep(${USD_TARGET})
+    set(USD_CMAKE_FLAGS -Dpxr_DIR=${CMAKE_INSTALL_PREFIX})
 endif()

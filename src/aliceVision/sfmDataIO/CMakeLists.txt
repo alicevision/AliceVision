@@ -37,6 +37,16 @@ if (ALICEVISION_HAVE_ALEMBIC)
     )
 endif()
 
+if (ALICEVISION_HAVE_USD)
+
+    list(APPEND sfmDataIO_files_headers
+        UsdExporter.hpp
+    )
+    list(APPEND sfmDataIO_files_sources
+        UsdExporter.cpp
+    )
+endif()
+
 alicevision_add_library(aliceVision_sfmDataIO
     SOURCES ${sfmDataIO_files_headers} ${sfmDataIO_files_sources}
     PUBLIC_LINKS
@@ -57,6 +67,17 @@ if (ALICEVISION_HAVE_ALEMBIC)
     # There is a missing include dependency in Alembic cmake export.
     target_include_directories(aliceVision_sfmDataIO
         PRIVATE "${ILMBASE_INCLUDE_DIR}"
+    )
+endif()
+
+if (ALICEVISION_HAVE_USD)
+    target_link_libraries(aliceVision_sfmDataIO
+        PRIVATE usd
+                usdGeom
+                gf
+                tf
+                vt
+                sdf
     )
 endif()
 
