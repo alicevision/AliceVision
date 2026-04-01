@@ -3,7 +3,7 @@
         "releaseVersion": "2025.1.0",
         "fileVersion": "2.0",
         "nodesVersions": {
-            "CameraInit": "12.0",
+            "CameraInit": "12.1",
             "CheckerboardDetection": "2.0",
             "DistortionCalibration": "6.1",
             "ExportDistortion": "2.0",

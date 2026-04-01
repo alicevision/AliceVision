@@ -37,6 +37,7 @@ SfMData::SfMData(const SfMData & other, bool unused)
     _landmarksUncertainty = other._landmarksUncertainty;
     _views = other._views;
     _intrinsics = other._intrinsics;
+    _imageGroups = other._imageGroups;
 }
 
 SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eigen::Vector3d & bbMax)
@@ -54,6 +55,7 @@ SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eig
     _landmarksUncertainty = other._landmarksUncertainty;
     _views = other._views;
     _intrinsics = other._intrinsics;
+    _imageGroups = other._imageGroups;
 
     for (const auto & pl : other._landmarks)
     {
@@ -74,6 +76,12 @@ bool SfMData::operator==(const SfMData& other) const
 {
     // Views
     if (_views != other._views)
+    {
+        return false;
+    }
+
+    // ImageGroups
+    if (_imageGroups != other._imageGroups)
     {
         return false;
     }
@@ -329,6 +337,9 @@ void SfMData::combine(const SfMData& sfmData)
 
     // constraints
     _constraintsPoint.insert(sfmData._constraintsPoint.begin(), sfmData._constraintsPoint.end());
+
+    // image groups
+    _imageGroups.insert(sfmData._imageGroups.begin(), sfmData._imageGroups.end());
 }
 
 void SfMData::clear()
@@ -346,6 +357,7 @@ void SfMData::clear()
     _matchesFolders.clear();
     _poses.clear();
     _rigs.clear();
+    _imageGroups.clear();
 }
 
 void SfMData::resetParameterStates()
@@ -469,12 +481,32 @@ void SfMData::removeUnusedLandmarks()
     });
 }
 
+void SfMData::removeUnusedImageGroups()
+{
+    std::set<IndexT> usedIds;
+
+    for (const auto & [_, view]: getViews().valueRange())
+    {
+        IndexT ig = view.getImageGroupId();
+        if (ig != UndefinedIndexT)
+        {
+            usedIds.insert(ig);
+        }
+    }
+
+    // Erase all image groups that are not used by any view
+    std::erase_if(getImageGroups(), [usedIds](const auto & pair) {
+        return (usedIds.find(pair.first) == usedIds.end());
+    });
+}
+
 void SfMData::repair()
 {
     removeUnusedIntrinsics();
     removeUnusedCameraPoses();
     removeInvalidObservations();
     removeUnusedLandmarks();
+    removeUnusedImageGroups();
 }
 
 bool SfMData::isFullyReconstructed() const

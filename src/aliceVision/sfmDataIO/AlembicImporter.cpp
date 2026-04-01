@@ -15,6 +15,7 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include <aliceVision/camera/Equidistant.hpp>
+#include <aliceVision/sfmData/ImageSet.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -538,6 +539,8 @@ bool readCamera(const Version& abcVersion,
     IndexT subPoseId = UndefinedIndexT;
     IndexT frameId = UndefinedIndexT;
     IndexT resectionId = UndefinedIndexT;
+    IndexT imageGroupId = UndefinedIndexT;
+    std::string mvg_imageGroupType = sfmData::ImageGroup::typeToString(sfmData::ImageGroup::Type::ImageSet);
     bool intrinsicLocked = false;
     bool poseLocked = false;
     bool rotationOnly = false;
@@ -586,6 +589,10 @@ bool readCamera(const Version& abcVersion,
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_frameId"))
             {
                 frameId = getAbcProp_uint(userProps, *propHeader, "mvg_frameId", sampleFrame);
+            }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_imageGroupId"))
+            {
+                imageGroupId = getAbcProp_uint(userProps, *propHeader, "mvg_imageGroupId", sampleFrame);
             }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_resectionId"))
             {
@@ -657,6 +664,10 @@ bool readCamera(const Version& abcVersion,
             else
             {
                 sensorSize_mm = {24.0, 36.0};
+            }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_imageGroupType"))
+            {
+                mvg_imageGroupType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_imageGroupType", sampleFrame);
             }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
             {
@@ -884,6 +895,7 @@ bool readCamera(const Version& abcVersion,
     {
         view->setResectionId(resectionId);
         view->setFrameId(frameId);
+        view->setImageGroupId(imageGroupId);
         view->setIndependantPose(poseIndependant);
 
         // set metadata
@@ -899,6 +911,13 @@ bool readCamera(const Version& abcVersion,
         }
 
         sfmData.getViews().emplace(viewId, view);
+    }
+
+    if (flagsPart & ESfMData::VIEWS && imageGroupId != UndefinedIndexT)
+    {
+        sfmData::ImageGroup::Type type = sfmData::ImageGroup::stringToType(mvg_imageGroupType);
+        sfmData::ImageGroup::sptr group = sfmData::ImageGroup::create(type);
+        sfmData.getImageGroups().emplace(imageGroupId, group);
     }
 
     if ((flagsPart & ESfMData::EXTRINSICS) && isReconstructed)

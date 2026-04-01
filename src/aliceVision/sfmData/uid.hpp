@@ -59,5 +59,12 @@ void regenerateUID(SfMData& sfmdata, std::map<std::size_t, std::size_t>& oldIdTo
  */
 void regenerateViewUIDs(Views& views, std::map<std::size_t, std::size_t>& oldIdToNew);
 
+/**
+* @brief compute a unique id associated to a set of views. This id will change if the views set change.
+* @param views The set of views used to compute the unique id
+* @return unique id
+ */
+IndexT computeGlobalId(const Views & views);
+
 }  // namespace sfmData
 }  // namespace aliceVision

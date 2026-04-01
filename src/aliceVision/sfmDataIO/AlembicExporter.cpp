@@ -67,6 +67,7 @@ struct AlembicExporter::DataImpl
                    const sfmData::CameraPose* pose = nullptr,
                    std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr,
                    const Vec6* uncertainty = nullptr,
+                   const sfmData::ImageGroup * imageGroup = nullptr,
                    Alembic::Abc::OObject* parent = nullptr);
 
     void addAncestor(const std::string& name, std::shared_ptr<sfmData::ImageInfo> ancestor = nullptr, Alembic::Abc::OObject* parent = nullptr);
@@ -95,6 +96,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
                                           const sfmData::CameraPose* pose,
                                           std::shared_ptr<camera::IntrinsicBase> intrinsic,
                                           const Vec6* uncertainty,
+                                          const sfmData::ImageGroup * imageGroup,
                                           Alembic::Abc::OObject* parent)
 {
     if (parent == nullptr)
@@ -162,6 +164,17 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
 
     if (view.getFrameId() != UndefinedIndexT)
         OUInt32Property(userProps, "mvg_frameId").set(view.getFrameId());
+
+    if (view.getImageGroupId() != UndefinedIndexT)
+    {
+        OUInt32Property(userProps, "mvg_imageGroupId").set(view.getImageGroupId());
+    }
+
+    if (imageGroup)
+    {
+        sfmData::ImageGroup::Type type = imageGroup->getType();
+        OStringProperty(userProps, "mvg_imageGroupType").set(sfmData::ImageGroup::typeToString(type));
+    }
 
     if (view.isPoseIndependant() == false)
         OBoolProperty(userProps, "mvg_poseIndependant").set(view.isPoseIndependant());
@@ -410,10 +423,21 @@ void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const 
     const std::shared_ptr<camera::IntrinsicBase> intrinsic =
       (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicSharedPtr(view.getIntrinsicId()) : nullptr;
 
+      
+    std::shared_ptr<const sfmData::ImageGroup> group = nullptr;
+    if (view.getImageGroupId() != UndefinedIndexT)
+    {
+        const auto & groups = sfmData.getImageGroups();
+        if (groups.find(view.getImageGroupId()) != groups.end())
+        {
+            group = groups.at(view.getImageGroupId());
+        }
+    }
+
     if (sfmData.isPoseAndIntrinsicDefined(view) && (flagsPart & ESfMData::EXTRINSICS))
-        _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
+        _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, group.get(), &_dataImpl->_mvgCameras);
     else
-        _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCamerasUndefined);
+        _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, group.get(), &_dataImpl->_mvgCamerasUndefined);
 }
 
 void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT rigId, const std::vector<IndexT>& viewIds, ESfMData flagsPart)
@@ -494,7 +518,8 @@ void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT ri
                 OBoolProperty(userProps, "mvg_rigPoseLocked").set(rigPoseLocked);
             }
         }
-        _dataImpl->addCamera(name, view, subPosePtr.get(), intrinsic, nullptr, &(rigObj.at(isReconstructed)));
+
+        _dataImpl->addCamera(name, view, subPosePtr.get(), intrinsic, nullptr, nullptr, &(rigObj.at(isReconstructed)));
     }
 }
 
@@ -689,9 +714,10 @@ void AlembicExporter::addCamera(const std::string& name,
                                 const sfmData::View& view,
                                 const sfmData::CameraPose* pose,
                                 std::shared_ptr<camera::IntrinsicBase> intrinsic,
-                                const Vec6* uncertainty)
+                                const Vec6* uncertainty,
+                                const sfmData::ImageGroup * imageGroup)
 {
-    _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty);
+    _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty, imageGroup);
 }
 
 void AlembicExporter::initAnimatedCamera(const std::string& cameraName, std::size_t startFrame, double frameRate)

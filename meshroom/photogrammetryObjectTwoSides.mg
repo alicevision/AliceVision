@@ -3,7 +3,7 @@
         "releaseVersion": "2025.1.0",
         "fileVersion": "2.0",
         "nodesVersions": {
-            "CameraInit": "12.0",
+            "CameraInit": "12.1",
             "ConvertSfMFormat": "2.0",
             "CopyFiles": "1.3",
             "Depthmap": "5.1",

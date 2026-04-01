@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmData/uid.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfmDataIO/jsonIO.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
@@ -18,6 +19,7 @@
 #include <aliceVision/image/io.cpp>
 #include <aliceVision/image/dcp.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/sfmData/ImageGroup.hpp>
 
 #include <boost/atomic/atomic_ref.hpp>
 #include <boost/program_options.hpp>
@@ -40,7 +42,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 12
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
@@ -186,6 +188,7 @@ int aliceVision_main(int argc, char** argv)
     bool errorOnMissingColorProfile = true;
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
     bool lensCorrectionProfileSearchIgnoreCameraModel = true;
+    bool isSequence = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -239,7 +242,9 @@ int aliceVision_main(int argc, char** argv)
          "Rise an error if a DCP color profiles database is specified but no DCP file matches with the camera model (maker+name) extracted from metadata (only for raw images).")
         ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
          "Allow the program to process a single view.\n"
-         "Warning: if a single view is process, the output file can't be use in many other programs.");
+         "Warning: if a single view is processed, the output file cannot be used in many other programs.")
+        ("isSequence", po::value<bool>(&isSequence)->default_value(isSequence),
+         "The images provided as input are part of a sequence with temporal coherency.");
     // clang-format on
 
     CmdLine cmdline("AliceVision cameraInit");
@@ -924,6 +929,20 @@ int aliceVision_main(int argc, char** argv)
     {
         ALICEVISION_LOG_ERROR("Multiple frames have the same frame id.");
         return EXIT_FAILURE;
+    }
+
+    // Set the unique image group id for all the views of the sfmData
+    IndexT imageGroupId = computeGlobalId(sfmData.getViews());
+    for (auto & [_, view]: sfmData.getViews().valueRange())
+    {
+        view.setImageGroupId(imageGroupId);
+    }
+    
+    if (sfmData.getViews().size() > 0)
+    {
+        // Create the image group
+        auto ptrImageGroup = sfmData::ImageGroup::create(isSequence ? sfmData::ImageGroup::Type::ImageSequence : sfmData::ImageGroup::Type::ImageSet);
+        sfmData.getImageGroups().emplace(imageGroupId, ptrImageGroup);
     }
 
     // store SfMData views & intrinsic data
