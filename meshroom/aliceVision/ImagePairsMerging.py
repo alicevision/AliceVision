@@ -42,37 +42,34 @@ class ImagePairsMerging(desc.Node):
 
     def processChunk(self, chunk):
         from pyalicevision import matchingImageCollection as mic
+        import logging
 
-        try:
-            chunk.logManager.start(chunk.node.verboseLevel.value)
+        logging.getLogger().setLevel(chunk.node.verboseLevel.value.upper())
 
-            inputFiles = [f.value for f in chunk.node.inputs.value if f.value]
+        inputFiles = [f.value for f in chunk.node.inputs.value if f.value]
 
-            if not inputFiles:
-                error = "No input image pairs files provided."
-                chunk.logger.error(error)
+        if not inputFiles:
+            error = "No input image pairs files provided."
+            logging.error(error)
+            raise RuntimeError(error)
+
+        mergedPairs = mic.PairSet()
+
+        for inputFile in inputFiles:
+            logging.info(f"Loading image pairs from: {inputFile}")
+            sizeBefore = len(mergedPairs)
+            if not mic.loadPairsFromFile(inputFile, mergedPairs):
+                error = f"Failed to load image pairs from file: {inputFile}"
+                logging.error(error)
                 raise RuntimeError(error)
+            logging.info(f"Loaded {len(mergedPairs) - sizeBefore} pairs from {inputFile}")
 
-            mergedPairs = mic.PairSet()
+        logging.info(f"Total merged pairs: {len(mergedPairs)}")
+        logging.info(f"Saving merged image pairs to: {chunk.node.output.value}")
 
-            for inputFile in inputFiles:
-                chunk.logger.info(f"Loading image pairs from: {inputFile}")
-                sizeBefore = len(mergedPairs)
-                if not mic.loadPairsFromFile(inputFile, mergedPairs):
-                    error = f"Failed to load image pairs from file: {inputFile}"
-                    chunk.logger.error(error)
-                    raise RuntimeError(error)
-                chunk.logger.info(f"Loaded {len(mergedPairs) - sizeBefore} pairs from {inputFile}")
+        if not mic.savePairsToFile(chunk.node.output.value, mergedPairs):
+            error = f"Failed to save merged image pairs to: {chunk.node.output.value}"
+            logging.error(error)
+            raise RuntimeError(error)
 
-            chunk.logger.info(f"Total merged pairs: {len(mergedPairs)}")
-            chunk.logger.info(f"Saving merged image pairs to: {chunk.node.output.value}")
-
-            if not mic.savePairsToFile(chunk.node.output.value, mergedPairs):
-                error = f"Failed to save merged image pairs to: {chunk.node.output.value}"
-                chunk.logger.error(error)
-                raise RuntimeError(error)
-
-            chunk.logger.info("Image pairs merging done.")
-
-        finally:
-            chunk.logManager.end()
+        logging.info("Image pairs merging done.")
