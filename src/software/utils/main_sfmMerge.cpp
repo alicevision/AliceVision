@@ -91,9 +91,10 @@ inline std::ostream& operator<<(std::ostream& os, EMergeMethod e) { return os <<
  * simply copy from one to another
  * @param [in, out] sfmData1 the first sfmData
  * @param [in] sfmData2 the second sfmData
+ * @param [in] ignoreDuplicates will ignore the duplicates instead of throwing an error
  * @return true if no duplicate found
 */
-bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
+bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2, bool ignoreDuplicates)
 {
     {
         auto& views1 = sfmData1.getViews();
@@ -101,7 +102,7 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
         const size_t totalSize = views1.size() + views2.size();
 
         views1.insert(views2.begin(), views2.end());
-        if (views1.size() < totalSize)
+        if (views1.size() < totalSize && !ignoreDuplicates)
         {
             ALICEVISION_LOG_ERROR("Unhandled error: common view ID between both SfMData");
             return false;
@@ -113,22 +114,25 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2)
         auto& intrinsics2 = sfmData2.getIntrinsics();
         const size_t totalSize = intrinsics1.size() + intrinsics2.size();
 
-        //If both sfm share a common intrinsicId
-        //Make sure there is no ambiguity and the  content is the same
-        for (const auto & [key, intrinsic] : intrinsics1)
+        if (!ignoreDuplicates)
         {
-            const auto & itIntrinsicOther = intrinsics2.find(key);
-            if (itIntrinsicOther != intrinsics2.end())
+            //If both sfm share a common intrinsicId
+            //Make sure there is no ambiguity and the  content is the same
+            for (const auto & [key, intrinsic] : intrinsics1)
             {
-                const auto & obj1 = *intrinsic;
-                const auto & obj2 = *(itIntrinsicOther->second);
-
-                if (!(obj1 == obj2))
+                const auto & itIntrinsicOther = intrinsics2.find(key);
+                if (itIntrinsicOther != intrinsics2.end())
                 {
-                    ALICEVISION_LOG_ERROR("Unhandled error: common intrinsic ID with different parameters between both SfMData");
-                    return false;
-                }
-            } 
+                    const auto & obj1 = *intrinsic;
+                    const auto & obj2 = *(itIntrinsicOther->second);
+
+                    if (!(obj1 == obj2))
+                    {
+                        ALICEVISION_LOG_ERROR("Unhandled error: common intrinsic ID with different parameters between both SfMData");
+                        return false;
+                    }
+                } 
+            }
         }
 
         intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());
@@ -396,6 +400,7 @@ int aliceVision_main(int argc, char** argv)
     EMergeMethod mergeMethod = EMergeMethod::SIMPLE_COPY;
     std::vector<std::string> matchesFolders;
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+    bool ignoreDuplicates = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -414,7 +419,9 @@ int aliceVision_main(int argc, char** argv)
         ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
          "Path to folder(s) in which computed matches are stored.")
         ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-         feature::EImageDescriberType_informations().c_str());
+         feature::EImageDescriberType_informations().c_str())
+        ("ignoreDuplicates", po::value<bool>(&ignoreDuplicates)->default_value(ignoreDuplicates),
+         "If false, an error will be thrown if a duplicate view or intrinsic is found. Only valid for simple_copy method.");
     // clang-format on
 
     CmdLine cmdline("AliceVision sfmMerge");
@@ -454,7 +461,7 @@ int aliceVision_main(int argc, char** argv)
 
         if (mergeMethod == EMergeMethod::SIMPLE_COPY)
         {
-            if (!simpleMerge(outputSfmData, sfmData))
+            if (!simpleMerge(outputSfmData, sfmData, ignoreDuplicates))
             {
                 return EXIT_FAILURE;
             }
