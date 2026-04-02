@@ -10,6 +10,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -20,7 +22,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -32,6 +34,9 @@ int aliceVision_main(int argc, char** argv)
     std::string sfmDataFilename;
     std::string sfmDataOutputFilename;
     bool lockIntrinsics = false;
+    bool lockFocalLength = true;
+    bool lockPrincipalPoint = true;
+    bool lockDistortion = true;
     bool lockPoses = false;
     bool lockLandmarks = false;
     std::string lockLandmarkTypes;
@@ -47,7 +52,13 @@ int aliceVision_main(int argc, char** argv)
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("lockIntrinsics", po::value<bool>(&lockIntrinsics)->default_value(lockIntrinsics),
-         "Lock all camera intrinsics.")
+         "Lock camera intrinsics.")
+        ("lockFocalLength", po::value<bool>(&lockFocalLength)->default_value(lockFocalLength),
+         "Lock the focal length of camera intrinsics. Only used when lockIntrinsics is enabled.")
+        ("lockPrincipalPoint", po::value<bool>(&lockPrincipalPoint)->default_value(lockPrincipalPoint),
+         "Lock the principal point of camera intrinsics. Only used when lockIntrinsics is enabled.")
+        ("lockDistortion", po::value<bool>(&lockDistortion)->default_value(lockDistortion),
+         "Lock the distortion parameters of camera intrinsics. Only used when lockIntrinsics is enabled.")
         ("lockPoses", po::value<bool>(&lockPoses)->default_value(lockPoses),
          "Lock all camera poses.")
         ("lockLandmarks", po::value<bool>(&lockLandmarks)->default_value(lockLandmarks),
@@ -76,17 +87,42 @@ int aliceVision_main(int argc, char** argv)
     // Lock camera intrinsics
     if (lockIntrinsics)
     {
-        for (auto& [id, intrinsic] : sfmData.getIntrinsics().valueRange())
+        std::size_t lockedCount = 0;
+        for (auto& [_, intrinsic] : sfmData.getIntrinsics().valueRange())
         {
-            intrinsic.lock();
+            if (lockFocalLength && lockPrincipalPoint && lockDistortion)
+            {
+                // Lock all intrinsic parts at once using the global lock
+                intrinsic.lock();
+            }
+            else
+            {
+                // Lock only the requested parts
+                auto* isoPtr = dynamic_cast<camera::IntrinsicScaleOffset*>(&intrinsic);
+                if (isoPtr)
+                {
+                    isoPtr->setScaleLocked(lockFocalLength);
+                    isoPtr->setOffsetLocked(lockPrincipalPoint);
+                }
+
+                if (lockDistortion)
+                {
+                    auto* isodPtr = dynamic_cast<camera::IntrinsicScaleOffsetDisto*>(&intrinsic);
+                    if (isodPtr && isodPtr->getDistortion())
+                    {
+                        isodPtr->getDistortion()->setLocked(true);
+                    }
+                }
+            }
+            ++lockedCount;
         }
-        ALICEVISION_LOG_INFO("Locked " << sfmData.getIntrinsics().size() << " camera intrinsic(s).");
+        ALICEVISION_LOG_INFO("Processed " << lockedCount << " camera intrinsic(s).");
     }
 
     // Lock camera poses
     if (lockPoses)
     {
-        for (auto& [id, pose] : sfmData.getPoses().valueRange())
+        for (auto& [_, pose] : sfmData.getPoses().valueRange())
         {
             pose.lock();
         }
@@ -105,7 +141,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
         std::size_t lockedCount = 0;
-        for (auto& [id, landmark] : sfmData.getLandmarks())
+        for (auto& [_, landmark] : sfmData.getLandmarks())
         {
             if (typesToLock.empty() || typesToLock.count(landmark.getDescType()))
             {

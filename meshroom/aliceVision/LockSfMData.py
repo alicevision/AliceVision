@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -16,7 +16,10 @@ Lock specific elements of an SfMData scene so that they are kept fixed during su
 bundle adjustment steps.
 
 The following elements can be locked independently:
- * **Camera Intrinsics**: focal length, principal point, and distortion parameters.
+ * **Camera Intrinsics**: all intrinsic parameters, or specific sub-parts:
+   * **Focal Length**: scale parameters of the camera model.
+   * **Principal Point**: offset parameters of the camera model.
+   * **Distortion**: distortion parameters of the camera model.
  * **Camera Poses**: position and orientation of all reconstructed cameras.
  * **Landmarks**: 3D points of the sparse point cloud, optionally filtered by describer type.
 """
@@ -31,8 +34,29 @@ The following elements can be locked independently:
         desc.BoolParam(
             name="lockIntrinsics",
             label="Lock Intrinsics",
-            description="Lock all camera intrinsics (focal length, principal point, distortion).",
+            description="Lock camera intrinsics.",
             value=False,
+        ),
+        desc.BoolParam(
+            name="lockFocalLength",
+            label="Lock Focal Length",
+            description="Lock the focal length of camera intrinsics.",
+            value=True,
+            enabled=lambda node: node.lockIntrinsics.value,
+        ),
+        desc.BoolParam(
+            name="lockPrincipalPoint",
+            label="Lock Principal Point",
+            description="Lock the principal point of camera intrinsics.",
+            value=True,
+            enabled=lambda node: node.lockIntrinsics.value,
+        ),
+        desc.BoolParam(
+            name="lockDistortion",
+            label="Lock Distortion",
+            description="Lock the distortion parameters of camera intrinsics.",
+            value=True,
+            enabled=lambda node: node.lockIntrinsics.value,
         ),
         desc.BoolParam(
             name="lockPoses",
