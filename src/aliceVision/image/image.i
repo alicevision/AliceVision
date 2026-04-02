@@ -6,6 +6,8 @@
 
 %module (package="pyalicevision") image
 
+%include <aliceVision/global.i>
+
 %{
   #define SWIG_FILE_WITH_INIT
 %}
@@ -71,6 +73,8 @@ int NumPyType<image::RGBColor>()
 }
 
 %} 
+
+%ignore aliceVision::image::listImages;
 
 %include <OpenImageIO/oiioversion.h>
 %include <aliceVision/image/colorspace.hpp> 
@@ -192,8 +196,22 @@ class oiioParams
     oiio::ParamValueList _myParamList;
 };
 
+PyObject* listImages(const std::string& path)
+{
+    std::vector<std::string> images;
+    bool success = aliceVision::image::listImages(images, path);
+
+    PyObject* image_list = PyList_New(images.size());
+    for (std::size_t i = 0; i < images.size(); ++i)
+        PyList_SET_ITEM(image_list, i, PyUnicode_FromString(images[i].c_str()));
+
+    return PyTuple_Pack(2, PyBool_FromLong(success), image_list);
+}
+
 %}
 std::map<std::string, std::string> readImageMetadataAsMap(const std::string& path);
+
+PyObject* listImages(const std::string& path);
 
 class oiioParams
 {
