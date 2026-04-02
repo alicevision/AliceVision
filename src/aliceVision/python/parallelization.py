@@ -1,7 +1,7 @@
 """Dynamic parallelization strategies for AliceVision processing nodes.
 
 This module provides classes that compute chunk sizes for parallelizing
-AliceVision pipeline nodes based on the number of views in an SfMData file.
+AliceVision pipeline nodes.
 Each class implements a `__call__` method that returns the number of
 parallel chunks a node should be split into.
 """
@@ -143,3 +143,39 @@ class DynamicDividedViewsSize(object):
         size = math.ceil(len(data.getViews()) / valDivider)
 
         return max(1, size)
+
+class DynamicDirectorySize(object):
+    """Compute parallelization size based on the total number of views.
+
+    Returns the total number of views found in the SfMData file referenced
+    by the given node parameter, with a minimum of 1.
+
+    Args:
+        param: Name of the node attribute that holds the path to the SfMData file.
+    """
+
+    def __init__(self, param):
+        self._param = param
+
+    def __call__(self, node):
+        """Compute the number of chunks from the images count in the path.
+
+        Args:
+            node: The processing node whose attribute *param* points to a directory.
+
+        Returns:
+            int: The number of images in the directory (at least 1).
+
+        Raises:
+            RuntimeError: If the Directory can't be parsed.
+        """
+
+        from pyalicevision import image
+
+        param = node.attribute(self._param)
+
+        valid, imlist = image.listImages(param.value)
+        if not valid:
+            raise RuntimeError(f"Failed to load file : {param.value}")
+        
+        return max(1, len(imlist))
