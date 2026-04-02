@@ -26,7 +26,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 namespace po = boost::program_options;
@@ -43,6 +43,7 @@ int aliceVision_main(int argc, char** argv)
     size_t numMatchesToKeep = 0;
     double geometricErrorMax = 0.0;
     int maxIteration = 50000;
+    size_t minMatches = 0;
 
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
@@ -66,8 +67,10 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
          feature::EImageDescriberType_informations().c_str())
+        ("minMatches", po::value<std::size_t>(&minMatches)->default_value(minMatches),
+         "Minimum number of matches to accept a pair of images (or 0 to disable limit).")
         ("maxMatches", po::value<std::size_t>(&numMatchesToKeep)->default_value(numMatchesToKeep),
-         "Maximum number pf matches to keep.")
+         "Maximum number of matches to keep.")
         ("geometricError", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax),
          "Maximum error (in pixels) allowed for features matching during geometric verification. "
          "If set to 0, it lets the ACRansac select an optimal value.")
@@ -179,7 +182,8 @@ int aliceVision_main(int argc, char** argv)
       regionPerView,
       matchingImageCollection::GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, robustEstimation::ERobustEstimator::ACRANSAC),
       filteredMatches,
-      randomNumberGenerator);
+      randomNumberGenerator,
+      minMatches);
 
     ALICEVISION_LOG_INFO(geometricInfos.size() << "/" << filteredMatches.size() << " pairs have been matched");
     for (const auto& [pair, info] : geometricInfos)

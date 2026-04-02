@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -76,6 +76,14 @@ then it checks the number of features that validates this model and iterate thro
             description="Maximum error (in pixels) allowed for features matching during geometric verification",
             value=0.0,
             range=(0.0, 10.0, 0.1),
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="minMatches",
+            label="Min Matches",
+            description="Minimum number of matches to accept a pair of images (or 0 to disable limit).",
+            value=0,
+            range=(0, 10000, 1),
             advanced=True,
         ),
         desc.IntParam(
