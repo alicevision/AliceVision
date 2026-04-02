@@ -22,7 +22,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -33,6 +33,7 @@ int aliceVision_main(int argc, char** argv)
     // command-line parameters
     std::string sfmDataFilename;
     std::string sfmDataOutputFilename;
+    std::string selectedViewsFilename;
     bool lockIntrinsics = false;
     bool lockFocalLength = true;
     bool lockPrincipalPoint = true;
@@ -40,6 +41,7 @@ int aliceVision_main(int argc, char** argv)
     bool lockPoses = false;
     bool lockLandmarks = false;
     std::string lockLandmarkTypes;
+    std::string landmarkSelectionMode = "fully_contained";
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -51,6 +53,9 @@ int aliceVision_main(int argc, char** argv)
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("selectedViews,s", po::value<std::string>(&selectedViewsFilename)->default_value(selectedViewsFilename),
+         "Optional SfMData file used to define a subset of views. "
+         "When provided, locking is restricted to elements associated with those views.")
         ("lockIntrinsics", po::value<bool>(&lockIntrinsics)->default_value(lockIntrinsics),
          "Lock camera intrinsics.")
         ("lockFocalLength", po::value<bool>(&lockFocalLength)->default_value(lockFocalLength),
@@ -65,7 +70,11 @@ int aliceVision_main(int argc, char** argv)
          "Lock landmarks.")
         ("lockLandmarkTypes", po::value<std::string>(&lockLandmarkTypes)->default_value(lockLandmarkTypes),
          "Comma-separated list of landmark describer types to lock (e.g. 'sift,dspsift'). "
-         "If empty, all landmark types will be locked.");
+         "If empty, all landmark types will be locked.")
+        ("landmarkSelectionMode", po::value<std::string>(&landmarkSelectionMode)->default_value(landmarkSelectionMode),
+         "Landmark selection mode when selectedViews is provided: "
+         "'fully_contained' to lock landmarks whose all observations belong to the selected views, "
+         "'partially_contained' to lock landmarks with at least one observation in the selected views.");
     // clang-format on
 
     CmdLine cmdline("AliceVision lockSfmData");
@@ -84,12 +93,57 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Validate landmarkSelectionMode
+    if (landmarkSelectionMode != "fully_contained" && landmarkSelectionMode != "partially_contained")
+    {
+        ALICEVISION_LOG_ERROR("Invalid landmarkSelectionMode '" << landmarkSelectionMode
+                              << "'. Expected 'fully_contained' or 'partially_contained'.");
+        return EXIT_FAILURE;
+    }
+
+    // Build the set of selected view IDs (from the optional selectedViews SfMData)
+    std::set<IndexT> selectedViewIds;
+    const bool hasSelectedViews = !selectedViewsFilename.empty();
+    if (hasSelectedViews)
+    {
+        sfmData::SfMData selectedViewsSfmData;
+        // Only VIEWS data is needed since we only extract view IDs from this SfMData
+        if (!sfmDataIO::load(selectedViewsSfmData, selectedViewsFilename, sfmDataIO::ESfMData::VIEWS))
+        {
+            ALICEVISION_LOG_ERROR("The selectedViews SfMData file '" + selectedViewsFilename + "' cannot be read.");
+            return EXIT_FAILURE;
+        }
+        for (const auto& [viewId, _] : selectedViewsSfmData.getViews())
+        {
+            selectedViewIds.insert(viewId);
+        }
+        ALICEVISION_LOG_INFO("Selected views subset contains " << selectedViewIds.size() << " view(s).");
+    }
+
     // Lock camera intrinsics
     if (lockIntrinsics)
     {
-        std::size_t lockedCount = 0;
-        for (auto& [_, intrinsic] : sfmData.getIntrinsics().valueRange())
+        // If selectedViews is provided, collect the intrinsic IDs referenced by those views
+        std::set<IndexT> intrinsicIdsToLock;
+        if (hasSelectedViews)
         {
+            for (const auto& [viewId, view] : sfmData.getViews())
+            {
+                if (selectedViewIds.count(viewId) && view->getIntrinsicId() != UndefinedIndexT)
+                {
+                    intrinsicIdsToLock.insert(view->getIntrinsicId());
+                }
+            }
+        }
+
+        std::size_t lockedCount = 0;
+        for (auto& [intrinsicId, intrinsic] : sfmData.getIntrinsics().valueRange())
+        {
+            if (hasSelectedViews && !intrinsicIdsToLock.count(intrinsicId))
+            {
+                continue;
+            }
+
             if (lockFocalLength && lockPrincipalPoint && lockDistortion)
             {
                 // Lock all intrinsic parts at once using the global lock
@@ -122,14 +176,33 @@ int aliceVision_main(int argc, char** argv)
     // Lock camera poses
     if (lockPoses)
     {
-        for (auto& [_, pose] : sfmData.getPoses().valueRange())
+        // If selectedViews is provided, collect the pose IDs referenced by those views
+        std::set<IndexT> poseIdsToLock;
+        if (hasSelectedViews)
         {
-            pose.lock();
+            for (const auto& [viewId, view] : sfmData.getViews())
+            {
+                if (selectedViewIds.count(viewId) && view->getPoseId() != UndefinedIndexT)
+                {
+                    poseIdsToLock.insert(view->getPoseId());
+                }
+            }
         }
-        ALICEVISION_LOG_INFO("Locked " << sfmData.getPoses().size() << " camera pose(s).");
+
+        std::size_t lockedCount = 0;
+        for (auto& [poseId, pose] : sfmData.getPoses().valueRange())
+        {
+            if (hasSelectedViews && !poseIdsToLock.count(poseId))
+            {
+                continue;
+            }
+            pose.lock();
+            ++lockedCount;
+        }
+        ALICEVISION_LOG_INFO("Locked " << lockedCount << " camera pose(s).");
     }
 
-    // Lock landmarks (optionally filtered by describer type)
+    // Lock landmarks (optionally filtered by describer type and/or selected views)
     if (lockLandmarks)
     {
         std::set<feature::EImageDescriberType> typesToLock;
@@ -143,11 +216,49 @@ int aliceVision_main(int argc, char** argv)
         std::size_t lockedCount = 0;
         for (auto& [_, landmark] : sfmData.getLandmarks())
         {
-            if (typesToLock.empty() || typesToLock.count(landmark.getDescType()))
+            if (!typesToLock.empty() && !typesToLock.count(landmark.getDescType()))
             {
-                landmark.setLocked(true);
-                ++lockedCount;
+                continue;
             }
+
+            if (hasSelectedViews)
+            {
+                const Observations& obs = landmark.getObservations();
+                bool include = false;
+                if (landmarkSelectionMode == "partially_contained")
+                {
+                    // At least one observation in the selected views
+                    for (const auto& [viewId, _] : obs)
+                    {
+                        if (selectedViewIds.count(viewId))
+                        {
+                            include = true;
+                            break;
+                        }
+                    }
+                }
+                else // fully_contained
+                {
+                    // All observations must belong to selected views
+                    include = !obs.empty();
+                    for (const auto& [viewId, _] : obs)
+                    {
+                        if (!selectedViewIds.count(viewId))
+                        {
+                            include = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (!include)
+                {
+                    continue;
+                }
+            }
+
+            landmark.setLocked(true);
+            ++lockedCount;
         }
         ALICEVISION_LOG_INFO("Locked " << lockedCount << " landmark(s) out of " << sfmData.getLandmarks().size() << ".");
     }

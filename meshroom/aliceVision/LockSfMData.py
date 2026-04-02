@@ -1,4 +1,4 @@
-__version__ = "1.1"
+__version__ = "1.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -15,13 +15,17 @@ class LockSfMData(desc.AVCommandLineNode):
 Lock specific elements of an SfMData scene so that they are kept fixed during subsequent
 bundle adjustment steps.
 
+An optional **Selected Views** SfMData can be provided to restrict locking to elements
+associated with that subset of views.
+
 The following elements can be locked independently:
  * **Camera Intrinsics**: all intrinsic parameters, or specific sub-parts:
    * **Focal Length**: scale parameters of the camera model.
    * **Principal Point**: offset parameters of the camera model.
    * **Distortion**: distortion parameters of the camera model.
  * **Camera Poses**: position and orientation of all reconstructed cameras.
- * **Landmarks**: 3D points of the sparse point cloud, optionally filtered by describer type.
+ * **Landmarks**: 3D points of the sparse point cloud, optionally filtered by describer type
+   and/or by landmark selection mode (fully or partially contained within the selected views).
 """
 
     inputs = [
@@ -29,6 +33,13 @@ The following elements can be locked independently:
             name="input",
             label="SfMData",
             description="Input SfMData file.",
+            value="",
+        ),
+        desc.File(
+            name="selectedViews",
+            label="Selected Views",
+            description="Optional SfMData file used to define a subset of views.\n"
+                        "When provided, locking is restricted to elements associated with those views.",
             value="",
         ),
         desc.BoolParam(
@@ -80,6 +91,17 @@ The following elements can be locked independently:
             exclusive=False,
             joinChar=",",
             enabled=lambda node: node.lockLandmarks.value,
+        ),
+        desc.ChoiceParam(
+            name="landmarkSelectionMode",
+            label="Landmark Selection Mode",
+            description="Determines which landmarks to lock when Selected Views is provided:\n"
+                        " - fully_contained: lock only landmarks whose all observations belong to the selected views.\n"
+                        " - partially_contained: lock landmarks with at least one observation in the selected views.",
+            value="fully_contained",
+            values=["fully_contained", "partially_contained"],
+            exclusive=True,
+            enabled=lambda node: node.lockLandmarks.value and bool(node.selectedViews.value),
         ),
         desc.ChoiceParam(
             name="verboseLevel",
