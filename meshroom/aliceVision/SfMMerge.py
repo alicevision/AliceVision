@@ -54,6 +54,13 @@ class SfMMerge(desc.AVCommandLineNode):
             value="simple_copy",
             values=["simple_copy", 'from_landmarks'],
         ),
+        desc.BoolParam(
+            name="ignoreDuplicates",
+            label="Ignore duplicates",
+            description="If disabled, an error will be thrown if a duplicate view or intrinsic is found.",
+            enabled=lambda node: node.method.value == "simple_copy",
+            value=False,
+        ),
         desc.ListAttribute(
             elementDesc=desc.File(
                 name="matchesFolder",
