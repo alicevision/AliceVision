@@ -339,7 +339,15 @@ void SfMData::combine(const SfMData& sfmData)
     _constraintsPoint.insert(sfmData._constraintsPoint.begin(), sfmData._constraintsPoint.end());
 
     // image groups
-    _imageGroups.insert(sfmData._imageGroups.begin(), sfmData._imageGroups.end());
+    for (const auto & [imageGroupID, imageGroupPtr] : sfmData._imageGroups)
+    {
+        auto imageGroup = _imageGroups.find(imageGroupID);
+        // Priority is given to ImageSequence over ImageSet
+        if (imageGroup == _imageGroups.end() || imageGroupPtr.get()->getType() == sfmData::ImageGroup::Type::ImageSequence)
+        {
+            _imageGroups.insert_or_assign(imageGroupID, imageGroupPtr);
+        }
+    }
 }
 
 void SfMData::clear()
@@ -406,7 +414,7 @@ IndexT SfMData::findView(const std::string & imageName) const
     {
         const auto & v = viewPair.second;
 
-        if (imageName == std::to_string(v->getViewId()) || 
+        if (imageName == std::to_string(v->getViewId()) ||
             imageName == fs::path(v->getImage().getImagePath()).filename().string() ||
             imageName == v->getImage().getImagePath())
         {

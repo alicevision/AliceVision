@@ -129,8 +129,6 @@ bool SfMDataFeed::FeederImpl::goToNextFrame()
         return false;
 
     return true;
-
-    return true;
 }
 
 /*******************************************************************************/
