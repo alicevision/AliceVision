@@ -12,19 +12,19 @@
             "ExportAlembic": "1.0",
             "ExportDistortion": "2.0",
             "ExportImages": "1.1",
-            "GeometricFilterEstimating": "1.0",
+            "GeometricFilterEstimating": "1.1",
             "ImageSegmentationSam3": "1.0",
             "IntrinsicsTransforming": "1.1",
             "KeyframeSelection": "5.0",
-            "MatchMasking": "1.0",
+            "MatchMasking": "1.1",
             "RelativePoseEstimating": "3.1",
-            "RomaMatcher": "1.0",
+            "RomaMatcher": "1.1",
             "RomaReducer": "1.0",
             "RomaSampler": "1.0",
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.3",
+            "SfMExpanding": "2.4",
             "SfMTransform": "3.2",
             "StarListing": "1.0",
             "TracksBuilding": "1.0"
@@ -199,8 +199,7 @@
             ],
             "inputs": {
                 "input": "{CameraInit_1.output}",
-                "maskInvert": true,
-                "keepFilename": true
+                "maskInvert": true
             },
             "internalInputs": {
                 "color": "#575963"
@@ -245,7 +244,10 @@
                 "imagePairsList": "{RomaMatcher_1.imagePairsList}",
                 "warpFolder": "{RomaMatcher_1.outputWarpFolder}",
                 "certaintyFolder": "{RomaMatcher_1.outputCertaintyFolder}",
-                "masksFolder": "{ImageSegmentationSam3_1.output}"
+                "masksFolders": [
+                    "{ImageSegmentationSam3_1.output}"
+                ],
+                "masksExtension": "{ImageSegmentationSam3_1.extensionOut}"
             },
             "internalInputs": {
                 "color": "#575963"
