@@ -12,6 +12,7 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_vlfeatFloat.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_DSPSIFT_vlfeat.hpp>
 #include <aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp>
+#include <aliceVision/feature/virtual/ImageDescriber_Roma.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
@@ -254,6 +255,10 @@ std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDe
             describerPtr.reset(new ImageDescriber_AKAZE_OCV());
             break;
 #endif  // ALICEVISION_HAVE_OPENCV
+
+        case EImageDescriberType::ROMA:
+            describerPtr.reset(new ImageDescriber_Roma());
+            break;
 
         default:
             throw std::out_of_range("Invalid imageDescriber enum");

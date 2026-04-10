@@ -12,6 +12,7 @@ set(features_files_headers
     sift/ImageDescriber_SIFT_vlfeatFloat.hpp
     sift/ImageDescriber_DSPSIFT_vlfeat.hpp
     sift/SIFT.hpp
+    virtual/ImageDescriber_Roma.hpp
     Descriptor.hpp
     feature.hpp
     FeaturesPerView.hpp
@@ -34,6 +35,7 @@ set(features_files_sources
     akaze/ImageDescriber_AKAZE.cpp
     sift/SIFT.cpp
     sift/ImageDescriber_DSPSIFT_vlfeat.cpp
+    virtual/ImageDescriber_Roma.cpp
     FeaturesPerView.cpp
     ImageDescriber.cpp
     imageDescriberCommon.cpp
