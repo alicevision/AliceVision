@@ -18,6 +18,17 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          # Isolate writes per ref (branch/PR) to reduce cross-PR cache contamination.
+          key: ccache-${{ runner.os }}-rocky9-cuda12.1.1-${{ github.ref_name }}-${{ hashFiles('CMakeLists.txt', 'src/CMakeLists.txt', 'vcpkg.json', 'vcpkg-configuration.json', '.github/workflows/build-linux.yml') }}
+          restore-keys: |
+            ccache-${{ runner.os }}-rocky9-cuda12.1.1-${{ github.ref_name }}-
+            ccache-${{ runner.os }}-rocky9-cuda12.1.1-develop-
+            ccache-${{ runner.os }}-
+          max-size: "1000M"
+
       - name: Prepare File Tree
         run: |
           mkdir ./build
@@ -30,6 +41,8 @@ jobs:
         run: |
           cmake .. \
            -G Ninja \
+           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
            -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
            -DBUILD_SHARED_LIBS=ON \
            -DCMAKE_PREFIX_PATH="${DEPS_INSTALL_DIR}" \
