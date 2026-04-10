@@ -325,3 +325,11 @@ class SfMExpanding(desc.AVCommandLineNode):
             value="{nodeCacheFolder}/cameras.sfm",
         )
     ]
+
+    def onUseTemporalConstraintChanged(self, node):
+        if node.useTemporalConstraint.value:
+            node.useLocalBA.value = False
+
+    def onUseLocalBAChanged(self, node):
+        if node.useLocalBA.value:
+            node.useTemporalConstraint.value = False

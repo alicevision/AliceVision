@@ -71,13 +71,34 @@ double computeAreaScore(const std::vector<Eigen::Vector2d>& refPts, const std::v
     return score;
 }
 
-const double meanFocalLength(const sfmData::SfMData& sfmData)
+const double meanFocalLength(const sfmData::SfMData& sfmData, const aliceVision::IndexT imageGroupID)
 {
     std::vector<double> focalLengths;
 
-    for (const auto& [intrinsicId, intrinsic] : sfmData.getIntrinsics())
+    for (const auto& [viewID, viewPtr] : sfmData.getViews())
     {
-        const auto& iso = std::dynamic_pointer_cast<const camera::IntrinsicScaleOffset>(intrinsic);
+        if (viewPtr->getImageGroupId() != imageGroupID)
+        {
+            continue;
+        }
+
+        if (!sfmData.isIntrinsicDefined(*viewPtr))
+        {
+            continue;
+        }
+
+        std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicSharedPtr(viewPtr->getIntrinsicId());
+        if (!intrinsic)
+        {
+            continue;
+        }
+
+        const auto iso = std::dynamic_pointer_cast<const camera::IntrinsicScaleOffset>(intrinsic);
+        if (!iso)
+        {
+            continue;
+        }
+
         focalLengths.push_back(iso->getFocalLength());
     }
 

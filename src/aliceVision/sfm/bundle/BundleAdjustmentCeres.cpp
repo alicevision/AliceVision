@@ -571,7 +571,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             landmarkBlock[0] = refX.x();
             landmarkBlock[1] = refX.y();
             landmarkBlock[2] = refX.z();
-            
+
             referencePoseBlockPtr = _posesBlocks.at(refview.getPoseId()).data();
         }
 
@@ -714,7 +714,7 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         {
             continue;
         }
-        
+
         const IndexT intrinsicId = view.getIntrinsicId();
         const IndexT poseId = view.getPoseId();
 
@@ -736,7 +736,7 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         const auto& pose = sfmData.getPose(view);
 
         // needed parameters to create a residual block (K, pose)
-        
+
         double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
         double* intrinsicBlockPtr = _intrinsicsBlocks.at(intrinsicId).data();
         const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[intrinsicId];
@@ -843,7 +843,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
                                                                                         (poseBlockPtr_1 == poseBlockPtr_2),
                                                                                         (rigBlockPtr_1 == rigBlockPtr_2));
         std::vector<double*> params;
-        params.push_back(intrinsicBlockPtr_1);        
+        params.push_back(intrinsicBlockPtr_1);
         params.push_back(distortionBlockPtr_1);
 
         if (intrinsicBlockPtr_1 != intrinsicBlockPtr_2)
@@ -931,100 +931,115 @@ void BundleAdjustmentCeres::addTemporalSmoothnessToProblem(const sfmData::SfMDat
         return;
     }
 
-    // set a LossFunction to be less penalized by false measurements.
-    // note: set it to NULL if you don't want use a lossFunction.
-    ceres::LossFunction* lossFunction = nullptr;
-
-    double focalScale = meanFocalLength(sfmData);
-
-    TemporalConstraintParams tempConstrParams = _ceresOptions.temporalConstraintParams;
-
-    double positionWeight = focalScale * tempConstrParams.positionWeight;
-    double orientationWeight = focalScale * tempConstrParams.orientationWeight;
-
-    const double c0pWeight = tempConstrParams.c0positionWeight;
-    const double c1pWeight = tempConstrParams.c1positionWeight;
-    const double c2pWeight = tempConstrParams.c2positionWeight;
-    const double c0oWeight = tempConstrParams.c0orientationWeight;
-    const double c1oWeight = tempConstrParams.c1orientationWeight;
-    const double c2oWeight = tempConstrParams.c2orientationWeight;
-
-    double land2ViewsRegWeight = tempConstrParams.land2ViewsRegWeight;
-    double trajLengthRegWeight = tempConstrParams.trajLengthRegWeight;
-
-    std::vector<IndexT> poseIdsVec;
-    IndexT firstViewWithPose;
-    IndexT lastViewWithPose;
-    if (!getOrderedPoseIds(sfmData, poseIdsVec, firstViewWithPose, lastViewWithPose))
+    for (const auto & [imageGroupID, imageGroupPtr] : sfmData.getImageGroups())
     {
-        ALICEVISION_THROW_ERROR("Unable to get ordered frameIDs.");
-    }
 
-    std::vector<double*> poseBlockPtrs;
-
-    for (IndexT frameIdx = firstViewWithPose; frameIdx <= lastViewWithPose; frameIdx++)
-    {
-        poseBlockPtrs.push_back(_posesBlocks.at(poseIdsVec.at(frameIdx)).data());
-        _linearSolverOrdering.AddElementToGroup(poseBlockPtrs[frameIdx-firstViewWithPose], 1);
-    }
-
-    double trajectoryLength = cameraTrajectoryLength(poseBlockPtrs);
-
-    // The camera track length is equal to zero in case all cameras are at a same position
-    // In this case, the temporal constraint is disabled for the positions
-    if (trajectoryLength == 0)
-        positionWeight = 0;
-
-    ceres::ResidualBlockId blockId;
-
-    for (IndexT frameIdx = firstViewWithPose + 3; frameIdx <= lastViewWithPose; frameIdx++)
-    {
-        std::vector<double*> posesParams(poseBlockPtrs.begin()+frameIdx-firstViewWithPose-3,
-                                         poseBlockPtrs.begin()+frameIdx-firstViewWithPose+1);
-
-        // Add constraint for the first views
-        if (frameIdx == firstViewWithPose+3)
+        if (imageGroupPtr.get()->getType() != sfmData::ImageGroup::Type::ImageSequence)
         {
-            ceres::CostFunction* costFunction1 = TemporalConstraintFunctor::createCostFunction(
-                positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 1);
-            blockId = problem.AddResidualBlock(costFunction1, lossFunction, posesParams);
-            blockIds.push_back(blockId);
+            continue;
+        }
 
-            ceres::CostFunction* costFunction2 = TemporalConstraintFunctor::createCostFunction(
-                positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 2);
-            blockId = problem.AddResidualBlock(costFunction2, lossFunction, posesParams);
+        // set a LossFunction to be less penalized by false measurements.
+        // note: set it to NULL if you don't want use a lossFunction.
+        ceres::LossFunction* lossFunction = nullptr;
+
+        double focalScale = meanFocalLength(sfmData, imageGroupID);
+
+        TemporalConstraintParams tempConstrParams = _ceresOptions.temporalConstraintParams;
+
+        double positionWeight = focalScale * tempConstrParams.positionWeight;
+        double orientationWeight = focalScale * tempConstrParams.orientationWeight;
+
+        const double c0pWeight = tempConstrParams.c0positionWeight;
+        const double c1pWeight = tempConstrParams.c1positionWeight;
+        const double c2pWeight = tempConstrParams.c2positionWeight;
+        const double c0oWeight = tempConstrParams.c0orientationWeight;
+        const double c1oWeight = tempConstrParams.c1orientationWeight;
+        const double c2oWeight = tempConstrParams.c2orientationWeight;
+
+        double land2ViewsRegWeight = tempConstrParams.land2ViewsRegWeight;
+        double trajLengthRegWeight = tempConstrParams.trajLengthRegWeight;
+
+        std::vector<IndexT> poseIdsVec;
+        IndexT firstViewWithPose = 0;
+        IndexT lastViewWithPose = 1;
+        if (!getOrderedPoseIds(sfmData, imageGroupID, poseIdsVec, firstViewWithPose, lastViewWithPose))
+        {
+            if (firstViewWithPose==lastViewWithPose)
+            {
+                ALICEVISION_LOG_WARNING("Unable to get ordered frameIDs for imageGroup " << imageGroupID <<
+                                        ". Temporal smoothness will be skipped for this group.");
+                continue;
+            }
+            ALICEVISION_THROW_ERROR("Unable to get ordered frameIDs for imageGroup " << imageGroupID << ".");
+        }
+
+        std::vector<double*> poseBlockPtrs;
+
+        for (IndexT frameIdx = firstViewWithPose; frameIdx <= lastViewWithPose; frameIdx++)
+        {
+            poseBlockPtrs.push_back(_posesBlocks.at(poseIdsVec.at(frameIdx)).data());
+            _linearSolverOrdering.AddElementToGroup(poseBlockPtrs[frameIdx-firstViewWithPose], 1);
+        }
+
+        double trajectoryLength = cameraTrajectoryLength(poseBlockPtrs);
+
+        // The camera track length is equal to zero in case all cameras are at a same position
+        // In this case, the temporal constraint is disabled for the positions
+        if (trajectoryLength == 0)
+            positionWeight = 0;
+
+        ceres::ResidualBlockId blockId;
+
+        for (IndexT frameIdx = firstViewWithPose + 3; frameIdx <= lastViewWithPose; frameIdx++)
+        {
+            std::vector<double*> posesParams(poseBlockPtrs.begin()+frameIdx-firstViewWithPose-3,
+                                            poseBlockPtrs.begin()+frameIdx-firstViewWithPose+1);
+
+            // Add constraint for the first views
+            if (frameIdx == firstViewWithPose+3)
+            {
+                ceres::CostFunction* costFunction1 = TemporalConstraintFunctor::createCostFunction(
+                    positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 1);
+                blockId = problem.AddResidualBlock(costFunction1, lossFunction, posesParams);
+                blockIds.push_back(blockId);
+
+                ceres::CostFunction* costFunction2 = TemporalConstraintFunctor::createCostFunction(
+                    positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 2);
+                blockId = problem.AddResidualBlock(costFunction2, lossFunction, posesParams);
+                blockIds.push_back(blockId);
+            }
+
+            ceres::CostFunction* costFunction = TemporalConstraintFunctor::createCostFunction(
+                positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 0);
+            blockId = problem.AddResidualBlock(costFunction, lossFunction, posesParams);
             blockIds.push_back(blockId);
         }
 
-        ceres::CostFunction* costFunction = TemporalConstraintFunctor::createCostFunction(
-            positionWeight, orientationWeight, c0pWeight, c1pWeight, c2pWeight, c0oWeight, c1oWeight, c2oWeight, 0);
-        blockId = problem.AddResidualBlock(costFunction, lossFunction, posesParams);
-        blockIds.push_back(blockId);
-    }
+        if (land2ViewsRegWeight != 0.)
+        {
+            std::vector<double*> landmarks;
 
-    if (land2ViewsRegWeight != 0.)
-    {
-        std::vector<double*> landmarks;
+            for (auto& [landmarkID, landmarkPtr] : _landmarksBlocks)
+                landmarks.push_back(landmarkPtr.data());
 
-        for (auto& [landmarkID, landmarkPtr] : _landmarksBlocks)
-            landmarks.push_back(landmarkPtr.data());
+            std::vector<double> meanLandmarks2viewsVector(3);
 
-        std::vector<double> meanLandmarks2viewsVector(3);
+            meanLandmarks2viewsPose(landmarks, poseBlockPtrs, meanLandmarks2viewsVector);
 
-        meanLandmarks2viewsPose(landmarks, poseBlockPtrs, meanLandmarks2viewsVector);
+            ceres::CostFunction* regFunction = Landmarks2viewsRegularizationFunctor::createCostFunction
+                            (land2ViewsRegWeight, landmarks, meanLandmarks2viewsVector, poseBlockPtrs.size());
+            ceres::LossFunction* reg_loss_function = nullptr;
+            problem.AddResidualBlock(regFunction, reg_loss_function, poseBlockPtrs);
+        }
 
-        ceres::CostFunction* regFunction = Landmarks2viewsRegularizationFunctor::createCostFunction
-                        (land2ViewsRegWeight, landmarks, meanLandmarks2viewsVector, poseBlockPtrs.size());
-        ceres::LossFunction* reg_loss_function = nullptr;
-        problem.AddResidualBlock(regFunction, reg_loss_function, poseBlockPtrs);
-    }
-
-    if (trajLengthRegWeight != 0.)
-    {
-        ceres::CostFunction* regFunction = TrajectoryLengthRegularizationFunctor::createCostFunction
-                                                (trajLengthRegWeight, trajectoryLength, poseBlockPtrs.size());
-        ceres::LossFunction* reg_loss_function = nullptr;
-        problem.AddResidualBlock(regFunction, reg_loss_function, poseBlockPtrs);
+        if (trajLengthRegWeight != 0.)
+        {
+            ceres::CostFunction* regFunction = TrajectoryLengthRegularizationFunctor::createCostFunction
+                                                    (trajLengthRegWeight, trajectoryLength, poseBlockPtrs.size());
+            ceres::LossFunction* reg_loss_function = nullptr;
+            problem.AddResidualBlock(regFunction, reg_loss_function, poseBlockPtrs);
+        }
     }
 
     ALICEVISION_LOG_INFO("SfmBundle::Temporal Smoothness added to problem");
@@ -1169,7 +1184,7 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
             sfmData::Landmark& landmark = sfmData.getLandmarks().at(idLandmark);
 
             std::array<double, 3> lblock = block;
-            
+
             if (landmark.getReferenceViewIndex() != UndefinedIndexT)
             {
                 if (landmark.getPointFetcher())
@@ -1178,7 +1193,7 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
                     const geometry::Pose3 refPose = sfmData.getPose(refview).getTransform();
 
                     const Vec3 origin = refPose.center();
-                    
+
                     Vec3 rdir;
                     rdir.x() = block[0];
                     rdir.y() = block[1];
@@ -1186,14 +1201,14 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
 
                     rdir = rdir / rdir.norm();
                     const Vec3 wdir = refPose.rotation().transpose() * rdir;
-                    
+
                     Vec3 point, normal;
                     if (!landmark.getPointFetcher()->getPointAndNormal(point, normal, origin, wdir))
                     {
                         ALICEVISION_LOG_DEBUG("A mesh-based landmark has no intersection with the mesh.");
                         continue;
                     }
-                    
+
                     lblock[0] = point.x();
                     lblock[1] = point.y();
                     lblock[2] = point.z();
@@ -1241,7 +1256,7 @@ void BundleAdjustmentCeres::surveyInfos(const sfmData::SfMData & sfmData) const
         if (!sfmData.isPoseAndIntrinsicDefined(view))
         {
             continue;
-        } 
+        }
 
         const auto & intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
         const auto pose = sfmData.getPose(view);

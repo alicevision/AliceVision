@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <Eigen/Dense>
+#include <aliceVision/types.hpp>
 
 namespace aliceVision {
 
@@ -35,17 +36,16 @@ double RMSE(const sfmData::SfMData& sfmData);
  * @param nextWidth the next image width
  * @param nextHeight the next image height
  * @return score
- * 
-*/
+ */
 double computeAreaScore(const std::vector<Eigen::Vector2d>& refPts, const std::vector<Eigen::Vector2d>& nextPts, size_t refWidth, size_t refHeight, size_t nextWidth, size_t nextHeight);
 
 /**
- * @brief Compute the mean focal length across all intrinsics in the given SfMData.
- * @param sfmData The sfm data containing camera intrinsics.
+ * @brief Compute the mean focal length for the views belonging to the specified imageGroup.
+ * @param sfmData The sfm data containing the views and the associated camera intrinsics.
+ * @param imageGroupID The imageGroupID of the views to consider.
  * @return The mean focal length in physical units (not pixels). Returns 1.0 if no intrinsics are present.
  */
-const double meanFocalLength(const sfmData::SfMData& sfmData);
-
+const double meanFocalLength(const sfmData::SfMData& sfmData, const IndexT imageGroupID);
 
 /**
  * @brief Compute the total length of the camera trajectory defined by the given poses.

@@ -48,12 +48,13 @@ private:
  * and identifies the first and last view IDs with valid poses.
  *
  * @param[in]  sfmData            The scene description containing views and poses.
+ * @param[in]  imageGroupID       The imageGroupID of the views to consider.
  * @param[out] poseIdsVec         Vector to be filled with the ordered pose IDs.
  * @param[out] firstViewWithPose  The ID of the first view with a valid pose.
  * @param[out] lastViewWithPose   The ID of the last view with a valid pose.
  * @return true if at least one pose was found and the output parameters were set, false otherwise.
  */
-bool getOrderedPoseIds(const sfmData::SfMData& sfmData, std::vector<IndexT>& poseIdsVec, IndexT& firstViewWithPose, IndexT& lastViewWithPose);
+bool getOrderedPoseIds(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::vector<IndexT>& poseIdsVec, IndexT& firstViewWithPose, IndexT& lastViewWithPose);
 } // namespace sfm
 } // namespace aliceVision
 
