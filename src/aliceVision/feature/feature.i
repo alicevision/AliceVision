@@ -39,5 +39,6 @@ using namespace aliceVision::feature;
 %template(CLASS##Descriptors) std::vector<aliceVision::feature::Descriptor<TYPE, LEN>>;
 %enddef
 
-%region_typemaps(Fake, unsigned char, 1)
+%region_typemaps(Fake, float, 1)
 %region_typemaps(Sift, unsigned char, 128)
+%region_typemaps(Roma, unsigned char, 1)
