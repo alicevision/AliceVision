@@ -57,7 +57,9 @@
                 -200,
                 0
             ],
-            "inputs": {},
+            "inputs": {
+                "isSequence": true
+            },
             "internalInputs": {
                 "color": "#575963"
             }
@@ -266,7 +268,7 @@
                 200
             ],
             "inputs": {
-                "input": "{KeyframeSelection_1.outputSfMDataFrames}",
+                "input": "{ApplyCalibration_1.output}",
                 "inputB": "{SfMExpanding_1.output}",
                 "featuresFolders": [
                     "{FeatureExtraction_1.output}"

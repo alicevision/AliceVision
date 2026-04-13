@@ -58,7 +58,9 @@
                 -200,
                 0
             ],
-            "inputs": {},
+            "inputs": {
+                "isSequence": true
+            },
             "internalInputs": {
                 "label": "InitShot",
                 "color": "#575963"
@@ -351,7 +353,7 @@
                 139
             ],
             "inputs": {
-                "input": "{KeyframeSelection_1.outputSfMDataFrames}",
+                "input": "{ApplyCalibration_1.output}",
                 "inputB": "{SfMExpanding_2.output}",
                 "featuresFolders": "{TracksBuilding_2.featuresFolders}",
                 "method": "VocabularyTree",

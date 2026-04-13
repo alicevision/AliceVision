@@ -5,7 +5,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "sceneSample.hpp"
+#include <aliceVision/stl/hash.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/sfmData/ImageSequence.hpp>
 
 namespace aliceVision {
 namespace sfmDataIO {
@@ -129,12 +131,18 @@ void generateSphereScene(sfmData::SfMData& output, int pointsNb, int posesNb)
 {
     // Generate random points on a sphere
 
+    size_t sphereSceneHash = 4546135487;
+
     const int w = 4092;
     const int h = 2048;
     const double focalLengthPixX = 10000.0;
     const double focalLengthPixY = 20000.0;
     output.getIntrinsics().emplace(
       0, camera::createPinhole(camera::DISTORTION_NONE, camera::UNDISTORTION_NONE, w, h, focalLengthPixX, focalLengthPixY, 0, 0));
+
+    size_t imageGroupID = sphereSceneHash;
+    stl::hash_combine(imageGroupID, pointsNb);
+    stl::hash_combine(imageGroupID, posesNb);
 
     // Generate poses on a circle
     for (IndexT idPV = 0; idPV < posesNb; idPV++)
@@ -147,7 +155,11 @@ void generateSphereScene(sfmData::SfMData& output, int pointsNb, int posesNb)
         output.getPoses().assign(idPV, sfmData::CameraPose(pose));
         output.getViews().emplace(idPV, std::make_shared<sfmData::View>("", idPV, 0, idPV, w, h));
         output.getView(idPV).setFrameId(idPV);
+        output.getView(idPV).setImageGroupId(imageGroupID);
     }
+
+    auto imageGroupPtr = std::make_shared<sfmData::ImageSequence>();
+    output.getImageGroups().emplace(imageGroupID, imageGroupPtr);
 
     // Generate random points on a sphere and corresponding observations in each view
     const double arbitraryScale = 1.0;
