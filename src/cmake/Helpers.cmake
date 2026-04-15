@@ -110,6 +110,9 @@ function(alicevision_add_library library_name)
         )
     endif()
 
+    # Add to global target list
+    set(ALICEVISION_GLOBAL_TARGET_LIST "${ALICEVISION_GLOBAL_TARGET_LIST};${library_name}" CACHE INTERNAL "Global list of all AliceVision targets enabled")
+
     install(TARGETS ${library_name}
         EXPORT aliceVision-targets
         ARCHIVE
@@ -241,6 +244,9 @@ function(alicevision_add_software software_name)
         PROPERTIES SOVERSION ${ALICEVISION_SOFTWARE_VERSION_MAJOR}
         VERSION "${ALICEVISION_SOFTWARE_VERSION_MAJOR}${ALICEVISION_SOFTWARE_VERSION_SEPARATOR}${ALICEVISION_SOFTWARE_VERSION_MINOR}"
     )
+
+    # Add to global target list
+    set(ALICEVISION_GLOBAL_TARGET_LIST "${ALICEVISION_GLOBAL_TARGET_LIST};${software_name}_exe" CACHE INTERNAL "Global list of all AliceVision targets enabled")
 
     install(TARGETS ${software_name}_exe
         RUNTIME

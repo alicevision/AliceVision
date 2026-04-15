@@ -273,4 +273,11 @@ if(AV_BUILD_ALICEVISION)
 
         DEPENDS ${AV_DEPS}
     )
+
+    # Pipe through the darwin-bundle target on Apple targets
+    if(APPLE)
+        add_custom_target(darwin-bundle
+            ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/aliceVision_build --target darwin-bundle
+        )
+    endif()
 endif()
