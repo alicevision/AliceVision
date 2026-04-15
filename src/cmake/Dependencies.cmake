@@ -76,6 +76,7 @@ option(AV_BUILD_GEOGRAM     "Build Geogram"   ON)
 option(AV_BUILD_ASSIMP      "Build Assimp"    ON)
 option(AV_BUILD_ALEMBIC     "Build Alembic"   ON)
 option(AV_BUILD_E57FORMAT   "Build E57Format" ON)
+av_conditional_option(AV_BUILD_XERCESC  "Build XERCESC" IF AV_BUILD_E57FORMAT THEN ON ELSE OFF)
 option(AV_BUILD_OPENMESH    "Build OpenMesh"  ON)
 option(AV_BUILD_PCL         "Build PCL"       OFF)
 option(AV_BUILD_OPENSUBDIV  "Build OpenSubdiv" ON)
@@ -98,7 +99,7 @@ set(_all_av_options
     AV_BUILD_LAPACK AV_BUILD_SUITESPARSE AV_BUILD_CERES
     AV_BUILD_FLANN AV_BUILD_NANOFLANN
     AV_BUILD_COINUTILS AV_BUILD_OSI AV_BUILD_CLP AV_BUILD_LEMON
-    AV_BUILD_GEOGRAM AV_BUILD_ASSIMP AV_BUILD_ALEMBIC AV_BUILD_E57FORMAT
+    AV_BUILD_GEOGRAM AV_BUILD_ASSIMP AV_BUILD_ALEMBIC AV_BUILD_E57FORMAT AV_BUILD_XERCESC
     AV_BUILD_OPENMESH AV_BUILD_PCL AV_BUILD_USD AV_BUILD_OPENSUBDIV
     AV_BUILD_POPSIFT AV_BUILD_CCTAG AV_BUILD_APRILTAG
 )
@@ -182,7 +183,8 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/lemon.cmake)        # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/geogram.cmake)      # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/assimp.cmake)       # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/alembic.cmake)      # depends: boost, openexr, zlib
-include(${CMAKE_CURRENT_LIST_DIR}/deps/e57format.cmake)    # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/xercesc.cmake)      # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/e57format.cmake)    # depends: (xercesc)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/openmesh.cmake)     # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/pcl.cmake)          # depends: eigen, boost, png, flann, lz4, zlib, cuda, openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/opensubdiv.cmake)   # depends: openmp
@@ -231,6 +233,7 @@ if(AV_BUILD_ALICEVISION)
             ${GEOGRAM_CMAKE_FLAGS}
             ${ASSIMP_CMAKE_FLAGS}
             ${ALEMBIC_CMAKE_FLAGS}
+            ${XERCESC_CMAKE_FLAGS}
             ${E57FORMAT_CMAKE_FLAGS}
             ${OPENMESH_CMAKE_FLAGS}
             ${PCL_CMAKE_FLAGS}

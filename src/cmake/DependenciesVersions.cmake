@@ -169,6 +169,10 @@ set(DEP_ALEMBIC_VERSION "1.8.5")
 set(DEP_ALEMBIC_URL     "https://github.com/alembic/alembic/archive/${DEP_ALEMBIC_VERSION}.tar.gz")
 set(DEP_ALEMBIC_HASH    "MD5=fcd5b5492a005057e11b601b60ac9a49")
 
+set(DEP_XERCESC_VERSION "3.3.0")
+set(DEP_XERCESC_URL     "https://downloads.apache.org/xerces/c/3/sources/xerces-c-${DEP_XERCESC_VERSION}.tar.xz")
+set(DEP_XERCESC_HASH    "MD5=7efbd9d785551c71d44ab6782e30c3c4")
+
 set(DEP_E57FORMAT_GIT_REPO "https://github.com/asmaloney/libE57Format.git")
 set(DEP_E57FORMAT_GIT_TAG  "v3.2.0")
 
