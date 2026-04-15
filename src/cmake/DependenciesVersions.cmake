@@ -85,7 +85,7 @@ set(DEP_OPENEXR_HASH    "MD5=da5daf4d7954c034921e7201bf815938")
 # ── Video ─────────────────────────────────────────────────────────────────────
 
 set(DEP_VPX_GIT_REPO   "https://chromium.googlesource.com/webm/libvpx.git")
-set(DEP_VPX_GIT_TAG    "v1.13.0")
+set(DEP_VPX_GIT_TAG    "v1.15.2")
 
 set(DEP_FFMPEG_VERSION "6.1.4")
 set(DEP_FFMPEG_URL     "http://ffmpeg.org/releases/ffmpeg-${DEP_FFMPEG_VERSION}.tar.bz2")
