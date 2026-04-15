@@ -13,6 +13,8 @@
 #   DEP_<LIB>_GIT_TAG   — git tag / commit
 # =============================================================================
 
+include(${CMAKE_SOURCE_DIR}/src/cmake/ConditionalOption.cmake)
+
 include(CMakeDependentOption)
 include(ExternalProject)
 
@@ -29,13 +31,14 @@ endif()
 set(AV_ONNX_APPLE_ARCH "arm64" CACHE STRING "Version to download OFF Apple [arm64, x86_64]")
 
 # Core
-option(AV_BUILD_ZLIB        "Build zlib"     ON)
-option(AV_BUILD_TBB         "Build TBB"      ON)
-option(AV_BUILD_EIGEN       "Build Eigen"    ON)
-option(AV_BUILD_EXPAT       "Build Expat"    ON)
-option(AV_BUILD_BOOST       "Build Boost"    ON)
-option(AV_BUILD_PYBIND11    "Build pybind11" ON)
-option(AV_BUILD_SWIG        "Build SWIG"     ON)
+option(AV_BUILD_ZLIB        "Build zlib"            ON)
+option(AV_BUILD_TBB         "Build TBB"             ON)
+option(AV_BUILD_EIGEN       "Build Eigen"           ON)
+option(AV_BUILD_EXPAT       "Build Expat"           ON)
+option(AV_BUILD_BOOST       "Build Boost"           ON)
+option(AV_BUILD_PYBIND11    "Build pybind11"        ON)
+option(AV_BUILD_SWIG        "Build SWIG"            ON)
+av_conditional_option(AV_BUILD_OPENMP "Build LLVM OpenMP" IF APPLE THEN ON ELSE OFF)
 
 # CUDA
 cmake_dependent_option(AV_BUILD_CUDA  "Build/install CUDA toolkit"  OFF  "NOT APPLE"  OFF)
@@ -87,7 +90,7 @@ option(AV_BUILD_APRILTAG    "Build AprilTag"  ON)
 
 set(_all_av_options
     AV_BUILD_ZLIB AV_BUILD_TBB AV_BUILD_EIGEN AV_BUILD_EXPAT
-    AV_BUILD_BOOST AV_BUILD_PYBIND11 AV_BUILD_SWIG
+    AV_BUILD_BOOST AV_BUILD_PYBIND11 AV_BUILD_SWIG AV_BUILD_OPENMP
     AV_BUILD_CUDA
     AV_BUILD_TIFF AV_BUILD_PNG AV_BUILD_JPEG AV_BUILD_LIBRAW AV_BUILD_OPENEXR
     AV_BUILD_VPX AV_BUILD_FFMPEG
@@ -136,11 +139,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/Helpers.cmake)
 # Core — no prerequisites
 include(${CMAKE_CURRENT_LIST_DIR}/deps/zlib.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/tbb.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/deps/eigen.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/eigen.cmake)     # depends: openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/expat.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/boost.cmake)      # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/pybind11.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/swig.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/openmp.cmake)
 
 # CUDA — no prerequisites
 include(${CMAKE_CURRENT_LIST_DIR}/deps/cuda.cmake)
@@ -160,14 +164,14 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/ffmpeg.cmake)     # depends: vpx
 include(${CMAKE_CURRENT_LIST_DIR}/deps/onnxruntime.cmake)  # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/opencolorio.cmake)  # depends: expat
 include(${CMAKE_CURRENT_LIST_DIR}/deps/openimageio.cmake)  # depends: boost, openexr, tiff, png, jpeg, libraw, zlib, ffmpeg, pybind11, expat, opencolorio
-include(${CMAKE_CURRENT_LIST_DIR}/deps/opencv.cmake)       # depends: tbb, zlib, openexr, tiff, png, jpeg, libraw, ffmpeg
+include(${CMAKE_CURRENT_LIST_DIR}/deps/opencv.cmake)       # depends: tbb, zlib, openexr, tiff, png, jpeg, libraw, ffmpeg, openmp
 
 # Math / solvers
 include(${CMAKE_CURRENT_LIST_DIR}/deps/lapack.cmake)       # depends: tbb
 include(${CMAKE_CURRENT_LIST_DIR}/deps/suitesparse.cmake)  # depends: lapack (includes gmp + mpfr inline)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/ceres.cmake)        # depends: eigen, suitesparse
 include(${CMAKE_CURRENT_LIST_DIR}/deps/lz4.cmake)          # depends: (none)
-include(${CMAKE_CURRENT_LIST_DIR}/deps/flann.cmake)        # depends: lz4
+include(${CMAKE_CURRENT_LIST_DIR}/deps/flann.cmake)        # depends: lz4, openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/nanoflann.cmake)    # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/coinutils.cmake)    # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/osi.cmake)          # depends: coinutils
@@ -180,8 +184,8 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/assimp.cmake)       # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/alembic.cmake)      # depends: boost, openexr, zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/e57format.cmake)    # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/openmesh.cmake)     # depends: (none)
-include(${CMAKE_CURRENT_LIST_DIR}/deps/pcl.cmake)          # depends: eigen, boost, png, flann, lz4, zlib, cuda
-include(${CMAKE_CURRENT_LIST_DIR}/deps/opensubdiv.cmake)   # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/pcl.cmake)          # depends: eigen, boost, png, flann, lz4, zlib, cuda, openmp
+include(${CMAKE_CURRENT_LIST_DIR}/deps/opensubdiv.cmake)   # depends: openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/usd.cmake)          # depends: (opensubdiv)
 
 # Feature detectors

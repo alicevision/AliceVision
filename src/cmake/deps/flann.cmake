@@ -19,6 +19,7 @@ if(AV_BUILD_FLANN)
             PKG_CONFIG_PATH=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkgconfig/
             ${CMAKE_COMMAND}
             ${CMAKE_CORE_BUILD_FLAGS}
+            ${OPENMP_CMAKE_FLAGS}
             -DBUILD_C_BINDINGS:BOOL=OFF
             -DBUILD_EXAMPLES=OFF
             -DBUILD_TESTS:BOOL=OFF
@@ -36,7 +37,7 @@ if(AV_BUILD_FLANN)
             ${CMAKE_COMMAND} --build <BINARY_DIR>
                 --config ${DEPS_CMAKE_BUILD_TYPE}
                 --target install
-        DEPENDS ${LZ4_TARGET}
+        DEPENDS ${LZ4_TARGET} ${OPENMP_TARGET}
     )
 
 set(FLANN_CMAKE_FLAGS -Dflann_DIR:PATH=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake/flann/)

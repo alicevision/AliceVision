@@ -49,6 +49,10 @@ set(DEP_SWIG_GIT_TAG   "v4.3.0")
 # cmake find_package path uses the version string
 set(DEP_SWIG_VERSION   "4.3.0")
 
+set(DEP_OPENMP_VERSION "22.1.3")
+set(DEP_OPENMP_URL     "https://github.com/llvm/llvm-project/releases/download/llvmorg-${DEP_OPENMP_VERSION}/llvm-project-${DEP_OPENMP_VERSION}.src.tar.xz")
+set(DEP_OPENMP_HASH    "MD5=1b8f0fdca6f49e323702ed7d4da0feae")
+
 # ── CUDA ──────────────────────────────────────────────────────────────────────
 
 set(DEP_CUDA_VERSION   "12.1.1")

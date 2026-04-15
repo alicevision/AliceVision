@@ -54,7 +54,7 @@ if(AV_BUILD_LIBRAW)
             ${CMAKE_COMMAND} --build <BINARY_DIR>
                 --config ${DEPS_CMAKE_BUILD_TYPE}
                 --parallel ${AV_BUILD_DEPENDENCIES_PARALLEL}
-        DEPENDS libraw_cmake ${ZLIB_TARGET} ${JPEG_TARGET}
+        DEPENDS libraw_cmake ${ZLIB_TARGET} ${JPEG_TARGET} ${OPENMP_TARGET}
     )
 
     set(LIBRAW_CMAKE_FLAGS
