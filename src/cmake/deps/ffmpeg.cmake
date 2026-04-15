@@ -9,6 +9,13 @@
 if(AV_BUILD_FFMPEG)
     set(FFMPEG_TARGET ffmpeg)
 
+    # Explicitly set the install name of the dynamic library to @rpath
+    if(APPLE AND ALICEVISION_USE_RPATH)
+        set(APPLE_FFMPEG_RPATH_FLAG --install-name-dir=@rpath)
+    else()
+        set(APPLE_FFMPEG_RPATH_FLAG)
+    endif()
+
     if(APPLE)
         if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
             set(APPLE_FFMPEG_ARCH_FLAGS --arch=x86_64 --enable-cross-compile --sysroot=${APPLE_SYSROOT})
@@ -44,6 +51,7 @@ if(AV_BUILD_FFMPEG)
                 --enable-nonfree
                 --enable-libvpx
                 ${APPLE_FFMPEG_ARCH_FLAGS}
+                ${APPLE_FFMPEG_RPATH_FLAG}
         BUILD_COMMAND make -j${AV_BUILD_DEPENDENCIES_PARALLEL}
         DEPENDS ${VPX_TARGET}
     )
