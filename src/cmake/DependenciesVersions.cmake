@@ -180,9 +180,9 @@ set(DEP_OPENMESH_VERSION "10.0.0")
 set(DEP_OPENMESH_URL     "https://www.graphics.rwth-aachen.de/media/openmesh_static/Releases/10.0/OpenMesh-${DEP_OPENMESH_VERSION}.tar.bz2")
 set(DEP_OPENMESH_HASH    "MD5=4d166aecbc09df58b38de9759c92a437")
 
-set(DEP_PCL_VERSION "1.13.0")
+set(DEP_PCL_VERSION "1.15.1")
 set(DEP_PCL_URL     "https://github.com/PointCloudLibrary/pcl/archive/refs/tags/pcl-${DEP_PCL_VERSION}.tar.gz")
-set(DEP_PCL_HASH    "MD5=987a5f6e440407a2bcae10c1022568b0")
+set(DEP_PCL_HASH    "MD5=e29ad2147fbe2109233e2b3a0254dbab")
 
 set(DEP_USD_GIT_REPO "https://github.com/PixarAnimationStudios/USD.git")
 set(DEP_USD_GIT_TAG  "v25.08")
