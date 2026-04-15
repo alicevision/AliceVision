@@ -82,7 +82,7 @@ option(AV_BUILD_OPENSUBDIV  "Build OpenSubdiv" ON)
 option(AV_BUILD_USD         "Build USD"        ON)
 
 # Feature detectors
-option(AV_BUILD_POPSIFT     "Build PopSift"   ON)
+cmake_dependent_option(AV_BUILD_POPSIFT       "Build PopSift" ON  "NOT APPLE" OFF)
 option(AV_BUILD_CCTAG       "Build CCTag"     ON)
 option(AV_BUILD_APRILTAG    "Build AprilTag"  ON)
 
