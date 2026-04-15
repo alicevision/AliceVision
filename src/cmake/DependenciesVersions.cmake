@@ -65,9 +65,9 @@ set(DEP_CUDA_URL       "https://developer.download.nvidia.com/compute/cuda/${DEP
 set(DEP_TIFF_GIT_TAG   "v4.5.1")
 set(DEP_TIFF_GIT_REPO  "https://gitlab.com/libtiff/libtiff.git")
 
-set(DEP_PNG_VERSION    "1.6.39")
+set(DEP_PNG_VERSION    "1.6.50")
 set(DEP_PNG_URL        "https://download.sourceforge.net/libpng/libpng-${DEP_PNG_VERSION}.tar.gz")
-set(DEP_PNG_HASH       "MD5=93b8e79a008747e70f7704f600349559")
+set(DEP_PNG_HASH       "MD5=eef2d3da281ae83ac8a8f5fd9fa9d325")
 
 set(DEP_JPEG_VERSION   "2.1.5.1")
 set(DEP_JPEG_URL       "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/${DEP_JPEG_VERSION}.tar.gz")

@@ -8,7 +8,7 @@ if(AV_BUILD_PNG)
     set(PNG_TARGET png)
 
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
-        set(_png_neon OFF)
+        set(_png_neon on)
     else()
         set(_png_neon off)
     endif()
