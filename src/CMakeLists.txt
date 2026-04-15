@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.30)
 message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/ConditionalOption.cmake)
+
+include(CMakeDependentOption)
+
 # ==============================================================================
 # AliceVision version
 # ==============================================================================
@@ -80,7 +84,10 @@ mark_as_advanced(FORCE ALICEVISION_USE_OCVSIFT)
 
 option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
 
-option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performances)" ON)
+# Apple users *could* technically still want SuiteSparse, so let them overwrite that
+# Non-Apple users can never use Accelerate.framework, hard-disable and hide it for them
+av_conditional_option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performance)" IF "NOT APPLE" THEN ON ELSE OFF)
+cmake_dependent_option(ALICEVISION_REQUIRE_CERES_WITH_ACCELERATESPARSE "Require Ceres with Accelerate.framework (ensure best performance)" ON "APPLE" OFF)
 
 option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
 option(ALICEVISION_REMOVE_ABSOLUTE "Remove absolute paths in dependencies" OFF)
@@ -442,6 +449,9 @@ if (ALICEVISION_BUILD_SFM)
     if (ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE)
         message(STATUS "By default, Ceres required SuiteSparse to ensure best performances. if you explicitly need to build without it, you can use the option: -DALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE=OFF")
         find_package(Ceres QUIET REQUIRED COMPONENTS SuiteSparse CONFIG)
+    elseif(ALICEVISION_REQUIRE_CERES_WITH_ACCELERATESPARSE)
+      message(STATUS "By default, Ceres required Accelerate.framework to ensure best performances. if you explicitly need to build without it, you can use the option: -DALICEVISION_REQUIRE_CERES_WITH_ACCELERATESPARSE=OFF")
+      find_package(Ceres QUIET REQUIRED COMPONENTS AccelerateSparse CONFIG)
     else()
         find_package(Ceres CONFIG QUIET CONFIG)
     endif()
