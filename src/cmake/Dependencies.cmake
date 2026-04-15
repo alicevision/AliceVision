@@ -30,6 +30,22 @@ endif()
 
 set(AV_ONNX_APPLE_ARCH "${CMAKE_OSX_ARCHITECTURES}" CACHE STRING "Version to download OFF Apple [arm64, x86_64]")
 
+# Set additional reusable flags for cross-compiling on macOS
+# Supports x86_64/arm64 cross-compilation
+if(APPLE)
+    # Get the current sysroot
+    execute_process(COMMAND xcrun --sdk macosx --show-sdk-path
+        OUTPUT_VARIABLE APPLE_SYSROOT
+        COMMAND_ERROR_IS_FATAL ANY
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+        set(APPLE_ARCH_FLAGS -arch\ arm64)
+    elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+        set(APPLE_ARCH_FLAGS -arch\ x86_64)
+    endif()
+endif()
+
 # Core
 option(AV_BUILD_ZLIB        "Build zlib"            ON)
 option(AV_BUILD_TBB         "Build TBB"             ON)

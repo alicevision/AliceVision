@@ -31,6 +31,14 @@ if(AV_BUILD_VPX AND AV_BUILD_FFMPEG)
             elseif(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
                 set(VPX_TOOLCHAIN_FLAG --target=arm64-darwin24-gcc)
             endif()
+        else() # Lower, extract for cross-compiling
+            # Extract major Darwin Version
+            string(REGEX MATCH "^[0-9]+" DARWIN_VERSION_MAJOR "${CMAKE_SYSTEM_VERSION}")
+            if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+                set(VPX_TOOLCHAIN_FLAG --target=x86_64-darwin${DARWIN_VERSION_MAJOR}-gcc)
+            elseif(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+                set(VPX_TOOLCHAIN_FLAG --target=arm64-darwin${DARWIN_VERSION_MAJOR}-gcc)
+            endif()
         endif()
     endif()
 

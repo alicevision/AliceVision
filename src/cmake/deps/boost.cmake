@@ -44,6 +44,17 @@ if(AV_BUILD_BOOST)
         endif()
     endforeach()
 
+    # We might cross-compile architectures on Apple platforms and Boost.Context
+    # cannot work with CMAKE_OSX_ARCHITECTURES yet, so we must pass some flags
+    # manually.
+    if(APPLE)
+      if(${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
+        set(DEP_BOOST_CONTEXT_APPLE_FLAGS -DBOOST_CONTEXT_ARCHITECTURE=arm64 -DBOOST_CONTEXT_ABI=aapcs -DBOOST_IOSTREAMS_ENABLE_ZSTD=OFF)
+      else()
+        set(DEP_BOOST_CONTEXT_APPLE_FLAGS -DBOOST_CONTEXT_ARCHITECTURE=x86_64 -DBOOST_CONTEXT_ABI=sysv -DBOOST_IOSTREAMS_ENABLE_ZSTD=OFF)
+      endif()
+    endif()
+
     av_add_cmake_dep(
         TARGET         ${BOOST_TARGET}
         SOURCE_DIR     boost
@@ -52,6 +63,7 @@ if(AV_BUILD_BOOST)
         EXTRA_CMAKE_FLAGS
           -DBOOST_INCLUDE_LIBRARIES=${DEP_BOOST_LIBS_SEMICOLON_ESCAPED}
           -DBUILD_TESTING=OFF
+          ${DEP_BOOST_CONTEXT_APPLE_FLAGS}
         DEPENDS ${ZLIB_TARGET}
     )
 
