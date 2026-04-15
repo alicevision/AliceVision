@@ -16,7 +16,8 @@ if(AV_BUILD_CERES)
             ${SUITESPARSE_CMAKE_FLAGS}
             ${EIGEN_CMAKE_FLAGS}
             ${LAPACK_CMAKE_FLAGS}
-            -DSUITESPARSE:BOOL=ON
+            -DACCELERATESPARSE:BOOL=$<IF:$<PLATFORM_ID:Darwin>,ON,OFF>
+            -DSUITESPARSE:BOOL=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>
             -DLAPACK:BOOL=ON
             -DMINIGLOG=ON
             -DBUILD_EXAMPLES:BOOL=OFF
