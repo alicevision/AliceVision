@@ -200,6 +200,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/apriltag.cmake)     # depends: (none)
 # ── AliceVision (main project) ────────────────────────────────────────────────
 
 if(AV_BUILD_ALICEVISION)
+
+    # Merge CMake configure options
+    include(${CMAKE_SOURCE_DIR}/src/cmake/ConfigureOptionsMerger.cmake)
+    av_merge_configure_options()
+
     ExternalProject_Add(aliceVision
         SOURCE_DIR        ${CMAKE_CURRENT_SOURCE_DIR}
         BINARY_DIR        ${CMAKE_CURRENT_BINARY_DIR}/aliceVision_build
@@ -245,9 +250,11 @@ if(AV_BUILD_ALICEVISION)
             ${CCTAG_CMAKE_FLAGS}
             ${APRILTAG_CMAKE_FLAGS}
             ${CUDA_CMAKE_FLAGS}
-            -DALICEVISION_USE_OPENCV:BOOL=${AV_BUILD_OPENCV}
-            -DALICEVISION_USE_CUDA:BOOL=${AV_USE_CUDA}
-            -DALICEVISION_BUILD_SWIG_BINDING:BOOL=${AV_BUILD_SWIG}
+
+            ${AV_BUILD_FLAGS}
+            ${AV_COMPONENT_FLAGS}
+            ${AV_TOPLEVEL_FLAGS}
+
         DEPENDS ${AV_DEPS}
     )
 endif()
