@@ -7,19 +7,13 @@
 if(AV_BUILD_SWIG)
     set(SWIG_TARGET SWIG)
 
-    #av_add_cmake_dep(
-    #    TARGET         PCRE2
-    #    SOURCE_DIR     pcre2
-    #    GIT_REPOSITORY ${DEP_PCRE2_GIT_REPO}
-    #    GIT_TAG        ${DEP_PCRE2_GIT_TAG}
-    #)
-
     av_add_cmake_dep(
         TARGET         ${SWIG_TARGET}
         SOURCE_DIR     SWIG
         GIT_REPOSITORY ${DEP_SWIG_GIT_REPO}
         GIT_TAG        ${DEP_SWIG_GIT_TAG}
-    #    DEPENDS        PCRE2
+        EXTRA_CMAKE_FLAGS
+          -DWITH_PCRE=OFF
     )
 
     set(SWIG_CMAKE_FLAGS

@@ -41,9 +41,6 @@ set(DEP_EXPAT_GIT_TAG  "R_2_7_4")
 set(DEP_PYBIND11_GIT_REPO "https://github.com/pybind/pybind11.git")
 set(DEP_PYBIND11_GIT_TAG  "v2.13.6")
 
-# set(DEP_PCRE2_GIT_REPO "https://github.com/PCRE2Project/pcre2")
-# set(DEP_PCRE2_GIT_TAG  "pcre2-10.47")
-
 set(DEP_SWIG_GIT_REPO  "https://github.com/swig/swig")
 set(DEP_SWIG_GIT_TAG   "v4.3.0")
 # cmake find_package path uses the version string
