@@ -16,6 +16,7 @@ if(APPLE AND NOT CMAKE_OSX_ARCHITECTURES)
 endif()
 
 option(ALICEVISION_BUILD_DEPENDENCIES "Build all AliceVision dependencies" OFF)
+option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" ON)
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
