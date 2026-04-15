@@ -61,8 +61,8 @@ option(AV_BUILD_OPENIMAGEIO  "Build OpenImageIO"    ON)
 option(AV_BUILD_OPENCV       "Build OpenCV"         ON)
 
 # Math / solvers
-option(AV_BUILD_LAPACK      "Build LAPACK/BLAS"   ON)
-option(AV_BUILD_SUITESPARSE "Build SuiteSparse"   ON)
+av_conditional_option(AV_BUILD_LAPACK      "Build LAPACK/BLAS" IF "NOT APPLE" THEN ON ELSE OFF)
+av_conditional_option(AV_BUILD_SUITESPARSE "Build SuiteSparse" IF "NOT APPLE" THEN ON ELSE OFF)
 option(AV_BUILD_CERES       "Build Ceres"         ON)
 option(AV_BUILD_FLANN       "Build FLANN (+lz4)"  ON)
 option(AV_BUILD_NANOFLANN   "Build nanoflann"     ON)
