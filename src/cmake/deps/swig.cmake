@@ -23,8 +23,15 @@ if(AV_BUILD_SWIG)
           -DCMAKE_OSX_ARCHITECTURES=${SWIG_HOST_PROCESSOR_ARCH}
     )
 
-    set(SWIG_CMAKE_FLAGS
-        -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig/${DEP_SWIG_VERSION}
-        -DSWIG_EXECUTABLE=${CMAKE_INSTALL_PREFIX}/bin-deps/swig
-    )
+    if(APPLE)
+      set(SWIG_CMAKE_FLAGS
+          -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig/${DEP_SWIG_VERSION}
+          -DSWIG_EXECUTABLE=${CMAKE_INSTALL_PREFIX}/bin/swig
+      )
+    else()
+      set(SWIG_CMAKE_FLAGS
+          -DSWIG_DIR=${CMAKE_INSTALL_PREFIX}/share/swig/${DEP_SWIG_VERSION}
+          -DSWIG_EXECUTABLE=${CMAKE_INSTALL_PREFIX}/bin-deps/swig
+      )
+    endif()
 endif()

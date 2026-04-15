@@ -353,6 +353,16 @@ function(alicevision_swig_add_library module_name)
         PROPERTY COMPILE_OPTIONS -std=c++20
     )
 
+    if(APPLE)
+        # The ld on macOS does not allow undefined symbols for shared objects,
+        # so this must be explicitly passed to the linker.
+        # See: https://github.com/swig/swig/issues/2469
+        set_property(
+            TARGET ${module_name}
+            PROPERTY LINK_OPTIONS -undefined dynamic_lookup
+        )
+    endif()
+
     target_link_libraries(${module_name}
         PUBLIC ${SWIG_MODULE_PUBLIC_LINKS}
     )

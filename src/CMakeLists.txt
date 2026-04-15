@@ -135,6 +135,7 @@ if (ALICEVISION_USE_RPATH)
         set(CMAKE_INSTALL_RPATH
             "@loader_path/../${CMAKE_INSTALL_LIBDIR}"
             "@loader_path"
+            "@loader_path/.." # For SWIG .so files, which do not get fixed up
             "@loader_path/../lib"
             "@loader_path/../Libraries"
             "@loader_path/../Frameworks"
