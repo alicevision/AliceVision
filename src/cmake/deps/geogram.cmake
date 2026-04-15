@@ -8,13 +8,13 @@ if(AV_BUILD_GEOGRAM)
     if(WIN32)
         set(_geo_platform -DVORPALINE_PLATFORM=Win-vs-dynamic-generic)
     elseif(APPLE)
-        if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+        if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
             set(_geo_platform -DVORPALINE_PLATFORM=Darwin-clang-dynamic)
-        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+        elseif(CMAKE_OSX_ARCHITECTURES MATCHES "aarch64|arm64")
             set(_geo_platform -DVORPALINE_PLATFORM=Darwin-aarch64-clang-dynamic)
         else()
             message(FATAL_ERROR
-                "Geogram: unsupported Apple processor '${CMAKE_SYSTEM_PROCESSOR}'. "
+                "Geogram: unsupported CMAKE_OSX_ARCHITECTURES processor '${CMAKE_OSX_ARCHITECTURES}'. "
                 "Expected x86_64 or aarch64/arm64.")
         endif()
     elseif(UNIX)
