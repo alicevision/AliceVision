@@ -29,11 +29,8 @@ set(DEP_EIGEN_URL      "https://gitlab.com/libeigen/eigen/-/archive/${DEP_EIGEN_
 set(DEP_EIGEN_HASH     "MD5=132dde48fe2b563211675626d29f1707")
 
 set(DEP_BOOST_VERSION  "1.86.0")
-# Boost uses underscores in the archive filename
-string(REPLACE "." "_" _boost_ver_underscore "${DEP_BOOST_VERSION}")
-set(DEP_BOOST_URL      "https://archives.boost.io/release/${DEP_BOOST_VERSION}/source/boost_${_boost_ver_underscore}.tar.bz2")
-set(DEP_BOOST_HASH     "MD5=2d098ba2e1457708a02de996857c2b10")
-unset(_boost_ver_underscore)
+set(DEP_BOOST_URL      "https://github.com/boostorg/boost/releases/download/boost-${DEP_BOOST_VERSION}/boost-${DEP_BOOST_VERSION}-cmake.tar.xz")
+set(DEP_BOOST_HASH     "SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57")
 
 set(DEP_EXPAT_GIT_REPO "https://github.com/libexpat/libexpat.git")
 set(DEP_EXPAT_GIT_TAG  "R_2_7_4")
