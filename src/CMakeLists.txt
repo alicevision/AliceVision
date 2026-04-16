@@ -1129,6 +1129,13 @@ if(APPLE)
             list(APPEND ALICEVISION_BUILD_ARTIFACTS "$<TARGET_FILE:${AV_TARGET}>")
         endif()
     endforeach()
+
+    # If the user chose not to use SWIG bindings, Python3 might not be found yet
+    # This is system-provided on Apple, so we can safely rely on its existence
+    if(NOT DEFINED Python3_EXECUTABLE)
+      find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    endif()
+
     # Add a custom target
     add_custom_target(darwin-bundle
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/cmake/darwin_bundle.py -o ${ALICEVISION_BUNDLE_PREFIX} ${ALICEVISION_BUILD_ARTIFACTS}
