@@ -469,7 +469,7 @@ macro(OFA_HandleX86Options)
     # Step 2: Enable/disable feature flags based on available CPU
     #         features, used-defined USE_<feature> variables and
     #         the capabilities of the host system's compiler and linker
-    file(READ ${ALICEVISION_ROOT}/../src/cmake/OFA/CheckX86.txt _checks)
+    file(READ ${CMAKE_SOURCE_DIR}/src/cmake/OFA/CheckX86.txt _checks)
     string(REGEX REPLACE "[:;]" "|" _checks "${_checks}")
     string(REPLACE "\n" ";" _checks "${_checks}")
 
