@@ -50,7 +50,8 @@ These differ slightly depending on the target architecture you want to build for
 - [x] gettext (Homebrew, MacPorts, Nix)
 - [x] m4 (Homebrew, MacPorts, Nix)
 - [x] BISON[^7] (Homebrew, MacPorts, Nix)
-- [x] NumPy[^8] (Homebrew, pip)
+- [x] Python (3.11 - 3.13 is highly recommended, not the system-provided Python!)
+- [x] NumPy[^8] (pip)
 
 ### x86_64 (Intel Macs, Core-i-CPUs)
 
@@ -135,6 +136,20 @@ This target creates a self-contained bundle (i.e., a folder containing a `lib` a
 If you have built any of the software targets or tests, there is a solid chance that you also want to run them... but you might notice that for some binaries the first startup can be *very* (and I mean *very*) slow. It might seem like your machine is doing nothing. You need to be partient here. AliceVision has a lot of dependencies and each time a new Mach-O file (that is, each binary and each dependent .framework/.dylib) is loaded the very first time by the dynamic linker (`dyld`), it performs a malware scan. You can see this happening in the Activity Monitor, where a process called "XprotectService" will be running.
 Depending on your machine, this could take *up to several minutes* when a binary is launched the first time. So just wait for it to eventually finish and all subsequent launches will be near-immediate.
 
+## NOTE: Meshroom compatibility
+
+If you want to use AliceVision with Meshroom, you essentially have to enable the SWIG bindings (WARNING: they are disabled by default, if built without dependencies!). Otherwise the Meshroom templates won't load correctly. This requires (as stated above) a Python installation and NumPy. Though one could use the system-shipped Python 3.9, it is *highly* recommended to use a package-manager provided Python 3.11 - 3.13 instead. This is for the following reasons: Meshroom expects at least a Python 3.10 interpreter, so the system provided Python is too old. Furthermore, you *cannot* mix NumPy versions, which will inherently happen if you switch interpreters between building AliceVision and using Meshroom. Do *not* use a Homebrew provided NumPy, always use virtual environments to get a reproducible behavior!
+
+The recommended way to do this is the following:
+
+1. Fetch a Python 3.12 installation with your package manager of choice
+2. Create a virtual environment(!) in the build folder (e.g., with HomeBrew Python: `python@3.12 -m venv .venv`)
+3. Source the virtual environment (e.g., `source .venv/bin/activate.<SUFFIX_FOR_SHELL>`)
+4. Use pip3 to install NumPy (e.g., `pip3 install numpy`)
+5. Start the configure and build process (see above)
+
+As long as you actually use the same Python version for Meshroom (Python 3.12 is known to work), you should be fine now.
+
 ## CMake Options for Apple
 
 These are some influential CMake options specific to Apple:
@@ -171,7 +186,7 @@ These are some influential CMake options specific to Apple:
 
 [^7]: This is only required if you intend to build SWIG from source. It requires a BISON newer than the one provided by Apple and therefore the external binary must be on your `$PATH` *first*. Look at the documentation of your shell on how to do this.
 
-[^8]: This is only required if you plan to build the AliceVision SWIG bindings.
+[^8]: This is only required if you plan to build the AliceVision SWIG bindings. *Please* use a virtual environment to save yourself from pain.
 
 [^9]: Alternatively you can also use `yasm`. These are mainly required by libVPX and ffmpeg.
 
