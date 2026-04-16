@@ -190,7 +190,7 @@ set(DEP_POPSIFT_GIT_REPO "https://github.com/alicevision/popsift")
 set(DEP_POPSIFT_GIT_TAG  "77d1d28624d2849798fc107619507b50cd8cfe10")
 
 set(DEP_CCTAG_GIT_REPO "https://github.com/alicevision/CCTag")
-set(DEP_CCTAG_GIT_TAG  "v1.0.4")
+set(DEP_CCTAG_GIT_TAG  "ff01840224a7f0948230f74bda723c9e0a216e5b")
 
 set(DEP_APRILTAG_GIT_REPO "https://github.com/AprilRobotics/apriltag")
 set(DEP_APRILTAG_GIT_TAG  "v3.2.0")
