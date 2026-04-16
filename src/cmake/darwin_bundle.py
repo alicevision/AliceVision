@@ -24,7 +24,6 @@ TARGET_RPATHS: list[str] = [
     "@loader_path/../lib",
 ]
 
-
 # Returns a tuple of
 # (1) The name of the Mach-O
 # (2) The required dependencies
@@ -70,7 +69,6 @@ def get_deps_and_rpaths(macho: Path) -> tuple[Path, list[Path], list[Path]]:
         rpaths,
     )  # Return the old path, so we still have .framework (not .framework/Mach-O)
 
-
 # Extracts the architectures of a Mach-O file
 def get_archs(path: Path) -> set[str]:
     if ".framework" in path.suffix:
@@ -84,7 +82,6 @@ def get_archs(path: Path) -> set[str]:
     )
     return set(result.stdout.strip().split())
 
-
 # Checks if lh and rh share the same architecture
 def check_arch_match(lh: Path, rh: Path) -> bool:
     lh_archs = get_archs(lh)
@@ -95,6 +92,114 @@ def check_arch_match(lh: Path, rh: Path) -> bool:
         return True
     return not lh_archs.isdisjoint(rh_archs)
 
+def resolve_rpaths(
+    macho: Path,
+    rpaths: list[Path],
+    is_executable: bool
+) -> tuple[list[Path], list[str]]:
+    resolved = []
+    errors = []
+
+    for rpath in rpaths:
+        if "@executable_path" in rpath.parts:
+            if is_executable:
+                resolved.append(
+                    macho.parent.parent.joinpath(*rpath.parts[1:]).resolve()
+                )
+            else:
+                errors.append(f"Cannot resolve {rpath} (not an executable)")
+        elif "@loader_path" in rpath.parts:
+            resolved.append(
+                macho.parent.joinpath(*rpath.parts[1:]).resolve()
+            )
+        elif not rpath.is_absolute():
+            resolved.append(macho.parent.joinpath(rpath).resolve())
+        else:
+            resolved.append(rpath)
+
+    return resolved, errors
+
+def build_lookup_paths(
+    rpaths: list[Path],
+    additional: Optional[set[Path]]
+) -> set[Path]:
+    lookup = set(rpaths)
+    if additional:
+        lookup.update(additional)
+    return lookup
+
+def is_cached(dep: Path, macho: Path, cache) -> bool:
+    for cached_path, archs in cache.items():
+        if dep.stem == cached_path.stem and get_archs(macho).issubset(archs):
+            return True
+    return False
+
+def resolve_dependency(
+    dep: Path,
+    macho: Path,
+    lookup_paths: set[Path],
+    is_executable: bool,
+    rpath_errors: list[str],
+) -> tuple[list[Path], list[str], list[list[Path]]]:
+    resolved = []
+    errors = []
+    conflicts = []
+
+    # Skip system libs
+    if "/usr/lib" in str(dep) or "/System" in str(dep):
+        return resolved, errors, conflicts
+
+    # Absolute path
+    if dep.is_absolute() and "@rpath" not in dep.parts:
+        if dep.exists():
+            if check_arch_match(macho, dep):
+                resolved.append(dep)
+            else:
+                print(f"[ WARN ] Architecture mismatch: {dep}")
+        else:
+            errors.append("Absolute path does not exist")
+        return resolved, errors, conflicts
+
+    # @rpath case
+    if "@rpath" in dep.parts:
+        target = Path(*dep.parts[1:])
+        matches = [
+            p / target for p in lookup_paths
+            if (p / target).exists() and check_arch_match(macho, p / target)
+        ]
+
+        if not matches:
+            errors.append("Could not resolve via rpaths")
+            if not is_executable:
+                errors.extend(rpath_errors)
+        elif len(matches) > 1:
+            conflicts.append(matches)
+            resolved.append(matches[0])
+        else:
+            resolved.extend(matches)
+
+        return resolved, errors, conflicts
+
+    # Relative path
+    if not dep.is_absolute():
+        matches = [
+            p / dep for p in lookup_paths
+            if (p / dep).exists() and check_arch_match(macho, p / dep)
+        ]
+
+        if not matches:
+            errors.append("Relative path did not resolve")
+        elif len(matches) > 1:
+            conflicts.append(matches)
+            resolved.append(matches[0])
+        else:
+            resolved.extend(matches)
+
+        return resolved, errors, conflicts
+
+    # Fallback
+    errors.append("Unknown dependency scheme")
+    return resolved, errors, conflicts
 
 # Returns a tuple of
 # (1) Whether op was successful
@@ -102,147 +207,44 @@ def check_arch_match(lh: Path, rh: Path) -> bool:
 # (3) Tuple of reasons and unresolved paths (must be empty on success)
 # (4) Tuple of conflicting paths per dependency
 # (5) The resolved rpaths to pass through to subdependencies
-def try_and_match_deps(
-    input: tuple[Path, list[Path], list[Path]],
-    globalCache,
-    additionalLookupPaths: Optional[set[Path]] = None,
-) -> tuple[
-    bool,
-    list[Path],
-    list[tuple[list[str], Path]],
-    list[tuple[list[Path], Path]],
-    set[Path],
-]:
-    possibleReasonsForErr: list[str] = []
+def try_and_match_deps(input, globalCache, additionalLookupPaths=None):
+    macho, deps, rpaths = input
+    is_executable = macho.suffix == ""
 
-    # If the input file has no extension, we assume it is an executable and resolve any @executable_paths
-    isExecutable = False
-    if input[0].suffix == "":
-        isExecutable = True
-
-    # We properly create paths from @executable_path (if possible), @loader_path and relative paths
-    for i, rpath in enumerate(input[2]):
-        if "@executable_path" in rpath.parts:
-            if isExecutable:
-                input[2][i] = (
-                    input[0].parent.parent.joinpath(Path(*rpath.parts[1:])).resolve()
-                )
-            else:
-                possibleReasonsForErr.append(
-                    f"Could not resolve {rpath}! Input file is not an executable: {input[0]}."
-                )
-        elif "@loader_path" in rpath.parts:
-            input[2][i] = input[0].parent.joinpath(Path(*rpath.parts[1:])).resolve()
-        elif not rpath.is_absolute():
-            input[2][i] = input[0].parent.joinpath(rpath).resolve()
-
-    # Remove duplicates
-    uniqueLookupPaths = set(input[2])
-    # Add additonal lookup paths from parents
-    if additionalLookupPaths:
-        uniqueLookupPaths.update(additionalLookupPaths)
-
-    # Try to resolve the required libraries with the available rpaths
-    resolvedPaths: list[Path] = []
-    unresolvedPaths: list[tuple[list[str], Path]] = []
-    conflicitingPaths: list[tuple[list[Path], Path]] = []
-    for dep in input[1]:
-        isCached = False
-        for macho in globalCache.items():
-            if dep.stem == macho[0].stem and get_archs(input[0]).issubset(macho[1]):
-                isCached = True
-                break
-        if isCached:
-            continue
-        # Filter system libraries
-        if "/usr/lib" in str(dep) or "/System" in str(dep):
-            continue
-        # If not @rpath prefixed, check if absolute
-        elif "@rpath" not in dep.parts and dep.is_absolute():
-            if dep.exists():
-                if check_arch_match(input[0], dep):
-                    resolvedPaths.append(dep)
-                    continue
-                else:
-                    print(
-                        f"[ WARN ] Resolved dependency exists, but the architectures do not match: Dependant: {input[0]}, resolved dependency: {dep}."
-                    )
-                    continue
-            else:
-                unresolvedPaths.append(
-                    (["Absolute path of dependency does not exist!"], dep)
-                )
-                continue
-        elif "@rpath" in dep.parts:
-            depRpathStripped = Path(*dep.parts[1:])
-            resolvedPathsInner: list[Path] = []
-            for lookupPath in uniqueLookupPaths:
-                if lookupPath.joinpath(depRpathStripped).exists():
-                    if check_arch_match(
-                        input[0], lookupPath.joinpath(depRpathStripped)
-                    ):
-                        resolvedPathsInner.append(lookupPath.joinpath(depRpathStripped))
-                        continue
-                    else:
-                        print(
-                            f"[ WARN ] Resolved dependency exists, but the architectures do not match: Dependant: {input[0]}, resolved dependency: {lookupPath.joinpath(depRpathStripped)}."
-                        )
-                        continue
-            if len(resolvedPathsInner) == 0:
-                reasons: list[str] = [
-                    f"No exctracted rpaths were able to resolve the dependency! Required by: {input[0]}."
-                ]
-                if not isExecutable:
-                    reasons += possibleReasonsForErr
-                unresolvedPaths.append((reasons, dep))
-            elif len(resolvedPathsInner) > 1:
-                conflicitingPaths.append((resolvedPathsInner, dep))
-                resolvedPaths.append(resolvedPathsInner[0])
-            else:
-                resolvedPaths += resolvedPathsInner
-            continue
-        elif not dep.is_absolute():
-            resolvedPathsInner: list[Path] = []
-            for lookupPath in uniqueLookupPaths:
-                if lookupPath.joinpath(dep).exists():
-                    if check_arch_match(input[0], lookupPath.joinpath(dep)):
-                        resolvedPathsInner.append(lookupPath.joinpath(dep))
-                        continue
-                    else:
-                        print(
-                            f"[ WARN ] Resolved dependency exists, but the architectures do not match: Dependant: {input[0]}, resolved dependency: {lookupPath.joinpath(dep)}."
-                        )
-                        continue
-            if len(resolvedPathsInner) == 0:
-                unresolvedPaths.append(
-                    (
-                        [
-                            "The relative path of the dependency did not resolve to an existing dependency!"
-                        ],
-                        dep,
-                    )
-                )
-            elif len(resolvedPathsInner) > 1:
-                conflicitingPaths.append((resolvedPathsInner, dep))
-                resolvedPaths.append(resolvedPathsInner[0])
-            else:
-                resolvedPaths += resolvedPathsInner
-            continue
-        else:
-            unresolvedPaths.append(
-                (["Encountered unknown dependency path scheme!"], dep)
-            )
-
-    for resolvedPath in resolvedPaths:
-        globalCache[resolvedPath] = get_archs(resolvedPath)
-    return (
-        len(unresolvedPaths) == 0,
-        resolvedPaths,
-        unresolvedPaths,
-        conflicitingPaths,
-        uniqueLookupPaths,
+    resolved_rpaths, rpath_errors = resolve_rpaths(
+        macho, rpaths, is_executable
     )
 
+    lookup_paths = build_lookup_paths(resolved_rpaths, additionalLookupPaths)
+
+    resolved = []
+    unresolved = []
+    conflicts = []
+
+    for dep in deps:
+        if is_cached(dep, macho, globalCache):
+            continue
+
+        r, e, c = resolve_dependency(
+            dep, macho, lookup_paths, is_executable, rpath_errors
+        )
+
+        resolved.extend(r)
+        conflicts.extend([(paths, dep) for paths in c])
+
+        if e:
+            unresolved.append((e, dep))
+
+    for path in resolved:
+        globalCache[path] = get_archs(path)
+
+    return (
+        len(unresolved) == 0,
+        resolved,
+        unresolved,
+        conflicts,
+        lookup_paths,
+    )
 
 def traverse_deps_and_resolve(
     input: tuple[Path, list[Path], list[Path]], globalCache
@@ -290,7 +292,6 @@ def traverse_deps_and_resolve(
 
     return (successTop, resolvedTop, unresolvedTop, conflictingTop)
 
-
 def copy_safe(src: Path, dst_dir: Path) -> Path:
     dst = dst_dir / src.name
 
@@ -316,7 +317,6 @@ def copy_safe(src: Path, dst_dir: Path) -> Path:
         _ = shutil.copy2(src, dst)
 
     return dst
-
 
 def fixup_macho_with_predefined_rpaths(macho: Path) -> bool:
     success = True
@@ -378,182 +378,167 @@ def fixup_macho_with_predefined_rpaths(macho: Path) -> bool:
 
     return success
 
-
-def entry():
-    # Create the parser
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Make a self-contained AliceVision bundle on Darwin"
     )
 
-    # Optional output directory
-    _ = parser.add_argument(
-        "-o",
-        "--output",
+    parser.add_argument(
+        "-o", "--output",
         type=Path,
-        default=Path.cwd().joinpath("bundle"),
+        default=Path.cwd() / "bundle",
         help="Output directory",
     )
 
-    # Positional arguments: arbitrary number of file paths
-    _ = parser.add_argument(
-        "input_files", type=Path, nargs="+", help="Input files to process"
+    parser.add_argument(
+        "input_files",
+        type=Path,
+        nargs="+",
+        help="Input files to process",
     )
 
-    # Parse args
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # Access them
-    outputDir: Path = args.output
-    inputFiles: list[Path] = args.input_files
-
-    # Log Info about input
-    print(f"[ INFO ] Placing bundle at: {outputDir}.")
+def log_inputs(output_dir: Path, input_files: list[Path]):
+    print(f"[ INFO ] Placing bundle at: {output_dir}.")
     print("[ INFO ] Attempting for files:")
-    for inputFile in inputFiles:
-        print("[ INFO ] \t" + str(inputFile))
+    for f in input_files:
+        print(f"[ INFO ] \t{f}")
     print("\n[ INFO ] ### Patience... ###\n")
 
-    # Get all binaries
-    inputMachOBins: list[Path] = []
-    for file in inputFiles:
-        fileCmd = subprocess.run(
-            ["file", file], universal_newlines=True, stdout=subprocess.PIPE
-        )
-        if "Mach-O" in fileCmd.stdout:
-            inputMachOBins.append(file)
+def is_macho(file: Path) -> bool:
+    result = subprocess.run(
+        ["file", file],
+        text=True,
+        stdout=subprocess.PIPE
+    )
+    return "Mach-O" in result.stdout
 
-    # Get all libraries and Frameworks
-    inputMachOLibs: list[Path] = []
-    for file in inputFiles:
-        if "dylib" in file.suffix:
-            fileCmd = subprocess.run(
-                ["file", file], universal_newlines=True, stdout=subprocess.PIPE
-            )
-            if "Mach-O" in fileCmd.stdout:
-                inputMachOLibs.append(file)
-        elif "framework" in file.suffix:
-            fileCmd = subprocess.run(
-                ["file", file.joinpath(file.stem)],
-                universal_newlines=True,
-                stdout=subprocess.PIPE,
-            )
-            if "Mach-O" in fileCmd.stdout:
-                inputMachOLibs.append(file)
-        else:
+def classify_inputs(input_files: list[Path]) -> tuple[list[Path], list[Path]]:
+    bins = []
+    libs = []
+
+    for f in input_files:
+        if not is_macho(f):
             continue
 
-    # Create concurrent interpreters
-    concurrentPool = Pool(cpu_count())
+        if f.suffix == "":
+            bins.append(f)
+        elif f.suffix == ".dylib":
+            libs.append(f)
+        elif f.suffix == ".framework":
+            inner = f / f.stem
+            if is_macho(inner):
+                libs.append(f)
 
-    print("[ INFO ] (1 / 5) Looking up required dependencies and embedded rpaths...")
+    return bins, libs
 
-    # Extract required dependencies and rpaths
-    depsAndRpathsPerInput: list[tuple[Path, list[Path], list[Path]]] = (
-        concurrentPool.map(get_deps_and_rpaths, inputMachOLibs + inputMachOBins)
-    )
+def extract_dependencies(files: list[Path]):
+    with Pool(cpu_count()) as pool:
+        return pool.map(get_deps_and_rpaths, files)
 
-    print("[ INFO ] (2 / 5) Attempting to resolve all dependencies...")
+def resolve_dependencies(deps_info):
+    with Pool(cpu_count()) as pool:
+        manager = Manager()
+        cache = manager.dict()
 
-    # Resolve per input and subdependency
-    manager = Manager()
-    globalCache: DictProxy[Path, set[str]] = manager.dict()
-    resolveFunc = partial(traverse_deps_and_resolve, globalCache=globalCache)
-    resolverResultPerInput: list[
-        tuple[
-            bool,
-            list[Path],
-            list[tuple[list[str], Path]],
-            list[tuple[list[Path], Path]],
-        ]
-    ] = concurrentPool.map(resolveFunc, depsAndRpathsPerInput)
+        resolver = partial(traverse_deps_and_resolve, globalCache=cache)
+        return pool.map(resolver, deps_info)
 
-    # Check for Results
-    isSuccessful = True
-    for result in resolverResultPerInput:
-        if not result[0]:
-            print("[ ERROR ] An error occured during the resolving process:")
-            for unresolved in result[2]:
-                print(
-                    f"[ ERROR ] \tDependency: {str(unresolved[1])}, failed with: {str(unresolved[0])}"
-                )
-            isSuccessful = False
-        if len(result[3]) != 0:
-            for conflictingDep in result[3]:
-                print(
-                    f"[ WARN ] Multiple paths were found to resolve {str(conflictingDep[1])}:"
-                )
-                for conflictingPath in conflictingDep[0]:
-                    print(f"[ WARN ] \tFound suitable: {str(conflictingPath)}")
+def ensure_success(results):
+    success = True
 
-    if not isSuccessful:
-        print("[ ERROR ] Errors occured! Refusing to build bundle.")
+    for ok, _, unresolved, conflicts in results:
+        if not ok:
+            print("[ ERROR ] Dependency resolution failed:")
+            for reasons, dep in unresolved:
+                print(f"[ ERROR ] \t{dep}: {reasons}")
+            success = False
+
+        for paths, dep in conflicts:
+            print(f"[ WARN ] Multiple candidates for {dep}:")
+            for p in paths:
+                print(f"[ WARN ] \t{p}")
+
+    if not success:
+        print("[ ERROR ] Aborting bundle creation.")
         exit(-1)
 
-    print("[ INFO ] (3 / 5) Making bundle structure...")
+def create_bundle_structure(output_dir: Path):
+    shutil.rmtree(output_dir, ignore_errors=True)
+    (output_dir / "bin").mkdir(parents=True)
+    (output_dir / "lib").mkdir(parents=True)
 
-    # Create the output directory
-    shutil.rmtree(outputDir, ignore_errors=True)
-    outputDir.mkdir(parents=True, exist_ok=True)
-    (outputDir / "lib").mkdir(parents=True, exist_ok=True)
-    (outputDir / "bin").mkdir(parents=True, exist_ok=True)
+    return {
+        "root": output_dir,
+        "bin": output_dir / "bin",
+        "lib": output_dir / "lib",
+    }
 
-    # Copy input files
-    # Determine if they are dylibs/Frameworks or executables
-    inputBins: set[Path] = set()
-    inputLibs: set[Path] = set()
-    for inputFile in inputFiles:
-        if inputFile.suffix == "":
-            inputBins.add(inputFile)
-        else:
-            inputLibs.add(inputFile)
+def split_inputs(input_files):
+    bins = {f for f in input_files if f.suffix == ""}
+    libs = set(input_files) - bins
+    return bins, libs
 
-    # Copy bins
-    dstBin = partial(copy_safe, dst_dir=outputDir / "bin")
-    destBins = set(list(concurrentPool.map(dstBin, inputBins)))
+def collect_dependencies(results):
+    files = set()
 
-    # Copy libs
-    dstLib = partial(copy_safe, dst_dir=outputDir / "lib")
-    destLibs = set(list(concurrentPool.map(dstLib, inputLibs)))
+    for _, resolved, _, _ in results:
+        for path in resolved:
+            if path.suffix == "":
+                while path.suffix != ".framework":
+                    path = path.parent
+            files.add(path)
 
-    print("[ INFO ] (4 / 5) Copying required files...")
+    return files
 
-    # Create set for files to copy
-    filesToCopy: set[Path] = set()
-    # Must handle special cases of Frameworks
-    for result in resolverResultPerInput:
-        for resolvedPath in result[1]:
-            if resolvedPath.suffix == "":
-                # We want to get the actual .framework folder.
-                # Means we call parent until the suffix is .framework
-                frameworkFolder = resolvedPath
-                while not frameworkFolder.suffix == ".framework":
-                    frameworkFolder = frameworkFolder.parent
-                filesToCopy.add(frameworkFolder)
-            else:
-                filesToCopy.add(resolvedPath)
+def copy_all_files(bundle_paths, input_files, results):
+    bins, libs = split_inputs(input_files)
+    deps = collect_dependencies(results)
 
-    # Copy all into new bundle
-    dstResolvedLibs = set(list(concurrentPool.map(dstLib, filesToCopy)))
+    with Pool(cpu_count()) as pool:
+        copy_bin = partial(copy_safe, dst_dir=bundle_paths["bin"])
+        copy_lib = partial(copy_safe, dst_dir=bundle_paths["lib"])
 
-    # Create destination list
-    allDstFiles = dstResolvedLibs.union(destLibs).union(destBins)
+        dest_bins = set(pool.map(copy_bin, bins))
+        dest_libs = set(pool.map(copy_lib, libs))
+        dest_deps = set(pool.map(copy_lib, deps))
 
-    print("[ INFO ] (5 / 5) Fixing up copied files...")
+    return dest_bins | dest_libs | dest_deps
 
-    # Fixup all destination files
-    successList: list[bool] = concurrentPool.map(
-        fixup_macho_with_predefined_rpaths, allDstFiles
-    )
+def fixup_binaries(files: set[Path]):
+    with Pool(cpu_count()) as pool:
+        results = pool.map(fixup_macho_with_predefined_rpaths, files)
 
-    # Done
-    if False in successList:
-        print("[ ERROR ] Errors occured during fixup. Bundle will be unfunctional.")
+    if not all(results):
+        print("[ ERROR ] Fixup failed.")
         exit(-1)
-    else:
-        print(
-            f"\n[ INFO ] ### Successfully created self-contained bundle at {outputDir.resolve()}. ###"
-        )
 
+def entry():
+    args = parse_args()
+
+    log_inputs(args.output, args.input_files)
+
+    bins, libs = classify_inputs(args.input_files)
+
+    print("[ INFO ] (1 / 5) Extracting dependencies...")
+    deps_info = extract_dependencies(bins + libs)
+
+    print("[ INFO ] (2 / 5) Resolving dependencies...")
+    results = resolve_dependencies(deps_info)
+
+    ensure_success(results)
+
+    print("[ INFO ] (3 / 5) Creating bundle...")
+    bundle_paths = create_bundle_structure(args.output)
+
+    print("[ INFO ] (4 / 5) Copying files...")
+    copied_files = copy_all_files(bundle_paths, args.input_files, results)
+
+    print("[ INFO ] (5 / 5) Fixing binaries...")
+    fixup_binaries(copied_files)
+
+    print(f"\n[ INFO ] Bundle created at {args.output.resolve()}")
 
 # Only launch when called directly
 if __name__ == "__main__":
