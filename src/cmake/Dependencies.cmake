@@ -272,6 +272,11 @@ if(AV_BUILD_ALICEVISION)
             ${AV_COMPONENT_FLAGS}
             ${AV_TOPLEVEL_FLAGS}
 
+        BUILD_COMMAND
+            ${CMAKE_COMMAND} --build <BINARY_DIR>
+                --config ${CMAKE_BUILD_TYPE}
+                --parallel ${AV_BUILD_DEPENDENCIES_PARALLEL}
+
         DEPENDS ${AV_DEPS}
     )
 
