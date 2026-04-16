@@ -97,9 +97,9 @@ set(DEP_ONNXRUNTIME_OSX_X86_64_HASH   "SHA256=b87b2febef24e5645e13859d176e764731
 set(DEP_OPENCOLORIO_GIT_REPO "https://github.com/AcademySoftwareFoundation/OpenColorIO.git")
 set(DEP_OPENCOLORIO_GIT_TAG  "v2.4.2")
 
-set(DEP_OPENIMAGEIO_VERSION "3.0.9.1")
+set(DEP_OPENIMAGEIO_VERSION "3.0.17.0")
 set(DEP_OPENIMAGEIO_URL     "https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v${DEP_OPENIMAGEIO_VERSION}.tar.gz")
-set(DEP_OPENIMAGEIO_HASH    "MD5=5a3490d405615f48d7340ba4af41380d")
+set(DEP_OPENIMAGEIO_HASH    "MD5=6d6b611b22117a23ac0b9dd0c0ec0ff6")
 
 set(DEP_OPENCV_VERSION "4.12.0")
 set(DEP_OPENCV_URL         "https://github.com/opencv/opencv/archive/refs/tags/${DEP_OPENCV_VERSION}.tar.gz")
