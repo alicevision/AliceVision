@@ -139,11 +139,9 @@ RUN CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
 # Docker layer cache reuse.
 # =============================================================================
 COPY CMakeLists.txt                        ${AV_DEV}/
-COPY src/cmake/Dependencies.cmake          \
-     src/cmake/DependenciesVersions.cmake  \
-     src/cmake/Helpers.cmake               \
-     ${AV_DEV}/src/cmake/
+COPY src/cmake/                            ${AV_DEV}/src/cmake/
 COPY src/cmake/deps/                       ${AV_DEV}/src/cmake/deps/
+COPY src/cmake/OFA/                        ${AV_DEV}/src/cmake/OFA/
 COPY dl/deps                               ${AV_BUILD}/external/download/
 
 # =============================================================================

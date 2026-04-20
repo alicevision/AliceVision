@@ -29,11 +29,8 @@ set(DEP_EIGEN_URL      "https://gitlab.com/libeigen/eigen/-/archive/${DEP_EIGEN_
 set(DEP_EIGEN_HASH     "MD5=132dde48fe2b563211675626d29f1707")
 
 set(DEP_BOOST_VERSION  "1.86.0")
-# Boost uses underscores in the archive filename
-string(REPLACE "." "_" _boost_ver_underscore "${DEP_BOOST_VERSION}")
-set(DEP_BOOST_URL      "https://archives.boost.io/release/${DEP_BOOST_VERSION}/source/boost_${_boost_ver_underscore}.tar.bz2")
-set(DEP_BOOST_HASH     "MD5=2d098ba2e1457708a02de996857c2b10")
-unset(_boost_ver_underscore)
+set(DEP_BOOST_URL      "https://github.com/boostorg/boost/releases/download/boost-${DEP_BOOST_VERSION}/boost-${DEP_BOOST_VERSION}-cmake.tar.xz")
+set(DEP_BOOST_HASH     "SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57")
 
 set(DEP_EXPAT_GIT_REPO "https://github.com/libexpat/libexpat.git")
 set(DEP_EXPAT_GIT_TAG  "R_2_7_4")
@@ -41,13 +38,14 @@ set(DEP_EXPAT_GIT_TAG  "R_2_7_4")
 set(DEP_PYBIND11_GIT_REPO "https://github.com/pybind/pybind11.git")
 set(DEP_PYBIND11_GIT_TAG  "v2.13.6")
 
-# set(DEP_PCRE2_GIT_REPO "https://github.com/PCRE2Project/pcre2")
-# set(DEP_PCRE2_GIT_TAG  "pcre2-10.47")
-
 set(DEP_SWIG_GIT_REPO  "https://github.com/swig/swig")
 set(DEP_SWIG_GIT_TAG   "v4.3.0")
 # cmake find_package path uses the version string
 set(DEP_SWIG_VERSION   "4.3.0")
+
+set(DEP_OPENMP_VERSION "22.1.3")
+set(DEP_OPENMP_URL     "https://github.com/llvm/llvm-project/releases/download/llvmorg-${DEP_OPENMP_VERSION}/llvm-project-${DEP_OPENMP_VERSION}.src.tar.xz")
+set(DEP_OPENMP_HASH    "MD5=1b8f0fdca6f49e323702ed7d4da0feae")
 
 # ── CUDA ──────────────────────────────────────────────────────────────────────
 
@@ -61,9 +59,9 @@ set(DEP_CUDA_URL       "https://developer.download.nvidia.com/compute/cuda/${DEP
 set(DEP_TIFF_GIT_TAG   "v4.5.1")
 set(DEP_TIFF_GIT_REPO  "https://gitlab.com/libtiff/libtiff.git")
 
-set(DEP_PNG_VERSION    "1.6.39")
+set(DEP_PNG_VERSION    "1.6.50")
 set(DEP_PNG_URL        "https://download.sourceforge.net/libpng/libpng-${DEP_PNG_VERSION}.tar.gz")
-set(DEP_PNG_HASH       "MD5=93b8e79a008747e70f7704f600349559")
+set(DEP_PNG_HASH       "MD5=eef2d3da281ae83ac8a8f5fd9fa9d325")
 
 set(DEP_JPEG_VERSION   "2.1.5.1")
 set(DEP_JPEG_URL       "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/${DEP_JPEG_VERSION}.tar.gz")
@@ -81,7 +79,7 @@ set(DEP_OPENEXR_HASH    "MD5=da5daf4d7954c034921e7201bf815938")
 # ── Video ─────────────────────────────────────────────────────────────────────
 
 set(DEP_VPX_GIT_REPO   "https://chromium.googlesource.com/webm/libvpx.git")
-set(DEP_VPX_GIT_TAG    "v1.13.0")
+set(DEP_VPX_GIT_TAG    "v1.15.2")
 
 set(DEP_FFMPEG_VERSION "6.1.4")
 set(DEP_FFMPEG_URL     "http://ffmpeg.org/releases/ffmpeg-${DEP_FFMPEG_VERSION}.tar.bz2")
@@ -99,9 +97,9 @@ set(DEP_ONNXRUNTIME_OSX_X86_64_HASH   "SHA256=b87b2febef24e5645e13859d176e764731
 set(DEP_OPENCOLORIO_GIT_REPO "https://github.com/AcademySoftwareFoundation/OpenColorIO.git")
 set(DEP_OPENCOLORIO_GIT_TAG  "v2.4.2")
 
-set(DEP_OPENIMAGEIO_VERSION "3.0.9.1")
+set(DEP_OPENIMAGEIO_VERSION "3.0.17.0")
 set(DEP_OPENIMAGEIO_URL     "https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v${DEP_OPENIMAGEIO_VERSION}.tar.gz")
-set(DEP_OPENIMAGEIO_HASH    "MD5=5a3490d405615f48d7340ba4af41380d")
+set(DEP_OPENIMAGEIO_HASH    "MD5=6d6b611b22117a23ac0b9dd0c0ec0ff6")
 
 set(DEP_OPENCV_VERSION "4.12.0")
 set(DEP_OPENCV_URL         "https://github.com/opencv/opencv/archive/refs/tags/${DEP_OPENCV_VERSION}.tar.gz")
@@ -165,6 +163,10 @@ set(DEP_ALEMBIC_VERSION "1.8.5")
 set(DEP_ALEMBIC_URL     "https://github.com/alembic/alembic/archive/${DEP_ALEMBIC_VERSION}.tar.gz")
 set(DEP_ALEMBIC_HASH    "MD5=fcd5b5492a005057e11b601b60ac9a49")
 
+set(DEP_XERCESC_VERSION "3.3.0")
+set(DEP_XERCESC_URL     "https://downloads.apache.org/xerces/c/3/sources/xerces-c-${DEP_XERCESC_VERSION}.tar.xz")
+set(DEP_XERCESC_HASH    "MD5=7efbd9d785551c71d44ab6782e30c3c4")
+
 set(DEP_E57FORMAT_GIT_REPO "https://github.com/asmaloney/libE57Format.git")
 set(DEP_E57FORMAT_GIT_TAG  "v3.2.0")
 
@@ -172,9 +174,9 @@ set(DEP_OPENMESH_VERSION "10.0.0")
 set(DEP_OPENMESH_URL     "https://www.graphics.rwth-aachen.de/media/openmesh_static/Releases/10.0/OpenMesh-${DEP_OPENMESH_VERSION}.tar.bz2")
 set(DEP_OPENMESH_HASH    "MD5=4d166aecbc09df58b38de9759c92a437")
 
-set(DEP_PCL_VERSION "1.13.0")
+set(DEP_PCL_VERSION "1.15.1")
 set(DEP_PCL_URL     "https://github.com/PointCloudLibrary/pcl/archive/refs/tags/pcl-${DEP_PCL_VERSION}.tar.gz")
-set(DEP_PCL_HASH    "MD5=987a5f6e440407a2bcae10c1022568b0")
+set(DEP_PCL_HASH    "MD5=e29ad2147fbe2109233e2b3a0254dbab")
 
 set(DEP_USD_GIT_REPO "https://github.com/PixarAnimationStudios/USD.git")
 set(DEP_USD_GIT_TAG  "v25.08")
@@ -188,7 +190,7 @@ set(DEP_POPSIFT_GIT_REPO "https://github.com/alicevision/popsift")
 set(DEP_POPSIFT_GIT_TAG  "77d1d28624d2849798fc107619507b50cd8cfe10")
 
 set(DEP_CCTAG_GIT_REPO "https://github.com/alicevision/CCTag")
-set(DEP_CCTAG_GIT_TAG  "v1.0.4")
+set(DEP_CCTAG_GIT_TAG  "ff01840224a7f0948230f74bda723c9e0a216e5b")
 
 set(DEP_APRILTAG_GIT_REPO "https://github.com/AprilRobotics/apriltag")
 set(DEP_APRILTAG_GIT_TAG  "v3.2.0")

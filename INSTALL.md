@@ -1,5 +1,7 @@
 # AliceVision
 
+For specific build instructions for macOS see [INSTALL_macOS.md](./INSTALL_macOS.md).
+
 ## Build instructions
 
 Required tools:
@@ -356,25 +358,6 @@ make test
 * Open the .sln solution created in your build directory.
   * Change the target to Release.
   * Compile the libraries and binaries samples.
-
-
-### Mac OSX compilation
-
-```bash
-git clone --recursive https://github.com/alicevision/AliceVision.git
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -G "Xcode" ../AliceVision
-```
-
-If you want to enable the build of the unit tests:
-```bash
-cmake -DCMAKE_BUILD_TYPE=Release \
-      -DALICEVISION_BUILD_TESTS=ON \
-      -G "Xcode" \
-      ../AliceVision
-xcodebuild -configuration Release
-```
-
 
 ## Using AliceVision as a third party library dependency in CMake
 

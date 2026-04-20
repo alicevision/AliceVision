@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.30)
 message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/ConditionalOption.cmake)
+
+include(CMakeDependentOption)
+
 # ==============================================================================
 # AliceVision version
 # ==============================================================================
@@ -67,7 +71,11 @@ trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
 option(ALICEVISION_USE_ONNX_GPU "Use CUDA with ONNX Runtime" ON)
-trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
+if(APPLE)
+    trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" OFF)
+else()
+    trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
+endif()
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
 trilean_option(ALICEVISION_USE_USD "Enable USD" AUTO)
@@ -76,7 +84,10 @@ mark_as_advanced(FORCE ALICEVISION_USE_OCVSIFT)
 
 option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
 
-option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performances)" ON)
+# Apple users *could* technically still want SuiteSparse, so let them overwrite that
+# Non-Apple users can never use Accelerate.framework, hard-disable and hide it for them
+av_conditional_option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performance)" IF "NOT APPLE" THEN ON ELSE OFF)
+cmake_dependent_option(ALICEVISION_REQUIRE_CERES_WITH_ACCELERATESPARSE "Require Ceres with Accelerate.framework (ensure best performance)" ON "APPLE" OFF)
 
 option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
 option(ALICEVISION_REMOVE_ABSOLUTE "Remove absolute paths in dependencies" OFF)
@@ -121,7 +132,18 @@ endif()
 if (ALICEVISION_USE_RPATH)
     if (APPLE)
         set(CMAKE_MACOSX_RPATH 1)
-        set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path")
+        set(CMAKE_INSTALL_RPATH
+            "@loader_path/../${CMAKE_INSTALL_LIBDIR}"
+            "@loader_path"
+            "@loader_path/.." # For SWIG .so files, which do not get fixed up
+            "@loader_path/../lib"
+            "@loader_path/../Libraries"
+            "@loader_path/../Frameworks"
+            "@executable_path/../${CMAKE_INSTALL_LIBDIR}"
+            "@executable_path/../lib"
+            "@executable_path/../Libraries"
+            "@executable_path/../Frameworks"
+        )
     elseif (UNIX)
         set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR};\\$ORIGIN")
     endif()
@@ -129,8 +151,13 @@ endif()
 
 
 # Set build path
-set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-set(LIBRARY_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+if(APPLE)
+    set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_OSX_ARCHITECTURES}")
+    set(LIBRARY_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_OSX_ARCHITECTURES}")
+else()
+    set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+    set(LIBRARY_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+endif()
 
 # Windows specific defines
 if (WIN32)
@@ -188,14 +215,21 @@ endmacro(add_target_properties)
 # ==============================================================================
 set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-include(OptimizeForArchitecture)
+include(OFA/OptimizeForArchitecture)
 OptimizeForArchitecture()
-set(ALICEVISION_HAVE_SSE 0)
-if (SSE2_FOUND OR TARGET_ARCHITECTURE STREQUAL "native")
+set(ALICEVISION_HAVE_SSE 0 CACHE BOOL "SSE2 is available" FORCE)
+if (USE_SSE2 OR TARGET_ARCHITECTURE STREQUAL "native")
     if (MSVC AND NOT ${CMAKE_CL_64})
         add_definitions(/arch:SSE2)
     endif()
-    set(ALICEVISION_HAVE_SSE 1)
+    set(ALICEVISION_HAVE_SSE 1 CACHE BOOL "SSE2 is available" FORCE)
+endif()
+set(ALICEVISION_HAVE_AVX 0 CACHE BOOL "AVX is available" FORCE)
+if(USE_AVX OR TARGET_ARCHITECTURE STREQUAL "native")
+    if (MSVC AND NOT ${CMAKE_CL_64})
+        add_definitions(/arch:AVX)
+    endif()
+    set(ALICEVISION_HAVE_AVX 1 CACHE BOOL "AVX is available" FORCE)
 endif()
 
 if (UNIX)
@@ -223,6 +257,7 @@ endif()
 # allocation feature with a separate flag, so use it if alignment is enabled in Eigen.
 # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
 if (AV_EIGEN_MEMORY_ALIGNMENT)
+    include(AddCompilerFlag)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
         AddCompilerFlag("-faligned-new")
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0)
@@ -257,7 +292,7 @@ else() # ON OR AUTO
     if (MSVC)
         set(OpenMP_RUNTIME_MSVC "llvm")
     endif()
-    find_package(OpenMP)
+    find_package(OpenMP COMPONENTS C CXX)
 
     if (OPENMP_FOUND)
         set(ALICEVISION_HAVE_OPENMP 1)
@@ -271,16 +306,9 @@ else() # ON OR AUTO
 endif()
 
 if (ALICEVISION_HAVE_OPENMP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    if (NOT MSVC)
-        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-            # for those using the clang with OpenMP support
-            list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES omp)
-        else()
-            list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES gomp)
-        endif()
-    endif()
+    set(ALICEVISION_OPENMP_CXX_TARGETS OpenMP::OpenMP_CXX)
+    set(ALICEVISION_OPENMP_C_TARGETS OpenMP::OpenMP_C)
+    list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES OpenMP::OpenMP_CXX)
 endif()
 
 # ==============================================================================
@@ -427,6 +455,9 @@ if (ALICEVISION_BUILD_SFM)
     if (ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE)
         message(STATUS "By default, Ceres required SuiteSparse to ensure best performances. if you explicitly need to build without it, you can use the option: -DALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE=OFF")
         find_package(Ceres QUIET REQUIRED COMPONENTS SuiteSparse CONFIG)
+    elseif(ALICEVISION_REQUIRE_CERES_WITH_ACCELERATESPARSE)
+      message(STATUS "By default, Ceres required Accelerate.framework to ensure best performances. if you explicitly need to build without it, you can use the option: -DALICEVISION_REQUIRE_CERES_WITH_ACCELERATESPARSE=OFF")
+      find_package(Ceres QUIET REQUIRED COMPONENTS AccelerateSparse CONFIG)
     else()
         find_package(Ceres CONFIG QUIET CONFIG)
     endif()
@@ -1006,6 +1037,9 @@ add_subdirectory(dependencies)
 # AliceVision modules
 # ==============================================================================
 
+# Initial global target list is empty, will be added by target helper functions
+set(ALICEVISION_GLOBAL_TARGET_LIST "" CACHE INTERNAL "Global list of all AliceVision targets enabled")
+
 # software(s) under patent or commercial licence
 # Included for research purpose only
 if (ALICEVISION_BUILD_SFM)
@@ -1079,3 +1113,41 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
 endif()
 
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${cmakeUninstallFile}")
+
+# ==============================================================================
+# Bundling on Apple targets
+# ==============================================================================
+# Get output file name for each target
+if(APPLE)
+    set(ALICEVISION_BUILD_ARTIFACTS)
+    foreach(AV_TARGET ${ALICEVISION_GLOBAL_TARGET_LIST})
+        # Different handling if Framework
+        get_target_property(IS_FRAMEWORK ${AV_TARGET} FRAMEWORK)
+        if(IS_FRAMEWORK)
+            list(APPEND ALICEVISION_BUILD_ARTIFACTS "$<TARGET_BUNDLE_DIR:${AV_TARGET}>")
+        else()
+            list(APPEND ALICEVISION_BUILD_ARTIFACTS "$<TARGET_FILE:${AV_TARGET}>")
+        endif()
+    endforeach()
+
+    # If the user chose not to use SWIG bindings, Python3 might not be found yet
+    # This is system-provided on Apple, so we can safely rely on its existence
+    if(NOT DEFINED Python3_EXECUTABLE)
+      find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    endif()
+
+    # Add a custom target
+    add_custom_target(darwin-bundle
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/cmake/darwin_bundle.py -o ${ALICEVISION_BUNDLE_PREFIX} ${ALICEVISION_BUILD_ARTIFACTS}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/aliceVision ${ALICEVISION_BUNDLE_PREFIX}/${CMAKE_INSTALL_DATADIR}/aliceVision
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/meshroom ${ALICEVISION_BUNDLE_PREFIX}/${CMAKE_INSTALL_DATADIR}/meshroom
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/aliceVision ${ALICEVISION_BUNDLE_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/aliceVision
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/aliceVision_dependencies ${ALICEVISION_BUNDLE_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/aliceVision_dependencies
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/python/pyalicevision ${ALICEVISION_BUNDLE_PREFIX}/${CMAKE_INSTALL_LIBDIR}/python/pyalicevision
+        COMMAND ${CMAKE_CURRENT_LIST_DIR}/cmake/PatchSWIGBinaries.sh ${ALICEVISION_BUNDLE_PREFIX}/${CMAKE_INSTALL_LIBDIR}/python/pyalicevision
+        COMMAND ${CMAKE_COMMAND} -DAV_BUNDLE_BINARY_DIR=${ALICEVISION_BUNDLE_PREFIX}/${CMAKE_INSTALL_BINDIR} -P ${CMAKE_CURRENT_LIST_DIR}/cmake/RecreateSymlinksInBundle.cmake
+        DEPENDS ${ALICEVISION_GLOBAL_TARGET_LIST}
+        COMMENT "Creating Darwin Bundle"
+        COMMAND_EXPAND_LISTS
+    )
+endif()

@@ -1,0 +1,176 @@
+# List of arm/arm64 checks
+
+# FORMAT:
+# <extension flag >[,<list of extra extension flags>];<list of headers>;<name>;<list of parameters>;[<extension alias>]
+#
+# lines starting with # are comments
+# lines starting with push_enable: start a block of tests enabled for the given compilers only
+# lines starting with pop_enable: ends a block of tests enabled for the given compilers only
+# lines starting with push_disable: start a block of tests disabled for the given compilers
+# lines starting with pop_disable: ends a block of tests disabled for the given compilers
+
+# DESCRIPTION:
+# For each line of this file, HandleArmOptions generates the code snipped
+#
+# #include<header0>
+# #include<header1>
+# ...
+# int main {
+#   name(parameter0, parameter1, ...);
+#   return 0;
+# }
+#
+# and compiles it with, e.g.
+#
+# gcc -m<extension> -m<extra extensions...>
+#
+# if the extension should be enabled and
+#
+# gcc -m-no<extension> -m-no<extra extensions...>
+#
+# if the extension should be disabled. In the above example, the
+# compiler name 'gcc' and the flag prefixes '-m' and '-mno-' will be
+# set properly by HandleX86Options.
+#
+# EXTENSION ALIAS:
+# By default, it is assumed that the name of the extension, e.g.,
+# avx512f coinsides with the name of the compiler flag to be used to
+# enable/disable it, e.g., -mno-avx512f. Some compilers like Oracle's
+# SunPro have non-canonical naming conventions,
+# cf. https://docs.oracle.com/cd/E77782_01/html/E77792/gqexw.html.
+#
+# In this case, the optional <extension alias> parameter can be used
+# to specify the name of the extension as reported by the system,
+# whereas the compiler-specific extension flag(s) are given in
+# <extension flag> and [<list of extra extension flags>], respectively.
+#
+# ENABLING/DISABLING OF CHECKS:
+# Checks can be explicitly disabled for particular compilers by placing
+# them inside a push_disable/pop_disable block, e.g.
+#
+# push_disable:SunPro,IntelLLVM
+# <checks, one per line>
+# pop_disable:SunPro
+#
+# Similarly, checks can be explicitly enabled for particular compilers
+# by placing them inside a push_disable/pop_disable block, e.g.
+#
+# push_enable:SunPro
+# <checks, one per line>
+# pop_enable:SunPro
+
+# ARM (aarch32) 32-bit
+
+# armv4    : no options
+# armv4t   : no options
+
+# armv5t   : no options 
+# armv5te  : no options
+# armv5tej : no options
+
+# armv6    : fp vfpv2
+# armv6j   : fp vfpv2
+# armv6k   : fp vfpv2
+# armv6z   : fp vfpv2
+# armv6kz  : fp vfpv2
+# armv6zk  : fp vfpv2
+# armv6t2  : fp vfpv2
+# armv6-m  : no options
+# armv6s-m : no options
+fp;arm_neon.h;vcvt_f16_f32;float32x4_t()
+vfpv2;cstdlib;exit;0
+
+# armv7    : fp vfpv3-d16
+vfpv3-d16;cstdlib;exit;0;vfpv3_d16
+
+# armv7-a  : mp sec fp vfpv3 vfpv3-d16-fp16 vfpv3-fp16 vfpv4-d16 vfpv4 simd
+#            neon-fp16 neon-vfpv4 nosimd vfpv3-d16 neon neon-vfpv3
+# armv7ve  : vfpv3-d16 vfpv3 vfpv3-d16-fp16 vfpv3-fp16 fp vfpv4 neon neon-fp16
+#            simd nosimd vfpv4-d16 neon-vfpv3 neon-vfpv4
+mp;cstdlib;exit;0
+neon;cstdlib;exit;0
+neon-fp16;cstdlib;exit;0;neon_fp16
+neon-vfpv3;cstdlib;exit;0;neon_vfpv3
+neon-vfpv4;cstdlib;exit;0;neon_vfpv4
+sec;cstdlib;exit;0
+simd;cstdlib;exit;0
+vfpv3;cstdlib;exit;0
+vfpv3-d16-fp16;cstdlib;exit;0;vfpv3_d16_fp16
+vfpv3-fp16;cstdlib;exit;0;vfpv3_fp16
+vfpv4;cstdlib;exit;0
+vfpv4-d16;cstdlib;exit;0;vfpv4_d16
+
+# armv7-r  : fp.sp fp vfpv3xd-fp16 vfpv3-d16-fp16 idiv noidiv vfpv3xd vfpv3-d16
+fp.sp;cstdlib;exit;0;fp_sp
+fp.dp;cstdlib;exit;0;fp_dp
+idiv;cstdlib;exit;0
+vfpv3dx;cstdlib;exit;0
+vfpv3dx-fp16;cstdlib;exit;0;vfpv3dx_fp16
+
+# armv7-m  : no options
+# armv7e-m : fp fpv5 fp.dp vfpv4-sp-d16 fpv5-d16
+fpv5;cstdlib;exit;0
+fpv5_d16;cstdlib;exit;0
+vfpv4-sp-d16;cstdlib;exit;0;vfpv4_sp_d16
+
+# armv8-a   : crc simd crypto nocrypto sb predres
+crc;arm_acle.h;__crc32b;(uint32_t)0,(uint8_t)0
+crypto;arm_neon.h;vaesdq_u8;uint8x16_t(), uint8x16_t()
+sb;cstdlib;exit;0
+predres;cstdlib;exit;0
+
+# armv8-r   : crc fp.sp simd crypto nocrypto
+# armv8.1-a : simd crypto nocrypto sb predres
+# armv8.2-a : simd fp16 fp16fml crypto nocrypto dotprod sb predres i8mm bf16
+bf16,sve;arm_sve.h;svbfdot;svfloat32_t(),svbfloat16_t(),svbfloat16_t()
+dotprod;arm_neon.h;svdot;svint32_t(),svint8_t(),svint8_t()
+fp16;arm_neon.h;vabdq_f16;float16x8_t(),float16x8_t()
+fp16fml;arm_neon.h;vfmlalq_high_f16;float32x4_t(),float16x8_t(),float16x8_t()
+i8mm,sve;arm_sve.h;svmmla;svint32_t(),svint8_t(),svint8_t()
+simd;arm_neon.h;vaddq_u32;uint32x4_t(),uint32x4_t()
+
+# armv8.3-a : simd fp16 fp16fml crypto nocrypto dotprod sb predres i8mm bf16
+# armv8.4-a : simd fp16 crypto nocrypto sb predres i8mm bf16
+# armv8.5-a : simd fp16 crypto nocrypto i8mm bf16
+# armv8.6-a : simd fp16 crypto nocrypto i8mm bf16
+
+# ARM64 (aarch64) 64-bit
+
+# armv8.x-a : fp simd crypto crc lse fp16 rcpc rdma dotprod aes sha2 sha3 sm4 fp16fml sve profile rng memtag sb ssbs predres sve2 sve2-sm4 sve2-aes sve2-sha3 sve2-bitperm tme i8mm f32mm f64mm bf16 flagm pauth asimd crc32
+crc32;arm_acle.h;__crc32b;(uint32_t)0,(uint8_t)0
+simd;cstdlib;exit;0;asimd
+aes,crypto;arm_neon.h;vaesdq_u8;uint8x16_t(), uint8x16_t()
+dsp,sve;arm_sve.h;svqadd_z;svbool_t(),svint8_t(),svint8_t()
+f32mm,sve;arm_sve.h;svmmla;svfloat32_t(),svfloat32_t(),svfloat32_t()
+f64mm,sve;arm_sve.h;svmmla;svfloat64_t(),svfloat64_t(),svfloat64_t()
+flagm;cstdlib;exit;0
+lse;cstdlib;exit;0
+memtag;cstdlib;exit;0
+mve;cstdlib;exit;0
+mve_fp;cstdlib;exit;0
+pauth;cstdlib;exit;0
+profile;cstdlib;exit;0
+ras;cstdlib;exit;0
+rcpc;cstdlib;exit;0
+rdm;cstdlib;exit;0
+rdma;cstdlib;exit;0
+rng;cstdlib;exit;0
+sec;cstdlib;exit;0
+sha2,crypto;arm_neon.h;vsha256hq_u32;uint32x4_t(),uint32x4_t(),uint32x4_t()
+sha3;arm_neon.h;vsha512hq_u64;uint64x2_t(),uint64x2_t(),uint64x2_t()
+sm4;arm_neon.h;vsm4eq_u32;uint32x4_t(), uint32x4_t()
+ssbs;cstdlib;exit;0
+tme;cstdlib;exit;0
+zcm;cstdlib;exit;0
+zcz;cstdlib;exit;0
+
+# SVE
+sve;arm_sve.h;svwhilelt_b64;0,1
+
+# SVE2
+sve2;arm_sve.h;svaba;svint8_t(),svint8_t(),svint8_t()
+sve2-aes;arm_sve.h;svaesd;svuint8_t(),svuint8_t()
+sve2-bitperm;arm_sve.h;svbdep;svuint8_t(),svuint8_t()
+sve2-sha3;arm_sve.h;svrax1;svint64_t(),svint64_t()
+sve2-sm4;arm_sve.h;svsm4e;svuint32_t(),svuint32_t()
+

@@ -13,6 +13,9 @@
 #   DEP_<LIB>_GIT_TAG   — git tag / commit
 # =============================================================================
 
+include(${CMAKE_SOURCE_DIR}/src/cmake/ConditionalOption.cmake)
+
+include(CMakeDependentOption)
 include(ExternalProject)
 
 # ── Build options ─────────────────────────────────────────────────────────────
@@ -25,20 +28,36 @@ if(AV_BUILD_DEPENDENCIES_PARALLEL EQUAL 0)
     cmake_host_system_information(RESULT AV_BUILD_DEPENDENCIES_PARALLEL QUERY NUMBER_OF_LOGICAL_CORES)
 endif()
 
-set(AV_ONNX_APPLE_ARCH "arm64" CACHE STRING "Version to download OFF Apple [arm64, x86_64]")
+set(AV_ONNX_APPLE_ARCH "${CMAKE_OSX_ARCHITECTURES}" CACHE STRING "Version to download OFF Apple [arm64, x86_64]")
+
+# Set additional reusable flags for cross-compiling on macOS
+# Supports x86_64/arm64 cross-compilation
+if(APPLE)
+    # Get the current sysroot
+    execute_process(COMMAND xcrun --sdk macosx --show-sdk-path
+        OUTPUT_VARIABLE APPLE_SYSROOT
+        COMMAND_ERROR_IS_FATAL ANY
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+        set(APPLE_ARCH_FLAGS -arch\ arm64)
+    elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+        set(APPLE_ARCH_FLAGS -arch\ x86_64)
+    endif()
+endif()
 
 # Core
-option(AV_BUILD_ZLIB        "Build zlib"     ON)
-option(AV_BUILD_TBB         "Build TBB"      ON)
-option(AV_BUILD_EIGEN       "Build Eigen"    ON)
-option(AV_BUILD_EXPAT       "Build Expat"    ON)
-option(AV_BUILD_BOOST       "Build Boost"    ON)
-option(AV_BUILD_PYBIND11    "Build pybind11" ON)
-option(AV_BUILD_SWIG        "Build SWIG"     ON)
+option(AV_BUILD_ZLIB        "Build zlib"            ON)
+option(AV_BUILD_TBB         "Build TBB"             ON)
+option(AV_BUILD_EIGEN       "Build Eigen"           ON)
+option(AV_BUILD_EXPAT       "Build Expat"           ON)
+option(AV_BUILD_BOOST       "Build Boost"           ON)
+option(AV_BUILD_PYBIND11    "Build pybind11"        ON)
+option(AV_BUILD_SWIG        "Build SWIG"            ON)
+av_conditional_option(AV_BUILD_OPENMP "Build LLVM OpenMP" IF APPLE THEN ON ELSE OFF)
 
 # CUDA
-option(AV_USE_CUDA          "Enable CUDA support"        ON)
-option(AV_BUILD_CUDA        "Build/install CUDA toolkit" OFF)
+cmake_dependent_option(AV_BUILD_CUDA  "Build/install CUDA toolkit"  OFF  "NOT APPLE"  OFF)
 
 # Image codecs
 option(AV_BUILD_TIFF        "Build libtiff"        ON)
@@ -58,8 +77,8 @@ option(AV_BUILD_OPENIMAGEIO  "Build OpenImageIO"    ON)
 option(AV_BUILD_OPENCV       "Build OpenCV"         ON)
 
 # Math / solvers
-option(AV_BUILD_LAPACK      "Build LAPACK/BLAS"   ON)
-option(AV_BUILD_SUITESPARSE "Build SuiteSparse"   ON)
+av_conditional_option(AV_BUILD_LAPACK      "Build LAPACK/BLAS" IF "NOT APPLE" THEN ON ELSE OFF)
+av_conditional_option(AV_BUILD_SUITESPARSE "Build SuiteSparse" IF "NOT APPLE" THEN ON ELSE OFF)
 option(AV_BUILD_CERES       "Build Ceres"         ON)
 option(AV_BUILD_FLANN       "Build FLANN (+lz4)"  ON)
 option(AV_BUILD_NANOFLANN   "Build nanoflann"     ON)
@@ -73,13 +92,14 @@ option(AV_BUILD_GEOGRAM     "Build Geogram"   ON)
 option(AV_BUILD_ASSIMP      "Build Assimp"    ON)
 option(AV_BUILD_ALEMBIC     "Build Alembic"   ON)
 option(AV_BUILD_E57FORMAT   "Build E57Format" ON)
+av_conditional_option(AV_BUILD_XERCESC  "Build XERCESC" IF AV_BUILD_E57FORMAT THEN ON ELSE OFF)
 option(AV_BUILD_OPENMESH    "Build OpenMesh"  ON)
 option(AV_BUILD_PCL         "Build PCL"       OFF)
 option(AV_BUILD_OPENSUBDIV  "Build OpenSubdiv" ON)
 option(AV_BUILD_USD         "Build USD"        ON)
 
 # Feature detectors
-option(AV_BUILD_POPSIFT     "Build PopSift"   ON)
+cmake_dependent_option(AV_BUILD_POPSIFT       "Build PopSift" ON  "NOT APPLE" OFF)
 option(AV_BUILD_CCTAG       "Build CCTag"     ON)
 option(AV_BUILD_APRILTAG    "Build AprilTag"  ON)
 
@@ -87,15 +107,15 @@ option(AV_BUILD_APRILTAG    "Build AprilTag"  ON)
 
 set(_all_av_options
     AV_BUILD_ZLIB AV_BUILD_TBB AV_BUILD_EIGEN AV_BUILD_EXPAT
-    AV_BUILD_BOOST AV_BUILD_PYBIND11 AV_BUILD_SWIG
-    AV_USE_CUDA AV_BUILD_CUDA
+    AV_BUILD_BOOST AV_BUILD_PYBIND11 AV_BUILD_SWIG AV_BUILD_OPENMP
+    AV_BUILD_CUDA
     AV_BUILD_TIFF AV_BUILD_PNG AV_BUILD_JPEG AV_BUILD_LIBRAW AV_BUILD_OPENEXR
     AV_BUILD_VPX AV_BUILD_FFMPEG
     AV_BUILD_ONNXRUNTIME AV_BUILD_OPENCOLORIO AV_BUILD_OPENIMAGEIO AV_BUILD_OPENCV
     AV_BUILD_LAPACK AV_BUILD_SUITESPARSE AV_BUILD_CERES
     AV_BUILD_FLANN AV_BUILD_NANOFLANN
     AV_BUILD_COINUTILS AV_BUILD_OSI AV_BUILD_CLP AV_BUILD_LEMON
-    AV_BUILD_GEOGRAM AV_BUILD_ASSIMP AV_BUILD_ALEMBIC AV_BUILD_E57FORMAT
+    AV_BUILD_GEOGRAM AV_BUILD_ASSIMP AV_BUILD_ALEMBIC AV_BUILD_E57FORMAT AV_BUILD_XERCESC
     AV_BUILD_OPENMESH AV_BUILD_PCL AV_BUILD_USD AV_BUILD_OPENSUBDIV
     AV_BUILD_POPSIFT AV_BUILD_CCTAG AV_BUILD_APRILTAG
 )
@@ -119,11 +139,14 @@ set(BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
 string(TOLOWER "${DEPS_CMAKE_BUILD_TYPE}" DEPS_CMAKE_BUILD_TYPE_LOWERCASE)
 
 set(CMAKE_CORE_BUILD_FLAGS
+    -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
     -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE}
     -DCMAKE_CXX_STANDARD=20
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+    -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+    -DCMAKE_MACOSX_RPATH=${ALICEVISION_USE_RPATH}
 )
 
 set(DEP_DEPS "")
@@ -136,11 +159,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/Helpers.cmake)
 # Core — no prerequisites
 include(${CMAKE_CURRENT_LIST_DIR}/deps/zlib.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/tbb.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/deps/eigen.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/eigen.cmake)     # depends: openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/expat.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/boost.cmake)      # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/pybind11.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/swig.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/openmp.cmake)
 
 # CUDA — no prerequisites
 include(${CMAKE_CURRENT_LIST_DIR}/deps/cuda.cmake)
@@ -160,14 +184,14 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/ffmpeg.cmake)     # depends: vpx
 include(${CMAKE_CURRENT_LIST_DIR}/deps/onnxruntime.cmake)  # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/opencolorio.cmake)  # depends: expat
 include(${CMAKE_CURRENT_LIST_DIR}/deps/openimageio.cmake)  # depends: boost, openexr, tiff, png, jpeg, libraw, zlib, ffmpeg, pybind11, expat, opencolorio
-include(${CMAKE_CURRENT_LIST_DIR}/deps/opencv.cmake)       # depends: tbb, zlib, openexr, tiff, png, jpeg, libraw, ffmpeg
+include(${CMAKE_CURRENT_LIST_DIR}/deps/opencv.cmake)       # depends: tbb, zlib, openexr, tiff, png, jpeg, libraw, ffmpeg, openmp
 
 # Math / solvers
 include(${CMAKE_CURRENT_LIST_DIR}/deps/lapack.cmake)       # depends: tbb
 include(${CMAKE_CURRENT_LIST_DIR}/deps/suitesparse.cmake)  # depends: lapack (includes gmp + mpfr inline)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/ceres.cmake)        # depends: eigen, suitesparse
 include(${CMAKE_CURRENT_LIST_DIR}/deps/lz4.cmake)          # depends: (none)
-include(${CMAKE_CURRENT_LIST_DIR}/deps/flann.cmake)        # depends: lz4
+include(${CMAKE_CURRENT_LIST_DIR}/deps/flann.cmake)        # depends: lz4, openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/nanoflann.cmake)    # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/coinutils.cmake)    # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/osi.cmake)          # depends: coinutils
@@ -178,10 +202,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/lemon.cmake)        # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/geogram.cmake)      # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/assimp.cmake)       # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/alembic.cmake)      # depends: boost, openexr, zlib
-include(${CMAKE_CURRENT_LIST_DIR}/deps/e57format.cmake)    # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/xercesc.cmake)      # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/e57format.cmake)    # depends: (xercesc)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/openmesh.cmake)     # depends: (none)
-include(${CMAKE_CURRENT_LIST_DIR}/deps/pcl.cmake)          # depends: eigen, boost, png, flann, lz4, zlib, cuda
-include(${CMAKE_CURRENT_LIST_DIR}/deps/opensubdiv.cmake)   # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/pcl.cmake)          # depends: eigen, boost, png, flann, lz4, zlib, cuda, openmp
+include(${CMAKE_CURRENT_LIST_DIR}/deps/opensubdiv.cmake)   # depends: openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/usd.cmake)          # depends: (opensubdiv)
 
 # Feature detectors
@@ -192,6 +217,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/apriltag.cmake)     # depends: (none)
 # ── AliceVision (main project) ────────────────────────────────────────────────
 
 if(AV_BUILD_ALICEVISION)
+
+    # Merge CMake configure options
+    include(${CMAKE_SOURCE_DIR}/src/cmake/ConfigureOptionsMerger.cmake)
+    av_merge_configure_options()
+
     ExternalProject_Add(aliceVision
         SOURCE_DIR        ${CMAKE_CURRENT_SOURCE_DIR}
         BINARY_DIR        ${CMAKE_CURRENT_BINARY_DIR}/aliceVision_build
@@ -227,6 +257,7 @@ if(AV_BUILD_ALICEVISION)
             ${GEOGRAM_CMAKE_FLAGS}
             ${ASSIMP_CMAKE_FLAGS}
             ${ALEMBIC_CMAKE_FLAGS}
+            ${XERCESC_CMAKE_FLAGS}
             ${E57FORMAT_CMAKE_FLAGS}
             ${OPENMESH_CMAKE_FLAGS}
             ${PCL_CMAKE_FLAGS}
@@ -236,9 +267,23 @@ if(AV_BUILD_ALICEVISION)
             ${CCTAG_CMAKE_FLAGS}
             ${APRILTAG_CMAKE_FLAGS}
             ${CUDA_CMAKE_FLAGS}
-            -DALICEVISION_USE_OPENCV:BOOL=${AV_BUILD_OPENCV}
-            -DALICEVISION_USE_CUDA:BOOL=${AV_USE_CUDA}
-            -DALICEVISION_BUILD_SWIG_BINDING:BOOL=${AV_BUILD_SWIG}
+
+            ${AV_BUILD_FLAGS}
+            ${AV_COMPONENT_FLAGS}
+            ${AV_TOPLEVEL_FLAGS}
+
+        BUILD_COMMAND
+            ${CMAKE_COMMAND} --build <BINARY_DIR>
+                --config ${CMAKE_BUILD_TYPE}
+                --parallel ${AV_BUILD_DEPENDENCIES_PARALLEL}
+
         DEPENDS ${AV_DEPS}
     )
+
+    # Pipe through the darwin-bundle target on Apple targets
+    if(APPLE)
+        add_custom_target(darwin-bundle
+            ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/aliceVision_build --target darwin-bundle
+        )
+    endif()
 endif()

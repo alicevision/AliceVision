@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - develop
+      - bits/macos-infra-v2
     # Skip jobs when only documentation files are changed
     paths-ignore:
       - '**.md'

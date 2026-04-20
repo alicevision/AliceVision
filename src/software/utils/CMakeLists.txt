@@ -612,7 +612,6 @@ if (ALICEVISION_BUILD_MVS)
               aliceVision_cmdline
               aliceVision_mvsData
               aliceVision_mvsUtils
-              aliceVision_depthMap
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options

@@ -2,52 +2,70 @@
 # deps/boost.cmake
 # Dependencies: zlib
 # Provides:     BOOST_TARGET, BOOST_CMAKE_FLAGS
-#
-# NOTE: Boost uses its own b2 build system, not CMake.
 # =============================================================================
 
 if(AV_BUILD_BOOST)
     set(BOOST_TARGET boost)
 
-    if(WIN32)
-        set(_boost_bootstrap_ext bat)
-    else()
-        set(_boost_bootstrap_ext sh)
+    set(DEP_BOOST_LIBS
+      accumulators
+      atomic
+      container
+      date_time
+      exception
+      foreach
+      format
+      geometry
+      graph
+      iostreams
+      json
+      log
+      math
+      multi_array
+      program_options
+      ptr_container
+      regex
+      serialization
+      system
+      test
+      thread
+      timer
+      stacktrace
+    )
+
+    # Helper to build a semicolon seperated list which survives the
+    # ExternProject_Add call
+    set(DEP_BOOST_LIBS_SEMICOLON_ESCAPED "")
+    foreach(DEP_BOOST_LIB ${DEP_BOOST_LIBS})
+        if(DEP_BOOST_LIBS_SEMICOLON_ESCAPED STREQUAL "")
+            set(DEP_BOOST_LIBS_SEMICOLON_ESCAPED "${DEP_BOOST_LIB}")
+        else()
+            set(DEP_BOOST_LIBS_SEMICOLON_ESCAPED "${DEP_BOOST_LIBS_SEMICOLON_ESCAPED}$<SEMICOLON>${DEP_BOOST_LIB}")
+        endif()
+    endforeach()
+
+    # We might cross-compile architectures on Apple platforms and Boost.Context
+    # cannot work with CMAKE_OSX_ARCHITECTURES yet, so we must pass some flags
+    # manually.
+    if(APPLE)
+      if(${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
+        set(DEP_BOOST_CONTEXT_APPLE_FLAGS -DBOOST_CONTEXT_ARCHITECTURE=arm64 -DBOOST_CONTEXT_ABI=aapcs -DBOOST_IOSTREAMS_ENABLE_ZSTD=OFF)
+      else()
+        set(DEP_BOOST_CONTEXT_APPLE_FLAGS -DBOOST_CONTEXT_ARCHITECTURE=x86_64 -DBOOST_CONTEXT_ABI=sysv -DBOOST_IOSTREAMS_ENABLE_ZSTD=OFF)
+      endif()
     endif()
 
-    ExternalProject_Add(${BOOST_TARGET}
-        URL              ${DEP_BOOST_URL}
-        URL_HASH         ${DEP_BOOST_HASH}
-        DOWNLOAD_DIR     ${BUILD_DIR}/download/boost
-        DOWNLOAD_NO_PROGRESS TRUE
-        PREFIX           ${BUILD_DIR}
-        BUILD_IN_SOURCE  0
-        BUILD_ALWAYS     0
-        UPDATE_COMMAND   ""
-        SOURCE_DIR       ${CMAKE_CURRENT_BINARY_DIR}/boost
-        BINARY_DIR       ${BUILD_DIR}/boost_build
-        INSTALL_DIR      ${CMAKE_INSTALL_PREFIX}
-        CONFIGURE_COMMAND
-            cd <SOURCE_DIR> &&
-            ./bootstrap.${_boost_bootstrap_ext}
-                --prefix=<INSTALL_DIR>
-                --with-libraries=atomic,container,date_time,exception,graph,iostreams,json,log,math,program_options,regex,serialization,system,test,thread,stacktrace,timer
-        BUILD_COMMAND
-            cd <SOURCE_DIR> &&
-            ./b2 --prefix=<INSTALL_DIR>
-                variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE}
-                cxxstd=20 link=shared threading=multi
-                -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-        INSTALL_COMMAND
-            cd <SOURCE_DIR> &&
-            ./b2
-                variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE}
-                cxxstd=20 link=shared threading=multi
-                install
+    av_add_cmake_dep(
+        TARGET         ${BOOST_TARGET}
+        SOURCE_DIR     boost
+        URL            ${DEP_BOOST_URL}
+        URL_HASH       ${DEP_BOOST_HASH}
+        EXTRA_CMAKE_FLAGS
+          -DBOOST_INCLUDE_LIBRARIES=${DEP_BOOST_LIBS_SEMICOLON_ESCAPED}
+          -DBUILD_TESTING=OFF
+          ${DEP_BOOST_CONTEXT_APPLE_FLAGS}
         DEPENDS ${ZLIB_TARGET}
     )
 
     set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX})
-    av_register_dep(${BOOST_TARGET})
-    unset(_boost_bootstrap_ext)
 endif()
