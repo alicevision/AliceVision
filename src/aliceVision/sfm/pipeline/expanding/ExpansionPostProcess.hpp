@@ -20,6 +20,8 @@ public:
 
 public:
 
+    virtual ~ExpansionPostProcess() = default;
+
     /**
      * @brief Perform post process for an iteration
      * @param sfmData the scene to process

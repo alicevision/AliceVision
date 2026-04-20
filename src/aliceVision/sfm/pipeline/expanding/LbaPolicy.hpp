@@ -21,6 +21,9 @@ public:
     using uptr = std::unique_ptr<LbaPolicy>;
     
 public:
+
+    virtual ~LbaPolicy() = default;
+
     /**
      * @brief Build the policy using a scene
      * @param sfmData the scene to process

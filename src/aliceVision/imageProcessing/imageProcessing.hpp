@@ -28,6 +28,9 @@ namespace imageProcessing {
 class ImageProcess
 {
 public:
+
+    virtual ~ImageProcess() = default;
+
     /**
      * @brief Execute the processing operation in place on the given image.
      * @param[in] sfmData The global SfMData providing scene-wide information (e.g. median exposure).
