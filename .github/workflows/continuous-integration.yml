@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - develop
-      - bits/macos-infra-v2
     # Skip jobs when only documentation files are changed
     paths-ignore:
       - '**.md'
@@ -26,4 +25,8 @@ jobs:
 
   build-windows:
     uses: ./.github/workflows/build-windows.yml
+    secrets: inherit
+
+  build-sonarqube:
+    uses: ./.github/workflows/build-sonarqube.yml
     secrets: inherit

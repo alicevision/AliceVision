@@ -1,0 +1,84 @@
+name: Build Linux
+
+on:
+  workflow_call:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    container:
+      image: "alicevision/alicevision-deps:2026.03.30-rocky9-cuda12.1.1"
+    env:
+      DEPS_INSTALL_DIR: /opt/AliceVision_install
+      BUILD_TYPE: Release
+      CTEST_OUTPUT_ON_FAILURE: 1
+      ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
+      ALICEVISION_SENSOR_DB: ${{ github.workspace }}/../AV_install/share/aliceVision/cameraSensors.db
+      ALICEVISION_LENS_PROFILE_INFO: ""
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          # Isolate writes per ref (branch/PR) to reduce cross-PR cache contamination.
+          key: ccache-${{ runner.os }}-sonarqube-${{ github.ref_name }}-${{ hashFiles('CMakeLists.txt', 'src/CMakeLists.txt', 'vcpkg.json', 'vcpkg-configuration.json', '.github/workflows/build-linux.yml') }}
+          restore-keys: |
+            ccache-${{ runner.os }}-sonarqube-${{ github.ref_name }}-
+            ccache-${{ runner.os }}-sonarqube-develop-
+            ccache-${{ runner.os }}-
+          max-size: "1000M"
+
+      - name: Install Build Wrapper
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v7.1
+
+      - name: Prepare File Tree
+        run: |
+          mkdir ./build
+          mkdir ../AV_install
+          mkdir -p ${{ github.workspace }}/bw-output
+          mkdir -p ${{ github.workspace }}/analysisCache
+
+      - name: Cache SonarCloud CFamily (incremental analysis)
+        uses: actions/cache@v4
+        with:
+          path: /root/.sonar/cache
+          key: ${{ runner.os }}-cfamily-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', '**/CMakeLists.txt') }}
+          restore-keys: ${{ runner.os }}-cfamily-
+
+      - name: Configure CMake
+        working-directory: ./build
+        run: |
+          cmake .. \
+           -G Ninja \
+           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+           -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+           -DBUILD_SHARED_LIBS=ON \
+           -DCMAKE_PREFIX_PATH="${DEPS_INSTALL_DIR}" \
+           -DCMAKE_INSTALL_PREFIX="${ALICEVISION_ROOT}" \
+           -DTARGET_ARCHITECTURE=core \
+           -DALICEVISION_BUILD_TESTS=OFF \
+           -DALICEVISION_BUILD_SWIG_BINDING=OFF \
+           -DALICEVISION_USE_OPENCV=ON \
+           -DALICEVISION_USE_CUDA=OFF \
+           -DALICEVISION_USE_CCTAG=OFF \
+           -DALICEVISION_USE_POPSIFT=OFF \
+           -DALICEVISION_USE_ALEMBIC=ON \
+           -DALICEVISION_USE_USD=ON \
+           -DOpenCV_DIR="${DEPS_INSTALL_DIR}/share/OpenCV" \
+           -DCeres_DIR="${DEPS_INSTALL_DIR}/share/Ceres" \
+           -DAlembic_DIR="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" 
+
+      - name: Build
+        working-directory: ./build
+        run: |
+          build-wrapper-linux-x86-64 --out-dir ${{ github.workspace }}/bw-output cmake --build . -j$(nproc)
+        
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v7.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            --define sonar.cfamily.compile-commands=${{ github.workspace }}/bw-output/compile_commands.json
