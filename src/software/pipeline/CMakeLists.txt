@@ -269,6 +269,19 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
+    # SfM Triangulation
+    alicevision_add_software(aliceVision_sfmTriangulating
+        SOURCE main_sfmTriangulating.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_track
+              aliceVision_sfm
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+    )
+
     # Global SfM
     alicevision_add_software(aliceVision_globalSfM
         SOURCE main_globalSfM.cpp

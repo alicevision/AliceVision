@@ -123,6 +123,19 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2,
     }
 
     {
+        auto& poses1 = sfmData1.getPoses();
+        auto& poses2 = sfmData2.getPoses();
+        const size_t totalSize = poses1.size() + poses2.size();
+
+        poses1.insert(poses2.begin(), poses2.end());
+        if (poses1.size() < totalSize && !ignoreDuplicates)
+        {
+            ALICEVISION_LOG_ERROR("Unhandled error: common Poses ID between both SfMData");
+            return false;
+        }
+    }
+
+    {
         auto& intrinsics1 = sfmData1.getIntrinsics();
         auto& intrinsics2 = sfmData2.getIntrinsics();
         const size_t totalSize = intrinsics1.size() + intrinsics2.size();
@@ -401,13 +414,11 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
     // Simple merge of intrinsics
     auto& intrinsics1 = sfmData1.getIntrinsics();
     auto& intrinsics2 = sfmData2.getIntrinsics();
-    totalSize = intrinsics1.size() + intrinsics2.size();
     intrinsics1.insert(intrinsics2.begin(), intrinsics2.end());
 
     // Simple merge of poses
     auto& poses1 = sfmData1.getPoses();
     auto& poses2 = sfmData2.getPoses();
-    totalSize = poses1.size() + poses2.size();
     poses1.insert(poses2.begin(), poses2.end());
 
     sfmData1.addFeaturesFolders(sfmData2.getRelativeFeaturesFolders());
