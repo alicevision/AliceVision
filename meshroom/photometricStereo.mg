@@ -1,13 +1,13 @@
 {
     "header": {
-        "releaseVersion": "2025.1.0",
+        "releaseVersion": "2026.1.0+develop",
         "fileVersion": "2.0",
         "nodesVersions": {
             "CameraInit": "12.1",
             "CopyFiles": "1.3",
             "LightingCalibration": "1.0",
             "PhotometricStereo": "1.0",
-            "SphereDetection": "1.0"
+            "SphereDetection": "2.0"
         },
         "template": true
     },

@@ -9,6 +9,9 @@
 // Standard libs
 #include <iostream>
 #include <numeric>
+#include <string>
+
+#include <aliceVision/utils/convert.hpp>
 
 // AliceVision image library
 #include <aliceVision/image/Image.hpp>
@@ -32,18 +35,38 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 // Boost JSON
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
-// namespaces
-namespace bpt = boost::property_tree;
-
 namespace aliceVision {
 namespace sphereDetection {
+
+void fillShapeTree(bpt::ptree& fileTree, const bpt::ptree& spheresTree)
+{
+    bpt::ptree shapesTree;
+    {
+        // Shape tree
+        bpt::ptree shapeTree;
+        shapeTree.put("name", "Manual Sphere Detection");
+        shapeTree.put("type", "Circle");
+
+        // Shape properties tree
+        bpt::ptree shapeProperties;
+        shapeProperties.put("color", "green");
+        shapeTree.add_child("properties", shapeProperties);
+
+        // Shape observations tree
+        shapeTree.add_child("observations", spheresTree);
+
+        // Add shape tree to shapes tree
+        shapesTree.push_back(std::make_pair("", shapeTree));
+    }
+
+    fileTree.add_child("shapes", shapesTree);
+}
 
 void modelExplore(Ort::Session& session)
 {
@@ -173,8 +196,8 @@ Prediction predict(Ort::Session& session, const fs::path imagePath, const float 
 
 void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs::path outputPath, const float minScore)
 {
-    // Main tree
-    bpt::ptree fileTree;
+    // Spheres tree
+    bpt::ptree spheresTree;
 
     for (auto& viewID : sfmData.getViews())
     {
@@ -191,62 +214,184 @@ void sphereDetection(const sfmData::SfMData& sfmData, Ort::Session& session, fs:
         // If there is no bounding box, then no sphere has been detected
         if (pred.bboxes.size() > 0)
         {
-            bpt::ptree spheresNode;
-
             // We only take the best sphere in the picture
             const int i = 0;
             // Compute sphere coords from bbox coords
             const auto bbox = pred.bboxes.at(i);
             const float r = std::min(bbox.at(3) - bbox.at(1), bbox.at(2) - bbox.at(0)) / 2;
-            const float x = bbox.at(0) + r - pred.size.width / 2;
-            const float y = bbox.at(1) + r - pred.size.height / 2;
+            const float x = bbox.at(0) + r;
+            const float y = bbox.at(1) + r;
 
             // Create an unnamed node containing the sphere
             bpt::ptree sphereNode;
-            sphereNode.put("x", x);
-            sphereNode.put("y", y);
-            sphereNode.put("r", r);
+            sphereNode.put("center.x", x);
+            sphereNode.put("center.y", y);
+            sphereNode.put("radius", r);
             sphereNode.put("score", pred.scores.at(i));
             sphereNode.put("type", "matte");
 
-            // Add sphere to array
-            spheresNode.push_back(std::make_pair("", sphereNode));
-
-            fileTree.add_child(sphereName, spheresNode);
+            // Add sphere node to spheres tree
+            spheresTree.add_child(sphereName, sphereNode);
         }
         else
         {
             ALICEVISION_LOG_WARNING("No sphere detected for '" << imagePath << "'.");
         }
     }
+
+    // Main tree
+    bpt::ptree fileTree;
+    fillShapeTree(fileTree, spheresTree);
+
+    // Write JSON
     bpt::write_json(outputPath.string(), fileTree);
 }
 
-void writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::array<float, 3>& sphereParam, fs::path outputPath)
+bool writeManualSphereJSON(const sfmData::SfMData& sfmData,
+                           const std::vector<std::string>& x,
+                           const std::vector<std::string>& y,
+                           const std::vector<std::string>& radius,
+                           fs::path outputPath,
+                           bool fillMissingSpheres)
 {
-    // Main tree
-    bpt::ptree fileTree;
+    auto xValues = aliceVision::utils::dictStringToStringMap(x);
+    auto yValues = aliceVision::utils::dictStringToStringMap(y);
+    auto radiusValues = aliceVision::utils::dictStringToStringMap(radius);
+
+    // Spheres tree
+    bpt::ptree spheresTree;
 
     for (auto& viewID : sfmData.getViews())
     {
-        ALICEVISION_LOG_DEBUG("View Id: " << viewID);
-
+        ALICEVISION_LOG_DEBUG("View ID: " << viewID);
         const std::string sphereName = std::to_string(viewID.second->getViewId());
 
-        bpt::ptree spheresNode;
+        std::vector<float> sphereParams;
+        auto pos = xValues.find(sphereName);
+        if (pos == xValues.end())
+        {
+            ALICEVISION_LOG_INFO("Sphere shape for view ID " << sphereName << " not found.");
+
+            if (fillMissingSpheres)
+            {
+                ALICEVISION_LOG_INFO("Using sphere position from view ID " << xValues.rbegin()->first << ".");
+                sphereParams = {std::stof(xValues.rbegin()->second), std::stof(yValues.rbegin()->second), std::stof(radiusValues.rbegin()->second)};
+            }
+        }
+        else
+        {
+            ALICEVISION_LOG_DEBUG("Sphere shape for view ID " << sphereName << " found.");
+            sphereParams = {std::stof(xValues.at(sphereName)), std::stof(yValues.at(sphereName)), std::stof(radiusValues.at(sphereName))};
+        }
+
         // Create an unnamed node containing the sphere
-        bpt::ptree sphereNode;
-        sphereNode.put("x", sphereParam[0]);
-        sphereNode.put("y", sphereParam[1]);
-        sphereNode.put("r", sphereParam[2]);
-        sphereNode.put("type", "matte");
+        if (!sphereParams.empty())
+        {
+            bpt::ptree sphereNode;
+            sphereNode.put("center.x", sphereParams[0]);
+            sphereNode.put("center.y", sphereParams[1]);
+            sphereNode.put("radius", sphereParams[2]);
+            sphereNode.put("type", "matte");
 
-        // Add sphere to array
-        spheresNode.push_back(std::make_pair("", sphereNode));
-
-        fileTree.add_child(sphereName, spheresNode);
+            // Add sphere node to spheres tree
+            spheresTree.add_child(sphereName, sphereNode);
+        }
     }
+
+    // Shapes tree
+    bpt::ptree shapesTree;
+    {
+        // Shape tree
+        bpt::ptree shapeTree;
+        shapeTree.put("name", "Manual Sphere Detection");
+        shapeTree.put("type", "Circle");
+
+        // Shape properties tree
+        bpt::ptree shapeProperties;
+        shapeProperties.put("color", "green");
+        shapeTree.add_child("properties", shapeProperties);
+
+        // Shape observations tree
+        shapeTree.add_child("observations", spheresTree);
+
+        // Add shape tree to shapes tree
+        shapesTree.push_back(std::make_pair("", shapeTree));
+    }
+
+    // Main tree
+    bpt::ptree fileTree;
+    fileTree.add_child("shapes", shapesTree);
+
+    // Write JSON
     bpt::write_json(outputPath.string(), fileTree);
+
+    return true;
+}
+
+bool writeManualSphereJSON(const sfmData::SfMData& sfmData, const std::string& sphereFile, const std::string& outputPath, bool fillMissingSpheres)
+{
+    if (!fillMissingSpheres)
+    {
+        // Copy the file as is if since there is no need to check on missing spheres
+        fs::copy_file(sphereFile, outputPath);
+        return true;
+    }
+
+    // Main tree
+    bpt::ptree fileTree;
+
+    // Read the json file and initialize the tree
+    bpt::read_json(sphereFile, fileTree);
+
+    // Spheres tree
+    bpt::ptree spheresTree;
+
+    // Initialize spheres tree
+    const auto shapesTreeOpt = fileTree.get_child_optional("shapes");
+    if (shapesTreeOpt && !shapesTreeOpt->empty())
+    {
+        const auto& firstShapeTree = shapesTreeOpt->begin()->second;
+        spheresTree = firstShapeTree.get_child("observations");
+    }
+    else
+    {
+        ALICEVISION_THROW_ERROR("Cannot find sphere detection data in '" << sphereFile << "'.");
+    }
+
+    std::string lastSphereViewID = spheresTree.rbegin()->first;
+    std::vector<float> sphereParams = {spheresTree.rbegin()->second.get("center.x", 0.0f),
+                                       spheresTree.rbegin()->second.get("center.y", 0.0f),
+                                       spheresTree.rbegin()->second.get("radius", 0.0f)};
+
+    ALICEVISION_LOG_INFO("Got last known sphere position: " << lastSphereViewID);
+
+    for (auto& viewID : sfmData.getViews())
+    {
+        ALICEVISION_LOG_DEBUG("View ID: " << viewID);
+        const std::string sphereName = std::to_string(viewID.second->getViewId());
+
+        auto sphereExists = (spheresTree.get_child_optional(sphereName)).is_initialized();
+        if (!sphereExists)
+        {
+            ALICEVISION_LOG_INFO("Sphere exists");
+            bpt::ptree sphereNode;
+            sphereNode.put("center.x", sphereParams[0]);
+            sphereNode.put("center.y", sphereParams[1]);
+            sphereNode.put("radius", sphereParams[2]);
+            sphereNode.put("type", "matte");
+
+            // Add sphere node to spheres tree
+            spheresTree.add_child(sphereName, sphereNode);
+        }
+    }
+
+    fileTree.clear();
+    fillShapeTree(fileTree, spheresTree);
+
+    // Write JSON
+    bpt::write_json(outputPath, fileTree);
+
+    return true;
 }
 
 }  // namespace sphereDetection
