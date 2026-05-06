@@ -261,7 +261,7 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     /// all parameters blocks pointers
     std::vector<double*> _allParametersBlocks;
     /// poses blocks wrapper
-    /// block: ceres angleAxis(3) + translation(3)
+    /// block: ceres angleAxis(3) + center(3)
     std::map<IndexT, std::array<double, 6>> _posesBlocks;  // TODO : maybe we can use boost::flat_map instead of std::map ?
     /// intrinsics blocks wrapper
     /// block: intrinsics params

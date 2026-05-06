@@ -29,27 +29,27 @@ struct ProjectionMeshErrorFunctor
     explicit ProjectionMeshErrorFunctor(const sfmData::Observation& obs
     , const std::shared_ptr<camera::IntrinsicBase>& intrinsics
     , sfmData::PointFetcher::sptr fetcher
-    , bool samePose)        
+    , bool samePose)
     : _intrinsicFunctor(new CostIntrinsicsProject(obs, intrinsics))
     , _meshIntersectFunctor(new CostMeshIntersector(fetcher))
     , _samePose(samePose)
-    {        
+    {
     }
 
     template<typename T>
     bool operator()(T const* const* parameters, T* residuals) const
-    {       
+    {
         const T* parameter_intrinsics = parameters[0];
         const T* parameter_distortion = parameters[1];
         const T* parameter_currentPose = parameters[2];
         const T* parameter_referencePose = _samePose ? parameter_currentPose : parameters[3];
         const T* parameter_point = _samePose ? parameters[3] : parameters[4];
 
-        
+
         const T* refcam_r_world = parameter_referencePose;
-        const T* refcam_t_world = &parameter_referencePose[3];
+        const T* world_t_refcam = &parameter_referencePose[3];
         const T* curcam_r_world = parameter_currentPose;
-        const T* curcam_t_world = &parameter_currentPose[3];
+        const T* world_t_curcam = &parameter_currentPose[3];
 
         T world_r_refcam[3];
         world_r_refcam[0] = -refcam_r_world[0];
@@ -64,21 +64,14 @@ struct ProjectionMeshErrorFunctor
         refcam_point[1] = parameter_point[1] / norm;
         refcam_point[2] = 1.0 / norm;
 
-        // Compute c = - R^t * t
-        T c[3];
-        ceres::AngleAxisRotatePoint(world_r_refcam, refcam_t_world, c);
-        c[0] = -c[0];
-        c[1] = -c[1];
-        c[2] = -c[2];
-
-        // Compute direction = R^t reference_point 
+        // Compute direction = R^t reference_point
         T direction[3];
         ceres::AngleAxisRotatePoint(world_r_refcam, refcam_point, direction);
 
-       
+
         T worldPoint[3];
         const T * intersectParameters[2];
-        intersectParameters[0] = c;
+        intersectParameters[0] = world_t_refcam;
         intersectParameters[1] = direction;
         if (!_meshIntersectFunctor(intersectParameters, worldPoint))
         {
@@ -87,10 +80,10 @@ struct ProjectionMeshErrorFunctor
 
         // Compute point in camera coordinates
         T transformedPoint[3];
+        worldPoint[0] -= world_t_curcam[0];
+        worldPoint[1] -= world_t_curcam[1];
+        worldPoint[2] -= world_t_curcam[2];
         ceres::AngleAxisRotatePoint(curcam_r_world, worldPoint, transformedPoint);
-        transformedPoint[0] += curcam_t_world[0];
-        transformedPoint[1] += curcam_t_world[1];
-        transformedPoint[2] += curcam_t_world[2];
 
         // Project
         const T * innerParameters[3];
@@ -109,13 +102,13 @@ struct ProjectionMeshErrorFunctor
      * @return cost functor
      */
     inline static ceres::CostFunction* createCostFunction(
-        const std::shared_ptr<camera::IntrinsicBase> intrinsic, 
+        const std::shared_ptr<camera::IntrinsicBase> intrinsic,
         const sfmData::Observation& observation,
         sfmData::PointFetcher::sptr fetcher,
         bool samePose)
     {
         auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionMeshErrorFunctor>(new ProjectionMeshErrorFunctor(observation, intrinsic, fetcher, samePose));
-        
+
         // Estimate distortion size from intrinsics
         int distortionSize = 1;
         auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);

@@ -687,7 +687,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
 
     BundleAdjustmentCeres::CeresOptions options;
     BundleAdjustment::ERefineOptions refineOptions =
-      BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
+      BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER | BundleAdjustment::REFINE_STRUCTURE;
 
     if (!isInitialPair && !_params.lockAllIntrinsics)
         refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;

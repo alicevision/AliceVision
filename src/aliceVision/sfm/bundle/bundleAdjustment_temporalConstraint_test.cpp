@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(BA_temporalConstraint)
     sfm::BundleAdjustment::ERefineOptions refineOptions;
     refineOptions = sfm::BundleAdjustment::REFINE_ROTATION
                   | sfm::BundleAdjustment::REFINE_STRUCTURE
-                  | sfm::BundleAdjustment::REFINE_TRANSLATION
+                  | sfm::BundleAdjustment::REFINE_CENTER
                   | sfm::BundleAdjustment::REFINE_INTRINSICS_ALL;
     options.summary = false;
 

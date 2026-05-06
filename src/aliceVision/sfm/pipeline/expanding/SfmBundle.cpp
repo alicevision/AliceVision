@@ -22,7 +22,7 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
     BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
 
     refineOptions |= BundleAdjustment::REFINE_ROTATION;
-    refineOptions |= BundleAdjustment::REFINE_TRANSLATION;
+    refineOptions |= BundleAdjustment::REFINE_CENTER;
 
     if (_isStructureRefinementEnabled)
     {

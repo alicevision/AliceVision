@@ -721,7 +721,7 @@ bool GlobalSfMTranslationAveragingSolver::estimateTTriplet(const SfMData& sfmDat
     BundleAdjustmentCeres::BA_options options(false, false);
     options._linear_solver_type = ceres::SPARSE_SCHUR;
     BundleAdjustmentCeres bundleAdjustmentObj(options);
-    if (bundleAdjustmentObj.Adjust(tiny_scene, REFINE_TRANSLATION | REFINE_STRUCTURE))
+    if (bundleAdjustmentObj.adjust(tinyScene, REFINE_CENTER | REFINE_STRUCTURE))
     {
         // export scene for visualization
         std::ostringstream os;

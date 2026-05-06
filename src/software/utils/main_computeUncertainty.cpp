@@ -81,7 +81,7 @@ int aliceVision_main(int argc, char** argv)
     {
         BundleAdjustmentCeres bundleAdjustmentObj;
         BundleAdjustment::ERefineOptions refineOptions =
-          BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
+          BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER | BundleAdjustment::REFINE_STRUCTURE;
         bundleAdjustmentObj.createJacobian(sfmData, refineOptions, jacobian);
     }
 

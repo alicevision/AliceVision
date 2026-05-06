@@ -344,7 +344,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData, std::map<IndexT, calibra
         options.summary = true;
         sfm::BundleAdjustmentCeres ba(options);
         sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
-                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_CENTER |
                                                          sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_ALL;
         if (!ba.adjust(sfmData, boptions))
         {
@@ -426,7 +426,7 @@ bool estimateRigs(sfmData::SfMData& sfmData)
         options.summary = true;
         sfm::BundleAdjustmentCeres ba(options);
         sfm::BundleAdjustment::ERefineOptions boptions = sfm::BundleAdjustment::ERefineOptions::REFINE_ROTATION |
-                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_TRANSLATION |
+                                                         sfm::BundleAdjustment::ERefineOptions::REFINE_CENTER |
                                                          sfm::BundleAdjustment::ERefineOptions::REFINE_INTRINSICS_ALL;
         if (!ba.adjust(sfmData, boptions))
         {
