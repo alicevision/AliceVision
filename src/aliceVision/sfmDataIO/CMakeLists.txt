@@ -41,9 +41,11 @@ if (ALICEVISION_HAVE_USD)
 
     list(APPEND sfmDataIO_files_headers
         UsdExporter.hpp
+        usdIO.hpp
     )
     list(APPEND sfmDataIO_files_sources
         UsdExporter.cpp
+        usdIO.cpp
     )
 endif()
 
@@ -72,12 +74,12 @@ endif()
 
 if (ALICEVISION_HAVE_USD)
     target_link_libraries(aliceVision_sfmDataIO
-        PRIVATE usd
-                usdGeom
-                gf
-                tf
-                vt
-                sdf
+        PUBLIC usd
+               usdGeom
+               gf
+               tf
+               vt
+               sdf
     )
 endif()
 

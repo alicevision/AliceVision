@@ -71,3 +71,19 @@ Intrinsics parameter are **abstract** and provide a way to easily add new custom
 It defines the structure:
 
 * 3D point with 2D view features observations.
+
+
+### Compact landmark tables for USD/export
+
+For high-cardinality scenes, sfmData provides a compact packing utility in
+[src/aliceVision/sfmData/LandmarkTable.hpp](src/aliceVision/sfmData/LandmarkTable.hpp).
+
+This utility converts `Landmarks` and variable-size `Observations` to contiguous arrays:
+
+* Per-landmark columns (ids, 3D points, state, descriptor type, flags, reference view)
+* CSR observation adjacency via offsets
+* Flattened observation arrays (viewId, featureId, xy, scale, depth)
+* Optional inverse indexing by view
+
+The packed representation is designed for efficient serialization and direct mapping to a
+landmark-centric USD schema without creating one USD prim per landmark.

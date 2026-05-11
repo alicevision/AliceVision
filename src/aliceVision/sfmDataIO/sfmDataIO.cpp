@@ -20,6 +20,10 @@
     #include <aliceVision/sfmDataIO/AlembicImporter.hpp>
 #endif
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_USD)
+    #include <aliceVision/sfmDataIO/usdIO.hpp>
+#endif
+
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -129,6 +133,14 @@ bool load(aliceVision::sfmData::SfMData& sfmData, const std::string& filename, E
     {
         status = loadPLY(sfmData, filename);
     }
+    else if (extension == ".usd" || extension == ".usda" || extension == ".usdc")
+    {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_USD)
+        status = loadUSD(sfmData, filename, partFlag);
+#else
+        ALICEVISION_THROW_ERROR("Cannot load the USD file: \"" << filename << "\", AliceVision is built without USD support.");
+#endif
+    }
     else if (fs::is_directory(filename))
     {
         status = readGt(filename, sfmData);
@@ -177,6 +189,14 @@ bool save(const aliceVision::sfmData::SfMData& sfmData, const std::string& filen
         ALICEVISION_THROW_ERROR("Cannot save the ABC file: \"" << filename << "\", AliceVision is built without Alembic support.");
 #endif
     }
+    else if (extension == ".usd" || extension == ".usda" || extension == ".usdc")
+    {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_USD)
+    status = saveUSD(sfmData, tmpPath, filename, partFlag);
+#else
+    ALICEVISION_THROW_ERROR("Cannot save the USD file: \"" << filename << "\", AliceVision is built without USD support.");
+#endif
+    }
     else
     {
         ALICEVISION_LOG_ERROR("Cannot save the SfM data file: '" << filename << "'." << std::endl << "The file extension is not recognized.");
@@ -185,7 +205,9 @@ bool save(const aliceVision::sfmData::SfMData& sfmData, const std::string& filen
 
     // rename temporary filename
     if (status)
+    {
         fs::rename(tmpPath, filename);
+    }
 
     return status;
 }

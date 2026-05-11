@@ -17,7 +17,6 @@
 #include <pxr/base/tf/token.h>
 #include <pxr/usd/sdf/path.h>
 #include <pxr/usd/usd/stage.h>
-#include <pxr/usd/usd/zipFile.h>
 #include <pxr/usd/usdGeom/mesh.h>
 #include <pxr/usd/usdGeom/metrics.h>
 #include <pxr/usd/usdGeom/primvar.h>
@@ -27,6 +26,13 @@
 #include <pxr/usd/usdShade/material.h>
 #include <pxr/usd/usdShade/materialBindingAPI.h>
 #include <pxr/usd/usdShade/shader.h>
+
+#if __has_include(<pxr/usd/usd/zipFile.h>)
+    #include <pxr/usd/usd/zipFile.h>
+    #define ALICEVISION_HAVE_USD_ZIPFILE 1
+#else
+    #define ALICEVISION_HAVE_USD_ZIPFILE 0
+#endif
 
 #include <filesystem>
 
@@ -345,6 +351,7 @@ int aliceVision_main(int argc, char** argv)
     // write out usdz if requested
     if (fileType == EUSDFileType::USDZ)
     {
+#if ALICEVISION_HAVE_USD_ZIPFILE
         ALICEVISION_LOG_INFO("Create usdz file");
         const fs::path usdzPath = fs::canonical(outputFolderPath) / "texturedMesh.usdz";
         UsdZipFileWriter writer = UsdZipFileWriter::CreateNew(usdzPath.string());
@@ -367,6 +374,10 @@ int aliceVision_main(int argc, char** argv)
             }
         }
         writer.Save();
+    #else
+        ALICEVISION_LOG_ERROR("USDZ export is not available with this USD build (missing pxr/usd/usd/zipFile.h).");
+        return EXIT_FAILURE;
+    #endif
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
