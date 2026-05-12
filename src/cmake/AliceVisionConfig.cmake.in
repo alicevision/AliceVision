@@ -110,6 +110,12 @@ if(ALICEVISION_HAVE_ALEMBIC)
   find_dependency(Alembic)
 endif()
 
+set(ALICEVISION_HAVE_USD @ALICEVISION_HAVE_USD@)
+
+if(ALICEVISION_HAVE_USD)
+   find_package(pxr CONFIG REQUIRED)
+endif()
+
 message(STATUS "Found AliceVision version: ${@exportedProjectName@_VERSION}")
 
 include("${CMAKE_CURRENT_LIST_DIR}/@targetsExportName@.cmake")

@@ -1,6 +1,7 @@
 # Headers
 set(sfmData_files_headers
     SfMData.hpp
+    LandmarkTable.hpp
     CameraPose.hpp
     Landmark.hpp
     ImageGroup.hpp
@@ -22,6 +23,7 @@ set(sfmData_files_headers
 # Sources
 set(sfmData_files_sources
     SfMData.cpp
+    LandmarkTable.cpp
     uid.cpp
     View.cpp
     colorize.cpp

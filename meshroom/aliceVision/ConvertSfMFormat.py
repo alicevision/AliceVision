@@ -26,7 +26,7 @@ It can also be used to remove specific parts of from an SfM scene (like filter a
             label="SfM File Format",
             description="Output SfM file format.",
             value="abc",
-            values=["abc", "sfm", "json", "ply", "baf"],
+            values=["abc", "usda", "sfm", "json", "ply", "baf"],
             commandLineGroup="",  # exclude from command line
         ),
         desc.ChoiceParam(
