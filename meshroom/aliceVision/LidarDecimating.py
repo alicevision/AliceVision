@@ -4,6 +4,15 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 class LidarDecimating(desc.AVCommandLineNode):
+    """
+Decimate and simplify meshes reconstructed from LiDAR point cloud data.
+
+LiDAR-based reconstruction can produce extremely dense meshes with far more triangles
+than are needed for downstream use. This node applies a decimation algorithm to reduce
+the number of faces while preserving the overall shape and important geometric features.
+It processes multiple input meshes in parallel using a range-based parallelization scheme.
+"""
+
     commandLine = "aliceVision_lidarDecimating {allParams}"
 
     size = desc.StaticNodeSize(10)
@@ -14,8 +23,6 @@ class LidarDecimating(desc.AVCommandLineNode):
     ram = desc.Level.INTENSIVE
 
     category = "Dense Reconstruction"
-    documentation = """This node simplifies previously reconstructed meshes from Lidar."""
-
     inputs = [
         desc.File(
             name="input",

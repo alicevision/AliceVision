@@ -5,11 +5,7 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class PanoramaInit(desc.AVCommandLineNode):
-    commandLine = "aliceVision_panoramaInit {allParams}"
-    size = desc.DynamicNodeSize("input")
-
-    category = "Panorama HDR"
-    documentation = """
+    """
 This node allows to setup the Panorama:
 
 1/ Enables the initialization the cameras from known position in an XML file (provided by
@@ -20,6 +16,10 @@ This node allows to setup the Panorama:
 3/ To automatically detects the Fisheye Circle (radius + center) in input images or manually adjust it.
 """
 
+    commandLine = "aliceVision_panoramaInit {allParams}"
+    size = desc.DynamicNodeSize("input")
+
+    category = "Panorama HDR"
     inputs = [
         desc.File(
             name="input",

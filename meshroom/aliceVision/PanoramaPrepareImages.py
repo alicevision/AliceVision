@@ -7,12 +7,19 @@ import os.path
 
 
 class PanoramaPrepareImages(desc.AVCommandLineNode):
+    """
+Prepare images for the Panorama pipeline by ensuring that all image orientations are consistent.
+
+EXIF orientation tags or inconsistent camera orientations can cause issues in panorama
+stitching. This node reads the orientation metadata from each view and applies the necessary
+rotations so that all images are stored with a canonical upright orientation. It also
+updates the SfMData accordingly to ensure that subsequent nodes process images correctly.
+"""
+
     commandLine = "aliceVision_panoramaPrepareImages {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Panorama HDR"
-    documentation = """Prepare images for Panorama pipeline: ensures that images orientations are coherent."""
-
     inputs = [
         desc.File(
             name="input",

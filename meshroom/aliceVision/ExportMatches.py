@@ -5,12 +5,19 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class ExportMatches(desc.AVCommandLineNode):
+    """
+Export feature matches between image pairs from an SfMData scene.
+
+This node writes the computed feature matches to disk in a format suitable for
+inspection and debugging. Matches can be filtered by describer type and by image
+pair using filename filters. The output folder contains the match files alongside
+the corresponding feature files.
+"""
+
     commandLine = "aliceVision_exportMatches {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Export"
-    documentation = """ """
-
     inputs = [
         desc.File(
             name="input",

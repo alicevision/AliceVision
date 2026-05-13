@@ -5,13 +5,13 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class MeshFiltering(desc.AVCommandLineNode):
-    commandLine = "aliceVision_meshFiltering {allParams}"
-
-    category = "Dense Reconstruction"
-    documentation = """
+    """
 This node applies a Laplacian filtering to remove local defects from the raw Meshing cut.
 """
 
+    commandLine = "aliceVision_meshFiltering {allParams}"
+
+    category = "Dense Reconstruction"
     inputs = [
         desc.File(
             name="inputMesh",

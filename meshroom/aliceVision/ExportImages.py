@@ -5,6 +5,11 @@ from meshroom.core.utils import COLORSPACES, EXR_STORAGE_DATA_TYPE, VERBOSE_LEVE
 from pyalicevision import parallelization as avpar
 
 class ExportImages(desc.AVCommandLineNode):
+    """
+Export images referenced in the input sfmData by transforming them to adapt to the required target intrinsics.
+For example, the target intrinsics may be the same without the distortion.
+"""
+
     commandLine = "aliceVision_exportImages {allParams}"
     size = avpar.DynamicViewsSize("input")
     
@@ -12,11 +17,6 @@ class ExportImages(desc.AVCommandLineNode):
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
     category = "Export"
-    documentation = """
-Export images referenced in the input sfmData by transforming them to adapt to the required target intrinsics.
-For example, the target intrinsics may be the same without the distortion.
-"""
-
     inputs = [
         desc.File(
             name="input",

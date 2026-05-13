@@ -5,15 +5,20 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMLandmarksRemapping(desc.AVCommandLineNode):
+    """
+Synchronize landmark identifiers in an SfMData scene with their corresponding track identifiers.
+
+In AliceVision, each 3D landmark is created from a feature track and should share the same
+identifier as that track. However, after certain operations on the tracks (e.g., merging or
+filtering), the track IDs may have changed while the landmark IDs in the SfMData remain
+outdated. This node updates each landmark's ID to match its associated track ID, restoring
+the expected correspondence that many downstream nodes rely on.
+"""
+
     commandLine = "aliceVision_sfmLandmarksRemapping {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """
-    A landmark is created using a track. Both have ids. It is assumed in many nodes that the source track id is the landmark id.
-    In this node, we update the landmark id to match its track id. It may have change over operations on tracks.
-    """
-
     inputs = [
         desc.File(
             name="input",

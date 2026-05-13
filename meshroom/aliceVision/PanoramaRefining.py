@@ -5,12 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class PanoramaRefining(desc.AVCommandLineNode):
+    """
+Refine panorama camera rotations using bundle adjustment.
+
+This node performs a joint optimisation (bundle adjustment) over all camera rotations and the
+shared focal length to minimise reprojection errors across all feature matches. The
+refined rotations produce a more accurate panorama with fewer stitching artefacts,
+especially in scenes with strong parallax or lens distortion.
+"""
+
     commandLine = "aliceVision_panoramaRefining {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Panorama HDR"
-    documentation = """Refine panorama estimation using bundle adjustment."""
-
     inputs = [
         desc.File(
             name="input",

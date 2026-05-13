@@ -5,16 +5,22 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMSplitReconstructed(desc.AVCommandLineNode):
+    """
+Split an SfMData scene into two separate files based on reconstruction status.
+
+This node separates the views in the input SfMData into two groups:
+ - **Reconstructed**: Views for which a camera pose has been successfully estimated.
+ - **Non-reconstructed**: Views that could not be localized during SfM.
+
+The two resulting SfMData files can then be processed independently, for example to
+focus further processing on only the reconstructed cameras or to attempt localizing
+the remaining views using a different strategy.
+"""
+
     commandLine = "aliceVision_sfmSplitReconstructed {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """
-This nodes takes a SfMData file as an input and splits it in two output SfMData files:
- - One SfMData containing the reconstructed views
- - One SfMData containing the non-reconstructed views
-"""
-
     inputs = [
         desc.File(
             name="input",

@@ -30,12 +30,7 @@ def outputImagesValueFunct(attr):
     return "{nodeCacheFolder}/" + '*' + (outputExt or '.*')
 
 class ColorCheckerCorrection(desc.AVCommandLineNode):
-    commandLine = "aliceVision_colorCheckerCorrection {allParams}"
-    size = desc.DynamicNodeSize("input")
-    # parallelization = desc.Parallelization(blockSize=40)
-    # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
-
-    documentation = """
+    """
 (BETA) \\
 Performs color calibration from Macbeth color checker chart.
 
@@ -44,6 +39,11 @@ All the input images will get the same correction.
 
 If multiple color charts are submitted, only the first one will be taken in account.
 """
+
+    commandLine = "aliceVision_colorCheckerCorrection {allParams}"
+    size = desc.DynamicNodeSize("input")
+    # parallelization = desc.Parallelization(blockSize=40)
+    # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
 
     inputs = [
         desc.File(

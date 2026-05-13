@@ -5,13 +5,7 @@ from meshroom.core.utils import COLORSPACES, DESCRIBER_TYPES, VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class FeatureExtraction(desc.AVCommandLineNode):
-    commandLine = "aliceVision_featureExtraction {allParams}"
-    size = avpar.DynamicViewsSize("input")
-    parallelization = desc.Parallelization(blockSize=40)
-    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
-
-    category = "Sparse Reconstruction"
-    documentation = """
+    """
 This node extracts distinctive groups of pixels that are, to some extent, invariant to changing camera viewpoints during image acquisition.
 Hence, a feature in the scene should have similar feature descriptions in all images.
 
@@ -31,6 +25,12 @@ It is robust to motion-blur, depth-of-field, occlusion. Be careful to have enoug
 [https://alicevision.org/#photogrammetry/natural_feature_extraction](https://alicevision.org/#photogrammetry/natural_feature_extraction)
 """
 
+    commandLine = "aliceVision_featureExtraction {allParams}"
+    size = avpar.DynamicViewsSize("input")
+    parallelization = desc.Parallelization(blockSize=40)
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
+
+    category = "Sparse Reconstruction"
     inputs = [
         desc.File(
             name="input",

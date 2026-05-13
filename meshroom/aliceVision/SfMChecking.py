@@ -5,14 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMChecking(desc.Node):
+    """
+Validate an SfM scene against configurable quality constraints.
+
+This node inspects the input SfMData and verifies that it meets minimum quality
+requirements, such as a minimum percentage of reconstructed views. If the scene
+does not satisfy the specified constraints, the node raises an error, which causes
+the pipeline to stop. This is useful as a quality gate to prevent poor reconstructions
+from propagating into computationally expensive downstream steps.
+"""
+
 
     size = desc.DynamicNodeSize("input")
     category = "Utils"
-    documentation = """
-Check an input SfM for validity.
-Throw an error if the SfM does not satisfy constraints.
-"""
-
     inputs = [
         desc.File(
             name="input",

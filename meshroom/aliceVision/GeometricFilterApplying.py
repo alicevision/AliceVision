@@ -5,16 +5,22 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class GeometricFilterApplying(desc.AVCommandLineNode):
+    '''
+Apply precomputed geometric transforms to filter feature matches between image pairs.
+
+This node is the second step of a two-stage geometric filtering process. The first stage
+(GeometricFilterEstimating) estimates a geometric model (homography, fundamental matrix,
+or essential matrix) for each image pair. This node uses those precomputed transforms to
+discard matches that do not conform to the estimated model, retaining only geometrically
+consistent inlier matches.
+'''
+
     commandLine = 'aliceVision_geometricFilterApplying {allParams}'
     size = avpar.DynamicViewsSize("input")
     parallelization = desc.Parallelization(blockSize=20)
     commandLineRange = '--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}'
 
     category = 'Sparse Reconstruction'
-    documentation = '''
-Apply precomputed transforms to matches to filter geometric matches
-'''
-
     inputs = [
         desc.File(
             name="input",

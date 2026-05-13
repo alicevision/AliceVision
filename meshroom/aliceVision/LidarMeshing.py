@@ -4,6 +4,8 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 class LidarMeshing(desc.AVCommandLineNode):
+    """This node creates a dense geometric surface representation of the Lidar measurements."""
+
     commandLine = "aliceVision_lidarMeshing {allParams}"
 
     size = desc.StaticNodeSize(10)
@@ -14,8 +16,6 @@ class LidarMeshing(desc.AVCommandLineNode):
     ram = desc.Level.INTENSIVE
 
     category = "Dense Reconstruction"
-    documentation = """This node creates a dense geometric surface representation of the Lidar measurements."""
-
     inputs = [
         desc.File(
             name="input",

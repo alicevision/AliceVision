@@ -109,9 +109,7 @@ class SafeFilterParser:
         return [e for e in elements if self.parse_expression(expression, e)]
 
 class SfMFilter(desc.Node):
-    size = desc.DynamicNodeSize("inputFile")
-    category = "Utils"
-    documentation = """
+    """
     Filtering views from an input SfMData given a validation expression.
     For each view, the expression is evaluated, and the view is selected if the expression returns True.
     Two SfMData are generated, one for the selected views, one for the non selected views.
@@ -131,6 +129,8 @@ class SfMFilter(desc.Node):
         - observedLandmarks : the count of observed landmarks
     """
 
+    size = desc.DynamicNodeSize("inputFile")
+    category = "Utils"
     inputs = [
         desc.File(
             name="inputFile",

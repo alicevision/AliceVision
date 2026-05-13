@@ -5,13 +5,13 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ImportAlembic(desc.AVCommandLineNode):
-    commandLine = "aliceVision_importAlembic {allParams}"
-
-    category = "Utils"
-    documentation = """
+    """
 Import an external Alembic file that does not follow the SfMData convention, and populates a valid SfMData with its camera poses.
 """
 
+    commandLine = "aliceVision_importAlembic {allParams}"
+
+    category = "Utils"
     inputs = [
         desc.File(
             name="input",

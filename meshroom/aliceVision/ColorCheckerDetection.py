@@ -5,12 +5,7 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ColorCheckerDetection(desc.AVCommandLineNode):
-    commandLine = "aliceVision_colorCheckerDetection {allParams}"
-    size = desc.DynamicNodeSize("input")
-    # parallelization = desc.Parallelization(blockSize=40)
-    # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
-
-    documentation = """
+    """
 (BETA) \\
 Performs Macbeth color checker chart detection.
 
@@ -24,6 +19,11 @@ Dev notes:
 - Fisheye/pinhole is not handled
 - ColorCheckerViewer is unstable with multiple color chart within a same image
 """
+
+    commandLine = "aliceVision_colorCheckerDetection {allParams}"
+    size = desc.DynamicNodeSize("input")
+    # parallelization = desc.Parallelization(blockSize=40)
+    # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
 
     inputs = [
         desc.File(

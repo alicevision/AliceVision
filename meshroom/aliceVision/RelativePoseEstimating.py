@@ -5,6 +5,16 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class RelativePoseEstimating(desc.AVCommandLineNode):
+    """
+Estimate the relative pose between each pair of views that share feature track observations.
+
+For every image pair with sufficient matching features, this node estimates the relative
+rotation and translation using robust geometric methods (e.g., RANSAC with the essential
+or fundamental matrix). The resulting relative poses are used by subsequent global or
+incremental SfM nodes to recover the absolute camera positions and orientations.
+Pure rotation pairs (with no translation baseline) can be explicitly handled as well.
+"""
+
     commandLine = "aliceVision_relativePoseEstimating {allParams}"
     size = avpar.DynamicViewsSize("input")
     
@@ -12,8 +22,6 @@ class RelativePoseEstimating(desc.AVCommandLineNode):
     commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
 
     category = "Sparse Reconstruction"
-    documentation = """Estimate relative pose between each pair of views that share tracks."""
-
     inputs = [
         desc.File(
             name="input",

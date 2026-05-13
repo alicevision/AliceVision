@@ -21,12 +21,24 @@ class Split360InputNodeSize(desc.DynamicNodeSize):
 
 
 class Split360Images(desc.AVCommandLineNode):
+    """
+Extract multiple perspective images from a single equirectangular or dual-fisheye image.
+
+360-degree images captured as equirectangular projections or dual-fisheye pairs cannot
+be directly used by standard SfM pipelines. This node decomposes each input image into
+a configurable number of overlapping perspective crops, creating a larger set of
+conventional perspective views that can be processed by the regular reconstruction pipeline.
+
+Two split modes are supported:
+ - **equirectangular**: Splits an equirectangular panoramic image into multiple
+   perspective crops distributed around the sphere.
+ - **dualfisheye**: Converts a dual-fisheye image into two separate fisheye views.
+"""
+
     commandLine = "aliceVision_split360Images {allParams}"
     size = Split360InputNodeSize("input")
     
     category = "Utils"
-    documentation = """This node is used to extract multiple images from equirectangular or dualfisheye images."""
-
     inputs = [
         desc.File(
             name="input",

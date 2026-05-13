@@ -5,12 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ConvertDistortion(desc.AVCommandLineNode):
+    """
+Convert the lens distortion model of cameras in an SfMData scene between different representations.
+
+Some algorithms operate on distortion models (which map from distorted image coordinates to
+undistorted coordinates), while others use undistortion models (the inverse mapping).
+This node converts all camera intrinsics in the scene from one representation to the other,
+fitting a new model that approximates the inverse of the original.
+"""
+
     commandLine = "aliceVision_convertDistortion {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """Convert distortions between different models."""
-
     inputs = [
         desc.File(
             name="input",

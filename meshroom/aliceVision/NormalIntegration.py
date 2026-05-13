@@ -4,10 +4,19 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 class NormalIntegration(desc.CommandLineNode):
+    """
+Reconstruct a depth map by integrating a surface normal map.
+
+Given a per-pixel normal map (as produced by the PhotometricStereo pipeline), this node
+integrates the normals to recover the underlying surface depth. Normal integration solves
+a Poisson-like equation to find the depth field whose gradients best match the input normals.
+The result is a depth map that can be used for high-frequency surface detail recovery.
+
+Note: This node is currently under active development and may produce incomplete results.
+"""
+
     commandLine = "aliceVision_normalIntegration {allParams}"
     category = "Photometric Stereo"
-    documentation = """Evaluate a depth map from a normals map (currently in development)."""
-
     inputs = [
         desc.File(
             name="inputPath",

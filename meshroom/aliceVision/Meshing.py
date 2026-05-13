@@ -5,13 +5,7 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class Meshing(desc.AVCommandLineNode):
-    commandLine = "aliceVision_meshing {allParams}"
-
-    cpu = desc.Level.INTENSIVE
-    ram = desc.Level.INTENSIVE
-
-    category = "Dense Reconstruction"
-    documentation = """
+    """
 This node creates a dense geometric surface representation of the scene.
 
 First, it fuses all the depth maps into a global dense point cloud with an adaptive resolution.
@@ -22,6 +16,12 @@ A Graph Cut Max-Flow is applied to optimally cut the volume. This cut represents
 [https://alicevision.org/#photogrammetry/meshing](https://alicevision.org/#photogrammetry/meshing)
 """
 
+    commandLine = "aliceVision_meshing {allParams}"
+
+    cpu = desc.Level.INTENSIVE
+    ram = desc.Level.INTENSIVE
+
+    category = "Dense Reconstruction"
     inputs = [
         desc.File(
             name="input",

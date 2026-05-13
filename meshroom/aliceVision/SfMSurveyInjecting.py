@@ -6,13 +6,21 @@ from meshroom.core.utils import VERBOSE_LEVEL
 import json
 
 class SfMSurveyInjecting(desc.AVCommandLineNode):
+    """
+Inject geodetic or physical survey measurements from a JSON file into an SfMData scene.
+
+Survey measurements (e.g., GPS coordinates or physical distance measurements between
+known control points) provide absolute scale and orientation constraints. This node reads
+a JSON file containing survey data and embeds the measurements as constraints within the
+SfMData. These constraints can then be used to geo-register the reconstruction or to
+enforce a known metric scale during bundle adjustment.
+"""
+
 
     commandLine = "aliceVision_sfmSurveyInjecting {allParams}"
     size = desc.DynamicNodeSize("input")
     
     category = "Utils"
-    documentation = """Use a JSON file to inject survey measurements inside the SfMData."""
-
     inputs = [
         desc.File(
             name="input",

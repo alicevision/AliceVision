@@ -5,12 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ApplyCalibration(desc.AVCommandLineNode):
+    """
+Overwrite the intrinsic parameters of cameras in an SfMData scene with a pre-calibrated intrinsic.
+
+This node replaces the intrinsics of all (or selected) cameras in the input SfMData with
+the intrinsics from a calibration file. The calibration file can be either an SfMData file
+or a dedicated lens calibration file. This is useful when a precise factory or lab calibration
+is available and should be enforced instead of the intrinsics estimated during reconstruction.
+"""
+
     commandLine = "aliceVision_applyCalibration {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """ Overwrite intrinsics with a calibrated intrinsic. """
-
     inputs = [
         desc.File(
             name="input",

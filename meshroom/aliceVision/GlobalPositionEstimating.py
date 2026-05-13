@@ -5,12 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class GlobalPositionEstimating(desc.AVCommandLineNode):
+    """
+Estimate global camera translations and recover 3D structure from feature tracks.
+
+As part of the Global SfM pipeline, once global rotations have been estimated, this node
+solves for the global camera translations and the 3D positions of all scene landmarks.
+It formulates the problem as a linear system using the relative translation directions
+between image pairs and resolves scale ambiguities using the track observations.
+"""
+
     commandLine = "aliceVision_globalPositionEstimating {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Sparse Reconstruction"
-    documentation = """Estimate the global translations and structure given tracks."""
-
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.INTENSIVE
 

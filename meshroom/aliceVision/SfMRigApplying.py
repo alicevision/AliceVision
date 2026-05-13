@@ -5,17 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMRigApplying(desc.Node):
+    """
+Apply a calibrated rig configuration to an uncalibrated multi-camera SfMData.
+
+This node takes a source SfMData that contains a rig with a single shared pose for all
+sub-cameras, and a calibration SfMData that provides the relative transformations between
+the rig sub-poses (from a prior rig calibration). It copies the sub-pose offsets from
+the calibration file into the source file, converting each shared rig pose into individual
+calibrated sub-poses. The intrinsic IDs must match between the two files.
+"""
+
 
     size = desc.DynamicNodeSize("input")
     category = "Utils"
-    documentation = """
-    Assume the input file is a non calibrated rig with only one pose but N views
-    Assume the rig calibration file is a calibrated rig with one or more pose but N sub-poses
-    Assume the number of intrinsics is the same and the intrinsics ids are equals.
-    Copy information for the rig calibration file to the input file such that the poses of the 
-    input file are set to the sub-pose of the calibrated rig.
-    """
-
     inputs = [
         desc.File(
             name="input",

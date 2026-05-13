@@ -5,14 +5,22 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class MeshRemoveUnseenFaces(desc.AVCommandLineNode):
+    """
+Remove triangles from the mesh that are not visible from any camera.
+
+After dense meshing, some triangles may correspond to surfaces that are never directly
+observed in any input image (e.g., the underside of an object or geometry in occluded
+regions). This node removes such triangles by checking the visibility of each vertex or
+face against the known camera frusta and the reconstructed depth information, producing
+a cleaner mesh that contains only observable geometry.
+"""
+
     commandLine = "aliceVision_meshRemoveUnseenFaces {allParams}"
 
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.NORMAL
 
     category = "Dense Reconstruction"
-    documentation = """Remove triangles from the mesh when the vertices are not visible by any camera."""
-
     inputs = [
         desc.File(
             name="input",

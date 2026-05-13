@@ -25,14 +25,22 @@ def findMetadata(d, keys, defaultValue):
 
 
 class LdrToHdrCalibration(desc.AVCommandLineNode):
+    """
+Calibrate the camera response function (CRF) needed to merge LDR bracketed exposures into HDR images.
+
+The camera response function describes the non-linear relationship between the scene
+radiance and the pixel values recorded by the sensor. This node estimates the CRF from
+pixel samples collected across the bracketed exposure sequence (produced by LdrToHdrSampling).
+The calibrated response curve is required by the LdrToHdrMerge node to correctly recover
+the true radiance values from the multiple exposures.
+"""
+
     commandLine = "aliceVision_LdrToHdrCalibration {allParams}"
     size = desc.DynamicNodeSize("input")
     cpu = desc.Level.INTENSIVE
     ram = desc.Level.NORMAL
 
     category = "Panorama HDR"
-    documentation = """Calibrate LDR to HDR response curve from samples."""
-
     inputs = [
         desc.File(
             name="input",

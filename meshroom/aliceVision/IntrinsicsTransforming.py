@@ -4,12 +4,20 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 class IntrinsicsTransforming(desc.AVCommandLineNode):
+    """
+Convert all camera intrinsic models in an SfMData scene to a different camera type.
+
+Different pipeline stages may require or produce cameras with specific lens models
+(e.g., pinhole, radial distortion, fisheye). This node re-fits all intrinsics in
+the input SfMData to the chosen camera type, using the track observations to optimize
+the new model parameters. The output SfMData contains cameras of the target type
+while preserving the reconstructed poses and 3D structure.
+"""
+
     commandLine = "aliceVision_intrinsicsTransforming {allParams}"
     size = desc.DynamicNodeSize("input")
     
     category = "Utils"
-    documentation = """Transforms all intrinsics in the sfmData to a new type."""
-
     inputs = [
         desc.File(
             name="input",

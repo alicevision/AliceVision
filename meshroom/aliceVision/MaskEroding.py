@@ -6,6 +6,16 @@ from pyalicevision import parallelization as avpar
 
 
 class MaskEroding(desc.AVCommandLineNode):
+    """
+Erode binary masks by a configurable radius.
+
+Assumes the inputs are binary masks where non-zero pixels represent the foreground (valid) region.
+A pixel in the output mask is set to valid only if all pixels within the specified radius
+in the input mask are also valid. This operation shrinks the foreground region, which is useful
+for removing thin foreground border artefacts or ensuring that subsequent processing only
+operates on well-supported interior regions.
+"""
+
     commandLine = "aliceVision_maskEroding {allParams}"
 
     size = avpar.DynamicDirectorySize("input")
@@ -13,9 +23,6 @@ class MaskEroding(desc.AVCommandLineNode):
     commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
 
     category = "Utils"
-    documentation = """ Assumes the inputs are binary masks. 
-    Erode the valid part of the mask such that a new pixel is valid if and only if the input region is fully valid. """
-
     inputs = [
         desc.File(
             name="input",

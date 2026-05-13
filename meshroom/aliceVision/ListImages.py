@@ -5,11 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ListImages(desc.AVCommandLineNode):
+    """
+Create an SfMData scene from a set of image files or folders.
+
+This node scans the provided image files and directories, reads available metadata
+(e.g., EXIF focal length, sensor dimensions, serial number), and produces a minimal
+SfMData file listing all discovered views with their associated intrinsic parameters.
+The resulting SfMData is suitable as an input for the CameraInit node or other nodes
+that accept an SfMData file without requiring reconstructed poses.
+"""
+
     commandLine = "aliceVision_listImages {allParams}"
 
     category = "Utils"
-    documentation = """Generate a sfmData using a set of images."""
-
     inputs = [
         desc.ListAttribute(
             elementDesc=desc.File(
