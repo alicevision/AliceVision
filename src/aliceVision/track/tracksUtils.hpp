@@ -124,9 +124,9 @@ void tracksToIndexedMatches(const TracksMap& tracks, const std::vector<IndexT>& 
 /**
  * @brief Return the occurrence of tracks length.
  * @param[in] tracks all tracks of the scene as a map {trackId, track}
- * @param[out] occurenceTrackLength : the occurrence length of each trackId in the scene
+ * @param[out] occurrenceTrackLength : the occurrence length of each trackId in the scene
  */
-void tracksLength(const TracksMap& tracks, std::map<std::size_t, std::size_t>& occurenceTrackLength);
+void tracksLength(const TracksMap& tracks, std::map<std::size_t, std::size_t>& occurrenceTrackLength);
 
 /**
  * @brief Return a set containing the image Id considered in the tracks container.

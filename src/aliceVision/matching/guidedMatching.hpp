@@ -92,7 +92,7 @@ struct distanceRatio
      */
     inline bool update(std::size_t index, DistT dist)
     {
-        if (dist < bd)  // best than any previous
+        if (dist < bd)  // better than any previous
         {
             idx = index;
             // update and swap

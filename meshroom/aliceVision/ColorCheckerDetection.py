@@ -11,8 +11,8 @@ Performs Macbeth color checker chart detection.
 
 Outputs:
 - the detected color charts position and colors
-- the associated transform matrix from "theoric" to "measured" 
-assuming that the "theoric" Macbeth chart corners coordinates are: 
+- the associated transform matrix from "theoretical" to "measured" 
+assuming that the "theoretical" Macbeth chart corners coordinates are: 
 (0, 0), (1675, 0), (1675, 1125), (0, 1125)
 
 Dev notes:

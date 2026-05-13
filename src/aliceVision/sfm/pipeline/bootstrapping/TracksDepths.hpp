@@ -19,7 +19,7 @@ namespace sfm {
  * @param tracksMap the input map of tracks
  * @param tracksPerView tracks grouped by views 
  * @param viewId the view of interest identifier
- * @return false if an error occured
+ * @return false if an error occurred
 */
 bool buildSfmDataFromDepthMap(sfmData::SfMData & output,
                             const sfmData::SfMData & sfmData, 
