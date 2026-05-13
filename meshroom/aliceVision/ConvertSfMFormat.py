@@ -5,15 +5,19 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class ConvertSfMFormat(desc.AVCommandLineNode):
+    """
+Convert an SfM scene from one file format to another.
+
+Supported output formats include Alembic (ABC), SfMData (SFM/JSON), and others.
+The node can also be used to remove specific parts of the scene, such as filtering out
+all 3D landmarks or removing 2D feature observations, which is useful for reducing file size
+or preparing data for tools that only need camera poses and intrinsics.
+"""
+
     commandLine = "aliceVision_convertSfMFormat {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """
-Convert an SfM scene from one file format to another.
-It can also be used to remove specific parts of from an SfM scene (like filter all 3D landmarks or filter 2D observations).
-"""
-
     inputs = [
         desc.File(
             name="input",

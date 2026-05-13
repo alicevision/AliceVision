@@ -5,12 +5,20 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class NodalSfM(desc.AVCommandLineNode):
+    """
+Perform Structure-from-Motion for scenes captured with a camera undergoing pure rotation.
+
+Unlike standard SfM pipelines that require translation between views to triangulate 3D
+points, this node is designed for panoramic capture setups where the camera rotates around
+a single nodal point (no parallax). It estimates the relative rotation between each pair
+of images and recovers the global camera orientations. The output is an SfMData with
+calibrated rotations but no translational component, suitable for panorama stitching.
+"""
+
     commandLine = "aliceVision_nodalSfM {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Sparse Reconstruction"
-    documentation = """A Structure-From-Motion node specifically designed to handle pure rotation camera movements."""
-
     inputs = [
         desc.File(
             name="input",

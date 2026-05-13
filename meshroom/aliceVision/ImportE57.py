@@ -5,12 +5,20 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ImportE57(desc.AVCommandLineNode):
+    """
+Import one or more E57 point cloud files and generate an SfMData scene.
+
+E57 is a standard file format for storing 3D point cloud data captured by
+terrestrial laser scanners and other range imaging devices. This node reads E57 files,
+extracts the embedded scanner positions and point data, and creates a corresponding
+SfMData file. The imported scene can then be processed by the LiDAR meshing pipeline
+to produce a 3D mesh from the scanner measurements.
+"""
+
     commandLine = "aliceVision_importE57 {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """Import an E57 file and generate an SfMData."""
-
     inputs = [
         desc.ListAttribute(
             elementDesc=desc.File(

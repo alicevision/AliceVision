@@ -5,13 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SampleScene(desc.AVCommandLineNode):
+    """
+Generate a synthetic SfMData scene for testing and development purposes.
+
+This node creates a simple artificial scene (a cube or a sphere) populated with
+virtual cameras placed around the object and 3D landmarks sampled from the surface.
+The resulting SfMData file contains ground-truth camera poses and 3D point positions
+and can be used to validate SfM algorithms or to generate synthetic feature tracks
+with TracksSimulating.
+"""
+
     commandLine = "aliceVision_generateSampleScene {allParams}"
 
     category = "Utils"
-    documentation = """
-Generate a sample scene and a valid SfMData with camera poses, and save it to a given file path.
-"""
-
     inputs = [
         desc.ChoiceParam(
             name="scene",

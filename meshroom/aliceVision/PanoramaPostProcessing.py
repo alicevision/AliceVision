@@ -8,13 +8,20 @@ from meshroom.core.utils import COLORSPACES, VERBOSE_LEVEL
 
 
 class PanoramaPostProcessing(desc.CommandLineNode):
+    """
+Apply post-processing operations to a completed panoramic image.
+
+After the panorama has been assembled and merged, this node performs final finishing
+steps such as tone mapping, exposure correction, and conversion to standard output
+formats (e.g., JPEG, PNG, or LDR EXR). It can also apply an output color space
+transform to match the target display or delivery specification.
+"""
+
     commandLine = "aliceVision_panoramaPostProcessing {allParams}"
     cpu = desc.Level.NORMAL
     ram = desc.Level.INTENSIVE
 
     category = "Panorama HDR"
-    documentation = """Post-process the panorama."""
-
     inputs = [
         desc.File(
             name="inputPanorama",

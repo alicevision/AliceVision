@@ -14,6 +14,17 @@ def outputImagesValueFunct(attr):
 
 
 class ImageProcessing(desc.AVCommandLineNode):
+    """
+Convert and apply image processing operations to all images referenced in an SfMData scene.
+
+This versatile node can perform a wide variety of per-image transformations, including:
+color space conversion, tone mapping, sharpening, noise reduction, downscaling, and
+format conversion. It can also apply lens correction (undistortion) to produce pinhole
+images. The processed images are saved to the output folder and the SfMData is updated
+to reference them. This node is commonly used to prepare images for downstream processing
+or to export final deliverables.
+"""
+
     commandLine = "aliceVision_imageProcessing {allParams}"
     size = avpar.DynamicViewsSize("input")
     
@@ -21,8 +32,6 @@ class ImageProcessing(desc.AVCommandLineNode):
     commandLineRange = '--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}'
 
     category = "Utils"
-    documentation = """Convert or apply filtering to the input images."""
-
     inputs = [
         desc.File(
             name="input",

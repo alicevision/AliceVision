@@ -5,15 +5,15 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class TracksBuilding(desc.AVCommandLineNode):
-    commandLine = "aliceVision_tracksBuilding {allParams}"
-    size = desc.DynamicNodeSize("input")
-
-    category = "Sparse Reconstruction"
-    documentation = """
+    """
 This node fuses all feature matches between image pairs into tracks.
 Each track represents a candidate point in space, visible from multiple cameras.
 """
 
+    commandLine = "aliceVision_tracksBuilding {allParams}"
+    size = desc.DynamicNodeSize("input")
+
+    category = "Sparse Reconstruction"
     inputs = [
         desc.File(
             name="input",

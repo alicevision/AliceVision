@@ -5,6 +5,11 @@ from meshroom.core.utils import VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class CheckerboardDetection(desc.AVCommandLineNode):
+    """
+Detect checkerboard structures in a set of images.
+The detection method also supports nested calibration grids.
+"""
+
     commandLine = "aliceVision_checkerboardDetection {allParams}"
     size = avpar.DynamicViewsSize("input")
     
@@ -12,11 +17,6 @@ class CheckerboardDetection(desc.AVCommandLineNode):
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
     category = "Other"
-    documentation = """
-Detect checkerboard structures in a set of images.
-The detection method also supports nested calibration grids.
-"""
-
     inputs = [
         desc.File(
             name="input",

@@ -5,14 +5,14 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ExportDistortion(desc.AVCommandLineNode):
-    commandLine = "aliceVision_exportDistortion {allParams}"
-
-    category = "Export"
-    documentation = """
+    """
 Export the lens distortion model as Nuke node and STMaps.
 It also allows to export an undistorted image of the lens grids for validation.
 """
 
+    commandLine = "aliceVision_exportDistortion {allParams}"
+
+    category = "Export"
     inputs = [
         desc.File(
             name="input",

@@ -327,12 +327,7 @@ def readSfMData(sfmFile):
 
 
 class CameraInit(desc.AVCommandLineNode, desc.InitNode):
-    commandLine = "aliceVision_cameraInit {allParams} --allowSingleView 1"  # don't throw an error if there is only one image
-
-    size = desc.DynamicNodeSize("viewpoints")
-
-    category = "Sparse Reconstruction"
-    documentation = """
+    """
 This node describes your dataset. It lists the Viewpoints candidates, the guess about the type of optic, the initial
 focal length and which images are sharing the same internal camera parameters, as well as potential camera rigs.
 
@@ -349,6 +344,11 @@ The needed metadata are:
  differentiated and their internal parameters are optimized separately (in the photogrammetry case).
 """
 
+    commandLine = "aliceVision_cameraInit {allParams} --allowSingleView 1"  # don't throw an error if there is only one image
+
+    size = desc.DynamicNodeSize("viewpoints")
+
+    category = "Sparse Reconstruction"
     inputs = [
         desc.ListAttribute(
             name="viewpoints",

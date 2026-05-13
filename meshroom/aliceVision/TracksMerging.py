@@ -7,11 +7,19 @@ import os.path
 
 
 class TracksMerging(desc.AVCommandLineNode):
+    """
+Merge multiple feature track files into a single unified track file.
+
+When feature tracks have been computed independently for different subsets of images
+(e.g., for parallel processing or multi-pass matching), this node combines all the
+individual track files into one. Tracks that span the same feature across different
+files are reconciled to maintain consistency. The merged track file is required as
+input by several SfM nodes.
+"""
+
     commandLine = "aliceVision_tracksMerging {allParams}"
 
     category = "Utils"
-    documentation = """Merge multiple track files into a single one."""
-
     inputs = [
         desc.ListAttribute(
             elementDesc=desc.File(

@@ -5,10 +5,16 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ConvertMesh(desc.AVCommandLineNode):
+    """
+Convert a 3D mesh from one file format to another.
+
+Supported formats include OBJ, FBX, glTF, GLB, STL and PLY. The node can optionally flip
+face normals (which may be required depending on the winding-order convention used by the
+target application) and copy associated texture image files to the output folder.
+"""
+
     commandLine = "aliceVision_convertMesh {allParams}"
     category = "Utils"
-    documentation = """Convert a mesh to another mesh format."""
-
     inputs = [
         desc.File(
             name="inputMesh",

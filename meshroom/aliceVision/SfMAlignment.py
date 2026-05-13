@@ -7,11 +7,7 @@ import os.path
 
 
 class SfMAlignment(desc.AVCommandLineNode):
-    commandLine = "aliceVision_sfmAlignment {allParams}"
-    size = desc.DynamicNodeSize("input")
-
-    category = "Utils"
-    documentation = """
+    """
 This node allows to change the coordinate system of one SfM scene to align it on another one.
 
 The alignment can be based on:
@@ -22,6 +18,10 @@ The alignment can be based on:
  * from_markers: Align from markers with the same Id
 """
 
+    commandLine = "aliceVision_sfmAlignment {allParams}"
+    size = desc.DynamicNodeSize("input")
+
+    category = "Utils"
     inputs = [
         desc.File(
             name="input",

@@ -5,12 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class GlobalRotationEstimating(desc.AVCommandLineNode):
+    """
+Estimate global camera rotations from relative rotation measurements between image pairs.
+
+As the first step of the Global SfM pipeline, this node aggregates all pairwise relative
+rotations (estimated during feature matching and geometric filtering) into a consistent
+set of absolute orientations for all cameras. It uses a robust rotation averaging method
+to handle outlier relative rotations and recover the global rotation of every view.
+"""
+
     commandLine = "aliceVision_globalRotationEstimating {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Sparse Reconstruction"
-    documentation = """Estimate the global rotation given tracks."""
-
     inputs = [
         desc.File(
             name="input",

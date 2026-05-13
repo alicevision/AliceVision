@@ -5,12 +5,19 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class PanoramaEstimation(desc.AVCommandLineNode):
+    """
+Estimate relative camera rotations between all image pairs for panorama stitching.
+
+This node analyses feature matches across image pairs and estimates the rotation
+between each pair of cameras. It assumes that all cameras rotate around a common
+nodal point (no translation), which is the typical capture model for panoramic photography.
+The result is an SfMData containing the estimated rotation for each view.
+"""
+
     commandLine = "aliceVision_panoramaEstimation {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Panorama HDR"
-    documentation = """Estimate relative camera rotations between input images."""
-
     inputs = [
         desc.File(
             name="input",

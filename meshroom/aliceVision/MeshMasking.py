@@ -5,10 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class MeshMasking(desc.AVCommandLineNode):
+    """
+Remove mesh triangles that project onto masked (background) regions in the input images.
+
+Using the image masks and the known camera poses, this node identifies triangles in
+the mesh whose projections overlap with background pixels (i.e., pixels marked as
+invalid by the mask). Such triangles are removed from the mesh, focusing the geometry
+on the foreground object of interest. This is particularly effective for cleaning up
+reconstruction artefacts on surfaces that were only partially visible or that correspond
+to unwanted background geometry.
+"""
+
     commandLine = "aliceVision_meshMasking {allParams}"
     category = "Mesh Post-Processing"
-    documentation = """Decimate triangles based on image masks."""
-
     inputs = [
         desc.File(
             name="input",
