@@ -54,7 +54,7 @@ class PointFeature
     Vec2f getOrientationVector() const { return Vec2f(std::cos(orientation()), std::sin(orientation())); }
 
     /**
-     * @brief Return the orientation of the feature as a vector scaled to the the scale of the feature.
+     * @brief Return the orientation of the feature as a vector scaled to the scale of the feature.
      * @return a vector corresponding to the orientation of the feature scaled at the scale of the feature.
      */
     Vec2f getScaledOrientationVector() const { return scale() * getOrientationVector(); }

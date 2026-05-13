@@ -218,7 +218,7 @@ int aliceVision_main(int argc, char* argv[])
     // clang-format on
 
     CmdLine cmdline("Dense Reconstruction.\n"
-                    "This program estimate a depth map for each input calibrated camera using Plane Sweeping, a multi-view stereo algorithm notable "
+                    "This program estimates a depth map for each input calibrated camera using Plane Sweeping, a multi-view stereo algorithm notable "
                     "for its efficiency on modern graphics hardware (GPU).\n"
                     "AliceVision depthMapEstimation");
     cmdline.add(requiredParams);

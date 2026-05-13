@@ -335,12 +335,12 @@ When you import new images into Meshroom, this node is automatically configured 
 The software can support images without any metadata but it is recommended to have them for robustness.
 
 ### Metadata
-Metadata allow images to be grouped together and provide an initialization of the focal length (in pixel unit).
+Metadata allows images to be grouped together and provide an initialization of the focal length (in pixel unit).
 The needed metadata are:
  * **Focal Length**: the focal length in mm.
- * **Make** & **Model**: this information allows to convert the focal in mm into a focal length in pixels using an
+ * **Make** & **Model**: this information allows converting the focal in mm into a focal length in pixels using an
  embedded sensor database.
- * **Serial Number**: allows to uniquely identify a device so multiple devices with the same Make, Model can be
+ * **Serial Number**: allows uniquely identifying a device so multiple devices with the same Make, Model can be
  differentiated and their internal parameters are optimized separately (in the photogrammetry case).
 """
 
@@ -420,7 +420,7 @@ The needed metadata are:
         desc.ChoiceParam(
             name="rawColorInterpretation",
             label="RAW Color Interpretation",
-            description="Allows to choose how RAW data are color processed:\n"
+            description="Allows you to choose how RAW data are color processed:\n"
                         " - None: Debayering without any color processing.\n"
                         " - LibRawNoWhiteBalancing: Simple neutralization.\n"
                         " - LibRawWhiteBalancing: Use internal white balancing from libraw.\n"
@@ -449,7 +449,7 @@ The needed metadata are:
         desc.ChoiceParam(
             name="viewIdMethod",
             label="ViewId Method",
-            description="Allows to choose the way the viewID is generated:\n"
+            description="Allows you to choose the way the viewID is generated:\n"
                         " - metadata : Generate viewId from image metadata.\n"
                         " - filename : Generate viewId from filename using regex.",
             value="metadata",
