@@ -4,6 +4,7 @@ import json
 
 from meshroom.core import desc
 from meshroom.core.utils import COLORSPACES, VERBOSE_LEVEL
+from .ldrToHdrCommon import ImageCountShouldBeAMultipleOfBracketNumber
 
 def findMetadata(d, keys, defaultValue):
     v = None
@@ -62,8 +63,7 @@ the true radiance values from the multiple exposures.
             range=(0, 15, 1),
             invalidate=False,
             commandLineGroup="user",  # not used directly on the command line
-            errorMessage="The set number of brackets is not a multiple of the number of input images.\n"
-                         "Errors will occur during the computation.",
+            validators=[ImageCountShouldBeAMultipleOfBracketNumber()],
             exposed=True,
         ),
         desc.IntParam(
@@ -188,23 +188,15 @@ the true radiance values from the multiple exposures.
         if "userNbBrackets" not in node.getAttributes().keys():
             # Old version of the node
             return
-        node.userNbBrackets.validValue = True  # Reset the status of "userNbBrackets"
 
         cameraInitOutput = node.input.inputRootLink
         if not cameraInitOutput:
             node.nbBrackets.value = 0
             return
         if node.userNbBrackets.value != 0:
-            # The number of brackets has been manually forced: check whether it is valid or not
-            if cameraInitOutput and cameraInitOutput.node and cameraInitOutput.node.hasAttribute("viewpoints"):
-                viewpoints = cameraInitOutput.node.viewpoints.value
-                # The number of brackets should be a multiple of the number of input images
-                if (len(viewpoints) % node.userNbBrackets.value != 0):
-                    node.userNbBrackets.validValue = False
-                else:
-                    node.userNbBrackets.validValue = True
-            node.nbBrackets.value = node.userNbBrackets.value
-            return
+            if len(node.userNbBrackets.getErrorMessages()) > 0:
+                node.nbBrackets.value = node.userNbBrackets.value
+                return
 
         if not cameraInitOutput.node.hasAttribute("viewpoints"):
             if cameraInitOutput.node.hasAttribute("input"):

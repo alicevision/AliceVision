@@ -1,6 +1,7 @@
 __version__ = "5.0"
 
 from meshroom.core import desc
+from meshroom.core.desc.validators import success, error
 from meshroom.core.utils import EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
 
 # List of supported video extensions (provided by OpenImageIO)
@@ -309,12 +310,9 @@ class KeyframeSelection(desc.AVCommandLineNode):
                         "are used to generate the output SfMData file.",
             value="none",
             values=["none", "exr", "jpg", "png"],
-            validValue=lambda node: not (any(ext in input.value.lower()
-                                             for ext in videoExts for
-                                             input in node.inputPaths.value)
-                                             and node.outputExtension.value == "none"),
-            errorMessage="A video input has been provided. The output extension should be "
-                         "different from 'none'.",
+            validators=[
+                lambda node, _ : success() if not (any(ext in input.value.lower() for ext in videoExts for input in node.inputPaths.value) and node.outputExtension.value == "none") else error("A video input has been provided. The output extension should be different from 'none'.")
+            ],
         ),
         desc.ChoiceParam(
             name="storageDataType",
