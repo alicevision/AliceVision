@@ -42,7 +42,7 @@ These differ slightly depending on the target architecture you want to build for
 ### arm64 (Apple Silicon Macs, M-CPUs)
 
 - [x] A working C/C++ compiler with C++20 support (e.g., Xcode/Xcode Command Line Tools)[^6]
-- [x] cmake >= 3.25 but < 4.0 (some dependencies do not support CMake 4)
+- [x] cmake >= 3.30 but < 4.0 (some dependencies do not support CMake 4)
 - [x] make (included in Xcode/Xcode Command Line Tools)
 - [x] autoconf (Homebrew, MacPorts, Nix)
 - [x] automake (Homebrew, MacPorts, Nix)
