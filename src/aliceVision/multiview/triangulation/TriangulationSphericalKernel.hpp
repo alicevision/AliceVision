@@ -109,7 +109,10 @@ public:
         sampledPts.push_back(_lifted[idx]);
     }
 
-    _solver.solve(sampledPts, sampledMats, models, *weights);
+    if(weights != nullptr)
+        _solver.solve(sampledPts, sampledMats, models, *weights);
+    else
+        _solver.solve(sampledPts, sampledMats, models);
   }
 
 
