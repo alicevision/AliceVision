@@ -5,8 +5,12 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "P4PfSolver.hpp"
+
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+
+#include <Eigen/SVD>
+#include <Eigen/Eigenvalues>
 
 #include <cmath>
 #include <cstring>

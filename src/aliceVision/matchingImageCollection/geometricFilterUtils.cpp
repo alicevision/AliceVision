@@ -5,7 +5,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "geometricFilterUtils.hpp"
+
 #include <ceres/ceres.h>
+#include <Eigen/SVD>
 
 namespace aliceVision {
 namespace matchingImageCollection {

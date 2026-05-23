@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <Eigen/Eigenvalues>
 
 namespace aliceVision {
 namespace lightingEstimation {

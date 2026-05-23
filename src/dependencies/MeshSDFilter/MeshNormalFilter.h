@@ -36,6 +36,8 @@
 #include "SDFilter.h"
 #include <cmath>
 #include <algorithm>
+#include <Eigen/SVD>
+#include <Eigen/QR>
 
 namespace SDFilter
 {

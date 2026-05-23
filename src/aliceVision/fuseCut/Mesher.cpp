@@ -9,6 +9,7 @@
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <boost/atomic/atomic_ref.hpp>
+#include <boost/math/constants/constants.hpp>
 
 namespace aliceVision {
 namespace fuseCut {

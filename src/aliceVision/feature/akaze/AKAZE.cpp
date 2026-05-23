@@ -13,6 +13,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/config.hpp>
 
+#include <Eigen/LU>
+
 namespace aliceVision {
 namespace feature {
 

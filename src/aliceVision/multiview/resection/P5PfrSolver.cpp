@@ -5,10 +5,15 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "P5PfrSolver.hpp"
+
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/algebra.hpp>
+
+#include <Eigen/SVD>
+#include <Eigen/LU>
+#include <Eigen/Eigenvalues>
 
 #include <cmath>
 #include <iostream>

@@ -26,6 +26,7 @@
 // Eigen
 #include <Eigen/Dense>
 #include <Eigen/Core>
+#include <Eigen/QR>
 
 #include <filesystem>
 #include <math.h>

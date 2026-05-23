@@ -12,6 +12,8 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 
+#include <Eigen/SVD>
+
 namespace aliceVision {
 namespace robustEstimation {
 

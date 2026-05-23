@@ -10,6 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <aliceVision/geometry/lie.hpp>
+#include <boost/math/constants/constants.hpp>
 
 namespace aliceVision {
 namespace geometry {
