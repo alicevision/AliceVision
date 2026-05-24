@@ -13,7 +13,8 @@ jobs:
       archivePath: '${{ github.workspace }}\dependencies\installed.zip'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
-      ALICEVISION_ROOT: '${{ github.workspace }}\install'
+      ALICEVISION_ROOT: '${{ github.workspace }}/install'
+      ALICEVISION_BUNDLE: ${{ github.workspace }}/install/bundle
       ALICEVISION_LIBPATH: '${{ github.workspace }}/install/bundle/bin'
       PYTHONPATH: '${{ github.workspace }}/install/bundle/lib/python'
       SCCACHE_GHA_ENABLED: "true"
@@ -151,6 +152,7 @@ jobs:
                             -DBUILD_SHARED_LIBS=ON
                             -DTARGET_ARCHITECTURE=core
                             -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }}
+                            -DALICEVISION_BUNDLE_PREFIX:PATH=${{ env.ALICEVISION_BUNDLE }}
                             -DALICEVISION_BUILD_TESTS=ON
                             -DALICEVISION_USE_OPENCV=ON
                             -DALICEVISION_USE_CUDA=ON
@@ -174,7 +176,7 @@ jobs:
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
           buildWithCMakeArgs: '--config Release --target bundle --parallel ${{ env.NUM_CORES }}'
-          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
+          cmakeAppendedArgs: -DBUNDLE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_BUNDLE }}
           cmakeBuildType: Release
           buildWithCMake: true
 
@@ -196,3 +198,23 @@ jobs:
           useVcpkgToolchainFile: true
           buildWithCMake: true
 
+      # ── Archive & upload for nightly release ────────
+      # Only runs when called from nightly.yml; skipped on regular CI.
+      - name: Create archive
+        if: github.workflow == 'Nightly'
+        id: archive
+        shell: pwsh
+        run: |
+          $commitShort = (git rev-parse --short=8 HEAD).Trim()
+          $date = (Get-Date -Format "yyyyMMdd")
+          $archive = "AliceVision-nightly-${date}-${commitShort}-windows.zip"
+          Compress-Archive -Path "$env:ALICEVISION_BUNDLE\*" -DestinationPath $archive
+          echo "filename=$archive" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+ 
+      - name: Upload archive artifact
+        if: github.workflow == 'Nightly'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-package
+          path: ${{ steps.archive.outputs.filename }}
+          retention-days: 3
