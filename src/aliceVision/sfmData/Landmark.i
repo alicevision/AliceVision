@@ -23,6 +23,9 @@
 %ignore aliceVision::sfmData::Landmark::_X;
 %ignore aliceVision::sfmData::Landmark::_pointFetcher;
 
+// getObservations() returns stl::flat_map which is not natively supported by SWIG.
+// The correct way to access it in python is to use getMapObservations, returning MapObservations (std::map).
+
 //Add new swig only C++ code
 %extend aliceVision::sfmData::Landmark {
 
@@ -45,7 +48,7 @@
         color.b() = value.z();
         $self->setRgb(color);
     }
-    
+
     // If the user asks for the rgb property
     // It is not a direct access to the rgb
     // variable but a getter/setter
