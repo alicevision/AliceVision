@@ -5,7 +5,7 @@ For specific build instructions for macOS see [INSTALL_macOS.md](./INSTALL_macOS
 ## Build instructions
 
 Required tools:
-* CMake >= 3.11
+* CMake >= 3.30
 * Git
 * C/C++ compiler (gcc or Visual Studio or clang) with C++17 support (i.e. gcc >= 7, clang >= 5, msvc >= 19.15, cuda >= 11.0).
 
