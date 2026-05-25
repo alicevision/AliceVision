@@ -18,7 +18,7 @@
 #include <aliceVision/depthMap/DepthMapEstimator.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 #endif
-#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_CUDA)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_DEPTHMAP_BACKEND_SYCL)
 #include <aliceVision/depthMap_sycl/computeOnMultiDevices.hpp>
 #include <aliceVision/depthMap_sycl/DepthMapEstimator.hpp>
 #endif

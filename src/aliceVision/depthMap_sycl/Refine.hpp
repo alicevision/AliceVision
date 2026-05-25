@@ -12,6 +12,7 @@
 #include <aliceVision/depthMap_sycl/Tile.hpp>
 #include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
+#include <aliceVision/depthMap_sycl/sycl/DeviceCache.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
 #include <vector>
@@ -55,6 +56,7 @@ class Refine
     sycl::event refineRc(const Tile& tile,
                          const SyclDeviceMemoryPitched<sycl::float2, 2>& in_sgmDepthThicknessMap_dmp,
                          const SyclDeviceMemoryPitched<sycl::float3, 2>& in_sgmNormalMap_dmp,
+                         DeviceCache& deviceCache,
                          sycl::event prerequisite);
 
   private:
@@ -64,13 +66,13 @@ class Refine
      * @brief Refine and fuse the given depth/sim map using volume strategy.
      * @param[in] tile The given tile for Refine computation
      */
-    sycl::event refineAndFuseDepthSimMap(const Tile& tile, sycl::event prerequisite);
+    sycl::event refineAndFuseDepthSimMap(const Tile& tile, DeviceCache& deviceCache, sycl::event prerequisite);
 
     /**
      * @brief Optimize the refined depth/sim maps.
      * @param[in] tile The given tile for Refine computation
      */
-    sycl::event optimizeDepthSimMap(const Tile& tile, sycl::event prerequisite);
+    sycl::event optimizeDepthSimMap(const Tile& tile, DeviceCache& deviceCache, sycl::event prerequisite);
 
     /**
      * @brief Compute and write the normal map from the input depth/sim map.

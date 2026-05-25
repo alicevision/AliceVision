@@ -32,7 +32,7 @@ DepthMapEstimator::DepthMapEstimator(const mvsUtils::MultiViewParams& mp,
     _sgmParams(sgmParams),
     _refineParams(refineParams),
     _ic(mp, image::EImageColorSpace::LINEAR), // share host cache between devices
-    _deviceCache(DeviceCache::getInstance()) // get device cache instance
+    _deviceCache() // construct device cache instance
 {
     // compute maximum downscale (scaleStep)
     const int maxDownscale = std::max(_sgmParams.scale * _sgmParams.stepXY, _refineParams.scale * _refineParams.stepXY);
@@ -69,7 +69,7 @@ DepthMapEstimator::ComputeObject& DepthMapEstimator::ComputeObjectBuffer::getCom
     containerLock.lock_shared();
     for(auto& obj : objects)
     {
-        if(obj.lock.try_lock()) { obj.users++; return obj; }
+        if(obj.lock.try_lock()) { containerLock.unlock_shared(); obj.users++; return obj; }
         else if(leastUserObj == nullptr || obj.users < leastUserObj->users) leastUserObj = &obj;
     }
     containerLock.unlock_shared();
@@ -332,7 +332,7 @@ void DepthMapEstimator::compute(const sycl::device& device, const std::vector<in
             sgmDepthList.checkStartingAndStoppingDepth();
 
             // compute Semi-Global Matching
-            sgm.sgmRc(tile, sgmDepthList, sycl::event());
+            sgm.sgmRc(tile, sgmDepthList, _deviceCache, sycl::event());
 
             if (_depthMapParams.useRefine)
             {
@@ -342,7 +342,7 @@ void DepthMapEstimator::compute(const sycl::device& device, const std::vector<in
 
                 // compute Refine
                 Refine& refine = refineOpt.value();
-                refine.refineRc(tile, sgm.getDeviceDepthThicknessMap(), sgm.getDeviceNormalMap(), sycl::event());
+                refine.refineRc(tile, sgm.getDeviceDepthThicknessMap(), sgm.getDeviceNormalMap(), _deviceCache, sycl::event());
 
                 // copy Refine depth/similarity map from device to host
                 bufferPerTileLocks.at(tile.id).lock(); // make sure we have flushed memory
@@ -391,7 +391,7 @@ void DepthMapEstimator::compute(const sycl::device& device, const std::vector<in
         if (asyncObject.has_value())
         {
             ALICEVISION_LOG_TRACE(deviceName << ": holding for completion of previous camera");
-            asyncObject.value().wait();
+            if(asyncObject.value().valid()) asyncObject.value().get();
         }
 
         // asynchronously write images to disk
@@ -412,7 +412,7 @@ void DepthMapEstimator::compute(const sycl::device& device, const std::vector<in
     }
 
     // wait for computation to finish
-    asyncObject.value().wait();
+    if(asyncObject.value().valid()) asyncObject.value().get();
     ALICEVISION_LOG_TRACE(deviceName << ": finished waiting on computation");
 
     // merge intermediate results tiles if needed and desired

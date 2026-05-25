@@ -13,7 +13,6 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap_sycl/depthMapUtils.hpp>
 #include <aliceVision/depthMap_sycl/volumeIO.hpp>
-#include <aliceVision/depthMap_sycl/sycl/DeviceCache.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/deviceDepthSimilarityMap.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/deviceSimilarityVolume.hpp>
 
@@ -69,6 +68,7 @@ namespace depthMap_sycl {
 sycl::event Refine::refineRc(const Tile& tile,
                              const SyclDeviceMemoryPitched<sycl::float2, 2>& in_sgmDepthThicknessMap_dmp,
                              const SyclDeviceMemoryPitched<sycl::float3, 2>& in_sgmNormalMap_dmp,
+                             DeviceCache& deviceCache,
                              sycl::event prerequisite)
 {
     const IndexT viewId = _mp.getViewId(tile.rc);
@@ -82,9 +82,6 @@ sycl::event Refine::refineRc(const Tile& tile,
     {
         // downscale the region of interest
         const ROI downscaledRoi = downscaleROI(tile.roi, _refineParams.scale * _refineParams.stepXY);
-
-        // get device cache instance
-        DeviceCache& deviceCache = DeviceCache::getInstance();
 
         // get camera params
         CameraParams camParams = getCameraParameters(tile.rc, _refineParams.scale, _mp);
@@ -117,7 +114,7 @@ sycl::event Refine::refineRc(const Tile& tile,
     if (_refineParams.useRefineFuse)
     {
         // refine and fuse with volume strategy
-        depthMap = refineAndFuseDepthSimMap(tile, upscaledDepthPixSizeMap);
+        depthMap = refineAndFuseDepthSimMap(tile, deviceCache, upscaledDepthPixSizeMap);
     }
     else
     {
@@ -141,7 +138,7 @@ sycl::event Refine::refineRc(const Tile& tile,
     // optimize depth/sim map
     if (_refineParams.useColorOptimization && _refineParams.optimizationNbIterations > 0)
     {
-        depthMap = optimizeDepthSimMap(tile, depthMap);
+        depthMap = optimizeDepthSimMap(tile, deviceCache, depthMap);
     }
     else
     {
@@ -158,7 +155,7 @@ sycl::event Refine::refineRc(const Tile& tile,
     return depthMap;
 }
 
-sycl::event Refine::refineAndFuseDepthSimMap(const Tile& tile, sycl::event prerequisite)
+sycl::event Refine::refineAndFuseDepthSimMap(const Tile& tile, DeviceCache& deviceCache, sycl::event prerequisite)
 {
     ALICEVISION_LOG_INFO(tile << "Refine and fuse depth/sim map volume.");
 
@@ -171,9 +168,6 @@ sycl::event Refine::refineAndFuseDepthSimMap(const Tile& tile, sycl::event prere
     // initialize the similarity volume at 0
     // each tc filtered and inverted similarity value will be summed in this volume
     prerequisite = sycl_volumeInitialize(_volumeRefineSim_dmp, TSimRefine(0.f), prerequisite);
-
-    // get device cache instance
-    DeviceCache& deviceCache = DeviceCache::getInstance();
 
     // get R device mipmap image from cache
     const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue.get_device());
@@ -230,15 +224,12 @@ sycl::event Refine::refineAndFuseDepthSimMap(const Tile& tile, sycl::event prere
     return prerequisite;
 }
 
-sycl::event Refine::optimizeDepthSimMap(const Tile& tile, sycl::event prerequisite)
+sycl::event Refine::optimizeDepthSimMap(const Tile& tile, DeviceCache& deviceCache, sycl::event prerequisite)
 {
     ALICEVISION_LOG_INFO(tile << "Color optimize depth/sim map.");
 
     // downscale the region of interest
     const ROI downscaledRoi = downscaleROI(tile.roi, _refineParams.scale * _refineParams.stepXY);
-
-    // get R device camera from cache
-    DeviceCache& deviceCache = DeviceCache::getInstance();
 
     // get camera params
     CameraParams camParams = getCameraParameters(tile.rc, _refineParams.scale, _mp);

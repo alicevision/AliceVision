@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <sycl/sycl.hpp>
+#include <aliceVision/depthMap_sycl/sycl/sycl.hpp>
 
 namespace aliceVision {
 namespace depthMap_sycl {

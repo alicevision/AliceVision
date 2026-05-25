@@ -14,6 +14,7 @@
 #include <aliceVision/depthMapCommon/SgmParams.hpp>
 #include <aliceVision/depthMap_sycl/SgmDepthList.hpp>
 #include <aliceVision/depthMap_sycl/sycl/memory.hpp>
+#include <aliceVision/depthMap_sycl/sycl/DeviceCache.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>
 
 #include <vector>
@@ -67,7 +68,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] tileDepthList the tile SGM depth list
      */
-    sycl::event sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite);
+    sycl::event sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, DeviceCache& deviceCache, sycl::event prerequisite);
 
     /**
      * @brief Smooth SGM result thickness map
@@ -85,7 +86,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] tileDepthList the tile SGM depth list
      */
-    sycl::event computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite);
+    sycl::event computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDepthList, DeviceCache& deviceCache, sycl::event prerequisite);
 
     /**
      * @brief Optimize the given similarity volume.
@@ -94,7 +95,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] tileDepthList the tile SGM depth list
      */
-    sycl::event optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite);
+    sycl::event optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDepthList, DeviceCache& deviceCache, sycl::event prerequisite);
 
     /**
      * @brief Retrieve the best depths in the given similarity volume.

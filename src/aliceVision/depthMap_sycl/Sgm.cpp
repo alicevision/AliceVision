@@ -10,7 +10,6 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap_sycl/depthMapUtils.hpp>
 #include <aliceVision/depthMap_sycl/volumeIO.hpp>
-#include <aliceVision/depthMap_sycl/sycl/DeviceCache.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/deviceDepthSimilarityMap.hpp>
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/deviceSimilarityVolume.hpp>
 
@@ -90,7 +89,7 @@ Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
     }
 }
 
-sycl::event Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite)
+sycl::event Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, DeviceCache& deviceCache, sycl::event prerequisite)
 {
     const IndexT viewId = _mp.getViewId(tile.rc);
 
@@ -109,7 +108,7 @@ sycl::event Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, sycl
     sycl::event copyDepthData = _depths_dmp.copyFrom(_depths_hmh, _queue, prerequisite);
 
     // compute best sim and second best sim volumes
-    sycl::event computeVolume = computeSimilarityVolumes(tile, tileDepthList, copyDepthData);
+    sycl::event computeVolume = computeSimilarityVolumes(tile, tileDepthList, deviceCache, copyDepthData);
 
     // export intermediate volume information (if requested by user)
     exportVolumeInformation(tile, tileDepthList, _volumeSecBestSim_dmp, "beforeFiltering", computeVolume);
@@ -120,7 +119,7 @@ sycl::event Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList, sycl
     sycl::event optimizeVolume;
     if (_sgmParams.doSgmOptimizeVolume)
     {
-        optimizeVolume = optimizeSimilarityVolume(tile, tileDepthList, computeVolume);
+        optimizeVolume = optimizeSimilarityVolume(tile, tileDepthList, deviceCache, computeVolume);
     }
     else
     {
@@ -180,7 +179,7 @@ sycl::event Sgm::smoothThicknessMap(const Tile& tile, const depthMapCommon::Refi
     return compute;
 }
 
-sycl::event Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite)
+sycl::event Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& tileDepthList, DeviceCache& deviceCache, sycl::event prerequisite)
 {
     ALICEVISION_LOG_INFO(tile << "SGM Compute similarity volume.");
 
@@ -190,9 +189,6 @@ sycl::event Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& 
     // initialize the two similarity volumes at 255
     prerequisite = sycl_volumeInitialize<TSim>(_volumeBestSim_dmp, 255.f, prerequisite);
     prerequisite = sycl_volumeInitialize<TSim>(_volumeSecBestSim_dmp, 255.f, prerequisite);
-
-    // get device cache instance
-    DeviceCache& deviceCache = DeviceCache::getInstance();
 
     // get R device mipmap image from cache
     const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue.get_device());
@@ -254,7 +250,7 @@ sycl::event Sgm::computeSimilarityVolumes(const Tile& tile, const SgmDepthList& 
     return prerequisite;
 }
 
-sycl::event Sgm::optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDepthList, sycl::event prerequisite)
+    sycl::event Sgm::optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& tileDepthList, DeviceCache& deviceCache, sycl::event prerequisite)
 {
     ALICEVISION_LOG_INFO(tile << "SGM Optimizing volume.");
 
@@ -262,7 +258,6 @@ sycl::event Sgm::optimizeSimilarityVolume(const Tile& tile, const SgmDepthList& 
     const ROI downscaledRoi = downscaleROI(tile.roi, _sgmParams.scale * _sgmParams.stepXY);
 
     // get R device mipmap image from cache
-    DeviceCache& deviceCache = DeviceCache::getInstance();
     const DeviceMipmapImage& rcDeviceMipmapImage = deviceCache.requestMipmapImage(tile.rc, _mp, _queue.get_device());
 
     sycl::event finished = sycl_volumeOptimize(

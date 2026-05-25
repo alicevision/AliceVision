@@ -121,7 +121,7 @@ class DepthMapEstimator : public IDeviceJob
     PerDevice<ComputeObjectBuffer> _objectBuffers;              //< objects used in the various stages of computing a tile
     std::vector<ROI> _tileRoiList;                              //< depth maps region-of-interest list
     mvsUtils::ImagesCache<image::Image<image::RGBAfColor>> _ic; //< host cache for loading images
-    DeviceCache& _deviceCache;                                  //< device cache for storing images
+    DeviceCache _deviceCache;                                   //< device cache for storing images
 };
 
 }  // namespace depthMap_sycl

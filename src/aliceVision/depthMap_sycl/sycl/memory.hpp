@@ -10,7 +10,7 @@
 #define ALICEVISION_DEPTHMAP_TEXTURE_USE_HALF
 #define ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
 
-#include <sycl/sycl.hpp>
+#include <aliceVision/depthMap_sycl/sycl/sycl.hpp>
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>

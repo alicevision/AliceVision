@@ -785,15 +785,30 @@ endif()
 # SYCL/AdaptiveCpp
 # ==============================================================================
 
+
+set(ALICEVISION_HAVE_SYCL 0)
 if (NOT ALICEVISION_USE_SYCL STREQUAL OFF)
-  set(ACPP_TARGETS generic) # Use runtime compilation for selected hardware device. Supports host CPU and GPUs from NVIDIA, AMD and Intel
-  find_package(AdaptiveCpp)
-  if (AdaptiveCpp_FOUND)
-    set(ALICEVISION_HAVE_SYCL 1)
-    message(STATUS "AdaptiveCpp found.")
-  elseif(ALICEVISION_USE_SYCL STREQUAL ON)
-    message(SEND_ERROR "Failed to find AdaptiveCpp, required for SYCL compilation.")
-  endif()
+
+    # When using gcc, make sure adaptive cpp is using the correct toolchain.
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(_alicevision_acpp_extra_args "${ACPP_EXTRA_ARGS}")
+        if (NOT _alicevision_acpp_extra_args MATCHES "(^| )--gcc-toolchain=")
+            get_filename_component(_alicevision_gxx_bin_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
+            get_filename_component(_alicevision_gxx_toolchain_root "${_alicevision_gxx_bin_dir}" DIRECTORY)
+            string(STRIP "${_alicevision_acpp_extra_args} --gcc-toolchain=${_alicevision_gxx_toolchain_root}" _alicevision_acpp_extra_args)
+            set(ACPP_EXTRA_ARGS "${_alicevision_acpp_extra_args}" CACHE STRING "Arguments to pass through directly to acpp." FORCE)
+            message(STATUS "AdaptiveCpp will use GCC toolchain from ${_alicevision_gxx_toolchain_root}")
+        endif()
+    endif()
+
+    set(ACPP_TARGETS generic) # Use runtime compilation for selected hardware device. Supports host CPU and GPUs from NVIDIA, AMD and Intel
+    find_package(AdaptiveCpp)
+    if (AdaptiveCpp_FOUND)
+        set(ALICEVISION_HAVE_SYCL 1)
+        message(STATUS "AdaptiveCpp found.")
+    elseif(ALICEVISION_USE_SYCL STREQUAL ON)
+        message(SEND_ERROR "Failed to find AdaptiveCpp, required for SYCL compilation.")
+    endif()
 endif()
 
 # ==============================================================================
@@ -1063,7 +1078,7 @@ if(ALICEVISION_DEPTHMAP_BACKEND STREQUAL "CUDA")
     endif()
     set(ALICEVISION_DEPTHMAP_BACKEND_CUDA 1)
     set(ALICEVISION_DEPTHMAP_BACKEND_SYCL 0)
-elseif(ALICEVISON_DEPTHMAP_BACKEND STREQUAL "SYCL")
+elseif(ALICEVISION_DEPTHMAP_BACKEND STREQUAL "SYCL")
     if(NOT ALICEVISION_HAVE_SYCL)
         message(FATAL_ERROR "SYCL backend was requested for depthmap stages but could not be found!")
     endif()

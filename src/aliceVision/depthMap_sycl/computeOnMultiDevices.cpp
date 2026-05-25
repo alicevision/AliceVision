@@ -7,7 +7,7 @@
 #include "computeOnMultiDevices.hpp"
 
 #include <aliceVision/alicevision_omp.hpp>
-#include <sycl/sycl.hpp>
+#include <aliceVision/depthMap_sycl/sycl/sycl.hpp>
 
 // Needed for checking device caracteristics
 #include <aliceVision/depthMap_sycl/sycl/planeSweeping/similarity.hpp>

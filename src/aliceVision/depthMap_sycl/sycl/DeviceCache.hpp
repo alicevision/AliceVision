@@ -31,7 +31,9 @@ public:
         const size_t id = hash_device(device);
 
         // find the current SingleDeviceCache
+        _lock.lock_shared();
         auto it = _perDevice.find(id);
+        _lock.unlock_shared();
 
         // check found
         if (it == _perDevice.end())
@@ -67,7 +69,7 @@ public:
 
 private:
     std::unordered_map<std::size_t, T> _perDevice;  // <sycl::device hash, item>
-    std::mutex _lock; // to prevent concurrent modification of the map container
+    std::shared_mutex _lock; // to prevent concurrent modification of the map container
 
 public:
     PerDevice() = default;
@@ -98,12 +100,6 @@ private: // only allow global singleton to actually use a cache instance
 class DeviceCache : private PerDevice<SingleDeviceCache>
 {
   public:
-    static DeviceCache& getInstance()
-    {
-        static DeviceCache instance;
-        return instance;
-    }
-
     // Singleton, no copy constructor
     DeviceCache(DeviceCache const&) = delete;
 
@@ -151,10 +147,7 @@ class DeviceCache : private PerDevice<SingleDeviceCache>
      */
     void freeMipmapImage(int camId, const sycl::device& device);
 
-  private:
-    // private members
-
-    // singleton: private default constructor and destructor
+    // default constructor and destructor
     DeviceCache() = default;
     ~DeviceCache() = default;
 };
