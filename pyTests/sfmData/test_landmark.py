@@ -15,6 +15,7 @@ from pyalicevision import sfmData as av
 # - operator==(other) => DONE
 # - [inline] operator!=(other) => DONE
 # - Observations& getObservations() / Observations (stl::flat_map) not binded
+# - MapObservation getMapObservations()
 ##################
 
 def test_landmark_default_constructor():
@@ -53,7 +54,25 @@ def test_landmark_compare():
     # TODO: Update the describer type, the Vec3 or the image before comparing again
 
 
-@pytest.mark.skip(reason="stl::flat_map<Observation> not binded")
 def test_landmark_get_observations():
-    """ Test creating Landmarks and retrieving their Observations. """
-    assert True
+    """ Test creating a Landmark and retrieving its (empty) Observations. """
+    landmark = av.Landmark()
+    observations = landmark.getMapObservations()
+
+    # A default Landmark has no observations
+    assert len(observations) == 0, \
+        "A default Landmark should have no observations"
+
+    # Verify the observations container is iterable and dict-like
+    iterated_ids = [obs_id for obs_id in observations]
+    assert iterated_ids == [], \
+        "Iterating over empty observations should yield no items"
+
+    keys = observations.keys()
+    assert len(keys) == 0, "keys() on empty observations should return an empty list"
+
+    values = observations.values()
+    assert len(values) == 0, "values() on empty observations should return an empty list"
+
+    items = observations.items()
+    assert len(items) == 0, "items() on empty observations should return an empty list"

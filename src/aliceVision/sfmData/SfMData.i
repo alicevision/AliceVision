@@ -114,5 +114,6 @@ SPMAP_EXTENSIONS(aliceVision::sfmData::CameraPose)
 %template(Rigs) std::map<IndexT, aliceVision::sfmData::Rig>;
 %template(RotationPriors) std::vector<aliceVision::sfmData::RotationPrior>;
 
+%template(PosesVector) std::vector<std::shared_ptr<aliceVision::sfmData::CameraPose>>;
 %template(ViewsVector) std::vector<std::shared_ptr<aliceVision::sfmData::View>>;
 %template(ViewsVectorVector) std::vector<std::vector<std::shared_ptr<aliceVision::sfmData::View>>>;
