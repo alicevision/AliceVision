@@ -23,7 +23,7 @@ namespace depthMap {
 
 Sgm::Sgm(const mvsUtils::MultiViewParams& mp,
          const mvsUtils::TileParams& tileParams,
-         const SgmParams& sgmParams,
+         const depthMapCommon::SgmParams& sgmParams,
          bool computeDepthSimMap,
          bool computeNormalMap,
          cudaStream_t stream)
@@ -187,7 +187,7 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     ALICEVISION_LOG_INFO(tile << "SGM depth/thickness map done.");
 }
 
-void Sgm::smoothThicknessMap(const Tile& tile, const RefineParams& refineParams)
+void Sgm::smoothThicknessMap(const Tile& tile, const depthMapCommon::RefineParams& refineParams)
 {
     ALICEVISION_LOG_INFO(tile << "SGM Smooth thickness map.");
 

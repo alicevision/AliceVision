@@ -14,6 +14,14 @@
     #define CUDA_FLOOR(f) floor(f)
     #define CUDA_MIN(a, b) min(a, b)
     #define CUDA_MAX(a, b) max(a, b)
+#elif defined(ACPP_LIBKERNEL_IS_DEVICE_PASS)
+    #include <aliceVision/depthMap_sycl/sycl/sycl.hpp>
+    #define CUDA_HOST_DEVICE
+    #define CUDA_HOST
+    #define CUDA_CEIL(f) sycl::ceil(f)
+    #define CUDA_FLOOR(f) sycl::floor(f)
+    #define CUDA_MIN(a, b) sycl::min(a, b)
+    #define CUDA_MAX(a, b) sycl::max(a, b)
 #else
     #define CUDA_HOST_DEVICE
     #define CUDA_HOST

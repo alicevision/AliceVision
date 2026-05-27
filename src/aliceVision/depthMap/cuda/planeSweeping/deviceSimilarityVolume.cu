@@ -159,7 +159,7 @@ __host__ void cuda_volumeComputeSimilarity(CudaDeviceMemoryPitched<TSim, 3>& out
                                            const int tcDeviceCameraParamsId,
                                            const DeviceMipmapImage& rcDeviceMipmapImage,
                                            const DeviceMipmapImage& tcDeviceMipmapImage,
-                                           const SgmParams& sgmParams,
+                                           const depthMapCommon::SgmParams& sgmParams,
                                            const Range& depthRange,
                                            const ROI& roi,
                                            cudaStream_t stream)
@@ -212,7 +212,7 @@ extern void cuda_volumeRefineSimilarity(CudaDeviceMemoryPitched<TSimRefine, 3>& 
                                         const int tcDeviceCameraParamsId,
                                         const DeviceMipmapImage& rcDeviceMipmapImage,
                                         const DeviceMipmapImage& tcDeviceMipmapImage,
-                                        const RefineParams& refineParams, 
+                                        const depthMapCommon::RefineParams& refineParams,
                                         const Range& depthRange,
                                         const ROI& roi,
                                         cudaStream_t stream)
@@ -268,7 +268,7 @@ __host__ void cuda_volumeAggregatePath(CudaDeviceMemoryPitched<TSim, 3>& out_vol
                                        const CudaSize<2>& rcLevelDim,
                                        const float rcMipmapLevel,
                                        const CudaSize<3>& axisT,
-                                       const SgmParams& sgmParams,
+                                       const depthMapCommon::SgmParams& sgmParams,
                                        const int lastDepthIndex,
                                        const int filteringIndex,
                                        const bool invY,
@@ -379,7 +379,7 @@ __host__ void cuda_volumeOptimize(CudaDeviceMemoryPitched<TSim, 3>& out_volSimFi
                                   CudaDeviceMemoryPitched<TSimAcc, 2>& inout_volAxisAcc_dmp,
                                   const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
                                   const DeviceMipmapImage& rcDeviceMipmapImage,
-                                  const SgmParams& sgmParams, 
+                                  const depthMapCommon::SgmParams& sgmParams,
                                   const int lastDepthIndex,
                                   const ROI& roi,
                                   cudaStream_t stream)
@@ -430,7 +430,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
                                            const CudaDeviceMemoryPitched<float, 2>& in_depths_dmp, 
                                            const CudaDeviceMemoryPitched<TSim, 3>& in_volSim_dmp, 
                                            const int rcDeviceCameraParamsId,
-                                           const SgmParams& sgmParams, 
+                                           const depthMapCommon::SgmParams& sgmParams,
                                            const Range& depthRange,
                                            const ROI& roi, 
                                            cudaStream_t stream)
@@ -470,7 +470,7 @@ __host__ void cuda_volumeRetrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& o
 extern void cuda_volumeRefineBestDepth(CudaDeviceMemoryPitched<float2, 2>& out_refineDepthSimMap_dmp,
                                        const CudaDeviceMemoryPitched<float2, 2>& in_sgmDepthPixSizeMap_dmp,
                                        const CudaDeviceMemoryPitched<TSimRefine, 3>& in_volSim_dmp, 
-                                       const RefineParams& refineParams, 
+                                       const depthMapCommon::RefineParams& refineParams,
                                        const ROI& roi, 
                                        cudaStream_t stream)
 {

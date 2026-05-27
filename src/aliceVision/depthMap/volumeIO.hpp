@@ -6,8 +6,8 @@
 
 #include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
@@ -29,7 +29,7 @@ namespace depthMap {
 void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                                 const std::vector<float>& in_depths,
                                 const std::string& name,
-                                const SgmParams& sgmParams,
+                                const depthMapCommon::SgmParams& sgmParams,
                                 const std::string& filepath,
                                 const ROI& roi);
 
@@ -43,7 +43,7 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_
  */
 void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSimRefine, 3>& in_volumeSim_hmh,
                                 const std::string& name,
-                                const RefineParams& refineParams,
+                                const depthMapCommon::RefineParams& refineParams,
                                 const std::string& filepath,
                                 const ROI& roi);
 
@@ -61,7 +61,7 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim_hmh,
                             const std::vector<float>& in_depths,
                             const mvsUtils::MultiViewParams& mp,
                             int camIndex,
-                            const SgmParams& sgmParams,
+                            const depthMapCommon::SgmParams& sgmParams,
                             const std::string& filepath,
                             const ROI& roi);
 
@@ -79,7 +79,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSim, 3>& in_volumeSim
                                  const std::vector<float>& in_depths,
                                  const mvsUtils::MultiViewParams& mp,
                                  int camIndex,
-                                 const SgmParams& sgmParams,
+                                 const depthMapCommon::SgmParams& sgmParams,
                                  const std::string& filepath,
                                  const ROI& roi);
 
@@ -97,7 +97,7 @@ void exportSimilarityVolumeCross(const CudaHostMemoryHeap<TSimRefine, 3>& in_vol
                                  const CudaHostMemoryHeap<float2, 2>& in_depthSimMapSgmUpscale_hmh,
                                  const mvsUtils::MultiViewParams& mp,
                                  int camIndex,
-                                 const RefineParams& refineParams,
+                                 const depthMapCommon::RefineParams& refineParams,
                                  const std::string& filepath,
                                  const ROI& roi);
 
@@ -115,7 +115,7 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSim, 3>& in_
                                           const std::vector<float>& in_depths,
                                           const mvsUtils::MultiViewParams& mp,
                                           int camIndex,
-                                          const SgmParams& sgmParams,
+                                          const depthMapCommon::SgmParams& sgmParams,
                                           const std::string& filepath,
                                           const ROI& roi);
 
@@ -133,7 +133,7 @@ void exportSimilarityVolumeTopographicCut(const CudaHostMemoryHeap<TSimRefine, 3
                                           const CudaHostMemoryHeap<float2, 2>& in_depthSimMapSgmUpscale_hmh,
                                           const mvsUtils::MultiViewParams& mp,
                                           int camIndex,
-                                          const RefineParams& refineParams,
+                                          const depthMapCommon::RefineParams& refineParams,
                                           const std::string& filepath,
                                           const ROI& roi);
 

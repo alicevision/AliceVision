@@ -10,8 +10,8 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/Tile.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
 #include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
@@ -40,7 +40,7 @@ class Sgm
      */
     Sgm(const mvsUtils::MultiViewParams& mp,
         const mvsUtils::TileParams& tileParams,
-        const SgmParams& sgmParams,
+        const depthMapCommon::SgmParams& sgmParams,
         bool computeDepthSimMap,
         bool computeNormalMap,
         cudaStream_t stream);
@@ -85,7 +85,7 @@ class Sgm
      * @param[in] tile The given tile for SGM computation
      * @param[in] refineParams the Refine parameters
      */
-    void smoothThicknessMap(const Tile& tile, const RefineParams& refineParams);
+    void smoothThicknessMap(const Tile& tile, const depthMapCommon::RefineParams& refineParams);
 
   private:
     // private methods
@@ -130,7 +130,7 @@ class Sgm
 
     const mvsUtils::MultiViewParams& _mp;     //< Multi-view parameters
     const mvsUtils::TileParams& _tileParams;  //< tile workflow parameters
-    const SgmParams& _sgmParams;              //< Semi Global Matching parameters
+    const depthMapCommon::SgmParams& _sgmParams;              //< Semi Global Matching parameters
     const bool _computeDepthSimMap;           //< needs to compute a final depth/sim map
     const bool _computeNormalMap;             //< needs to compute a final normal map
 

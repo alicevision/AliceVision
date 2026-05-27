@@ -499,7 +499,7 @@ endif()
 ### MVS software
 if (ALICEVISION_BUILD_MVS)
 
-    if (ALICEVISION_HAVE_CUDA) # Depth map computation need CUDA
+    if (ALICEVISION_HAVE_CUDA OR ALICEVISION_HAVE_SYCL) # Depth map computation needs HW acceleration
         # Depth Map Estimation
         alicevision_add_software(aliceVision_depthMapEstimation
             SOURCE main_depthMapEstimation.cpp
@@ -509,7 +509,7 @@ if (ALICEVISION_BUILD_MVS)
                   aliceVision_gpu
                   aliceVision_mvsData
                   aliceVision_mvsUtils
-                  aliceVision_depthMap
+                  ${ALICEVISION_DEPTHMAP_LIBRARY}
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
@@ -524,11 +524,17 @@ if (ALICEVISION_BUILD_MVS)
                   aliceVision_mvsData
                   aliceVision_mvsUtils
                   aliceVision_fuseCut
-                  aliceVision_depthMap
+                  ${ALICEVISION_DEPTHMAP_LIBRARY}
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
                   Boost::program_options
         )
+        if(ALICEVISION_DEPTHMAP_BACKEND_SYCL)
+            add_sycl_to_target(TARGET aliceVision_depthMapEstimation_exe SOURCES main_depthMapEstimation.cpp)
+            add_sycl_to_target(TARGET aliceVision_depthMapFiltering_exe SOURCES main_depthMapFiltering.cpp)
+        endif()
+    elseif(NOT ALICEVISION_DEPTHMAP_BACKEND STREQUAL "AUTO")
+        message(WARNING "Backend for depthmap stages was specified, but they won't be built as neither SYCL nor CUDA were found.")
     endif()
 
     # Meshing

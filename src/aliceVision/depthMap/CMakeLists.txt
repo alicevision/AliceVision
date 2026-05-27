@@ -2,16 +2,12 @@
 set(depthMap_files_headers
     BufPtr.hpp
     computeOnMultiGPUs.hpp
-    CustomPatchPatternParams.hpp
     DepthMapEstimator.hpp
-    DepthMapParams.hpp
     depthMapUtils.hpp
     NormalMapEstimator.hpp
     Refine.hpp
-    RefineParams.hpp
     Sgm.hpp
     SgmDepthList.hpp
-    SgmParams.hpp
     Tile.hpp
     volumeIO.hpp
 )
@@ -19,7 +15,6 @@ set(depthMap_files_headers
 # Sources
 set(depthMap_files_sources
     computeOnMultiGPUs.cpp
-    CustomPatchPatternParams.cpp
     DepthMapEstimator.cpp
     depthMapUtils.cpp
     NormalMapEstimator.cpp
@@ -118,7 +113,7 @@ set(depthMap_cuda_files_sources
     ${depthMap_cuda_planeSweeping_sources}
 )
 
-alicevision_add_library(aliceVision_depthMap
+alicevision_add_library(aliceVision_depthMap_cuda
     USE_CUDA
     SOURCES
         ${depthMap_files_headers}

@@ -76,6 +76,8 @@ if(APPLE)
 else()
     trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 endif()
+trilean_option(ALICEVISION_USE_SYCL "Enable SYCL" AUTO)
+option(ALICEVISION_DEPTHMAP_BACKEND "Compile DepthMap component with support for CUDA or SYCL or both" AUTO)
 trilean_option(ALICEVISION_USE_OPENCV "Enable use of OpenCV algorithms" OFF)
 trilean_option(ALICEVISION_USE_OPENCV_CONTRIB "Enable use of OpenCV algorithms from extra modules" AUTO)
 trilean_option(ALICEVISION_USE_USD "Enable USD" AUTO)
@@ -780,6 +782,36 @@ if (ALICEVISION_HAVE_CUDA)
 endif()
 
 # ==============================================================================
+# SYCL/AdaptiveCpp
+# ==============================================================================
+
+
+set(ALICEVISION_HAVE_SYCL 0)
+if (NOT ALICEVISION_USE_SYCL STREQUAL OFF)
+
+    # When using gcc, make sure adaptive cpp is using the correct toolchain.
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(_alicevision_acpp_extra_args "${ACPP_EXTRA_ARGS}")
+        if (NOT _alicevision_acpp_extra_args MATCHES "(^| )--gcc-toolchain=")
+            get_filename_component(_alicevision_gxx_bin_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
+            get_filename_component(_alicevision_gxx_toolchain_root "${_alicevision_gxx_bin_dir}" DIRECTORY)
+            string(STRIP "${_alicevision_acpp_extra_args} --gcc-toolchain=${_alicevision_gxx_toolchain_root}" _alicevision_acpp_extra_args)
+            set(ACPP_EXTRA_ARGS "${_alicevision_acpp_extra_args}" CACHE STRING "Arguments to pass through directly to acpp." FORCE)
+            message(STATUS "AdaptiveCpp will use GCC toolchain from ${_alicevision_gxx_toolchain_root}")
+        endif()
+    endif()
+
+    set(ACPP_TARGETS generic) # Use runtime compilation for selected hardware device. Supports host CPU and GPUs from NVIDIA, AMD and Intel
+    find_package(AdaptiveCpp)
+    if (AdaptiveCpp_FOUND)
+        set(ALICEVISION_HAVE_SYCL 1)
+        message(STATUS "AdaptiveCpp found.")
+    elseif(ALICEVISION_USE_SYCL STREQUAL ON)
+        message(SEND_ERROR "Failed to find AdaptiveCpp, required for SYCL compilation.")
+    endif()
+endif()
+
+# ==============================================================================
 # SWIG
 # ==============================================================================
 if (ALICEVISION_BUILD_SWIG_BINDING)
@@ -992,6 +1024,7 @@ message("** Build SWIG Python binding: " ${ALICEVISION_BUILD_SWIG_BINDING})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})
 message("** Use CUDA: " ${ALICEVISION_HAVE_CUDA})
+message("** Use SYCL: " ${ALICEVISION_HAVE_SYCL})
 message("** Use OpenCV SIFT features: " ${ALICEVISION_HAVE_OCVSIFT})
 message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
@@ -1036,6 +1069,43 @@ add_subdirectory(dependencies)
 # ==============================================================================
 # AliceVision modules
 # ==============================================================================
+# Backend selection for depthmap module
+set(ALICEVISION_DEPTHMAP_BACKEND_CUDA 0)
+set(ALICEVISION_DEPTHMAP_BACKEND_SYCL 0)
+if(ALICEVISION_DEPTHMAP_BACKEND STREQUAL "CUDA")
+    if(NOT ALICEVISION_HAVE_CUDA)
+        message(FATAL_ERROR "CUDA backend was requested for depthmap stages but could not be found!")
+    endif()
+    set(ALICEVISION_DEPTHMAP_BACKEND_CUDA 1)
+    set(ALICEVISION_DEPTHMAP_BACKEND_SYCL 0)
+elseif(ALICEVISION_DEPTHMAP_BACKEND STREQUAL "SYCL")
+    if(NOT ALICEVISION_HAVE_SYCL)
+        message(FATAL_ERROR "SYCL backend was requested for depthmap stages but could not be found!")
+    endif()
+    set(ALICEVISION_DEPTHMAP_BACKEND_SYCL 1)
+    set(ALICEVISION_DEPTHMAP_BACKEND_CUDA 0)
+elseif(ALICEVISION_DEPTHMAP_BACKEND STREQUAL "BOTH")
+    if(NOT ALICEVISION_HAVE_CUDA)
+         message(FATAL_ERROR "CUDA backend was requested for depthmap stages but could not be found!")
+    endif()
+    if(NOT ALICEVISION_HAVE_SYCL)
+        message(FATAL_ERROR "SYCL backend was requested for depthmap stages but could not be found!")
+    endif()
+    set(ALICEVISION_DEPTHMAP_BACKEND_CUDA 1)
+    set(ALICEVISION_DEPTHMAP_BACKEND_SYCL 1)
+else() # AUTO or unrecognosied option
+    set(ALICEVISION_DEPTHMAP_BACKEND_CUDA ${ALICEVISION_HAVE_CUDA})
+    set(ALICEVISION_DEPTHMAP_BACKEND_SYCL ${ALICEVISION_HAVE_SYCL})
+endif()
+
+# Add libraries based on selected backend
+set(ALICEVISION_DEPTHMAP_LIBRARY "aliceVision_depthMapCommon")
+if(ALICEVISION_DEPTHMAP_BACKEND_CUDA)
+    list(APPEND ALICEVISION_DEPTHMAP_LIBRARY "aliceVision_depthMap_cuda")
+endif()
+if(ALICEVISION_DEPTHMAP_BACKEND_SYCL)
+    list(APPEND ALICEVISION_DEPTHMAP_LIBRARY "aliceVision_depthMap_sycl")
+endif()
 
 # Initial global target list is empty, will be added by target helper functions
 set(ALICEVISION_GLOBAL_TARGET_LIST "" CACHE INTERNAL "Global list of all AliceVision targets enabled")
