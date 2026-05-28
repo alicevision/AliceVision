@@ -656,6 +656,9 @@ std::vector<int> MultiViewParams::findTileNearestCams(int rc, int nbNearestCams,
             ids.push_back(SortedId(tcScorePair.first, tcScorePair.second));
     }
 
+    if(ids.empty())
+        return out;
+
     qsort(&ids[0], ids.size(), sizeof(SortedId), qsortCompareSortedIdDesc);
 
     // ensure the ideal number of target cameras is not superior to the actual number of cameras
