@@ -147,7 +147,7 @@ set(DEP_CLP_GIT_REPO "https://github.com/alicevision/Clp")
 set(DEP_CLP_GIT_TAG  "4da587acebc65343faafea8a134c9f251efab5b9")
 
 set(DEP_LEMON_GIT_REPO "https://github.com/alicevision/lemon.git")
-set(DEP_LEMON_GIT_TAG  "8885b9a8b7a20cdf5588964fe30da89093ec53cd")
+set(DEP_LEMON_GIT_TAG  "Cpp20")
 
 # ── 3D / Geometry ─────────────────────────────────────────────────────────────
 
