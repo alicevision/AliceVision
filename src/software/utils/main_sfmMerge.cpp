@@ -12,7 +12,6 @@
 #include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <boost/program_options.hpp>
-#include <aliceVision/geometry/rigidTransformation3D.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
 
 #include <string>
@@ -219,126 +218,17 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2,
 */
 bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2, const matching::PairwiseMatches & pairwiseMatches)
 {
-    //create map (viewId, featureId) -> landmarkId
-    std::map<Pair, IndexT> mapFeatureIdToLandmarkId;
-    for (const auto & plandmark : sfmData1.getLandmarks())
-    {
-        for (const auto & pobs : plandmark.second.getObservations())
-        {
-            IndexT featureId = pobs.second.getFeatureId();
-
-            std::pair<IndexT, IndexT> pairViewFeature;
-            pairViewFeature.first = pobs.first;
-            pairViewFeature.second = featureId;
-            mapFeatureIdToLandmarkId[pairViewFeature] = plandmark.first;
-        }
-    }
-
-    for (const auto & plandmark : sfmData2.getLandmarks())
-    {
-        for (const auto & pobs : plandmark.second.getObservations())
-        {
-            IndexT featureId = pobs.second.getFeatureId();
-
-            std::pair<IndexT, IndexT> pairViewFeature;
-            pairViewFeature.first = pobs.first;
-            pairViewFeature.second = featureId;
-
-            mapFeatureIdToLandmarkId[pairViewFeature] = plandmark.first;
-        }
-    }
-
-    std::set<std::pair<IndexT, IndexT>> landmarkUniquePairs;
-    //For all pairs:
-    for (const auto & pairMatches : pairwiseMatches)
-    {
-        Pair pairViews = pairMatches.first;
-
-        //Is the pair of views is (view in sfmData2, view in sfmData1)
-        //Or the reverse ?
-        bool reverse = false;
-        if (sfmData2.getViews().find(pairViews.first) == sfmData2.getViews().end())
-        {
-            reverse = true;
-        }
-
-        //For all types:
-        for (const auto & pDescMatches: pairMatches.second)
-        {
-            //For all matches
-            for (const auto & match : pDescMatches.second)
-            {
-                Pair lookup;
-
-                //Check if the first feature is associated to a landmark
-                lookup.first = pairViews.first;
-                lookup.second = match._i;
-                auto itl1 = mapFeatureIdToLandmarkId.find(lookup);
-                if (itl1 == mapFeatureIdToLandmarkId.end())
-                {
-                    continue;
-                }
-
-                //Check if the second feature is associated to a landmark
-                lookup.first = pairViews.second;
-                lookup.second = match._j;
-                auto itl2 = mapFeatureIdToLandmarkId.find(lookup);
-                if (itl2 == mapFeatureIdToLandmarkId.end())
-                {
-                    continue;
-                }
-
-                std::pair<IndexT, IndexT> pairOfLandmarks;
-
-                if (reverse)
-                {
-                    pairOfLandmarks = std::make_pair(itl1->second, itl2->second);
-                }
-                else
-                {
-                    pairOfLandmarks = std::make_pair(itl2->second, itl1->second);
-                }
-
-                landmarkUniquePairs.insert(pairOfLandmarks);
-            }
-        }
-    }
-
-    //Transform set to vector for easier manipulation
-    std::vector<std::pair<IndexT, IndexT>> landmarkPairs;
-    for (const auto & pair : landmarkUniquePairs)
-    {
-        landmarkPairs.push_back(pair);
-    }
-
-    ALICEVISION_LOG_INFO("Matched landmarks : " << landmarkPairs.size());
-
-    // Move input point in appropriate container
-    Mat xA(3, landmarkPairs.size());
-    Mat xB(3, landmarkPairs.size());
-
-    int count = 0;
-    for (auto & pair : landmarkPairs)
-    {
-        xA.col(count) = sfmData1.getLandmarks().at(pair.first).getX();
-        xB.col(count) = sfmData2.getLandmarks().at(pair.second).getX();
-        count++;
-    }
-
-    // Compute rigid transformation p'i = S R pi + t
     double S;
     Vec3 t;
     Mat3 R;
-    std::vector<std::size_t> inliers;
+    std::vector<std::pair<IndexT, IndexT>> inlierLandmarkPairs;
     std::mt19937 randomNumberGenerator;
 
-    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, randomNumberGenerator, S, t, R, inliers, true))
+    if (!sfm::computeSimilarityFromCommonLandmarks(sfmData1, sfmData2, pairwiseMatches, randomNumberGenerator, &S, &R, &t, &inlierLandmarkPairs))
     {
-        ALICEVISION_LOG_INFO("Cannot found alignment");
+        ALICEVISION_LOG_INFO("Cannot find alignment");
         return false;
     }
-
-    ALICEVISION_LOG_INFO("Inliers for SIM(3) : " << inliers.size());
 
     //Given inliers, create a map to translate matched landmarks from sfmData2 to sfmData1
     std::map<IndexT, IndexT> mapL2toL1;
@@ -346,12 +236,10 @@ bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sf
     {
         mapL2toL1[pl.first] = UndefinedIndexT;
     }
-    for (const auto & inlier : inliers)
+    for (const auto & pair : inlierLandmarkPairs)
     {
-        const auto & p = landmarkPairs[inlier];
-        mapL2toL1[p.second] = p.first;
+        mapL2toL1[pair.second] = pair.first;
     }
-
 
     // Apply found transformation on sfmData1
     sfm::applyTransform(sfmData1, S, R, t);

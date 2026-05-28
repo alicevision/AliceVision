@@ -9,6 +9,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
+#include <aliceVision/matching/MatchesCollections.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -129,6 +130,30 @@ bool computeSimilarityFromCommonLandmarks(const sfmData::SfMData& sfmDataA,
                                         double* out_S,
                                         Mat3* out_R,
                                         Vec3* out_t);
+
+/**
+ * @brief Compute a similarity transform between two SfM scenes using pairwise feature matches
+ * to identify corresponding landmarks across the two datasets.
+ *
+ * @param[in] sfmDataA first SfM scene
+ * @param[in] sfmDataB second SfM scene
+ * @param[in] pairwiseMatches feature matches between views of sfmDataA and sfmDataB
+ * @param[in] randomNumberGenerator random number generator
+ * @param[out] out_S output scale factor
+ * @param[out] out_R output rotation 3x3 matrix
+ * @param[out] out_t output translation vector
+ * @param[out] out_inlierMatchedLandmarks optional output pairs of (landmarkId in A, landmarkId in B)
+ *             for inlier correspondences used to compute the transform
+ * @return true if a similarity transformation was found
+ */
+bool computeSimilarityFromCommonLandmarks(const sfmData::SfMData& sfmDataA,
+                                          const sfmData::SfMData& sfmDataB,
+                                          const matching::PairwiseMatches& pairwiseMatches,
+                                          std::mt19937& randomNumberGenerator,
+                                          double* out_S,
+                                          Mat3* out_R,
+                                          Vec3* out_t,
+                                          std::vector<std::pair<IndexT, IndexT>>* out_inlierMatchedLandmarks = nullptr);
 
 bool computeSimilarityFromPairs(const std::vector<Vec3> & ptsA,
                                 const std::vector<Vec3> & ptsB,
