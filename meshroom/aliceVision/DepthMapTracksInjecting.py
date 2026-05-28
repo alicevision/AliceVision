@@ -5,11 +5,18 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class DepthMapTracksInjecting(desc.AVCommandLineNode):
+    '''
+Inject depth information from depth maps into feature tracks.
+
+For each feature track, the corresponding depth value from the associated depth map is
+looked up and stored alongside the 2D observation. This enriched track information can
+improve the accuracy of downstream triangulation and bundle adjustment steps, as the
+depth constraint provides an additional per-observation measurement.
+'''
+
     commandLine = 'aliceVision_depthmapTracksInjecting {allParams}'
 
     category = 'Utils'
-    documentation = '''Inject depth from depthmaps into tracks.'''
-
     inputs = [
         desc.File(
             name="input",

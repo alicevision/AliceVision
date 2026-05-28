@@ -26,6 +26,7 @@ if(AV_BUILD_EIGEN)
             ${CMAKE_COMMAND}
             -DCMAKE_CXX_STANDARD=20
             ${EIGEN_CMAKE_ALIGNMENT_FLAGS}
+            ${OPENMP_CMAKE_FLAGS}
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
             -DPKGCONFIG_INSTALL_DIR:PATH=<INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR}/pkgconfig
             <SOURCE_DIR>
@@ -33,6 +34,7 @@ if(AV_BUILD_EIGEN)
             ${CMAKE_COMMAND} --build <BINARY_DIR>
                 --config ${DEPS_CMAKE_BUILD_TYPE}
                 --parallel ${AV_BUILD_DEPENDENCIES_PARALLEL}
+        DEPENDS ${OPENMP_TARGET}
     )
 
     set(EIGEN_CMAKE_FLAGS

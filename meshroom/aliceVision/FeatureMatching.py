@@ -5,13 +5,7 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class FeatureMatching(desc.AVCommandLineNode):
-    commandLine = "aliceVision_featureMatching {allParams}"
-    size = avpar.DynamicViewsSize("input")
-    parallelization = desc.Parallelization(blockSize=20)
-    commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
-
-    category = "Sparse Reconstruction"
-    documentation = """
+    """
 This node performs the matching of all features between the candidate image pairs.
 
 It is performed in 2 steps:
@@ -33,6 +27,12 @@ then it checks the number of features that validates this model and iterate thro
 [https://alicevision.org/#photogrammetry/feature_matching](https://alicevision.org/#photogrammetry/feature_matching)
 """
 
+    commandLine = "aliceVision_featureMatching {allParams}"
+    size = avpar.DynamicViewsSize("input")
+    parallelization = desc.Parallelization(blockSize=20)
+    commandLineRange = "--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}"
+
+    category = "Sparse Reconstruction"
     inputs = [
         desc.File(
             name="input",

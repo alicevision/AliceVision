@@ -5,6 +5,8 @@ from meshroom.core.utils import VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class ImageSegmentation(desc.AVCommandLineNode):
+    """Generate a mask with segmented labels for each pixel."""
+
     commandLine = "aliceVision_imageSegmentation {allParams}"
     size = avpar.DynamicViewsSize("input")
     gpu = desc.Level.INTENSIVE
@@ -12,8 +14,6 @@ class ImageSegmentation(desc.AVCommandLineNode):
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
     category = "Utils"
-    documentation = """Generate a mask with segmented labels for each pixel."""
-
     inputs = [
         desc.File(
             name="input",

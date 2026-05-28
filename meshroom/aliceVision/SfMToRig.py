@@ -6,15 +6,20 @@ from meshroom.core.utils import VERBOSE_LEVEL
 import os.path
 
 class SfMToRig(desc.AVCommandLineNode):
+    """
+Convert a set of independently posed cameras in an SfMData into a multi-camera rig.
+
+This node assumes that the input SfMData contains multiple cameras that all observed the
+same scene at the same moment in time (e.g., a synchronized multi-camera array). It
+groups the cameras into a single rig structure, where each camera is expressed as a
+sub-pose relative to the rig's reference frame. The resulting SfMData can then be used
+in downstream nodes that explicitly support or require a rig representation.
+"""
+
     commandLine = "aliceVision_sfmToRig {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """
-Assumes the input SfMData describes a set of cameras capturing a scene at a common time.
-Transforms the set of cameras into a rig of cameras.
-"""
-
     inputs = [
         desc.File(
             name="input",

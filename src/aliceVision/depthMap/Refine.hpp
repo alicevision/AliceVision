@@ -10,7 +10,7 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/Tile.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
@@ -34,7 +34,7 @@ class Refine
      * @param[in] refineParams the Refine parameters
      * @param[in] stream the stream for gpu execution
      */
-    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, cudaStream_t stream);
+    Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const depthMapCommon::RefineParams& refineParams, cudaStream_t stream);
 
     // no default constructor
     Refine() = delete;
@@ -101,7 +101,7 @@ class Refine
 
     const mvsUtils::MultiViewParams& _mp;     //< Multi-view parameters
     const mvsUtils::TileParams& _tileParams;  //< tile workflow parameters
-    const RefineParams& _refineParams;        //< Refine parameters
+    const depthMapCommon::RefineParams& _refineParams;        //< Refine parameters
 
     // private members in device memory
 

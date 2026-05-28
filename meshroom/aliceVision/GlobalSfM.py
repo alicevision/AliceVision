@@ -6,15 +6,15 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class GlobalSfM(desc.AVCommandLineNode):
-    commandLine = "aliceVision_globalSfM {allParams}"
-    size = desc.DynamicNodeSize("input")
-
-    category = "Sparse Reconstruction"
-    documentation = """
+    """
 Performs the Structure-From-Motion with a global approach.
 It is known to be faster but less robust to challenging datasets than the Incremental approach.
 """
 
+    commandLine = "aliceVision_globalSfM {allParams}"
+    size = desc.DynamicNodeSize("input")
+
+    category = "Sparse Reconstruction"
     inputs = [
         desc.File(
             name="input",

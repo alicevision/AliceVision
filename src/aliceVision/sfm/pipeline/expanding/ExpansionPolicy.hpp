@@ -19,6 +19,8 @@ public:
     using uptr = std::unique_ptr<ExpansionPolicy>;
 public:
 
+    virtual ~ExpansionPolicy() = default;
+
     /**
      * @brief Initialize policy for an iteration
      * @param sfmData the scene to process

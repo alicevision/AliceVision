@@ -5,6 +5,10 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMTemporalFiltering(desc.AVCommandLineNode):
+    '''
+This node takes the result of SfM and fine-tune the camera poses so that the camera path is temporally smooth.
+'''
+
     commandLine = 'aliceVision_sfmTempFiltering {allParams}'
     size = desc.DynamicNodeSize('input')
 
@@ -12,10 +16,6 @@ class SfMTemporalFiltering(desc.AVCommandLineNode):
     ram = desc.Level.INTENSIVE
 
     category = 'Sparse Reconstruction'
-    documentation = '''
-This node takes the result of SfM and fine-tune the camera poses so that the camera path is temporally smooth.
-'''
-
     inputs = [
         desc.File(
             name="input",

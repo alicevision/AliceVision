@@ -5,12 +5,25 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMBootStrapping(desc.AVCommandLineNode):
+    """
+Initialize the incremental Structure-from-Motion reconstruction by selecting the best initial image pair.
+
+This node identifies the optimal pair of images from which to begin the reconstruction.
+A good initial pair has sufficient visual overlap, a wide baseline, and enough matched features
+to compute a reliable fundamental or homography matrix. Several bootstrapping methods are available:
+
+ - **classic**: Uses epipolar geometry to select the best initial pair based on feature matches.
+ - **mesh**: Constrains the initial pair selection using a reference 3D mesh.
+ - **mesh_single**: Like mesh, but does not require visual parallax between the two views.
+ - **depth**: Uses depth map information to initialize the reconstruction.
+
+The output is a partially initialized SfMData with the first two cameras localized.
+"""
+
     commandLine = "aliceVision_sfmBootstrapping {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Sparse Reconstruction"
-    documentation = """ """
-
     inputs = [
         desc.File(
             name="input",

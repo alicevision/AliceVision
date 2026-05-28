@@ -12,7 +12,7 @@
 #include <aliceVision/mvsUtils/mapIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/depthMap/depthMapUtils.hpp>
-#include <aliceVision/depthMap/DepthMapParams.hpp>
+#include <aliceVision/depthMapCommon/DepthMapParams.hpp>
 #include <aliceVision/depthMap/SgmDepthList.hpp>
 #include <aliceVision/depthMap/Sgm.hpp>
 #include <aliceVision/depthMap/Refine.hpp>
@@ -27,9 +27,9 @@ namespace depthMap {
 
 DepthMapEstimator::DepthMapEstimator(const mvsUtils::MultiViewParams& mp,
                                      const mvsUtils::TileParams& tileParams,
-                                     const DepthMapParams& depthMapParams,
-                                     const SgmParams& sgmParams,
-                                     const RefineParams& refineParams)
+                                     const depthMapCommon::DepthMapParams& depthMapParams,
+                                     const depthMapCommon::SgmParams& sgmParams,
+                                     const depthMapCommon::RefineParams& refineParams)
   : _mp(mp),
     _tileParams(tileParams),
     _depthMapParams(depthMapParams),

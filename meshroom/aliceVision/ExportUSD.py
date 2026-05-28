@@ -5,15 +5,15 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ExportUSD(desc.AVCommandLineNode):
+    """
+    Convert cameras from an SfM scene into an animated camera in USD format.
+    Based on the input image filenames, this node detects video sequences and creates the corresponding animated camera.
+    """
+
     commandLine = "aliceVision_exportUSD {allParams}"
     size = desc.DynamicNodeSize("input")
 
-    category = "Export"
-    documentation = """
-Convert cameras from an SfM scene into an animated camera in USD format.
-Based on the input image filenames, this node detects video sequences and creates the corresponding animated camera.
-"""
-
+    category = "Utils"
     inputs = [
         desc.File(
             name="input",

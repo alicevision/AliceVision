@@ -7,12 +7,12 @@
 #pragma once
 
 #include <aliceVision/mvsUtils/TileParams.hpp>
-#include <aliceVision/depthMap/CustomPatchPatternParams.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/CustomPatchPatternParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMapCommon {
 
 /**
  * @brief Depth Map Parameters
@@ -31,8 +31,8 @@ struct DepthMapParams
 
     // constant parameters
 
-    const bool useRefine = true;  //< for debug purposes: enable or disable Refine process
+    static constexpr bool useRefine = true;  //< for debug purposes: enable or disable Refine process
 };
 
-}  // namespace depthMap
+}  // namespace depthMap_sycl
 }  // namespace aliceVision

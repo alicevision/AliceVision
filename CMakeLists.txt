@@ -1,13 +1,31 @@
 cmake_minimum_required(VERSION 3.30)
 project(aliceVision LANGUAGES C CXX)
 
+include(CMakeDependentOption)
+
+# Initialize CMAKE_OSX_ARCHITECTURES, if not specified on the command line.
+if(APPLE AND NOT CMAKE_OSX_ARCHITECTURES)
+    message(STATUS "Host processor: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+        set(CMAKE_OSX_ARCHITECTURES "arm64")
+    elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(CMAKE_OSX_ARCHITECTURES "x86_64")
+    else()
+        message(FATAL_ERROR "CMAKE_HOST_SYSTEM_PROCESSOR was neither arm64 nor x86_64 on an Apple platform and CMAKE_OSX_ARCHITECTURES was not specified!")
+    endif()
+endif()
+
 option(ALICEVISION_BUILD_DEPENDENCIES "Build all AliceVision dependencies" OFF)
+option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
 option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 option(AV_EIGEN_MEMORY_ALIGNMENT "Enable Eigen memory alignment" ON)
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
-option(AV_USE_CUDA "Enable CUDA" ON)
-option(AV_USE_OPENMP "Enable OpenMP" $<$<CXX_COMPILER_ID:"AppleClang">,OFF,ON>) # disable by default for AppleClang
+option(AV_USE_OPENMP "Enable OpenMP" ON) # AppleClang now supports OpenMP, if installed as an external dependency (Homebrew, MacPorts, ...)
+cmake_dependent_option(AV_USE_CUDA  "Enable CUDA support" ON  "NOT APPLE" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+if(APPLE AND BUILD_SHARED_LIBS)
+    option(BUILD_APPLE_FRAMEWORKS "Create Frameworks instead of plain dynamic libraries on macOS" ON)
+endif()
 option(ALICEVISION_INSTALL_MESHROOM_PLUGIN "Install AliceVision's plugin for Meshroom" ON)
 
 # Global policy section
@@ -15,6 +33,12 @@ cmake_policy(SET CMP0135 NEW)    # Improve timestamp handling in ExternalProject
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
+endif()
+
+# Currently no universal binaries are supported. Fail early.
+# FIXME: Enable universal builds by adapting dependency building accordingly.
+if(APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64" AND CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+    message(FATAL_ERROR "Building universal binaries is currently not supported. Please set 'CMAKE_OSX_ARCHITECTURES' to either arm64 (Apple Silicon) or x86_64 (Intel)!")
 endif()
 
 # set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type for AliceVision")
@@ -78,10 +102,10 @@ else()
     add_subdirectory(src)
 
     install(
-        FILES 
-            LICENSE-MPL2.md 
-            LICENSE-MIT-libmv.md 
-            COPYING.md 
+        FILES
+            LICENSE-MPL2.md
+            LICENSE-MIT-libmv.md
+            COPYING.md
             CONTRIBUTORS.md
         DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
     )

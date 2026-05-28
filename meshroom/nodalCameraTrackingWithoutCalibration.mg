@@ -29,7 +29,9 @@
                 -220,
                 2
             ],
-            "inputs": {},
+            "inputs": {
+                "isSequence": true
+            },
             "internalInputs": {
                 "color": "#80766f"
             }

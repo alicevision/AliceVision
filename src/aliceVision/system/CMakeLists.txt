@@ -33,6 +33,7 @@ alicevision_add_library(aliceVision_system
         Boost::system
         Boost::date_time
         ${ALICEVISION_NVTX_LIBRARY}
+        ${ALICEVISION_OPENMP_CXX_TARGETS}
     PRIVATE_LINKS
         Boost::boost
 )

@@ -7,11 +7,7 @@ import os.path
 
 
 class SfMTransform(desc.AVCommandLineNode):
-    commandLine = "aliceVision_sfmTransform {allParams}"
-    size = desc.DynamicNodeSize("input")
-
-    category = "Utils"
-    documentation = """
+    """
 This node allows to change the coordinate system of one SfM scene.
 
 The transformation can be based on:
@@ -26,6 +22,10 @@ The transformation can be based on:
  * from_depthmaps: Rescale scene to match metric depth in tracks
 """
 
+    commandLine = "aliceVision_sfmTransform {allParams}"
+    size = desc.DynamicNodeSize("input")
+
+    category = "Utils"
     inputs = [
         desc.File(
             name="input",

@@ -606,13 +606,13 @@ unsigned long getNbDepthValuesFromDepthMap(int rc, const MultiViewParams& mp, in
     bool fromTiles = false;
 
     // get nbDepthValues from metadata
-    if (utils::exists(depthMapPath))  // untilled
+    if (utils::exists(depthMapPath))  // untiled
     {
         fileExists = true;
         const oiio::ParamValueList metadata = image::readImageMetadata(depthMapPath);
         nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
     }
-    else  // tilled
+    else  // tiled
     {
         std::vector<std::string> mapTilePathList;
         getTilePathList(rc, mp, EFileType::depthMapFiltered, customSuffix, mapTilePathList);

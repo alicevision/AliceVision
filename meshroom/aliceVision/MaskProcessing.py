@@ -26,12 +26,18 @@ class MaskProcessingNodeSize(desc.DynamicNodeSize):
 
 
 class MaskProcessing(desc.AVCommandLineNode):
+    """
+Perform Boolean and morphological operations on sets of binary masks.
+
+Given multiple directories of binary masks (where corresponding masks share the same filename),
+this node can combine them using logical operations (AND, OR, XOR). This is useful for combining
+masks produced by different segmentations.
+"""
+
     commandLine = "aliceVision_maskProcessing {allParams}"
     size = MaskProcessingNodeSize("inputs")
 
     category = "Utils"
-    documentation = """Perform operations on a list of masks with the same names."""
-
     inputs = [
         desc.ListAttribute(
             elementDesc=desc.File(

@@ -2406,7 +2406,9 @@ void DCPDatabase::clear()
 
 bool DCPDatabase::retrieveDcpForCamera(const std::string& make, const std::string& model, DCPProfile& dcpProf)
 {
-    const std::string dcpKey = make + "_" + model;
+    const std::string makeLower = boost::algorithm::to_lower_copy(make);
+    const std::string modelLower = boost::algorithm::to_lower_copy(model);
+    const std::string dcpKey = makeLower + "_" + modelLower;
 
     {
         // Retrieve preloaded DCPProfile
@@ -2421,8 +2423,8 @@ bool DCPDatabase::retrieveDcpForCamera(const std::string& make, const std::strin
     {
         // Load DCPProfile from disk
         const std::vector<std::string>::iterator it =
-          std::find_if(dcpFilenamesList.begin(), dcpFilenamesList.end(), [make, model](const std::string& s) {
-              return (s.find(make) != std::string::npos) && (s.find(model) != std::string::npos);
+          std::find_if(dcpFilenamesList.begin(), dcpFilenamesList.end(), [makeLower, modelLower](const std::string& s) {
+              return boost::algorithm::icontains(s, makeLower) && boost::algorithm::icontains(s, modelLower);
           });
 
         if (it != dcpFilenamesList.end())
@@ -2438,7 +2440,9 @@ bool DCPDatabase::retrieveDcpForCamera(const std::string& make, const std::strin
 
 void DCPDatabase::add_or_replace(DCPProfile& dcpProf, const std::string& make, const std::string& model)
 {
-    const std::string dcpKey = make + "_" + model;
+    const std::string makeLower = boost::algorithm::to_lower_copy(make);
+    const std::string modelLower = boost::algorithm::to_lower_copy(model);
+    const std::string dcpKey = makeLower + "_" + modelLower;
 
     std::map<std::string, image::DCPProfile>::iterator it = dcpStore.find(dcpKey);
     if (it != dcpStore.end())

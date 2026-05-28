@@ -29,7 +29,8 @@ endif()
 
 # Detect OpenMP environment
 set(OPENMP ON CACHE BOOL "OpenMP")
-if (OPENMP)
+# Only use OpenMP if enabled at the top level
+if (OPENMP AND ALICEVISION_USE_OPENMP)
     find_package(OpenMP QUIET)
     if (OPENMP_FOUND)
         message("OpenMP found. OpenMP activated in release.")
@@ -64,7 +65,7 @@ add_executable(MeshSDFilter
     MeshNormalFilter.h
     MeshSDFilter.cpp
 )
-target_link_libraries(MeshSDFilter MeshSDLibrary)
+target_link_libraries(MeshSDFilter MeshSDLibrary ${ALICEVISION_OPENMP_CXX_TARGETS})
 
 
 # Executable for denoising
@@ -76,7 +77,7 @@ add_executable(MeshDenoiser
     MeshNormalDenoising.h
     MeshDenoiser.cpp
 )
-target_link_libraries(MeshDenoiser MeshSDLibrary)
+target_link_libraries(MeshDenoiser MeshSDLibrary ${ALICEVISION_OPENMP_CXX_TARGETS})
 
 
 if (OPENMP_FOUND)
@@ -84,11 +85,7 @@ if (OPENMP_FOUND)
     # target_compile_definitions(MeshSDLibrary PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
     # target_link_libraries(MeshSDLibrary "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
 
-    target_compile_options(MeshSDFilter PUBLIC "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
     target_compile_definitions(MeshSDFilter PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
-    target_link_libraries(MeshSDFilter "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
 
-    target_compile_options(MeshDenoiser PUBLIC "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
     target_compile_definitions(MeshDenoiser PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
-    target_link_libraries(MeshDenoiser "$<$<CONFIG:RELEASE>:${OpenMP_CXX_FLAGS}>")
 endif()

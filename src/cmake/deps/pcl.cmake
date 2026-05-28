@@ -20,6 +20,7 @@ if(AV_BUILD_PCL)
             ${FLANN_CMAKE_FLAGS}
             ${LZ4_CMAKE_FLAGS}
             ${ZLIB_CMAKE_FLAGS}
+            ${OPENMP_CMAKE_FLAGS}
             -DWITH_CUDA:BOOL=${AV_USE_CUDA}
             -DWITH_OPENGL:BOOL=OFF
             -DWITH_OPENMP:BOOL=ON
@@ -30,7 +31,7 @@ if(AV_BUILD_PCL)
             ${FLANN_TARGET} ${LZ4_TARGET}
             ${EIGEN_TARGET} ${BOOST_TARGET}
             ${PNG_TARGET}   ${CUDA_TARGET}
-            ${ZLIB_TARGET}
+            ${ZLIB_TARGET} ${OPENMP_TARGET}
     )
 
     set(PCL_CMAKE_FLAGS -DPCL_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/pcl-1.12/)

@@ -1,6 +1,7 @@
 __version__ = "5.0"
 
 from meshroom.core import desc
+from meshroom.core.desc.validators import success, error
 from meshroom.core.utils import EXR_STORAGE_DATA_TYPE, VERBOSE_LEVEL
 
 # List of supported video extensions (provided by OpenImageIO)
@@ -57,17 +58,17 @@ class KeyframeSelectionNodeSize(desc.DynamicNodeSize):
 
 
 class KeyframeSelection(desc.AVCommandLineNode):
+    """
+    Allows to extract keyframes from a video and insert metadata.
+    It can extract frames from a synchronized multi-cameras rig.
+
+    You can extract frames at regular interval by configuring only the min/maxFrameStep.
+    """
+
     commandLine = "aliceVision_keyframeSelection {allParams}"
     size = KeyframeSelectionNodeSize("inputPaths")
 
     category = "Utils"
-    documentation = """
-Allows to extract keyframes from a video and insert metadata.
-It can extract frames from a synchronized multi-cameras rig.
-
-You can extract frames at regular interval by configuring only the min/maxFrameStep.
-"""
-
     inputs = [
         desc.ListAttribute(
             elementDesc=desc.File(
@@ -309,12 +310,9 @@ You can extract frames at regular interval by configuring only the min/maxFrameS
                         "are used to generate the output SfMData file.",
             value="none",
             values=["none", "exr", "jpg", "png"],
-            validValue=lambda node: not (any(ext in input.value.lower()
-                                             for ext in videoExts for
-                                             input in node.inputPaths.value)
-                                             and node.outputExtension.value == "none"),
-            errorMessage="A video input has been provided. The output extension should be "
-                         "different from 'none'.",
+            validators=[
+                lambda node, _ : success() if not (any(ext in input.value.lower() for ext in videoExts for input in node.inputPaths.value) and node.outputExtension.value == "none") else error("A video input has been provided. The output extension should be different from 'none'.")
+            ],
         ),
         desc.ChoiceParam(
             name="storageDataType",

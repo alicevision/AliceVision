@@ -5,11 +5,18 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class NormalMapRendering(desc.AVCommandLineNode):
+    """
+Render synthetic normal maps for each calibrated camera using a reference 3D mesh.
+
+Given an SfMData file with known camera poses and intrinsics, and a 3D mesh, this node
+rasterizes the mesh from each camera viewpoint and outputs per-view normal maps in camera
+space. The rendered normal maps can serve as ground truth for evaluating photometric stereo
+algorithms, or as input to normal integration for surface refinement.
+"""
+
     commandLine = "aliceVision_normalMapRendering {allParams}"
 
     category = "Utils"
-    documentation = """Using camera parameters and mesh, render normalmaps for each view."""
-
     inputs = [
         desc.File(
             name="input",

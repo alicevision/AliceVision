@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/CustomPatchPatternParams.hpp>
+#include <aliceVision/depthMapCommon/CustomPatchPatternParams.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -15,7 +15,7 @@ namespace depthMap {
  * @brief Build user custom patch pattern in CUDA constant memory.
  * @param[in] patchParams the user custom patch pattern parameters
  */
-void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams);
+void buildCustomPatchPattern(const depthMapCommon::CustomPatchPatternParams& patchParams);
 
 }  // namespace depthMap
 }  // namespace aliceVision

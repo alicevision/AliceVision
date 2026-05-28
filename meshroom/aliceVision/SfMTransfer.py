@@ -7,12 +7,20 @@ import os.path
 
 
 class SfMTransfer(desc.AVCommandLineNode):
+    """
+Transfer camera poses and/or intrinsics from one SfM scene onto another.
+
+This node matches cameras between a source SfMData and a reference SfMData using one of
+several strategies (by view ID, file path, metadata, pose ID, or intrinsic ID), then
+copies the resolved poses and intrinsics from the reference scene into the source scene.
+It is useful for propagating a high-quality reconstruction onto a different but related
+set of images, or for applying externally computed camera parameters.
+"""
+
     commandLine = "aliceVision_sfmTransfer {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """This node allows to transfer poses and/or intrinsics form one SfM scene onto another one."""
-
     inputs = [
         desc.File(
             name="input",

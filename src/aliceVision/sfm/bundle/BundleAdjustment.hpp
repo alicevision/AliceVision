@@ -92,6 +92,9 @@ struct TemporalConstraintParams
 class BundleAdjustment
 {
   public:
+
+    virtual ~BundleAdjustment() = default;
+
     /**
      * @brief Defines all the types of parameter adjusted during bundle adjustment.
      */

@@ -5,16 +5,16 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class FeatureRepeatability(desc.AVCommandLineNode):
+    """
+Compare feature/descriptor matching repeatability on some dataset with known homography motions.
+"""
+
     commandLine = "aliceVision_samples_repeatabilityDataset {allParams}"
     size = desc.DynamicNodeSize("input")
     # parallelization = desc.Parallelization(blockSize=40)
     # commandLineRange = '--rangeStart {rangeStart} --rangeSize {rangeBlockSize}'
 
     category = "Utils"
-    documentation = """
-Compare feature/descriptor matching repeatability on some dataset with known homography motions.
-"""
-
     inputs = [
         desc.File(
             name="input",

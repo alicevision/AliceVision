@@ -5,12 +5,7 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ImageMatchingMultiSfM(desc.AVCommandLineNode):
-    commandLine = "aliceVision_imageMatching {allParams}"
-    # use both SfM inputs to define Node's size
-    size = desc.MultiDynamicNodeSize(["input", "inputB"])
-
-    category = "Sparse Reconstruction"
-    documentation = """
+    """
 The goal of this node is to select the image pairs to match in the context of an SfM augmentation.
 The ambition is to find the images that are looking to the same areas of the scene.
 Thanks to this node, the FeatureMatching node will only compute the matches between the selected image pairs.
@@ -19,6 +14,11 @@ Thanks to this node, the FeatureMatching node will only compute the matches betw
 [https://alicevision.org/#photogrammetry/image_matching](https://alicevision.org/#photogrammetry/image_matching)
 """
 
+    commandLine = "aliceVision_imageMatching {allParams}"
+    # use both SfM inputs to define Node's size
+    size = desc.MultiDynamicNodeSize(["input", "inputB"])
+
+    category = "Sparse Reconstruction"
     inputs = [
         desc.File(
             name="input",

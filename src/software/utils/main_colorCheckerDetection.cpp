@@ -164,7 +164,7 @@ void drawSVG(const cv::Ptr<cv::mcc::CChecker>& checker, const std::string& outpu
     // Push back the quad representing the color checker
     quadsToDraw.push_back(QuadSVG(checker->getBox()));
 
-    // Transform matrix from 'theoric' to 'measured'
+    // Transform matrix from 'theoretical' to 'measured'
     cv::Matx33f tMatrix = cv::getPerspectiveTransform(MACBETH_CCHART_CORNERS_POS, checker->getBox());
 
     // Push back quads representing color checker cells
@@ -306,7 +306,7 @@ struct MacbethCCheckerQuad : Quad
         _imgOpt(imgOpt),
         _cellMasks(std::vector<cv::Mat>(24))
     {
-        // Transform matrix from 'theoric' to 'measured'
+        // Transform matrix from 'theoretical' to 'measured'
         _transformMat = cv::getPerspectiveTransform(MACBETH_CCHART_CORNERS_POS, _cchecker->getBox());
 
         // Create an image boolean mask for each cchecker cell

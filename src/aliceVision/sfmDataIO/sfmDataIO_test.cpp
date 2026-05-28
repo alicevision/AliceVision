@@ -85,6 +85,9 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
     ext_Type.push_back("abc");
 #endif
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_USD)
+    ext_Type.push_back("usda");
+#endif
     for (int i = 0; i < ext_Type.size(); ++i)
     {
         std::ostringstream os;

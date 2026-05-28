@@ -5,12 +5,23 @@ from meshroom.core.utils import VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class ImageMasking(desc.AVCommandLineNode):
+    """
+Generate a binary mask for each image in an SfMData scene.
+
+Pixels are classified as foreground or background using one of several algorithms:
+ - **HSV**: Select pixels within a configurable range of hue, saturation and value.
+   Useful for removing a monochromatic background such as a green screen.
+ - **AutoGrayscaleThreshold**: Automatically determine a grayscale threshold to separate
+   foreground from background.
+
+The resulting masks can be used by downstream nodes (e.g., DepthMap, Texturing) to
+restrict processing to the foreground region, improving quality and reducing computation time.
+"""
+
     commandLine = "aliceVision_imageMasking {allParams}"
     size = avpar.DynamicViewsSize("input")
     parallelization = desc.Parallelization(blockSize=40)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
-
-    documentation = """ """
 
     inputs = [
         desc.File(

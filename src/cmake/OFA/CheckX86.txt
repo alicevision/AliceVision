@@ -1,0 +1,218 @@
+# List of x86/x86_64 checks
+
+# FORMAT:
+# <extension flag >[,<list of extra extension flags>];<list of headers>;<name>;<list of parameters>;[<extension alias>]
+#
+# lines starting with # are comments
+# lines starting with push_enable: start a block of tests enabled for the given compilers only
+# lines starting with pop_enable: ends a block of tests enabled for the given compilers only
+# lines starting with push_disable: start a block of tests disabled for the given compilers
+# lines starting with pop_disable: ends a block of tests disabled for the given compilers
+
+# DESCRIPTION:
+# For each line of this file, HandleX86Options generates the code snipped
+#
+# #include<header0>
+# #include<header1>
+# ...
+# int main {
+#   name(parameter0, parameter1, ...);
+#   return 0;
+# }
+#
+# and compiles it with, e.g.
+#
+# gcc -m<extension> -m<extra extensions...>
+#
+# if the extension should be enabled and
+#
+# gcc -m-no<extension> -m-no<extra extensions...>
+#
+# if the extension should be disabled. In the above example, the
+# compiler name 'gcc' and the flag prefixes '-m' and '-mno-' will be
+# set properly by HandleX86Options.
+#
+# EXTENSION ALIAS:
+# By default, it is assumed that the name of the extension, e.g.,
+# avx512f coinsides with the name of the compiler flag to be used to
+# enable/disable it, e.g., -mno-avx512f. Some compilers like Oracle's
+# SunPro have non-canonical naming conventions,
+# cf. https://docs.oracle.com/cd/E77782_01/html/E77792/gqexw.html.
+#
+# In this case, the optional <extension alias> parameter can be used
+# to specify the name of the extension as reported by the system,
+# whereas the compiler-specific extension flag(s) are given in
+# <extension flag> and [<list of extra extension flags>], respectively.
+#
+# ENABLING/DISABLING OF CHECKS:
+# Checks can be explicitly disabled for particular compilers by placing
+# them inside a push_disable/pop_disable block, e.g.
+#
+# push_disable:MSVC,SunPro
+# <checks, one per line>
+# pop_disable:MSVC,SunPro
+#
+# Similarly, checks can be explicitly enabled for particular compilers
+# by placing them inside a push_disable/pop_disable block, e.g.
+#
+# push_enable:SunPro
+# <checks, one per line>
+# pop_enable:SunPro
+
+# MSVC and Oracle's SunPro compiler fail these checks
+push_disable:MSVC,SunPro
+
+# MMX
+mmx;mmintrin.h;_mm_add_pi16;__m64(),__m64()
+
+# SSE/SSE2/SSE3/SSE4.1/SSE4.2/SSE4A/AVX/AVX2/FMA
+avx;immintrin.h;_mm256_add_pd;_mm256_setzero_pd(),_mm256_setzero_pd()
+avx2;immintrin.h;_mm256_hadd_epi16;_mm256_setzero_si256(),_mm256_setzero_si256()
+fma;immintrin.h;_mm_fmadd_pd;_mm_setzero_pd(),_mm_setzero_pd(),_mm_setzero_pd()
+sse2;emmintrin.h;_mm_add_epi16;_mm_setzero_si128(),_mm_setzero_si128()
+sse3;pmmintrin.h;_mm_addsub_pd;_mm_setzero_pd(),_mm_setzero_pd()
+sse4.1;smmintrin.h;_mm_max_epi32;_mm_setzero_si128(),_mm_setzero_si128()
+sse4.2;nmmintrin.h;_mm_cmpgt_epi64;_mm_setzero_si128(),_mm_setzero_si128()
+sse4a;ammintrin.h;_mm_extract_si64;_mm_setzero_si128(),_mm_setzero_si128()
+sse;xmmintrin.h;_mm_add_ps;_mm_setzero_ps(),_mm_setzero_ps()
+ssse3;tmmintrin.h;_mm_hadd_epi16;_mm_setzero_si128(),_mm_setzero_si128()
+
+# AVX-VNNI
+avxvnni;immintrin.h;_mm_dpbusd_avx_epi32;_mm_setzero_si128(),_mm_setzero_si128(),_mm_setzero_si128()
+
+# AVX-512
+avx5124fmaps;immintrin.h;_mm_4fmadd_ss;_mm_setzero_ps(),_mm_setzero_ps(),_mm_setzero_ps(),_mm_setzero_ps(),_mm_setzero_ps(),new __m128[1]
+avx5124vnniw;immintrin.h;_mm512_4dpwssd_epi32;_mm512_setzero_si512(),_mm512_setzero_si512(),_mm512_setzero_si512(),_mm512_setzero_si512(),_mm512_setzero_si512(),new __m128i[1]
+avx512bf16,avx512vl;immintrin.h;_mm_cvtne2ps_pbh;_mm_setzero_ps(),_mm_setzero_ps()
+avx512bitalg,avx512vl;immintrin.h;_mm_popcnt_epi16;_mm_setzero_si128()
+avx512bw;immintrin.h;_mm512_abs_epi16;_mm512_setzero_si512()
+avx512cd;immintrin.h;_mm512_broadcastmb_epi64;__mmask8()
+avx512dq;immintrin.h;_mm512_and_pd;_mm512_setzero_pd(),_mm512_setzero_pd()
+avx512er;immintrin.h;_mm512_exp2a23_pd;_mm512_setzero_pd()
+avx512f;immintrin.h;_mm512_abs_epi32;_mm512_setzero_si512()
+avx512fp16,avx512vl;immintrin.h;_mm_add_ph;_mm_setzero_ph(),_mm_setzero_ph()
+avx512ifma;immintrin.h;_mm512_maskz_madd52hi_epu64;__mmask8(),_mm512_setzero_si512(),_mm512_setzero_si512(),_mm512_setzero_si512()
+avx512pf;immintrin.h;_mm512_prefetch_i32scatter_pd;NULL,_mm256_setzero_si256(),(int)1,_MM_HINT_T0
+avx512vbmi2,avx512vl;immintrin.h;_mm_mask_compress_epi16;_mm_setzero_si128(),__mmask8(),_mm_setzero_si128()
+avx512vbmi;immintrin.h;_mm512_permutex2var_epi8;_mm512_setzero_si512(),_mm512_setzero_si512(),_mm512_setzero_si512()
+avx512vl,avx512f;immintrin.h;_mm_abs_epi64;_mm_setzero_si128()
+avx512vnni,avx512vl;immintrin.h;_mm_dpbusd_epi32;_mm_setzero_si128(),_mm_setzero_si128(),_mm_setzero_si128()
+avx512vp2intersect,avx512vl;immintrin.h;_mm_2intersect_epi32;_mm_setzero_si128(),_mm_setzero_si128(),new __mmask8[1],new __mmask8[1]
+avx512vpopcntdq,avx512vl;immintrin.h;_mm_popcnt_epi64;_mm_setzero_si128()
+
+# AMX
+amx-bf16;immintrin.h;_tile_dpbf16ps;0,1,2
+amx-int8;immintrin.h;_tile_dpbssd;0,1,2
+amx-tile;immintrin.h;_tile_zero;0
+
+# Other
+adx;immintrin.h;_addcarryx_u32;(unsigned char)0,(unsigned int)1,(unsigned int)1,new unsigned int[1]
+aes;wmmintrin.h;_mm_aesdec_si128;_mm_setzero_si128(),_mm_setzero_si128()
+bmi2;immintrin.h;_bzhi_u32;(unsigned int)1,(unsigned int)1
+enqcmd;immintrin.h;_enqcmd;(void*)NULL,(void const*)NULL
+f16c;immintrin.h;_mm_cvtph_ps;_mm_setzero_si128()
+fsgsbase;immintrin.h;_readfsbase_u32;
+fxsr;immintrin.h;_fxrstor;(void*)NULL
+gfni,avx512vl;immintrin.h;_mm_gf2p8mul_epi8;_mm_setzero_si128(),_mm_setzero_si128()
+hreset;immintrin.h;_hreset;1
+invpcid;immintrin.h;_invpcid;(unsigned int)1,(void*)NULL
+keylocker;immintrin.h;_mm_aesdec128kl_u8;new __m128i[1],_mm_setzero_si128(),(const void*)NULL
+keylocker_wide;immintrin.h;_mm_aesdecwide128kl_u8;new __m128i[1],(const __m128i*)new __m128i[1], (const void*)NULL
+lzcnt;immintrin.h;_lzcnt_u32;(unsigned int)1
+monitor;pmmintrin.h;_mm_monitor;(void const*)NULL,(unsigned)1,(unsigned)1
+movbe;immintrin.h;_loadbe_i16;(void const*)NULL
+movdir64b;immintrin.h;_movdir64b;(void*)NULL,(const void*)NULL
+movdiri;immintrin.h;_directstoreu_u32;(void*)NULL,(unsigned int)1
+mpx;immintrin.h;_bnd_chk_ptr_lbounds;(const void*)NULL
+pclmul;wmmintrin.h;_mm_clmulepi64_si128;_mm_setzero_si128(),_mm_setzero_si128(),(const int)0;pclmul
+pconfig;immintrin.h;_pconfig_u32;(const int)1,new size_t[1]
+pku;cstdlib;exit;0
+popcnt;immintrin.h;_mm_popcnt_u32;(unsigned int)1
+prfchw;immintrin.h;_m_prefetchw;(void*)NULL
+prefetchwt1;xmmintrin.h;_mm_prefetch;(char const*)NULL,(int)1
+ptwrite;immintrin.h;_ptwrite32;(unsigned int)0
+rdpid;immintrin.h;_rdpid_u32;
+rdrnd;immintrin.h;_rdrand16_step;(unsigned short*)new unsigned short[1]
+rdseed;immintrin.h;_rdseed16_step;(unsigned short*)new unsigned short[1]
+rdtscp;immintrin.h;__rdtscp;(unsigned int*)NULL
+rtm;immintrin.h;_xend;
+serialize;immintrin.h;_serialize;
+sha;immintrin.h;_mm_sha1msg1_epu32;_mm_setzero_si128(),_mm_setzero_si128()
+tsc;immintrin.h;_rdtsc;
+tsxldtrk;immintrin.h;_xresldtrk;
+uintr;immintrin.h;_clui;
+vaes,avx512vl;immintrin.h;_mm256_aesdec_epi128;_mm256_setzero_si256(),_mm256_setzero_si256()
+vpclmulqdq,avx512vl;immintrin.h;_mm256_clmulepi64_epi128;_mm256_setzero_si256(),_mm256_setzero_si256(),(const int)1
+waitpkg;immintrin.h;_umonitor;(void*)NULL
+wbnoinvd;immintrin.h;_wbnoinvd;
+xsavec,xsave;immintrin.h;_xsavec;(void*)NULL,(unsigned long long)0
+xsaveopt,xsave;immintrin.h;_xsaveopt;(void*)NULL,(unsigned long long)0
+xsaves;immintrin.h;_xgetbv;(unsigned int)1
+xss,xsave;immintrin.h;_xrstors;(const void*)NULL,(unsigned long long)0
+
+# GNU GCC fails the following tests ...
+push_disable:GNU
+abm;x86intrin.h;_bextri_u32;(unsigned int)0,(unsigned int)0
+bmi;immintrin.h;_andn_u32;(unsigned int)1,(unsigned int)1
+cldemote;immintrin.h;_mm_cldemote;(void const*)NULL
+clflushopt;immintrin.h;_mm_clflushopt;(void const*)NULL
+clwb;immintrin.h;_mm_clwb;(void const*)NULL
+pop_disable:GNU
+
+# ... and needs a slightly modified implementation
+push_enable:GNU
+abm;x86intrin.h;__bextri_u32;(unsigned int)0,(unsigned int)0
+bmi;immintrin.h;__andn_u32;(unsigned int)1,(unsigned int)1
+cldemote;immintrin.h;_cldemote;(void*)NULL
+clflushopt;immintrin.h;_mm_clflushopt;(void*)NULL
+clwb;immintrin.h;_mm_clwb;(void*)NULL
+pop_enable:GNU
+
+pop_disable:MSVC,SunPro
+
+
+# Special checks for the MSVC compiler
+push_enable:MSVC
+
+# SSE/SSE2/SSE3/SSE4.1/SSE4.2/SSE4A/AVX/AVX2/FMA
+SSE;xmmintrin.h;_mm_add_ps;_mm_setzero_ps(),_mm_setzero_ps();sse
+SSE2;emmintrin.h;_mm_add_epi16;_mm_setzero_si128(),_mm_setzero_si128();sse2
+AVX;immintrin.h;_mm256_add_pd;_mm256_setzero_pd(),_mm256_setzero_pd();avx
+AVX2;immintrin.h;_mm256_hadd_epi16;_mm256_setzero_si256(),_mm256_setzero_si256();avx2
+
+# AVX-512
+AVX512;immintrin.h;_mm512_abs_epi32;_mm512_setzero_si512();avx512f
+
+pop_enable:MSVC
+
+
+# Special checks for Oracle's SunPro compiler
+# https://docs.oracle.com/cd/E77782_01/html/E77792/gqexw.html
+push_enable:SunPro
+
+# SSE/SSE2/SSE3/SSE4.1/SSE4.2/SSE4A/AVX/AVX2/FMA
+avx;immintrin.h;_mm256_add_pd;_mm256_setzero_pd(),_mm256_setzero_pd()
+avx2;immintrin.h;_mm256_hadd_epi16;_mm256_setzero_si256(),_mm256_setzero_si256()
+sse2;emmintrin.h;_mm_add_epi16;_mm_setzero_si128(),_mm_setzero_si128()
+sse3;pmmintrin.h;_mm_addsub_pd;_mm_setzero_pd(),_mm_setzero_pd()
+sse4_1;smmintrin.h;_mm_max_epi32;_mm_setzero_si128(),_mm_setzero_si128();sse4.1
+sse4_2;nmmintrin.h;_mm_cmpgt_epi64;_mm_setzero_si128(),_mm_setzero_si128();sse4.2
+sse;xmmintrin.h;_mm_add_ps;_mm_setzero_ps(),_mm_setzero_ps()
+ssse3;tmmintrin.h;_mm_hadd_epi16;_mm_setzero_si128(),_mm_setzero_si128()
+
+# AVX-512
+avx512;immintrin.h;_mm512_abs_epi32;_mm512_setzero_si512();avx512f
+avx512;xmmintrin.h;_mm_prefetch;(char const*)NULL,(int)1;prefetchwt1
+
+# Other
+avx_i;emmintrin.h;_mm_cvtph_ps;_mm_setzero_si128();f16c
+aes;wmmintrin.h;_mm_aesdec_si128;_mm_setzero_si128(),_mm_setzero_si128();aes
+aes;wmmintrin.h;_mm_clmulepi64_si128;_mm_setzero_si128(),_mm_setzero_si128(),(const int)0;pclmul
+avx2;immintrin.h;_lzcnt_u32;(unsigned int)1;lzcnt
+sse4_2;immintrin.h;_mm_popcnt_u32;(unsigned int)1;popcnt
+avx_i;immintrin.h;_andn_u32;(unsigned int)1,(unsigned int)1;bmi
+avx_i;immintrin.h;_bzhi_u32;(unsigned int)1,(unsigned int)1;bmi2
+avx_i;immintrin.h;_readfsbase_u32;;fsgsbase
+avx_i;immintrin.h;_rdrand16_step;(unsigned short*)new unsigned short[1];rdrnd
+pop_enable:SunPro
+

@@ -233,16 +233,16 @@ void tracksToIndexedMatches(const TracksMap& tracks, const std::vector<IndexT>& 
     }
 }
 
-void tracksLength(const TracksMap& tracks, std::map<std::size_t, std::size_t>& occurenceTrackLength)
+void tracksLength(const TracksMap& tracks, std::map<std::size_t, std::size_t>& occurrenceTrackLength)
 {
     for (TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
     {
         const std::size_t trLength = iterT->second.featPerView.size();
 
-        if (occurenceTrackLength.end() == occurenceTrackLength.find(trLength))
-            occurenceTrackLength[trLength] = 1;
+        if (occurrenceTrackLength.end() == occurrenceTrackLength.find(trLength))
+            occurrenceTrackLength[trLength] = 1;
         else
-            occurenceTrackLength[trLength] += 1;
+            occurrenceTrackLength[trLength] += 1;
     }
 }
 

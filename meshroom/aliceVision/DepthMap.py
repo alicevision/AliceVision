@@ -5,14 +5,7 @@ from meshroom.core.utils import VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class DepthMap(desc.AVCommandLineNode):
-    commandLine = "aliceVision_depthMapEstimation {allParams}"
-    gpu = desc.Level.INTENSIVE
-    size = avpar.DynamicReconstructedViewsSize("input")
-    parallelization = desc.Parallelization(blockSize=12)
-    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
-
-    category = "Dense Reconstruction"
-    documentation = """
+    """
 Estimate a depth map for each calibrated camera using Plane Sweeping, a multi-view stereo algorithm notable for its
 efficiency on modern graphics hardware (GPU).
 
@@ -24,6 +17,13 @@ Use a downscale factor of one (full-resolution) only if the quality of the input
 [https://alicevision.org/#photogrammetry/depth_maps_estimation](https://alicevision.org/#photogrammetry/depth_maps_estimation)
 """
 
+    commandLine = "aliceVision_depthMapEstimation {allParams}"
+    gpu = desc.Level.INTENSIVE
+    size = avpar.DynamicReconstructedViewsSize("input")
+    parallelization = desc.Parallelization(blockSize=12)
+    commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
+
+    category = "Dense Reconstruction"
     inputs = [
         desc.File(
             name="input",

@@ -85,7 +85,7 @@ void TriangulateNViewAlgebraicSpherical(const std::vector<Vec3> &xs,
  * @brief Compute a 3D position of a point from several images of it. In particular,
  * compute the projective point X in R^4 such that x ~ PX.
  * Algorithm is Lo-RANSAC
- * It can return the the list of the cameras set as intlier by the Lo-RANSAC algorithm.
+ * It can return the list of the cameras set as inlier by the Lo-RANSAC algorithm.
  *
  * @param[in] x are 2D coordinates (x,y,1) in each image
  * @param[in] Ps is the list of projective matrices for each camera

@@ -15,7 +15,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-void buildCustomPatchPattern(const CustomPatchPatternParams& patchParams)
+void buildCustomPatchPattern(const depthMapCommon::CustomPatchPatternParams& patchParams)
 {
     // check at least one patch subpart
     if (patchParams.subpartsParams.empty())

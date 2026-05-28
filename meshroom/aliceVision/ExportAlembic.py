@@ -5,15 +5,15 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class ExportAlembic(desc.AVCommandLineNode):
-    commandLine = "aliceVision_exportAlembic {allParams}"
-    size = desc.DynamicNodeSize("input")
-
-    category = "Export"
-    documentation = """
+    """
 Convert cameras from an SfM scene into an animated cameras in Alembic file format.
 Based on the input image filenames, it will recognize the input video sequence to create an animated camera.
 """
 
+    commandLine = "aliceVision_exportAlembic {allParams}"
+    size = desc.DynamicNodeSize("input")
+
+    category = "Export"
     inputs = [
         desc.File(
             name="input",

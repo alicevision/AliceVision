@@ -51,11 +51,19 @@ def progressUpdate(size=None, progress=None, logManager=None):
     logManager.updateProgressBar(progress)
 
 class SketchfabUpload(desc.Node):
+    """
+Upload a textured 3D model to the Sketchfab online platform.
+
+This node packages the input mesh and associated texture files into a ZIP archive and
+uploads them to Sketchfab using the Sketchfab API. An API token (available from your
+Sketchfab account settings) is required for authentication. The model can be given a
+title, description, and tags, and its visibility (public or private) can be configured.
+A progress indicator is shown during the upload.
+"""
+
     size = desc.DynamicNodeSize("inputFiles")
 
     category = "Export"
-    documentation = """Upload a textured mesh on Sketchfab."""
-
     inputs = [
         desc.ListAttribute(
             elementDesc=desc.File(

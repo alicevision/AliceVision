@@ -5,12 +5,20 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class TracksSimulating(desc.AVCommandLineNode):
+    """
+Generate synthetic feature tracks from a known SfMData scene for algorithm testing.
+
+Given an SfMData scene with known camera poses and 3D landmarks, this node simulates
+2D feature observations by projecting each landmark into all cameras that can see it.
+Configurable Gaussian noise can be added to the 2D observations, and a fraction of them
+can be replaced by outliers. The output tracks can be used to test and benchmark
+SfM algorithms in a controlled setting with known ground truth.
+"""
+
     commandLine = "aliceVision_tracksSimulating {allParams}"
     size = desc.DynamicNodeSize("input")
 
     category = "Utils"
-    documentation = """Generate tracks from an SfmData input."""
-
     inputs = [
         desc.File(
             name="input",

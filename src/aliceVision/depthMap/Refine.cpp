@@ -20,7 +20,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-Refine::Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const RefineParams& refineParams, cudaStream_t stream)
+Refine::Refine(const mvsUtils::MultiViewParams& mp, const mvsUtils::TileParams& tileParams, const depthMapCommon::RefineParams& refineParams, cudaStream_t stream)
   : _mp(mp),
     _tileParams(tileParams),
     _refineParams(refineParams),

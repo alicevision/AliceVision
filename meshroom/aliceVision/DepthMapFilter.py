@@ -5,6 +5,11 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class DepthMapFilter(desc.AVCommandLineNode):
+    """
+Filter depth map values that are not coherent in multiple depth maps.
+This allows to filter unstable points before starting the fusion of all depth maps in the Meshing node.
+"""
+
     commandLine = "aliceVision_depthMapFiltering {allParams}"
     gpu = desc.Level.NORMAL
     size = desc.DynamicNodeSize("input")
@@ -12,11 +17,6 @@ class DepthMapFilter(desc.AVCommandLineNode):
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
     category = "Dense Reconstruction"
-    documentation = """
-Filter depth map values that are not coherent in multiple depth maps.
-This allows to filter unstable points before starting the fusion of all depth maps in the Meshing node.
-"""
-
     inputs = [
         desc.File(
             name="input",

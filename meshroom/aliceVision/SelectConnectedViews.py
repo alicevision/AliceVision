@@ -5,14 +5,22 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SelectConnectedViews(desc.AVCommandLineNode):
+    """
+Select the set of neighbouring cameras for each view based on SfM landmark visibility.
+
+For each input view, this node identifies the best neighbouring cameras to use for
+multi-view stereo depth map estimation. Neighbours are selected based on the number of
+shared landmarks, the viewing angle between cameras, and a configurable maximum count.
+The output is a text file listing the selected neighbouring view indices, which is used
+by the DepthMap node to determine which images to process together.
+"""
+
     commandLine = "aliceVision_selectConnectedViews {allParams}"
 
     cpu = desc.Level.NORMAL
     ram = desc.Level.NORMAL
 
     category = "Dense Reconstruction"
-    documentation = """Select Connected Views based on SfM landmarks."""
-
     inputs = [
         desc.File(
             name="input",

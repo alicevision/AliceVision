@@ -23,6 +23,7 @@ std::string EImageDescriberType_informations()
            "* sift: Scale-invariant feature transform.\n"
            "* sift_float: SIFT stored as float.\n"
            "* sift_upright: SIFT with upright feature.\n"
+           "* roma: Deep dense matcher.\n"
            "* akaze: A-KAZE with floating point descriptors.\n"
            "* akaze_liop: A-KAZE with Local Intensity Order Pattern descriptors.\n"
            "* akaze_mldb: A-KAZE with Modified-Local Difference Binary descriptors.\n"
@@ -84,6 +85,8 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
             return "akaze_ocv";
 #endif  // ALICEVISION_HAVE_OPENCV
 
+        case EImageDescriberType::ROMA:
+            return "roma";
         case EImageDescriberType::UNKNOWN:
             return "unknown";
         case EImageDescriberType::UNINITIALIZED:
@@ -134,7 +137,8 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
     if (type == "akaze_ocv")
         return EImageDescriberType::AKAZE_OCV;
 #endif  // ALICEVISION_HAVE_OPENCV
-
+    if (type == "roma")
+        return EImageDescriberType::ROMA;
     if (type == "unknown")
         return EImageDescriberType::UNKNOWN;
     // UNINITIALIZED should throw an error.

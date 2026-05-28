@@ -5,6 +5,18 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class SfMExpanding(desc.AVCommandLineNode):
+    """
+Expand an incremental Structure-from-Motion reconstruction by localizing additional cameras.
+
+Starting from an initialized SfMData (produced by SfmBootstrapping), this node iteratively
+adds new views to the reconstruction. For each candidate view, it localizes the camera by
+finding 2D-3D correspondences between tracked features and existing 3D landmarks (resectioning),
+then triangulates new landmarks that become visible from the newly added cameras.
+
+The process continues until all views have been processed or no further views can be added.
+Bundle adjustment is performed periodically to refine all camera poses and 3D point positions.
+"""
+
     commandLine = "aliceVision_sfmExpanding {allParams}"
     size = desc.DynamicNodeSize("input")
 
@@ -12,8 +24,6 @@ class SfMExpanding(desc.AVCommandLineNode):
     ram = desc.Level.INTENSIVE
 
     category = "Sparse Reconstruction"
-    documentation = """ """
-
     inputs = [
         desc.File(
             name="input",
@@ -325,3 +335,11 @@ class SfMExpanding(desc.AVCommandLineNode):
             value="{nodeCacheFolder}/cameras.sfm",
         )
     ]
+
+    def onUseTemporalConstraintChanged(self, node):
+        if node.useTemporalConstraint.value:
+            node.useLocalBA.value = False
+
+    def onUseLocalBAChanged(self, node):
+        if node.useLocalBA.value:
+            node.useTemporalConstraint.value = False

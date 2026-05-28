@@ -18,6 +18,9 @@ public:
     using uptr = std::unique_ptr<LocalizationValidationPolicy>;
 
 public:
+
+    virtual ~LocalizationValidationPolicy() = default;
+
     /**
      * @brief A function to validate the result of the Ransac process using N inputs
      * @param intrinsic the intrinsic used for the resection

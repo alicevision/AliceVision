@@ -1,0 +1,373 @@
+#usda 1.0
+(
+    doc = "Proposed USD schema for AliceVision SfMData with hybrid storage: table for landmarks/observations and one prim per object for other entities."
+)
+
+over "GLOBAL" (
+    customData = {
+        string libraryName = "avSfm"
+        string libraryPath = "./"
+        string libraryPrefix = "Av"
+        string tokensPrefix = "Av"
+    }
+)
+{
+}
+
+class "AvSfMData" (
+    inherits = </Typed>
+    customData = {
+        string className = "SfMData"
+        string fileName = "sfmData"
+    }
+)
+{
+    int3 av:version = (1, 0, 0)
+
+    string[] av:featuresFolders = []
+    string[] av:matchesFolders = []
+
+    rel av:views = </SfM/Views>
+    rel av:viewImageInfos = </SfM/ViewImageInfos>
+    rel av:intrinsics = </SfM/Intrinsics>
+    rel av:poses = </SfM/Poses>
+    rel av:rigs = </SfM/Rigs>
+    rel av:ancestors = </SfM/Ancestors>
+    rel av:imageGroups = </SfM/ImageGroups>
+
+    rel av:landmarks = </SfM/Landmarks>
+    rel av:constraints2d = </SfM/Constraints2D>
+    rel av:constraintPoints = </SfM/ConstraintPoints>
+    rel av:rotationPriors = </SfM/RotationPriors>
+    rel av:surveyPoints = </SfM/SurveyPoints>
+}
+
+class "AvView" (
+    inherits = </Typed>
+    customData = {
+        string className = "View"
+        string fileName = "view"
+    }
+)
+{
+    uint av:viewId = 4294967295
+    uint av:imageInfoId = 4294967295
+    uint av:intrinsicId = 4294967295
+    uint av:poseId = 4294967295
+    uint av:rigId = 4294967295
+    uint av:subPoseId = 4294967295
+    uint av:frameId = 4294967295
+    uint av:resectionId = 4294967295
+    uint av:imageGroupId = 4294967295
+
+    uint[] av:ancestorIds = []
+}
+
+class "AvImageInfo" (
+    inherits = </Typed>
+    customData = {
+        string className = "ImageInfo"
+        string fileName = "imageInfo"
+    }
+)
+{
+    uint av:id = 4294967295
+    string av:imagePath = ""
+    uint av:imageWidth = 0
+    uint av:imageHeight = 0
+
+    string[] av:metadataKeys = []
+    string[] av:metadataValues = []
+}
+
+class "AvPose" (
+    inherits = </Typed>
+    customData = {
+        string className = "Pose"
+        string fileName = "pose"
+    }
+)
+{
+    uint av:id = 4294967295
+    matrix4d av:worldFromCamera = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1) )
+    uchar av:state = 0
+    bool av:locked = false
+    bool av:rotationOnly = false
+    bool av:removable = true
+    float6 av:uncertainty = (0, 0, 0, 0, 0, 0)
+}
+
+class "AvIntrinsic" (
+    inherits = </Typed>
+    customData = {
+        string className = "Intrinsic"
+        string fileName = "intrinsic"
+    }
+)
+{
+    uint av:id = 4294967295
+    token av:modelType = "unknown"
+    bool av:locked = false
+    uint av:imageWidth = 0
+    uint av:imageHeight = 0
+    double av:sensorWidth = 0
+    double av:sensorHeight = 0
+    string av:serialNumber = ""
+    int av:initializationMode = 0
+
+    rel av:distortion
+    rel av:undistortion
+}
+
+class "AvIntrinsicPinhole" (
+    inherits = </AvIntrinsic>
+    customData = {
+        string className = "IntrinsicPinhole"
+        string fileName = "intrinsicPinhole"
+    }
+)
+{
+    double2 av:focalLengthPix = (0, 0)
+    double2 av:principalPoint = (0, 0)
+}
+
+class "AvIntrinsicEquidistant" (
+    inherits = </AvIntrinsic>
+    customData = {
+        string className = "IntrinsicEquidistant"
+        string fileName = "intrinsicEquidistant"
+    }
+)
+{
+    double2 av:focalLengthPix = (0, 0)
+    double2 av:principalPoint = (0, 0)
+    double av:circleRadius = 0
+    double2 av:circleCenter = (0, 0)
+}
+
+class "AvIntrinsicEquirectangular" (
+    inherits = </AvIntrinsic>
+    customData = {
+        string className = "IntrinsicEquirectangular"
+        string fileName = "intrinsicEquirectangular"
+    }
+)
+{
+    double2 av:focalLengthPix = (0, 0)
+    double2 av:principalPoint = (0, 0)
+}
+
+class "AvDistortion" (
+    inherits = </Typed>
+    customData = {
+        string className = "Distortion"
+        string fileName = "distortion"
+    }
+)
+{
+    token av:modelType = "none"
+    bool av:locked = false
+    double[] av:parameters = []
+}
+
+
+class "AvUndistortion" (
+    inherits = </Typed>
+    customData = {
+        string className = "Undistortion"
+        string fileName = "undistortion"
+    }
+)
+{
+    token av:modelType = "none"
+    bool av:locked = false
+    bool av:desqueezed = false
+    double av:pixelAspectRatio = 1
+    double av:diagonal = 0
+    double2 av:size = (0, 0)
+    double2 av:offset = (0, 0)
+    double[] av:parameters = []
+}
+
+class "AvRig" (
+    inherits = </Typed>
+    customData = {
+        string className = "Rig"
+        string fileName = "rig"
+    }
+)
+{
+    uint av:id = 4294967295
+    uint[] av:subPoseIds = []
+}
+
+class "AvRigSubPose" (
+    inherits = </Typed>
+    customData = {
+        string className = "RigSubPose"
+        string fileName = "rigSubPose"
+    }
+)
+{
+    uint av:id = 4294967295
+    uchar av:status = 0
+    matrix4d av:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1) )
+}
+
+class "AvLandmarkTableAPI" (
+    inherits = </APISchemaBase>
+    customData = {
+        string className = "LandmarkTableAPI"
+        string fileName = "landmarkTableAPI"
+        string apiSchemaType = "singleApply"
+    }
+)
+{
+    uint[] av:ids
+    uchar[] av:state
+    uchar[] av:descType
+    uchar[] av:flags
+    uint[] av:referenceViewId
+    float3[] av:uncertainty
+
+    uint[] av:obsOffsets
+    uint[] av:obsViewId
+    uint[] av:obsFeatureId
+    float2[] av:obsXY
+    half[] av:obsScale
+    half[] av:obsDepth
+
+    uint[] av:viewIds
+    uint[] av:viewObsOffsets
+    uint[] av:viewObsLandmarkIndex
+    uint[] av:viewObsIndex
+}
+
+class "AvConstraint2D" (
+    inherits = </Typed>
+    customData = {
+        string className = "Constraint2D"
+        string fileName = "constraint2D"
+    }
+)
+{
+    uchar av:descType = 1
+    uint av:viewFirst = 4294967295
+    uint av:viewSecond = 4294967295
+
+    float2 av:observationFirstXY = (0, 0)
+    uint av:observationFirstFeatureId = 4294967295
+    half av:observationFirstScale = 0
+    half av:observationFirstDepth = -1
+
+    float2 av:observationSecondXY = (0, 0)
+    uint av:observationSecondFeatureId = 4294967295
+    half av:observationSecondScale = 0
+    half av:observationSecondDepth = -1
+}
+
+class "AvConstraintPoint" (
+    inherits = </Typed>
+    customData = {
+        string className = "ConstraintPoint"
+        string fileName = "constraintPoint"
+    }
+)
+{
+    uint av:id = 4294967295
+    uint av:landmarkId = 4294967295
+    float3 av:normal = (0, 0, 0)
+    float3 av:point = (0, 0, 0)
+}
+
+class "AvRotationPrior" (
+    inherits = </Typed>
+    customData = {
+        string className = "RotationPrior"
+        string fileName = "rotationPrior"
+    }
+)
+{
+    uint av:id = 4294967295
+    uint av:viewFirst = 4294967295
+    uint av:viewSecond = 4294967295
+    matrix3d av:secondRFirst = ( (1, 0, 0), (0, 1, 0), (0, 0, 1) )
+}
+
+class "AvSurveyPointGroup" (
+    inherits = </Typed>
+    customData = {
+        string className = "SurveyPointGroup"
+        string fileName = "surveyPointGroup"
+    }
+)
+{
+    uint av:id = 4294967295
+}
+
+class "AvSurveyPoint" (
+    inherits = </Typed>
+    customData = {
+        string className = "SurveyPoint"
+        string fileName = "surveyPoint"
+    }
+)
+{
+    uint av:id = 4294967295
+    float3 av:point3d = (0, 0, 0)
+    float2 av:survey = (0, 0)
+    float2 av:residual = (0, 0)
+}
+
+class "AvImageGroup" (
+    inherits = </Typed>
+    customData = {
+        string className = "ImageGroup"
+        string fileName = "imageGroup"
+    }
+)
+{
+    uint av:id = 4294967295
+    int av:type = 0
+}
+
+# Example application target:
+# def "SfM" (
+#     typeName = "AvSfMData"
+# )
+# {
+#     def Scope "Views"
+#     {
+#         def "view_000001" (
+#             typeName = "AvView"
+#         )
+#         {
+#         }
+#     }
+#
+#     def Scope "ViewImageInfos"
+#     {
+#         def "imageInfo_000001" (
+#             typeName = "AvImageInfo"
+#         )
+#         {
+#         }
+#     }
+#
+#     def Scope "Poses"
+#     {
+#         def "pose_000001" (
+#             typeName = "AvPose"
+#         )
+#         {
+#         }
+#     }
+#
+#     def Points "Landmarks" (
+#         apiSchemas = ["AvLandmarkTableAPI"]
+#     )
+#     {
+#         point3f[] points = []
+#         color3f[] primvars:displayColor = []
+#     }
+# }

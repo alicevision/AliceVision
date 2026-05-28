@@ -5,11 +5,19 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class LightingEstimation(desc.AVCommandLineNode):
+    """
+Estimate the lighting conditions of a scene using depth maps and input images.
+
+For each view, the lighting is modeled as a low-frequency spherical harmonic environment map.
+Estimation can be performed globally (a single lighting model shared across all images)
+or per-image (an individual model for each view). The surface albedo can be estimated with
+different methods (constant, picture-based, or filtered). The resulting lighting vectors
+are used by the PhotometricStereo pipeline.
+"""
+
     commandLine = "aliceVision_lightingEstimation {allParams}"
 
     category = "Utils"
-    documentation = """ """
-
     inputs = [
         desc.File(
             name="input",

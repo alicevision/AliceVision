@@ -9,7 +9,7 @@
 #include <string>
 
 namespace aliceVision {
-namespace depthMap {
+namespace depthMapCommon {
 
 /**
  * @brief Semi Global Matching Parameters
@@ -44,14 +44,14 @@ struct SgmParams
     bool exportIntermediateCrossVolumes = false;
     bool exportIntermediateTopographicCutVolumes = false;
     bool exportIntermediateVolume9pCsv = false;
-    const bool exportDepthsTxtFiles = false;
+    static constexpr bool exportDepthsTxtFiles = false;
 
     // constant parameters
 
-    const bool updateUninitializedSim = true;  // should always be true, false for debug purposes
-    const float prematchingMaxDepthScale = 1.5f;
-    const double seedsRangePercentile = 0.999;
-    const bool doSgmOptimizeVolume = true;
+    static constexpr bool updateUninitializedSim = true;  // should always be true, false for debug purposes
+    static constexpr float prematchingMaxDepthScale = 1.5f;
+    static constexpr double seedsRangePercentile = 0.999;
+    static constexpr bool doSgmOptimizeVolume = true;
 };
 
 }  // namespace depthMap

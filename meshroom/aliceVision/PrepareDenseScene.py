@@ -5,16 +5,16 @@ from meshroom.core.utils import VERBOSE_LEVEL
 
 
 class PrepareDenseScene(desc.AVCommandLineNode):
+    """
+This node export undistorted images so the depth map and texturing can be computed on Pinhole images without distortion.
+"""
+
     commandLine = "aliceVision_prepareDenseScene {allParams}"
     size = desc.DynamicNodeSize("input")
     parallelization = desc.Parallelization(blockSize=40)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeBlockSize}"
 
     category = "Dense Reconstruction"
-    documentation = """
-This node export undistorted images so the depth map and texturing can be computed on Pinhole images without distortion.
-"""
-
     inputs = [
         desc.File(
             name="input",

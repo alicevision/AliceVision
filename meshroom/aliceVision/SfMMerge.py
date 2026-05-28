@@ -26,12 +26,20 @@ class MergeNodeSize(desc.DynamicNodeSize):
 
 
 class SfMMerge(desc.AVCommandLineNode):
+    """
+Merge two or more SfMData files into a single unified SfMData scene.
+
+All input SfMData files must have disjoint view and landmark identifiers (UIDs);
+the node will fail if any UID is shared between inputs to prevent ambiguous merging.
+Various merging strategies are available to control how overlapping intrinsics or
+poses are handled. This node is typically used to combine independently reconstructed
+sub-scenes before a joint bundle adjustment.
+"""
+
     commandLine = "aliceVision_sfmMerge {allParams}"
     size = MergeNodeSize("inputs")
 
     category = "Utils"
-    documentation = """Merges two SfMData files into a single one. Fails if some UID is shared among them."""
-
     inputs = [
         desc.ListAttribute(
             elementDesc=desc.File(

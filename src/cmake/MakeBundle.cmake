@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.30)
 # Perform bundle fixup on all executables of an install directory
 # and generates a standalone bundle with all required runtime dependencies.
 #

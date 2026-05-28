@@ -29,13 +29,16 @@ if(AV_BUILD_OPENSUBDIV)
             -DNO_METAL=ON
             -DNO_CLEW=ON
             -DNO_CUEW=ON
-            
+
             # Disable PTex (requires OpenGL)
             -DNO_PTEX=ON
-            
+
             # Enable CPU backends
             -DNO_OMP=OFF
             -DNO_TBB=OFF
+
+            ${OPENMP_CMAKE_FLAGS}
+        DEPENDS ${OPENMP_TARGET}
     )
 
 endif()

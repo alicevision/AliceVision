@@ -5,13 +5,7 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
 class GeometricFilterEstimating(desc.AVCommandLineNode):
-    commandLine = 'aliceVision_geometricFilterEstimating {allParams}'
-    size = avpar.DynamicViewsSize("input")
-    parallelization = desc.Parallelization(blockSize=20)
-    commandLineRange = '--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}'
-
-    category = 'Sparse Reconstruction'
-    documentation = '''
+    '''
 It performs a geometric filtering of the photometric match candidates.
 It uses the features positions in the images to make a geometric filtering by using epipolar geometry in an outlier detection framework
 called RANSAC (RANdom SAmple Consensus). It randomly selects a small set of feature correspondences and compute the fundamental (or essential) matrix,
@@ -21,6 +15,12 @@ then it checks the number of features that validates this model and iterate thro
 [https://alicevision.org/#photogrammetry/feature_matching](https://alicevision.org/#photogrammetry/feature_matching)
 '''
 
+    commandLine = 'aliceVision_geometricFilterEstimating {allParams}'
+    size = avpar.DynamicViewsSize("input")
+    parallelization = desc.Parallelization(blockSize=20)
+    commandLineRange = '--rangeIteration {rangeIteration} --rangeBlocksCount {rangeBlocksCount}'
+
+    category = 'Sparse Reconstruction'
     inputs = [
         desc.File(
             name="input",

@@ -5,10 +5,20 @@ from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
 class SfMDistances(desc.AVCommandLineNode):
+    """
+Compute and display pairwise distances between elements in an SfM scene.
+
+Given two sets of element identifiers (A and B), this node calculates the Euclidean
+distances between every combination of elements in the two sets, and prints the results.
+Elements can be either 3D landmarks (filtered by describer type) or camera positions.
+If a set is left empty, all elements of that type in the scene are included.
+
+This is primarily a diagnostic and quality-assessment tool, useful for verifying
+known distances in the scene, such as measurements between calibration targets.
+"""
+
     commandLine = "aliceVision_sfmDistances {allParams}"
     size = desc.DynamicNodeSize("input")
-
-    documentation = """ """
 
     inputs = [
         desc.File(

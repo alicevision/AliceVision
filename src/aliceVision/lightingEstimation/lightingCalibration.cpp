@@ -71,9 +71,25 @@ void lightCalibration(const sfmData::SfMData& sfmData,
 
     // Main tree
     bpt::ptree fileTree;
+
     // Read the json file and initialize the tree
     bpt::read_json(inputFile, fileTree);
 
+    // Spheres tree
+    bpt::ptree spheresTree;
+    
+    // Initialize spheres tree
+    const auto shapesTreeOpt = fileTree.get_child_optional("shapes");
+    if (shapesTreeOpt && !shapesTreeOpt->empty()) 
+    {
+        const auto& firstShapeTree = shapesTreeOpt->begin()->second;
+        spheresTree = firstShapeTree.get_child("observations");
+    }
+    else
+    {
+        ALICEVISION_THROW_ERROR("Cannot find sphere detection data in '" << inputFile << "'.");
+    }
+    
     for (const auto& [currentId, currentView] : viewMap)
     {
         ALICEVISION_LOG_INFO("View Id: " << currentView.getViewId());
@@ -82,19 +98,20 @@ void lightCalibration(const sfmData::SfMData& sfmData,
         if (!boost::algorithm::icontains(imagePath.stem().string(), "ambient"))
         {
             std::string sphereName = std::to_string(currentView.getViewId());
-            auto sphereExists = (fileTree.get_child_optional(sphereName)).is_initialized();
+            auto sphereExists = (spheresTree.get_child_optional(sphereName)).is_initialized();
             if (sphereExists)
             {
                 ALICEVISION_LOG_INFO("  - " << imagePath.string());
                 imageList.push_back(imagePath.string());
 
                 std::array<float, 3> currentSphereParams;
-                for (auto& currentSphere : fileTree.get_child(sphereName))
                 {
-                    currentSphereParams[0] = currentSphere.second.get_child("").get("x", 0.0);
-                    currentSphereParams[1] = currentSphere.second.get_child("").get("y", 0.0);
-                    currentSphereParams[2] = currentSphere.second.get_child("").get("r", 0.0);
+                    const auto& currentSphere = spheresTree.get_child(sphereName);
+                    currentSphereParams[0] = currentSphere.get("center.x", 0.0) - (currentView.getImage().getWidth() / 2);
+                    currentSphereParams[1] = currentSphere.get("center.y", 0.0) - (currentView.getImage().getHeight() / 2);
+                    currentSphereParams[2] = currentSphere.get("radius", 0.0);
                 }
+
                 allSpheresParams.push_back(currentSphereParams);
 
                 IndexT intrinsicId = currentView.getIntrinsicId();

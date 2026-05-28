@@ -8,9 +8,9 @@
 
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
-#include <aliceVision/depthMap/DepthMapParams.hpp>
-#include <aliceVision/depthMap/SgmParams.hpp>
-#include <aliceVision/depthMap/RefineParams.hpp>
+#include <aliceVision/depthMapCommon/DepthMapParams.hpp>
+#include <aliceVision/depthMapCommon/SgmParams.hpp>
+#include <aliceVision/depthMapCommon/RefineParams.hpp>
 #include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 #include <aliceVision/depthMap/Tile.hpp>
 
@@ -37,9 +37,9 @@ class DepthMapEstimator : public IGPUJob
      */
     DepthMapEstimator(const mvsUtils::MultiViewParams& mp,
                       const mvsUtils::TileParams& tileParams,
-                      const DepthMapParams& depthMapParams,
-                      const SgmParams& sgmParams,
-                      const RefineParams& refineParams);
+                      const depthMapCommon::DepthMapParams& depthMapParams,
+                      const depthMapCommon::SgmParams& sgmParams,
+                      const depthMapCommon::RefineParams& refineParams);
 
     // no copy constructor
     DepthMapEstimator(DepthMapEstimator const&) = delete;
@@ -78,9 +78,9 @@ class DepthMapEstimator : public IGPUJob
 
     const mvsUtils::MultiViewParams& _mp;     //< multi-view parameters
     const mvsUtils::TileParams& _tileParams;  //< tiling parameters
-    const DepthMapParams& _depthMapParams;    //< depth map estimation parameters
-    const SgmParams& _sgmParams;              //< parameters of Sgm process
-    const RefineParams& _refineParams;        //< parameters of Refine process
+    const depthMapCommon::DepthMapParams& _depthMapParams;    //< depth map estimation parameters
+    const depthMapCommon::SgmParams& _sgmParams;              //< parameters of Sgm process
+    const depthMapCommon::RefineParams& _refineParams;        //< parameters of Refine process
     std::vector<ROI> _tileRoiList;            //< depth maps region-of-interest list
 };
 

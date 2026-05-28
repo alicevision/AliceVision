@@ -43,6 +43,7 @@ if(AV_BUILD_OPENCV)
             ${PNG_CMAKE_FLAGS}
             ${JPEG_CMAKE_FLAGS}
             ${LIBRAW_CMAKE_FLAGS}
+            ${OPENMP_CMAKE_FLAGS}
             -DWITH_TBB=ON
             -DWITH_FFMPEG=${AV_BUILD_FFMPEG}
             -DBUILD_opencv_python2=OFF
@@ -74,7 +75,7 @@ if(AV_BUILD_OPENCV)
             opencv_contrib
             ${TBB_TARGET}    ${ZLIB_TARGET}   ${OPENEXR_TARGET}
             ${TIFF_TARGET}   ${PNG_TARGET}    ${JPEG_TARGET}
-            ${LIBRAW_TARGET} ${FFMPEG_TARGET}
+            ${LIBRAW_TARGET} ${FFMPEG_TARGET} ${OPENMP_TARGET}
     )
 
     set(OPENCV_CMAKE_FLAGS

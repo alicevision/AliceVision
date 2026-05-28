@@ -315,6 +315,17 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
+    # SfM Data Intersection
+    alicevision_add_software(aliceVision_sfmDataIntersection
+        SOURCE main_sfmDataIntersection.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+    )
+
     # Tracks Merge
     alicevision_add_software(aliceVision_tracksMerging
         SOURCE main_tracksMerging.cpp
@@ -612,7 +623,6 @@ if (ALICEVISION_BUILD_MVS)
               aliceVision_cmdline
               aliceVision_mvsData
               aliceVision_mvsUtils
-              aliceVision_depthMap
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options

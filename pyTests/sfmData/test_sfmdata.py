@@ -83,6 +83,46 @@ def test_sfmdata_get_poses():
     assert len(data.getPoses()) == len(poses) == 1, "The list of Poses should have been updated"
 
 
+def test_sfmdata_iterate_poses():
+    """ Test creating an SfMData object, filling it with Poses, and iterating over them. """
+    data = av.SfMData()
+    poses = data.getPoses()
+
+    pose_ids = [1, 2, 3, 4, 5]
+    for pose_id in pose_ids:
+        camera_pose = av.CameraPose()
+        poses[pose_id] = camera_pose
+
+    assert len(poses) == len(pose_ids), "The list of Poses should contain all added Poses"
+
+    # Test __iter__: iterating yields all pose IDs
+    iterated_ids = [pose_id for pose_id in poses]
+    assert sorted(iterated_ids) == sorted(pose_ids), \
+        "Iterating over Poses should yield all pose IDs"
+
+    # Test keys()
+    keys = poses.keys()
+    assert sorted(keys) == sorted(pose_ids), \
+        "keys() should return all pose IDs"
+
+    # Test values()
+    values = poses.values()
+    print(type(values))
+    assert len(values) == len(pose_ids), \
+        "values() should return one CameraPose per pose ID"
+    assert all(isinstance(v, av.CameraPose) for v in values), \
+        "Each value returned by values() should be a CameraPose"
+
+    # Test items()
+    items = poses.items()
+    assert len(items) == len(pose_ids), \
+        "items() should return one (pose_id, CameraPose) pair per pose"
+    for pose_id, pose in items:
+        assert pose_id in pose_ids, "Each key from items() should be a valid pose ID"
+        assert isinstance(pose, av.CameraPose), \
+            "Each value from items() should be a CameraPose"
+
+
 def test_sfmdata_get_rigs():
     """ Test creating an empty SfMData object, retrieving and editing its Rigs. """
     data = av.SfMData()
