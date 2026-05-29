@@ -1,7 +1,7 @@
 {
     "header": {
         "releaseVersion": "2026.1.0+develop",
-        "fileVersion": "2.0",
+        "fileVersion": "2.1",
         "nodesVersions": {
             "ApplyCalibration": "1.0",
             "CameraInit": "12.1",
@@ -12,19 +12,19 @@
             "ExportAlembic": "1.0",
             "ExportDistortion": "2.0",
             "ExportImages": "1.1",
-            "GeometricFilterEstimating": "1.0",
+            "GeometricFilterEstimating": "1.1",
             "ImageSegmentationSam3": "1.0",
             "IntrinsicsTransforming": "1.1",
             "KeyframeSelection": "5.0",
-            "MatchMasking": "1.0",
+            "MatchMasking": "1.2",
             "RelativePoseEstimating": "3.1",
-            "RomaMatcher": "1.0",
-            "RomaReducer": "1.0",
-            "RomaSampler": "1.0",
+            "RomaMatcher": "1.1",
+            "RomaReducer": "1.1",
+            "RomaSampler": "1.1",
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.3",
+            "SfMExpanding": "2.4",
             "SfMTransform": "3.2",
             "StarListing": "1.0",
             "TracksBuilding": "1.0"
@@ -201,8 +201,7 @@
             ],
             "inputs": {
                 "input": "{CameraInit_1.output}",
-                "maskInvert": true,
-                "keepFilename": true
+                "maskInvert": true
             },
             "internalInputs": {
                 "color": "#575963"
@@ -246,8 +245,10 @@
                 "inputSfMData": "{RomaMatcher_1.inputSfMData}",
                 "imagePairsList": "{RomaMatcher_1.imagePairsList}",
                 "warpFolder": "{RomaMatcher_1.outputWarpFolder}",
-                "certaintyFolder": "{RomaMatcher_1.outputCertaintyFolder}",
-                "masksFolder": "{ImageSegmentationSam3_1.output}"
+                "confidenceFolder": "{RomaMatcher_1.outputConfidenceFolder}",
+                "masksFolders": [
+                    "{ImageSegmentationSam3_1.output}"
+                ]
             },
             "internalInputs": {
                 "color": "#575963"
@@ -327,7 +328,7 @@
                 "inputSfMData": "{MatchMasking_1.inputSfMData}",
                 "imagePairsList": "{MatchMasking_1.imagePairsList}",
                 "warpFolder": "{MatchMasking_1.warpFolder}",
-                "certaintyFolder": "{MatchMasking_1.outputCertaintyFolder}",
+                "confidenceFolder": "{MatchMasking_1.outputConfidenceFolder}",
                 "maxMatches": 5000
             },
             "internalInputs": {
@@ -344,9 +345,8 @@
                 "inputSfMData": "{GeometricFilterEstimating_1.input}",
                 "imagePairsList": "{RomaReducer_1.imagePairsList}",
                 "warpFolder": "{RomaSampler_1.warpFolder}",
-                "certaintyFolder": "{RomaSampler_1.certaintyFolder}",
+                "confidenceFolder": "{RomaSampler_1.confidenceFolder}",
                 "maxMatches": 2500,
-                "minCertainty": 0.2,
                 "filtersFolder": "{GeometricFilterEstimating_1.output}",
                 "describerTypes": "{GeometricFilterEstimating_1.describerTypes}"
             },
