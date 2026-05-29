@@ -48,6 +48,6 @@ Import an external Alembic file that does not follow the SfMData convention, and
             name="output",
             label="SfMData",
             description="SfMData file populated with the camera poses from the external Alembic file.",
-            value="{nodeCacheFolder}/importedAbc.abc",
+            value="{nodeCacheFolder}/importedAbc.usda",
         ),
     ]

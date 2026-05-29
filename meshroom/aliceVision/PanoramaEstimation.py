@@ -172,7 +172,7 @@ The result is an SfMData containing the estimated rotation for each view.
             name="output",
             label="SfM File",
             description="Path to the output SfM file.",
-            value="{nodeCacheFolder}/panorama.abc",
+            value="{nodeCacheFolder}/panorama.usda",
         ),
         desc.File(
             name="outputViewsAndPoses",

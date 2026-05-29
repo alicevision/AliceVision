@@ -66,6 +66,6 @@ Contrary to the StructureFromMotion node, this node does not infer the camera po
             name="output",
             label="SfMData",
             description="Path to the output SfMData file.",
-            value="{nodeCacheFolder}/sfm.abc",
+            value="{nodeCacheFolder}/sfm.usda",
         )
     ]

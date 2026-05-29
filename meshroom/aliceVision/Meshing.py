@@ -478,6 +478,6 @@ A Graph Cut Max-Flow is applied to optimally cut the volume. This cut represents
             name="output",
             label="Dense SfMData",
             description="Output dense point cloud with visibilities (SfMData file format).",
-            value="{nodeCacheFolder}/densePointCloud.abc",
+            value="{nodeCacheFolder}/densePointCloud.usda",
         ),
     ]

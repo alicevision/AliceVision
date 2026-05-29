@@ -93,8 +93,8 @@ sub-scenes before a joint bundle adjustment.
             name="fileExt",
             label="SfM File Format",
             description="Output SfM file format.",
-            value="abc",
-            values=["abc", "sfm", "json"],
+            value="usda",
+            values=["abc", "sfm", "json", "usda"],
             commandLineGroup="",  # exclude from command line
         ),
         desc.ChoiceParam(

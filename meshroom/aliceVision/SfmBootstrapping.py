@@ -107,7 +107,7 @@ The output is a partially initialized SfMData with the first two cameras localiz
             name="output",
             label="SfMData",
             description="Path to the output SfMData file.",
-            value="{nodeCacheFolder}/bootstrap.abc",
+            value="{nodeCacheFolder}/bootstrap.usda",
         ),
         desc.File(
             name="outputViewsAndPoses",

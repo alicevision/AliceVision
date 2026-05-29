@@ -257,7 +257,7 @@ The transformation can be based on:
             name="output",
             label="SfMData File",
             description="Aligned SfMData file.",
-            value=lambda attr: "{nodeCacheFolder}/" + (os.path.splitext(os.path.basename(attr.node.input.value))[0] or "sfmData") + ".abc",
+            value=lambda attr: "{nodeCacheFolder}/" + (os.path.splitext(os.path.basename(attr.node.input.value))[0] or "sfmData") + ".usda",
         ),
         desc.File(
             name="outputViewsAndPoses",

@@ -37,6 +37,6 @@ which can be further converted to other formats (e.g., PLY) for visualization.
             name="output",
             label="Point Cloud Filepath",
             description="Output point cloud with visibilities as SfMData file.",
-            value="{nodeCacheFolder}/pointCloud.abc",
+            value="{nodeCacheFolder}/pointCloud.usda",
         ),
     ]

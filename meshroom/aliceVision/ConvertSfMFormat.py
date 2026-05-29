@@ -29,7 +29,7 @@ or preparing data for tools that only need camera poses and intrinsics.
             name="fileExt",
             label="SfM File Format",
             description="Output SfM file format.",
-            value="abc",
+            value="usda",
             values=["abc", "usda", "sfm", "json", "ply", "baf"],
             commandLineGroup="",  # exclude from command line
         ),
