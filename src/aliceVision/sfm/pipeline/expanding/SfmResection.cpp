@@ -180,7 +180,7 @@ bool SfmResection::internalRefinement(
     }
 
     BundleAdjustmentCeres BA;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION;
+    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER;
 
     const bool success = BA.adjust(tinyScene, refineOptions);
     if(!success)

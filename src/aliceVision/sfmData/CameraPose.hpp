@@ -128,12 +128,12 @@ class CameraPose
         }
         
         const Vec3 r_refined(data.at(0), data.at(1), data.at(2));
-        const Vec3 t_refined(data.at(3), data.at(4), data.at(5));
+        const Vec3 c_refined(data.at(3), data.at(4), data.at(5));
 
         const Mat3 R_refined = SO3::expm(r_refined);
 
         // update the pose
-        setTransform(geometry::poseFromRT(R_refined, t_refined));
+        setTransform(geometry::Pose3(R_refined, c_refined));
     }
 
   private:

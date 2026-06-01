@@ -112,7 +112,7 @@ class BundleAdjustment
     {
         REFINE_NONE = 0,
         REFINE_ROTATION = 1,                                  //< refine pose rotations
-        REFINE_TRANSLATION = 2,                               //< refine pose translations
+        REFINE_CENTER = 2,                                    //< refine pose centers
         REFINE_STRUCTURE = 4,                                 //< refine structure (i.e. 3D points)
         REFINE_INTRINSICS_FOCAL = 8,                          //< refine the focal length
         REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS = 16,          //< refine the optical offset from the center
@@ -123,7 +123,7 @@ class BundleAdjustment
         /// Refine all intrinsics parameters
         REFINE_INTRINSICS_ALL = REFINE_INTRINSICS_FOCAL | REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA | REFINE_INTRINSICS_DISTORTION,
         /// Refine all parameters
-        REFINE_ALL = REFINE_ROTATION | REFINE_TRANSLATION | REFINE_INTRINSICS_ALL | REFINE_STRUCTURE,
+        REFINE_ALL = REFINE_ROTATION | REFINE_CENTER | REFINE_INTRINSICS_ALL | REFINE_STRUCTURE,
     };
 
     /**

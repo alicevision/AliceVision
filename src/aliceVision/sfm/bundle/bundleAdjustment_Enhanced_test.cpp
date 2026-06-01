@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(test_poses)
         }
 
         sfm::BundleAdjustmentCeres::CeresOptions options;
-        sfm::BundleAdjustment::ERefineOptions refineOptions = sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_TRANSLATION;
+        sfm::BundleAdjustment::ERefineOptions refineOptions = sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_CENTER;
         options.summary = false;
 
         double rmseBefore = sfm::RMSE(sfmData);

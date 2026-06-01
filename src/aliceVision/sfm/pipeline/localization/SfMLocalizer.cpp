@@ -216,7 +216,7 @@ bool SfMLocalizer::refinePose(camera::IntrinsicBase* intrinsics,
     BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
 
     if (refinePose)
-        refineOptions |= BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION;
+        refineOptions |= BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER;
     if (refineIntrinsic)
         refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 

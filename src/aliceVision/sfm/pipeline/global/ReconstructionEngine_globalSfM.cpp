@@ -375,8 +375,8 @@ bool ReconstructionEngine_globalSfM::adjust()
     options.useParametersOrdering = false;  // disable parameters ordering
 
     BundleAdjustmentCeres BA(options);
-    // - refine only Structure and translations
-    bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
+    // - refine only Structure and centers
+    bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_CENTER | BundleAdjustment::REFINE_STRUCTURE);
     if (success)
     {
         if (!_loggingFile.empty())
@@ -385,7 +385,7 @@ bool ReconstructionEngine_globalSfM::adjust()
                             sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
 
         // refine only structure and rotations & translations
-        success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
+        success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER | BundleAdjustment::REFINE_STRUCTURE);
 
         if (success && !_loggingFile.empty())
             sfmDataIO::save(_sfmData,
@@ -437,7 +437,7 @@ bool ReconstructionEngine_globalSfM::adjust()
     }
 
     BundleAdjustment::ERefineOptions refineOptions =
-      BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
+      BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER | BundleAdjustment::REFINE_STRUCTURE;
     if (!_lockAllIntrinsics)
         refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
     success = BA.adjust(_sfmData, refineOptions);
@@ -611,7 +611,7 @@ void ReconstructionEngine_globalSfM::computeRelativeRotations(rotationAveraging:
                 options.linearSolverType = ceres::DENSE_SCHUR;
                 BundleAdjustmentCeres bundleAdjustmentObj(options);
                 if (bundleAdjustmentObj.adjust(
-                      tinyScene, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE))
+                      tinyScene, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER | BundleAdjustment::REFINE_STRUCTURE))
                 {
                     // --> to debug: save relative pair geometry on disk
                     // std::ostringstream os;

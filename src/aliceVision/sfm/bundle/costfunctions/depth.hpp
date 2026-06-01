@@ -32,14 +32,16 @@ struct DepthErrorFunctor
         // Apply external parameters (Pose)
         //--
         const T* cam_R = parameter_pose;
-        const T* cam_t = &parameter_pose[3];
+        const T* cam_c = &parameter_pose[3];
         
+        T centeredPoint[3];
+        centeredPoint[0] = parameter_point[0] - cam_c[0];
+        centeredPoint[1] = parameter_point[1] - cam_c[1];
+        centeredPoint[2] = parameter_point[2] - cam_c[2];
+
         T transformedPoint[3];
         // Rotate the point according the camera rotation
-        ceres::AngleAxisRotatePoint(cam_R, parameter_point, transformedPoint);
-
-        // Apply the camera translation
-        transformedPoint[2] += cam_t[2];
+        ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
 
         residuals[0] = T(1.0 / _depthVariance) * (transformedPoint[2] - T(_depth));
 

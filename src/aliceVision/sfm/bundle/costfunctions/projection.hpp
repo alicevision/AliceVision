@@ -40,16 +40,16 @@ struct ProjectionSimpleErrorFunctor
         // Apply external parameters (Pose)
         //--
         const T* cam_R = parameter_pose;
-        const T* cam_t = &parameter_pose[3];
+        const T* cam_c = &parameter_pose[3];
         
+        T centeredPoint[3];
+        centeredPoint[0] = parameter_point[0] - cam_c[0];
+        centeredPoint[1] = parameter_point[1] - cam_c[1];
+        centeredPoint[2] = parameter_point[2] - cam_c[2];
+
         T transformedPoint[3];
         // Rotate the point according the camera rotation
-        ceres::AngleAxisRotatePoint(cam_R, parameter_point, transformedPoint);
-
-        // Apply the camera translation
-        transformedPoint[0] += cam_t[0];
-        transformedPoint[1] += cam_t[1];
-        transformedPoint[2] += cam_t[2];
+        ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
 
         const T * innerParameters[3];
         innerParameters[0] = parameter_intrinsics;
@@ -112,29 +112,28 @@ struct ProjectionErrorFunctor
         T transformedPoint[3];
         {
             const T* cam_R = parameter_pose;
-            const T* cam_t = &parameter_pose[3];
+            const T* cam_c = &parameter_pose[3];
+
+            T centeredPoint[3];
+            centeredPoint[0] = parameter_point[0] - cam_c[0];
+            centeredPoint[1] = parameter_point[1] - cam_c[1];
+            centeredPoint[2] = parameter_point[2] - cam_c[2];
 
             // Rotate the point according the camera rotation
-            ceres::AngleAxisRotatePoint(cam_R, parameter_point, transformedPoint);
-
-            // Apply the camera translation
-            transformedPoint[0] += cam_t[0];
-            transformedPoint[1] += cam_t[1];
-            transformedPoint[2] += cam_t[2];
+            ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
         }
 
         {
             const T* cam_R = parameter_subpose;
-            const T* cam_t = &parameter_subpose[3];
+            const T* cam_c = &parameter_subpose[3];
+
+            T centeredPoint[3];
+            centeredPoint[0] = transformedPoint[0] - cam_c[0];
+            centeredPoint[1] = transformedPoint[1] - cam_c[1];
+            centeredPoint[2] = transformedPoint[2] - cam_c[2];
 
             // Rotate the point according to the camera rotation
-            T transformedPointBuf[3] = {transformedPoint[0], transformedPoint[1], transformedPoint[2]};
-            ceres::AngleAxisRotatePoint(cam_R, transformedPointBuf, transformedPoint);
-
-            // Apply the camera translation
-            transformedPoint[0] += cam_t[0];
-            transformedPoint[1] += cam_t[1];
-            transformedPoint[2] += cam_t[2];
+            ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
         }
 
         const T * innerParameters[3];
@@ -212,6 +211,12 @@ struct ProjectionRelativeErrorFunctor
             const T* parameter_refpose = parameters[3];
             const T* parameter_relativepoint = parameters[4];
 
+            /// (cam_T_world) * (ref_T_world)^-1 * ref_p
+            /// cam_R_world * (ref_R_world^T * ref_p - ref_R_world^T * ref_t_world) + cam_t_world
+            /// cam_R_world * (ref_R_world^T * ref_p + ref_c_world) + cam_t_world
+            /// cam_R_world * (ref_R_world^T * ref_p + ref_c_world) - cam_R_world * cam_c_world
+            /// cam_R_world * (ref_R_world^T * ref_p + ref_c_world - cam_c_world)
+
             //Retrieve point
             T relpoint[3];
             relpoint[0] = parameter_relativepoint[0];
@@ -219,15 +224,11 @@ struct ProjectionRelativeErrorFunctor
             relpoint[2] = parameter_relativepoint[2];
 
             const T* refcam_R = parameter_refpose;
-            const T* refcam_t = &parameter_refpose[3];
+            const T* refcam_c = &parameter_refpose[3];
             
             // Apply transformation such that the point
             // Which was defined in the camera geometric frame
             // is now defined in the world frame
-            relpoint[0] = relpoint[0] - refcam_t[0];
-            relpoint[1] = relpoint[1] - refcam_t[1];
-            relpoint[2] = relpoint[2] - refcam_t[2];
-
             T invrefcam_R[3];
             invrefcam_R[0] = -refcam_R[0];
             invrefcam_R[1] = -refcam_R[1];
@@ -236,20 +237,22 @@ struct ProjectionRelativeErrorFunctor
             T absolutePoint[3];  
             ceres::AngleAxisRotatePoint(invrefcam_R, relpoint, absolutePoint);
 
+            absolutePoint[0] += refcam_c[0];
+            absolutePoint[1] += refcam_c[1];
+            absolutePoint[2] += refcam_c[2];
+
             //--
             // Apply external parameters (Pose)
             //--
             const T* cam_R = parameter_pose;
-            const T* cam_t = &parameter_pose[3];
+            const T* cam_c = &parameter_pose[3];
             
-            
+            absolutePoint[0] -= cam_c[0];
+            absolutePoint[1] -= cam_c[1];
+            absolutePoint[2] -= cam_c[2];
+
             // Rotate the point according the camera rotation
             ceres::AngleAxisRotatePoint(cam_R, absolutePoint, transformedPoint);
-
-            // Apply the camera translation
-            transformedPoint[0] += cam_t[0];
-            transformedPoint[1] += cam_t[1];
-            transformedPoint[2] += cam_t[2];
         }
 
         const T * innerParameters[3];

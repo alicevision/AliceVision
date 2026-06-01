@@ -60,22 +60,18 @@ struct TemporalConstraintFunctor
             invQuaternion[3] = -quaternion[3];
         };
 
-        const auto viewPreProcess = [&](const T* angleAxis, const T* translation, T* viewCenter, T* quaternion)
-        {
-            T invQuaternion[4];
-            ceres::AngleAxisToQuaternion(angleAxis, quaternion);
-            // Inverse the rotation to compute the camera position
-            quaternionConjugate(quaternion, invQuaternion);
-            ceres::QuaternionRotatePoint(invQuaternion, translation, viewCenter);
-        };
 
-        T viewCenter0[3], viewCenter1[3], viewCenter2[3], viewCenter3[3];
+
         T quaternion0[4], quaternion1[4], quaternion2[4], quaternion3[4];
+        ceres::AngleAxisToQuaternion(&para0[0], quaternion0);
+        ceres::AngleAxisToQuaternion(&para1[0], quaternion1);
+        ceres::AngleAxisToQuaternion(&para2[0], quaternion2);
+        ceres::AngleAxisToQuaternion(&para3[0], quaternion3);
 
-        viewPreProcess(&para0[0], &para0[3], viewCenter0, quaternion0);
-        viewPreProcess(&para1[0], &para1[3], viewCenter1, quaternion1);
-        viewPreProcess(&para2[0], &para2[3], viewCenter2, quaternion2);
-        viewPreProcess(&para3[0], &para3[3], viewCenter3, quaternion3);
+        const T * viewCenter0 = &para0[3];
+        const T * viewCenter1 = &para1[3];
+        const T * viewCenter2 = &para2[3];
+        const T * viewCenter3 = &para3[3];
 
         const auto computeAngleDiff = [&](const T* quaternionA, const T* quaternionB, T* angleAxisDiff, T* quaternionDiff)
         {

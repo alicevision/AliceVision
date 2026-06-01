@@ -226,21 +226,21 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
                                                    BundleAdjustment::ERefineOptions refineOptions,
                                                    ceres::Problem& problem)
 {
-    const bool refineTranslation = refineOptions & BundleAdjustment::REFINE_TRANSLATION;
+    const bool refineCenter = refineOptions & BundleAdjustment::REFINE_CENTER;
     const bool refineRotation = refineOptions & BundleAdjustment::REFINE_ROTATION;
 
     const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isConstant, std::array<double, 6>& poseBlock) {
         const Mat3& R = cameraPose.getTransform().rotation();
-        const Vec3& t = cameraPose.getTransform().translation();
+        const Vec3& c = cameraPose.getTransform().center();
 
         double angleAxis[3];
         ceres::RotationMatrixToAngleAxis(static_cast<const double*>(R.data()), angleAxis);
         poseBlock.at(0) = angleAxis[0];
         poseBlock.at(1) = angleAxis[1];
         poseBlock.at(2) = angleAxis[2];
-        poseBlock.at(3) = t(0);
-        poseBlock.at(4) = t(1);
-        poseBlock.at(5) = t(2);
+        poseBlock.at(3) = c(0);
+        poseBlock.at(4) = c(1);
+        poseBlock.at(5) = c(2);
 
         double* poseBlockPtr = poseBlock.data();
         problem.AddParameterBlock(poseBlockPtr, 6);
@@ -249,7 +249,7 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
         _allParametersBlocks.push_back(poseBlockPtr);
 
         // keep the camera extrinsics constants
-        if (cameraPose.isLocked() || isConstant || (!refineTranslation && !refineRotation))
+        if (cameraPose.isLocked() || isConstant || (!refineCenter && !refineRotation))
         {
             // set the whole parameter block as constant.
             _statistics.addState(EParameter::POSE, EEstimatorParameterState::CONSTANT);
@@ -269,7 +269,7 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
         }
 
         // don't refine translations
-        if (!refineTranslation)
+        if (!refineCenter)
         {
             constantExtrinsic.push_back(3);
             constantExtrinsic.push_back(4);
@@ -1095,7 +1095,7 @@ void BundleAdjustmentCeres::resetProblem()
 
 void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const
 {
-    const bool refinePoses = (refineOptions & REFINE_ROTATION) || (refineOptions & REFINE_TRANSLATION);
+    const bool refinePoses = (refineOptions & REFINE_ROTATION) || (refineOptions & REFINE_CENTER);
     const bool refineIntrinsicsOpticalCenter =
       (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
     const bool refineIntrinsics =
@@ -1130,10 +1130,11 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
 
                 Mat3 R_refined;
                 ceres::AngleAxisToRotationMatrix(subPoseBlock.data(), R_refined.data());
-                const Vec3 t_refined(subPoseBlock.at(3), subPoseBlock.at(4), subPoseBlock.at(5));
+                const Vec3 c_refined(subPoseBlock.at(3), subPoseBlock.at(4), subPoseBlock.at(5));
 
                 // update the sub-pose
-                subPose.pose = poseFromRT(R_refined, t_refined);
+                subPose.pose.setRotation(R_refined);
+                subPose.pose.setCenter(c_refined);
             }
         }
     }
