@@ -373,12 +373,25 @@ bool computeUncertainty(Eigen::MatrixXd & covarianceCameras, const Eigen::Sparse
         return false;
     }
 
+
+   
+
     Eigen::MatrixXd Hcc_inv;
     if (!computeHessianInverse(Hcc_inv, Hcc, queue))
     {
         ALICEVISION_LOG_ERROR("Failed to build inverse");
         return false;
     }
+
+    /*Eigen::MatrixXd C;
+    if (!computeDenseHessianInverse(C, Hcc))
+    {
+        ALICEVISION_LOG_ERROR("Failed to build Hcc");
+        return false;
+    }
+
+    std::cout << C.diagonal().transpose() << std::endl;
+    std::cout << Hcc_inv.diagonal().transpose() << std::endl;*/
     
     // Cancel the scaling
     const Eigen::VectorXd invNorms_c = invNorms.head(camParams);

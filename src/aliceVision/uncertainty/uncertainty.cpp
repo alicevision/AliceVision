@@ -100,54 +100,7 @@ bool computeDenseHessianInverse(Eigen::MatrixXd & inverse, Eigen::MatrixXd & hes
     return true;
 }
 
-/**
- * Computes an approximate inverse of the camera Schur-complement Hessian Hcc.
- *
- * REGULARIZATION
- *   Hcc may be singular or near-singular, so it is first regularized:
- *
- *     Z = Hcc + lambda * I,    lambda = 10^(-1.2653 * log10(n) - 2.9415)
- *
- *   where n = Hcc.rows(). The formula empirically scales lambda with problem
- *   size so that Z is strictly positive definite while minimally perturbing Hcc.
- *
- * CHOLESKY INVERSION OF Z
- *   Since Z is symmetric positive definite, its inverse is computed via:
- *
- *     Z = L * L^T   (dpotrf, Cholesky factorization)
- *     Z^{-1}        (dpotri, inversion from the Cholesky factor)
- *
- *   This is ~2x cheaper in flops than a general LU factorization.
- *
- * NEUMANN-SERIES CORRECTION
- *   The exact Hcc^{-1} is recovered from Z^{-1} via the identity:
- *
- *     Hcc^{-1} = (Z - lambda*I)^{-1}
- *
- *   Writing Hcc = Z - lambda*I and factoring out Z^{-1}:
- *
- *     Hcc^{-1} = Z^{-1} * (I - lambda * Z^{-1})^{-1}
- *
- *   Expanding the geometric series (converges when ||lambda * Z^{-1}|| < 1):
- *
- *     (I - lambda * Z^{-1})^{-1} = sum_{k=0}^{inf} (lambda * Z^{-1})^k
- *
- *   Substituting back and collecting powers of Z^{-1}:
- *
- *     Hcc^{-1} = Z^{-1} + sum_{i=1}^{inf} [ lambda^i / (i-1)! ] * Z^{-(i+1)}
- *
- *   The series is truncated at i = 19. Each term contributes
- *   k_i * Z^{-(i+1)},  k_i = lambda^i / (i-1)!
- *
- *   Since lambda << 1 (typically ~1e-7 for n=2400), k_i decays super-exponentially
- *   and the series converges in very few iterations in practice.
- *
- * CONVERGENCE GUARD
- *   To protect against numerical divergence, each term is only accumulated into
- *   the result if lambda * max|Z^{-(i+1)}| has not increased relative to the
- *   previous iteration. This check is performed entirely on the GPU with no
- *   CPU synchronization between iterations.
- */
+
 bool computeHessianInverse(Eigen::MatrixXd & HccInverse, const Eigen::MatrixXd & Hcc, magma_queue_t queue)
 {
     const double scale = Hcc.diagonal().cwiseAbs().mean();
@@ -172,7 +125,7 @@ bool computeHessianInverse(Eigen::MatrixXd & HccInverse, const Eigen::MatrixXd &
     while (1)
     {
         ALICEVISION_LOG_DEBUG("Trying cholesky factorization with lambda = " << lambda);
-        
+
         Eigen::MatrixXd Z = Hcc + lambda * Eigen::MatrixXd::Identity(Hcc.rows(), Hcc.cols());
         // Uploading Z to GPU (-> DIZorig)
         magma_dsetmatrix(n, n, Z.data(), n, dIZorig, n, queue);
@@ -217,7 +170,7 @@ bool computeHessianInverse(Eigen::MatrixXd & HccInverse, const Eigen::MatrixXd &
 
     // Two device scalars for the GPU-side convergence check:
     //   d_cur_maxabs  — max|dIZadd| for the current iteration (written by reduction kernel)
-    //   d_prev_norm   — lambda * max|dIZadd| from the previous iteration
+    //   d_prev_norm   — max|k * dIZadd| from the previous iteration
     // Initialized to +inf so the first iteration always passes the check.
     MagmaBuffer d_cur_maxabs(1);
     MagmaBuffer d_prev_norm(1);
@@ -240,12 +193,12 @@ bool computeHessianInverse(Eigen::MatrixXd & HccInverse, const Eigen::MatrixXd &
         // Compute max|dIZadd| fully on GPU (no CPU sync; result in d_cur_maxabs)
         launchMaxAbsReduction(dIZadd, d_cur_maxabs, n * n, stream);
 
-        // dHcc += k * dIZadd, but only when lambda * max|dIZadd| has not increased.
+        // dHcc += k * dIZadd, but only when max|k * dIZadd| has not increased.
         // The kernel skips the axpy and leaves dHcc unchanged when diverging.
         // d_prev_norm is updated in-place by the kernel when the check passes.
         // Note that even if the value increase, the computations are still done but ignored.
         // This is better than having to deal with costly cpu<-->gpu synchronisation
-        launchConditionalAxpy(k, dIZadd, dHcc, d_cur_maxabs, d_prev_norm, lambda, n * n, stream);
+        launchConditionalAxpy(k, dIZadd, dHcc, d_cur_maxabs, d_prev_norm, n * n, stream);
 
         // Advance the power: dTemp = dIZadd * dIZorig
         magma_dgemm(MagmaNoTrans, MagmaNoTrans, n, n, n, 1.0, dIZadd, n, dIZorig, n, 0.0, dTemp, n, queue);

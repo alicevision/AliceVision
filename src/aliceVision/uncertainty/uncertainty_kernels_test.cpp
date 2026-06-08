@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(MaxAbsReduction_AllZeros)
 
 BOOST_AUTO_TEST_CASE(ConditionalAxpy_ConvergingAccumulates)
 {
-    // lambda * cur_maxabs (0.5) <= prev_norm (1.0)  => axpy should execute.
+    // abs(k) * cur_maxabs (0.25) <= prev_norm (1.0)  => axpy should execute.
     // dst[i] = 1.0, src[i] = 2.0, k = 0.5  =>  dst[i] += 0.5 * 2.0 = 2.0
     const int n = 4;
     const std::vector<double> src(n, 2.0);
@@ -170,13 +170,12 @@ BOOST_AUTO_TEST_CASE(ConditionalAxpy_ConvergingAccumulates)
 
     double* d_src         = toDevice(src);
     double* d_dst         = toDevice(dst_init);
-    double* d_cur_maxabs  = deviceScalar(0.5);   // lambda * 0.5 = 0.25 <= prev_norm 1.0
+    double* d_cur_maxabs  = deviceScalar(0.5);   // abs(k) * 0.5 = 0.25 <= prev_norm 1.0
     double* d_prev_norm   = deviceScalar(1.0);
 
-    const double lambda = 0.5;
     const double k      = 0.5;
 
-    launchConditionalAxpy(k, d_src, d_dst, d_cur_maxabs, d_prev_norm, lambda, n, nullptr);
+    launchConditionalAxpy(k, d_src, d_dst, d_cur_maxabs, d_prev_norm, n, nullptr);
     cudaDeviceSynchronize();
 
     // axpy executed: dst[i] = 1.0 + 0.5 * 2.0 = 2.0
@@ -185,7 +184,7 @@ BOOST_AUTO_TEST_CASE(ConditionalAxpy_ConvergingAccumulates)
     for (int i = 0; i < n; ++i)
         BOOST_CHECK_CLOSE(result[i], 2.0, 1e-10);
 
-    // d_prev_norm updated to lambda * cur_maxabs = 0.5 * 0.5 = 0.25
+    // d_prev_norm updated to abs(k) * cur_maxabs = 0.5 * 0.5 = 0.25
     BOOST_CHECK_CLOSE(fromDevice(d_prev_norm), 0.25, 1e-10);
 
     cudaFree(d_src);
@@ -196,20 +195,19 @@ BOOST_AUTO_TEST_CASE(ConditionalAxpy_ConvergingAccumulates)
 
 BOOST_AUTO_TEST_CASE(ConditionalAxpy_DivergingSkips)
 {
-    // lambda * cur_maxabs (10.0) = 5.0 > prev_norm (1.0)  => axpy must be skipped.
+    // abs(k) * cur_maxabs (10.0) = 5.0 > prev_norm (1.0)  => axpy must be skipped.
     const int n = 4;
     const std::vector<double> src(n, 2.0);
     const std::vector<double> dst_init(n, 1.0);
 
     double* d_src         = toDevice(src);
     double* d_dst         = toDevice(dst_init);
-    double* d_cur_maxabs  = deviceScalar(10.0);  // lambda * 10.0 = 5.0 > prev_norm 1.0
+    double* d_cur_maxabs  = deviceScalar(10.0);  // abs(k) * 10.0 = 5.0 > prev_norm 1.0
     double* d_prev_norm   = deviceScalar(1.0);
 
-    const double lambda = 0.5;
     const double k      = 0.5;
 
-    launchConditionalAxpy(k, d_src, d_dst, d_cur_maxabs, d_prev_norm, lambda, n, nullptr);
+    launchConditionalAxpy(k, d_src, d_dst, d_cur_maxabs, d_prev_norm, n, nullptr);
     cudaDeviceSynchronize();
 
     // axpy skipped: dst[i] remains 1.0
@@ -229,7 +227,7 @@ BOOST_AUTO_TEST_CASE(ConditionalAxpy_DivergingSkips)
 
 BOOST_AUTO_TEST_CASE(ConditionalAxpy_InitialInfAlwaysPasses)
 {
-    // d_prev_norm = +inf  =>  any lambda * cur_maxabs passes on the first call.
+    // d_prev_norm = +inf  =>  any abs(k) * cur_maxabs passes on the first call.
     const int n = 4;
     const std::vector<double> src(n, 3.0);
     const std::vector<double> dst_init(n, 0.0);
@@ -239,10 +237,9 @@ BOOST_AUTO_TEST_CASE(ConditionalAxpy_InitialInfAlwaysPasses)
     double* d_cur_maxabs  = deviceScalar(100.0);
     double* d_prev_norm   = deviceScalar(std::numeric_limits<double>::infinity());
 
-    const double lambda = 1e-3;
     const double k      = 2.0;
 
-    launchConditionalAxpy(k, d_src, d_dst, d_cur_maxabs, d_prev_norm, lambda, n, nullptr);
+    launchConditionalAxpy(k, d_src, d_dst, d_cur_maxabs, d_prev_norm, n, nullptr);
     cudaDeviceSynchronize();
 
     // axpy executed: dst[i] = 0.0 + 2.0 * 3.0 = 6.0
@@ -251,8 +248,8 @@ BOOST_AUTO_TEST_CASE(ConditionalAxpy_InitialInfAlwaysPasses)
     for (int i = 0; i < n; ++i)
         BOOST_CHECK_CLOSE(result[i], 6.0, 1e-10);
 
-    // d_prev_norm updated to lambda * cur_maxabs = 1e-3 * 100.0 = 0.1
-    BOOST_CHECK_CLOSE(fromDevice(d_prev_norm), 0.1, 1e-10);
+    // d_prev_norm updated to abs(k) * cur_maxabs = 2.0 * 100.0 = 200.0
+    BOOST_CHECK_CLOSE(fromDevice(d_prev_norm), 200.0, 1e-10);
 
     cudaFree(d_src);
     cudaFree(d_dst);
@@ -262,24 +259,24 @@ BOOST_AUTO_TEST_CASE(ConditionalAxpy_InitialInfAlwaysPasses)
 
 BOOST_AUTO_TEST_CASE(ConditionalAxpy_ExactEqualityPasses)
 {
-    // lambda * cur_maxabs == prev_norm (exactly equal) must also accumulate.
+    // abs(k) * cur_maxabs == prev_norm (exactly equal) must also accumulate.
     const int n = 2;
     const std::vector<double> src(n, 1.0);
     const std::vector<double> dst_init(n, 0.0);
 
-    // lambda=0.5, cur=2.0  =>  lambda*cur = 1.0 == prev_norm=1.0  => pass
+    // k=0.5, cur=2.0  =>  abs(k)*cur = 1.0 == prev_norm=1.0  => pass
     double* d_src         = toDevice(src);
     double* d_dst         = toDevice(dst_init);
     double* d_cur_maxabs  = deviceScalar(2.0);
     double* d_prev_norm   = deviceScalar(1.0);
 
-    launchConditionalAxpy(1.0, d_src, d_dst, d_cur_maxabs, d_prev_norm, 0.5, n, nullptr);
+    launchConditionalAxpy(0.5, d_src, d_dst, d_cur_maxabs, d_prev_norm, n, nullptr);
     cudaDeviceSynchronize();
 
     std::vector<double> result(n);
     cudaMemcpy(result.data(), d_dst, n * sizeof(double), cudaMemcpyDeviceToHost);
     for (int i = 0; i < n; ++i)
-        BOOST_CHECK_CLOSE(result[i], 1.0, 1e-10);
+        BOOST_CHECK_CLOSE(result[i], 0.5, 1e-10);
 
     cudaFree(d_src);
     cudaFree(d_dst);

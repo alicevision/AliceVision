@@ -25,7 +25,7 @@ void launchMaxAbsReduction(const double* d_data, double* d_result, int n, cudaSt
 /**
  * @brief Conditionally accumulate k * d_src into d_dst on GPU, skipping when the series diverges.
  *
- * Thread 0 reads d_cur_maxabs and computes cur = lambda * (*d_cur_maxabs).
+ * The guard computes cur = abs(k) * (*d_cur_maxabs).
  * If cur <= *d_prev_norm the axpy is performed (series still converging) and *d_prev_norm is
  * updated to cur. Otherwise the axpy is skipped and *d_prev_norm is left unchanged so that
  * subsequent iterations also fail the check and are also skipped.
@@ -35,7 +35,7 @@ void launchMaxAbsReduction(const double* d_data, double* d_result, int n, cudaSt
  */
 void launchConditionalAxpy(double k, const double* d_src, double* d_dst,
                            const double* d_cur_maxabs, double* d_prev_norm,
-                           double lambda, int n, cudaStream_t stream);
+                           int n, cudaStream_t stream);
 
 } // namespace uncertainty
 } // namespace aliceVision

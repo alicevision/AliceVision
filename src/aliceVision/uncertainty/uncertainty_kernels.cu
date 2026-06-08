@@ -62,59 +62,31 @@ __global__ void maxAbsReductionKernel(const double* __restrict__ data, double* r
 // ---------------------------------------------------------------------------
 // Conditional axpy kernel
 // ---------------------------------------------------------------------------
-// Thread 0 in block 0 decides whether to execute the axpy.
-// The decision is broadcast via shared memory so all threads in the grid
-// read it from L1 cache rather than global memory.
+// A scalar pre-kernel updates d_prev_norm when the current term is accepted.
+// The axpy kernel then reads only d_prev_norm, relying on stream ordering
+// between kernel launches instead of inter-block synchronization.
 //
-// Layout: one kernel launch with enough blocks to cover n elements.
-// Block 0 additionally runs the comparison and update logic in thread 0.
+// Layout: one scalar kernel launch followed by one axpy kernel launch with
+// enough blocks to cover n elements.
+
+__global__ void updatePreviousNormKernel(double k, const double* d_cur_maxabs, double* d_prev_norm)
+{
+    const double termNorm = fabs(k) * (*d_cur_maxabs);
+    if (termNorm <= *d_prev_norm)
+    {
+        *d_prev_norm = termNorm;
+    }
+}
 
 __global__ void conditionalAxpyKernel(double k,
                                        const double* __restrict__ src,
                                        double* __restrict__ dst,
                                        const double* d_cur_maxabs,
-                                       double* d_prev_norm,
-                                       double lambda,
+                                       const double* d_prev_norm,
                                        int n)
 {
-    // Block 0, thread 0: compare and update d_prev_norm
-    __shared__ int do_axpy;
-    if (blockIdx.x == 0 && threadIdx.x == 0)
-    {
-        double cur = lambda * (*d_cur_maxabs);
-        do_axpy = (cur <= *d_prev_norm) ? 1 : 0;
-        if (do_axpy)
-        {
-            *d_prev_norm = cur;
-        }
-    }
-
-    // All threads in block 0 wait for the decision; other blocks read it
-    // from global memory via the shared flag after block 0 has written it.
-    // Since blocks can execute in any order we use a device-side broadcast:
-    // block 0 writes do_axpy to d_cur_maxabs[1] (we repurpose a spare slot)
-    // — but that requires an extra device buffer.
-    //
-    // Simpler correct approach: re-read d_prev_norm comparison in every block.
-    // (One extra global read per block, negligible vs the axpy bandwidth.)
-    __syncthreads(); // sync within block 0
-
-    // Non-block-0 threads recompute the flag from global memory
-    int local_do_axpy;
-    if (blockIdx.x == 0)
-    {
-        local_do_axpy = do_axpy;
-    }
-    else
-    {
-        // d_prev_norm was updated by block 0 only if do_axpy; check the
-        // pre-update value by comparing directly (re-read is safe: block 0
-        // has already written d_prev_norm before this block can read it
-        // because grids execute sequentially per stream).
-        local_do_axpy = (lambda * (*d_cur_maxabs) <= *d_prev_norm) ? 1 : 0;
-    }
-
-    if (!local_do_axpy) return;
+    const double termNorm = fabs(k) * (*d_cur_maxabs);
+    if (!(termNorm <= *d_prev_norm)) return;
 
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < n)
@@ -136,11 +108,15 @@ void launchMaxAbsReduction(const double* d_data, double* d_result, int n, cudaSt
 
 void launchConditionalAxpy(double k, const double* d_src, double* d_dst,
                             const double* d_cur_maxabs, double* d_prev_norm,
-                            double lambda, int n, cudaStream_t stream)
+                            int n, cudaStream_t stream)
 {
+    if (n <= 0) return;
+
     const int blocks = (n + BLOCK_SIZE - 1) / BLOCK_SIZE;
+
+    updatePreviousNormKernel<<<1, 1, 0, stream>>>(k, d_cur_maxabs, d_prev_norm);
     conditionalAxpyKernel<<<blocks, BLOCK_SIZE, 0, stream>>>(
-        k, d_src, d_dst, d_cur_maxabs, d_prev_norm, lambda, n);
+        k, d_src, d_dst, d_cur_maxabs, d_prev_norm, n);
 }
 
 } // namespace uncertainty
