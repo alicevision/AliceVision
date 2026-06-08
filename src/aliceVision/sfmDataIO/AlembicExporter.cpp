@@ -16,6 +16,9 @@
 
 #include <numeric>
 #include <filesystem>
+#include <cmath>
+
+#include <aliceVision/system/Logger.hpp>
 
 namespace fs = std::filesystem;
 
@@ -66,7 +69,7 @@ struct AlembicExporter::DataImpl
                    const sfmData::View& view,
                    const sfmData::CameraPose* pose = nullptr,
                    std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr,
-                   const Vec6* uncertainty = nullptr,
+                   const sfmData::PoseUncertainty* uncertainty = nullptr,
                    const sfmData::ImageGroup * imageGroup = nullptr,
                    Alembic::Abc::OObject* parent = nullptr);
 
@@ -89,13 +92,15 @@ struct AlembicExporter::DataImpl
     Alembic::AbcGeom::OUInt32Property _propIntrinsicId;
     Alembic::AbcGeom::OStringProperty _mvgIntrinsicType;
     Alembic::AbcGeom::ODoubleArrayProperty _mvgIntrinsicParams;
+    Alembic::AbcGeom::OXform _ellipsoidXform;
+    Alembic::AbcGeom::OPolyMesh _ellipsoidMesh;
 };
 
 void AlembicExporter::DataImpl::addCamera(const std::string& name,
                                           const sfmData::View& view,
                                           const sfmData::CameraPose* pose,
                                           std::shared_ptr<camera::IntrinsicBase> intrinsic,
-                                          const Vec6* uncertainty,
+                                          const sfmData::PoseUncertainty* uncertainty,
                                           const sfmData::ImageGroup * imageGroup,
                                           Alembic::Abc::OObject* parent)
 {
@@ -301,8 +306,8 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
 
     if (uncertainty)
     {
-        std::vector<double> uncertaintyParams(uncertainty->data(), uncertainty->data() + 6);
-        ODoubleArrayProperty mvg_uncertaintyParams(userProps, "mvg_uncertaintyEigenValues");
+        std::vector<double> uncertaintyParams(uncertainty->data(), uncertainty->data() + 36);
+        ODoubleArrayProperty mvg_uncertaintyParams(userProps, "mvg_uncertaintyMatrix");
         mvg_uncertaintyParams.set(uncertaintyParams);
     }
 
@@ -420,6 +425,8 @@ void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const 
     const std::string name = fs::path(view.getImage().getImagePath()).stem().string();
     const sfmData::CameraPose* pose =
       ((flagsPart & ESfMData::EXTRINSICS) && sfmData.existsPose(view)) ? sfmData.getPoses().at(view.getPoseId()).get() : nullptr;
+    const sfmData::PoseUncertainty* uncertainty =
+      ((flagsPart & ESfMData::EXTRINSICS) && sfmData.existsPoseUncertainty(view)) ? &sfmData.getPosesUncertainty().at(view.getPoseId()) : nullptr;
     const std::shared_ptr<camera::IntrinsicBase> intrinsic =
       (flagsPart & ESfMData::INTRINSICS) ? sfmData.getIntrinsicSharedPtr(view.getIntrinsicId()) : nullptr;
 
@@ -435,9 +442,9 @@ void AlembicExporter::addSfMSingleCamera(const sfmData::SfMData& sfmData, const 
     }
 
     if (sfmData.isPoseAndIntrinsicDefined(view) && (flagsPart & ESfMData::EXTRINSICS))
-        _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, group.get(), &_dataImpl->_mvgCameras);
+        _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty, group.get(), &_dataImpl->_mvgCameras);
     else
-        _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, group.get(), &_dataImpl->_mvgCamerasUndefined);
+        _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty, group.get(), &_dataImpl->_mvgCamerasUndefined);
 }
 
 void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT rigId, const std::vector<IndexT>& viewIds, ESfMData flagsPart)
@@ -714,7 +721,7 @@ void AlembicExporter::addCamera(const std::string& name,
                                 const sfmData::View& view,
                                 const sfmData::CameraPose* pose,
                                 std::shared_ptr<camera::IntrinsicBase> intrinsic,
-                                const Vec6* uncertainty,
+                                const sfmData::PoseUncertainty* uncertainty,
                                 const sfmData::ImageGroup * imageGroup)
 {
     _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty, imageGroup);
@@ -762,7 +769,8 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
                                         const camera::Pinhole* cam,
                                         const std::string& imagePath,
                                         IndexT viewId,
-                                        IndexT intrinsicId)
+                                        IndexT intrinsicId,
+                                        const sfmData::PoseUncertainty* uncertainty)
 {
     Eigen::Matrix4d M = Eigen::Matrix4d::Identity();
     M(1, 1) = -1;
@@ -847,6 +855,114 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
 
     // Attach intrinsic parameters to camera object
     _dataImpl->_camObj.getSchema().set(camSample);
+
+    if (uncertainty)
+    {
+        // Extract position (camera center) covariance: bottom-right 3x3 block
+        const Eigen::Matrix3d posCov = uncertainty->block<3, 3>(3, 3);
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(posCov);
+        const Eigen::Vector3d semiAxes = solver.eigenvalues().cwiseMax(0.0).cwiseSqrt().cwiseMax(1e-10);
+        
+        // Ensure proper rotation matrix (det = +1); flip last column if det = -1
+        Eigen::Matrix3d eigVecs = solver.eigenvectors();
+        if (eigVecs.determinant() < 0.0)
+        {
+            eigVecs.col(2) = -eigVecs.col(2);
+        }
+
+        
+        // Camera center in world space (CV convention)
+        const Vec3 center = pose.center();
+
+
+        // Build ellipsoid transform in CV world frame (no camera rotation applied)
+        Eigen::Matrix4d ellipsoidCV = Eigen::Matrix4d::Identity();
+        ellipsoidCV.block<3, 3>(0, 0) = eigVecs * semiAxes.asDiagonal();
+        ellipsoidCV.block<3, 1>(0, 3) = center;
+
+        // Convert to CG convention: T_CG = M * T_CV * M
+        const Eigen::Matrix4d ellipsoidCG = M * ellipsoidCV * M;
+
+        Abc::M44d ellipsoidMatrix;
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                ellipsoidMatrix[j][i] = ellipsoidCG(i, j);
+            }
+        }
+
+        XformSample ellipsoidXformSample;
+        ellipsoidXformSample.setMatrix(ellipsoidMatrix);
+
+        // Lazy-init ellipsoid as sibling of _xform under _mvgCameras (world-frame: no camera transform inherited)
+        if (!_dataImpl->_ellipsoidXform.valid())
+        {
+            TimeSamplingPtr tsp = _dataImpl->_xform.getSchema().getTimeSampling();
+            _dataImpl->_ellipsoidXform = Alembic::AbcGeom::OXform(_dataImpl->_mvgCameras, "uncertainty_" + _dataImpl->_xform.getName(), tsp);
+
+            constexpr int nu = 16;
+            constexpr int nv = 8;
+            std::vector<V3f> verts;
+            std::vector<int32_t> faceCounts;
+            std::vector<int32_t> faceIndices;
+
+            verts.emplace_back(0.f, 0.f, 1.f);  // north pole
+            for (int jj = 1; jj < nv; ++jj)
+            {
+                const float phi = static_cast<float>(M_PI) * jj / nv;
+                for (int ii = 0; ii < nu; ++ii)
+                {
+                    const float theta = 2.f * static_cast<float>(M_PI) * ii / nu;
+                    verts.emplace_back(std::sin(phi) * std::cos(theta),
+                                       std::sin(phi) * std::sin(theta),
+                                       std::cos(phi));
+                }
+            }
+            verts.emplace_back(0.f, 0.f, -1.f);  // south pole
+            const int southIdx = static_cast<int>(verts.size()) - 1;
+
+            for (int ii = 0; ii < nu; ++ii)
+            {
+                faceCounts.push_back(3);
+                faceIndices.push_back(0);
+                faceIndices.push_back(1 + (ii + 1) % nu);
+                faceIndices.push_back(1 + ii);
+            }
+
+            for (int jj = 0; jj < nv - 2; ++jj)
+            {
+                for (int ii = 0; ii < nu; ++ii)
+                {
+                    faceCounts.push_back(4);
+                    faceIndices.push_back(1 + jj * nu + ii);
+                    faceIndices.push_back(1 + jj * nu + (ii + 1) % nu);
+                    faceIndices.push_back(1 + (jj + 1) * nu + (ii + 1) % nu);
+                    faceIndices.push_back(1 + (jj + 1) * nu + ii);
+                }
+            }
+            
+            {
+                const int base = 1 + (nv - 2) * nu;
+                for (int ii = 0; ii < nu; ++ii)
+                {
+                    faceCounts.push_back(3);
+                    faceIndices.push_back(southIdx);
+                    faceIndices.push_back(base + ii);
+                    faceIndices.push_back(base + (ii + 1) % nu);
+                }
+            }
+
+            _dataImpl->_ellipsoidMesh = OPolyMesh(_dataImpl->_ellipsoidXform, "ellipsoid");
+            V3fArraySample vertsArray(verts);
+            Int32ArraySample indicesArray(faceIndices);
+            Int32ArraySample countsArray(faceCounts);
+            OPolyMeshSchema::Sample meshSample(vertsArray, indicesArray, countsArray);
+            _dataImpl->_ellipsoidMesh.getSchema().set(meshSample);
+        }
+
+        _dataImpl->_ellipsoidXform.getSchema().set(ellipsoidXformSample);
+    }
 }
 
 void AlembicExporter::jumpKeyframe(const std::string& imagePath)

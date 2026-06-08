@@ -13,9 +13,16 @@
 #include <pxr/usd/usdGeom/xform.h>
 #include <pxr/usd/usdGeom/points.h>
 #include <pxr/usd/usdGeom/camera.h>
+#include <pxr/usd/usdGeom/sphere.h>
+#include <pxr/usd/usdGeom/sphere.h>
+#include <pxr/usd/usdGeom/xformCommonAPI.h>
 
 #include <pxr/base/gf/vec3f.h>
 #include <pxr/base/vt/array.h>
+
+#include <Eigen/Eigenvalues>
+
+#include <Eigen/Eigenvalues>
 
 
 PXR_NAMESPACE_USING_DIRECTIVE
@@ -127,6 +134,76 @@ void UsdExporter::addFrame(const std::string & cameraName, const sfmData::Camera
     if (!xformOps.empty()) {
         UsdGeomXformOp motion = xformOps[0];
         motion.Set(usdT, t);
+    }
+}
+
+void UsdExporter::addFrameWithUncertainty(const std::string & cameraName,
+                                          const sfmData::CameraPose & pose,
+                                          const camera::Pinhole & intrinsic,
+                                          const sfmData::PoseUncertainty & uncertainty,
+                                          IndexT frameId)
+{
+    // Write the regular camera keyframe first
+    addFrame(cameraName, pose, intrinsic, frameId);
+
+    // --- Ellipsoid from position covariance (world frame) ---
+    // DOF ordering: [angleAxis(0-2), center(3-5)]
+    // Position covariance is the bottom-right 3x3 block.
+    const Eigen::Matrix3d posCov = uncertainty.block<3, 3>(3, 3);
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(posCov);
+    const Eigen::Vector3d semiAxes = solver.eigenvalues().cwiseMax(0.0).cwiseSqrt().cwiseMax(1e-10);
+    Eigen::Matrix3d eigVecs = solver.eigenvectors();
+    // Ensure proper rotation (det = +1)
+    if (eigVecs.determinant() < 0.0)
+    {
+        eigVecs.col(2) = -eigVecs.col(2);
+    }
+
+    // Camera center in world space (CV convention)
+    const Vec3 center = pose.getTransform().center();
+
+    // Build ellipsoid transform in CV world frame (no camera rotation)
+    Eigen::Matrix4d ellipsoidCV = Eigen::Matrix4d::Identity();
+    ellipsoidCV.block<3, 3>(0, 0) = eigVecs * semiAxes.asDiagonal();
+    ellipsoidCV.block<3, 1>(0, 3) = center;
+
+    // Convert CV -> CG convention (flip Y and Z): T_CG = M * T_CV * M
+    Eigen::Matrix4d Mflip = Eigen::Matrix4d::Identity();
+    Mflip(1, 1) = -1.0;
+    Mflip(2, 2) = -1.0;
+    const Eigen::Matrix4d ellipsoidCG = Mflip * ellipsoidCV * Mflip;
+
+    // USD matrix is column-major: [col][row]
+    GfMatrix4d usdEllipsoid;
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 4; ++j)
+        {
+            usdEllipsoid[j][i] = ellipsoidCG(i, j);
+        }
+    }
+
+    // Lazy-create the ellipsoid prim as a sibling of the camera under /World
+    const std::string ellipsoidName = cameraName + "_uncertainty";
+    SdfPath ellipsoidXformPath("/World/" + ellipsoidName);
+    SdfPath spherePath("/World/" + ellipsoidName + "/sphere");
+
+    if (!_stage->GetPrimAtPath(ellipsoidXformPath))
+    {
+        UsdGeomXform ellipsoidXform = UsdGeomXform::Define(_stage, ellipsoidXformPath);
+        ellipsoidXform.MakeMatrixXform();
+        // Define a unit sphere — the xform carries the scale+orientation+translation
+        UsdGeomSphere sphere = UsdGeomSphere::Define(_stage, spherePath);
+        sphere.GetRadiusAttr().Set(1.0);
+    }
+
+    UsdPrim ellipsoidXformPrim = _stage->GetPrimAtPath(ellipsoidXformPath);
+    UsdGeomXformable ellipsoidXformable(ellipsoidXformPrim);
+    bool dummy = false;
+    std::vector<UsdGeomXformOp> ellipsoidOps = ellipsoidXformable.GetOrderedXformOps(&dummy);
+    if (!ellipsoidOps.empty())
+    {
+        ellipsoidOps[0].Set(usdEllipsoid, UsdTimeCode(frameId));
     }
 }
 

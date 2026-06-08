@@ -131,7 +131,16 @@ int aliceVision_main(int argc, char** argv)
                     const std::string cameraName = "cam_" + std::to_string(view->getViewId());
                     const sfmData::CameraPose & cp = sfmData.getPose(*view);
                     exporter.createNewCamera(cameraName);
-                    exporter.addFrame(cameraName, cp, pinhole, 0);
+
+                    if (sfmData.existsPoseUncertainty(*view))
+                    {
+                        const auto & uncertainty = sfmData.getPosesUncertainty().at(view->getPoseId());
+                        exporter.addFrameWithUncertainty(cameraName, cp, pinhole, uncertainty, 0);
+                    }
+                    else 
+                    {
+                        exporter.addFrame(cameraName, cp, pinhole, 0);
+                    }
                 }
             }
         }  
@@ -147,7 +156,15 @@ int aliceVision_main(int argc, char** argv)
                 {
                     const sfmData::CameraPose & cp = sfmData.getPose(*view);
                     
-                    exporter.addFrame(cameraName, cp, pinhole, frameId);
+                    if (sfmData.existsPoseUncertainty(*view))
+                    {
+                        const auto & uncertainty = sfmData.getPosesUncertainty().at(view->getPoseId());
+                        exporter.addFrameWithUncertainty(cameraName, cp, pinhole, uncertainty, frameId);
+                    }
+                    else 
+                    {
+                        exporter.addFrame(cameraName, cp, pinhole, frameId);
+                    }
                 }
             }
         }      

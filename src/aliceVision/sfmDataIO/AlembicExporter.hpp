@@ -83,7 +83,7 @@ class AlembicExporter
                    const sfmData::View& view,
                    const sfmData::CameraPose* pose = nullptr,
                    std::shared_ptr<camera::IntrinsicBase> intrinsic = nullptr,
-                   const Vec6* uncertainty = nullptr,
+                   const sfmData::PoseUncertainty* uncertainty = nullptr,
                    const sfmData::ImageGroup * imageGroup = nullptr);
 
     /**
@@ -93,12 +93,14 @@ class AlembicExporter
      * @param[in] imagePath The localized image path
      * @param[in] viewId View id
      * @param[in] intrinsicId Intrinsic id
+     * @param[in] uncertainty The camera uncertainty values (nullptr if undefined)
      */
     void addCameraKeyframe(const geometry::Pose3& pose,
                            const camera::Pinhole* cam,
                            const std::string& imagePath,
                            IndexT viewId,
-                           IndexT intrinsicId);
+                           IndexT intrinsicId,
+                           const sfmData::PoseUncertainty* uncertainty = nullptr);
 
     /**
      * @brief Initiate an animated camera

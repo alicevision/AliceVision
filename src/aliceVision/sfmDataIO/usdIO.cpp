@@ -394,18 +394,21 @@ void writePoses(const UsdStageRefPtr& stage, const sfmData::SfMData& sfmData, co
         setAttr(posePrim, "av:rotationOnly", SdfValueTypeNames->Bool, pose.isRotationOnly());
         setAttr(posePrim, "av:removable", SdfValueTypeNames->Bool, pose.isRemovable());
 
-        GfVec3f u0(0.0f, 0.0f, 0.0f);
-        GfVec3f u1(0.0f, 0.0f, 0.0f);
-        const auto it = sfmData._posesUncertainty.find(poseId);
-        if (it != sfmData._posesUncertainty.end())
+        const auto it = sfmData.getPosesUncertainty().find(poseId);
+        if (it != sfmData.getPosesUncertainty().end())
         {
-            const Vec6& u = it->second;
-            u0 = GfVec3f(static_cast<float>(u(0)), static_cast<float>(u(1)), static_cast<float>(u(2)));
-            u1 = GfVec3f(static_cast<float>(u(3)), static_cast<float>(u(4)), static_cast<float>(u(5)));
+            const auto& uncertainty = it->second;
+            VtArray<double> uv(21);
+            int idx = 0;
+            for (int i = 0; i < 6; ++i)
+            {
+                for (int j = i; j < 6; ++j)
+                {
+                    uv[idx++] = uncertainty(i, j);
+                }
+            }
+            setAttr(posePrim, "av:uncertainty", SdfValueTypeNames->DoubleArray, uv);
         }
-
-        VtArray<float> uv = {u0[0], u0[1], u0[2], u1[0], u1[1], u1[2]};
-        setAttr(posePrim, "av:uncertainty", SdfValueTypeNames->FloatArray, uv);
     }
 }
 
@@ -1182,11 +1185,20 @@ void loadPoses(const UsdStageRefPtr& stage, const ExportPaths& paths, sfmData::S
             pose->setRemovable(removable);
         }
 
-        VtArray<float> uncertainty;
-        if (getAttr(posePrim, "av:uncertainty", uncertainty) && uncertainty.size() >= 6)
+        VtArray<double> uncertainty;
+        if (getAttr(posePrim, "av:uncertainty", uncertainty))
         {
-            sfmData._posesUncertainty[static_cast<IndexT>(poseId)] =
-                Vec6(uncertainty[0], uncertainty[1], uncertainty[2], uncertainty[3], uncertainty[4], uncertainty[5]);
+            sfmData::PoseUncertainty mat;
+
+            int idx = 0;
+            for (int i = 0; i < 6; ++i)
+            {
+                for (int j = i; j < 6; ++j)
+                {
+                    mat(i, j) = mat(j, i) = uncertainty[idx++];
+                }
+            }
+            sfmData.setPoseUncertainty(static_cast<IndexT>(poseId), mat);
         }
 
         sfmData.getPoses().insert_or_assign(static_cast<IndexT>(poseId), pose);

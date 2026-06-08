@@ -123,10 +123,18 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     /**
      * @brief Create a jacobian CRSMatrix
      * @param[in] sfmData The input SfMData contains all the information about the reconstruction
-     * @param[in] refineOptions The chosen refine flag
      * @param[out] jacobian The jacobian CSRMatrix
+     * @param[out] poseToPosition a map which gives the parameter block index of a pose (wrt to its pose Id) in the jacobian
+     * @param[out] intrinsicsToPosition a map which gives the parameter block index of a intrinsic (wrt to its intrinsic Id) in the jacobian
+     * @param[out] distortionToPosition a map which gives the parameter block index of a distortion (wrt to its intrinsic Id) in the jacobian
+     * @param[out] landmarkToPosition a map which gives the parameter block index of a landmark (wrt to its landmark Id) in the jacobian
      */
-    void createJacobian(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::CRSMatrix& jacobian);
+    void createJacobian(const sfmData::SfMData& sfmData, 
+                    ceres::CRSMatrix& jacobian, 
+                    std::map<IndexT, size_t> & poseToPosition, 
+                    std::map<IndexT, size_t> & intrinsicsToPosition,
+                    std::map<IndexT, size_t> & distortionToPosition,
+                    std::map<IndexT, size_t> & landmarkToPosition);
 
     /**
      * @brief Perform a Bundle Adjustment on the SfM scene with refinement of the requested parameters
@@ -258,13 +266,9 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
 
     // data wrappers for refinement
 
-    /// all parameters blocks pointers
-    std::vector<double*> _allParametersBlocks;
     /// poses blocks wrapper
     /// block: ceres angleAxis(3) + center(3)
-    std::map<IndexT, std::array<double, 6>> _posesBlocks;  // TODO : maybe we can use boost::flat_map instead of std::map ?
-    /// intrinsics blocks wrapper
-    /// block: intrinsics params
+    std::map<IndexT, std::array<double, 6>> _posesBlocks; 
     std::map<IndexT, std::vector<double>> _intrinsicsBlocks;
     std::map<IndexT, std::vector<double>> _distortionsBlocks;
     std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;

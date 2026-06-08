@@ -245,9 +245,6 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
         double* poseBlockPtr = poseBlock.data();
         problem.AddParameterBlock(poseBlockPtr, 6);
 
-        // add pose parameter to the all parameters blocks pointers list
-        _allParametersBlocks.push_back(poseBlockPtr);
-
         // keep the camera extrinsics constants
         if (cameraPose.isLocked() || isConstant || (!refineCenter && !refineRotation))
         {
@@ -391,9 +388,6 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
         intrinsicBlock = intrinsicPtr->getParameters();
         double* intrinsicBlockPtr = intrinsicBlock.data();
         problem.AddParameterBlock(intrinsicBlockPtr, intrinsicBlock.size());
-
-        // add intrinsic parameter to the all parameters blocks pointers list
-        _allParametersBlocks.push_back(intrinsicBlockPtr);
 
         // keep the camera intrinsic constant
         if (intrinsicPtr->isLocked() || !refineIntrinsics || intrinsicPtr->getState() == EEstimatorParameterState::CONSTANT)
@@ -579,9 +573,6 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
         problem.AddParameterBlock(landmarkBlockPtr, sizeLandmark);
 
         double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
-
-        // add landmark parameter to the all parameters blocks pointers list
-        _allParametersBlocks.push_back(landmarkBlockPtr);
 
         // iterate over 2D observation associated to the 3D landmark
         for (const auto& [viewId, observation] : landmark.getObservations())
@@ -1083,7 +1074,6 @@ void BundleAdjustmentCeres::resetProblem()
 {
     _statistics = Statistics();
 
-    _allParametersBlocks.clear();
     _posesBlocks.clear();
     _intrinsicsBlocks.clear();
     _landmarksBlocks.clear();
@@ -1221,21 +1211,91 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
     }
 }
 
-void BundleAdjustmentCeres::createJacobian(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::CRSMatrix& jacobian)
+void BundleAdjustmentCeres::createJacobian(const sfmData::SfMData& sfmData, 
+                                        ceres::CRSMatrix& jacobian, 
+                                        std::map<IndexT, size_t> & poseToPosition, 
+                                        std::map<IndexT, size_t> & intrinsicsToPosition,
+                                        std::map<IndexT, size_t> & distortionToPosition,
+                                        std::map<IndexT, size_t> & landmarkToPosition)
 {
     std::vector<ceres::ResidualBlockId> landmarksBlockIds;
     std::vector<ceres::ResidualBlockId> temporalConstraintBlockIds;
 
-    // create problem
+    poseToPosition.clear();
+    intrinsicsToPosition.clear();
+    distortionToPosition.clear();
+    landmarkToPosition.clear();
+
+    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ALL;
+    //BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER | BundleAdjustment::REFINE_STRUCTURE;
+
+    // create problem so that we get the same constraints that the classical bundle
     ceres::Problem::Options problemOptions;
     problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     ceres::Problem problem(problemOptions);
     createProblem(sfmData, refineOptions, problem, landmarksBlockIds, temporalConstraintBlockIds);
 
+    
+    // Control manually the order
+    // Make sure the parameters order is stored such that the jacobian 
+    // can be processed in a controlled way.
+
+    std::vector<double*> allParametersBlocks;
+
+    // First, poses
+    for (auto & [id, ptr] : _posesBlocks)
+    {
+        if (problem.IsParameterBlockConstant(ptr.data()))
+        {
+            continue;
+        }
+
+        poseToPosition[id] = allParametersBlocks.size();
+        allParametersBlocks.push_back(ptr.data());
+    }
+
+    // Second, intrinsics
+    for (auto & [id, ptr] : _intrinsicsBlocks)
+    {
+        if (problem.IsParameterBlockConstant(ptr.data()))
+        {
+            continue;
+        }
+        
+        intrinsicsToPosition[id] = allParametersBlocks.size();
+        allParametersBlocks.push_back(ptr.data());
+    }
+
+    // Third, distortion
+    for (auto & [id, ptr] : _distortionsBlocks)
+    {
+        if (problem.IsParameterBlockConstant(ptr.data()))
+        {
+            continue;
+        }
+
+        distortionToPosition[id] = allParametersBlocks.size();
+        allParametersBlocks.push_back(ptr.data());
+    }
+
+
+    // Last, landmarks
+    for (auto & [id, ptr] : _landmarksBlocks)
+    {
+        if (problem.IsParameterBlockConstant(ptr.data()))
+        {
+            continue;
+        }
+
+        landmarkToPosition[id] = allParametersBlocks.size();
+        allParametersBlocks.push_back(ptr.data());
+    }
+    
+
     // configure Jacobian engine
     double cost = 0.0;
     ceres::Problem::EvaluateOptions evalOpt;
-    evalOpt.parameter_blocks = _allParametersBlocks;
+    evalOpt.parameter_blocks = allParametersBlocks;
     evalOpt.num_threads = 8;
     evalOpt.apply_loss_function = true;
 

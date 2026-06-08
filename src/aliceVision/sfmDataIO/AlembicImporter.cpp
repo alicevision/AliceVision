@@ -558,6 +558,8 @@ bool readCamera(const Version& abcVersion,
     bool undistortionDesqueezed = false;
     bool undistortionLocked = false;
     std::string serialNumber = "";
+    bool hasUncertainty = false;
+    std::vector<double> uncertaintyParams;
 
     if (userProps)
     {
@@ -775,6 +777,13 @@ bool readCamera(const Version& abcVersion,
                     undistortionLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_undistortionLocked", sampleFrame);
                 }
             }
+            if (userProps.getPropertyHeader("mvg_uncertaintyMatrix"))
+            {   
+                Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_uncertaintyMatrix");
+                Alembic::Abc::IDoubleArrayProperty::sample_ptr_type sample;
+                prop.get(sample, ISampleSelector(sampleFrame));
+                uncertaintyParams.assign(sample->get(), sample->get() + sample->size());
+            }
         }
     }
 
@@ -967,6 +976,15 @@ bool readCamera(const Version& abcVersion,
             cp.setRotationOnly(rotationOnly);
             cp.setRemovable(removable);
             sfmData.setPose(*view, cp);
+        }
+    }
+
+    if ((flagsPart & ESfMData::EXTRINSICS))
+    {
+        if (uncertaintyParams.size() == 36)
+        {
+            Eigen::Map<Eigen::Matrix<double, 6, 6>> pUncertainty(uncertaintyParams.data());
+            sfmData.setPoseUncertainty(poseId, pUncertainty);
         }
     }
 

@@ -69,6 +69,8 @@ trilean_option(ALICEVISION_USE_APRILTAG "Enable AprilTag markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
+trilean_option(ALICEVISION_USE_MAGMA "Enable Magma for Uncertainty computation" AUTO)
+
 option(ALICEVISION_USE_ONNX_GPU "Use CUDA with ONNX Runtime" ON)
 if(APPLE)
     trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" OFF)
@@ -218,6 +220,7 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(OFA/OptimizeForArchitecture)
 OptimizeForArchitecture()
+
 set(ALICEVISION_HAVE_SSE 0 CACHE BOOL "SSE2 is available" FORCE)
 if (USE_SSE2 OR TARGET_ARCHITECTURE STREQUAL "native")
     if (MSVC AND NOT ${CMAKE_CL_64})
@@ -505,18 +508,6 @@ if (ALICEVISION_BUILD_SFM)
     endif()
 endif()
 
-# ==============================================================================
-# Flann
-# ==============================================================================
-if (ALICEVISION_BUILD_SFM)
-    find_package(magma CONFIG REQUIRED)
-
-    if (TARGET magma::magma)
-        set(MAGMA_LIBRARIES magma::magma)
-    else()
-        message(FATAL_ERROR "MAGMA can not be found")
-    endif()
-endif()
 
 # ==============================================================================
 # CoinUtils, Clp, Osi
@@ -883,6 +874,26 @@ if (ALICEVISION_BUILD_SFM)
     endif()
 endif()
 
+# ==============================================================================
+# Magma
+# ==============================================================================
+
+if ((NOT ALICEVISION_BUILD_SFM) OR (NOT ALICEVISION_HAVE_CUDA))
+    set(ALICEVISION_USE_MAGMA "OFF")
+endif()
+
+set(ALICEVISION_HAVE_MAGMA 0)
+if (NOT ALICEVISION_USE_MAGMA STREQUAL "OFF")
+    
+    find_package(magma CONFIG)
+
+    if (TARGET magma::magma)
+        set(MAGMA_LIBRARIES magma::magma)
+        set(ALICEVISION_HAVE_MAGMA 1)
+    elseif (ALICEVISION_USE_MAGMA STREQUAL "ON")
+        message(SEND_ERROR "Failed to find Magma.")
+    endif()
+endif()
 
 # ==============================================================================
 # Include directories

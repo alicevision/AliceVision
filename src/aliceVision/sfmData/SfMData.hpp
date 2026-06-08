@@ -48,8 +48,10 @@ using Landmarks = std::map<IndexT, Landmark>;
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;
 
+using PoseUncertainty = Eigen::Matrix<double, 6, 6>;
+
 /// Define uncertainty per pose
-using PosesUncertainty = std::map<IndexT, Vec6>;
+using PosesUncertainty = std::map<IndexT, PoseUncertainty>;
 
 /// Define uncertainty per landmark
 using LandmarksUncertainty = std::map<IndexT, Vec3>;
@@ -75,8 +77,6 @@ using RotationPriors = std::vector<RotationPrior>;
 class SfMData
 {
   public:
-    /// Uncertainty per pose
-    PosesUncertainty _posesUncertainty;
     /// Uncertainty per landmark
     LandmarksUncertainty _landmarksUncertainty;
 
@@ -538,6 +538,41 @@ class SfMData
     CameraPose & getAbsolutePose(IndexT poseId) { return *_poses.at(poseId); }
 
     /**
+     * @brief Get uncertainties associated with poses.
+     * @return mutable map of pose uncertainties indexed by pose id
+     */
+    PosesUncertainty & getPosesUncertainty()
+    {
+        return _posesUncertainty;
+    }
+
+    /**
+     * @brief Get uncertainties associated with poses.
+     * @return map of pose uncertainties indexed by pose id
+     */
+    const PosesUncertainty & getPosesUncertainty() const
+    {
+        return _posesUncertainty;
+    }
+
+    /**
+     * @brief Check if the given view has an existing pose uncertainty
+     * @param[in] view The given view
+     * @return true if the uncertainty exists
+     */
+    bool existsPoseUncertainty(const View& view) const { return (_posesUncertainty.find(view.getPoseId()) != _posesUncertainty.end()); }
+
+    /**
+     * @brief Set the uncertainty associated with a pose.
+     * @param[in] poseId pose identifier
+     * @param[in] mat uncertainty matrix indexed by the pose id
+     */
+    void setPoseUncertainty(IndexT poseId, const PoseUncertainty & mat)
+    {
+        _posesUncertainty[poseId] = mat;
+    }
+
+    /**
      * @brief Get the rig of the given view
      * @param[in] view The given view
      * @return rig of the given view
@@ -809,6 +844,8 @@ class SfMData
     SurveyPoints _surveyPoints;
     /// Image groups
     ImageGroups _imageGroups;
+    /// Pose uncertainty
+    PosesUncertainty _posesUncertainty;
 
     /**
      * @brief Get Rig pose of a given camera view
