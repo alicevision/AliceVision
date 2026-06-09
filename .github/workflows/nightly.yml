@@ -1,0 +1,137 @@
+name: Nightly
+
+on:
+  schedule:
+    # Every day at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+# Cancel any in-progress nightly run if a new one is triggered
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+jobs:
+
+  # ───────────────────────────────────────────────
+  # 1. Build & archive (archives created inside each build workflow)
+  # ───────────────────────────────────────────────
+  build-linux:
+    uses: ./.github/workflows/build-linux.yml
+
+  build-windows:
+    uses: ./.github/workflows/build-windows.yml
+
+  # ───────────────────────────────────────────────
+  # 2. Publish to the "nightly" GitHub Release
+  # ───────────────────────────────────────────────
+  publish-nightly:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create/edit releases and push tags
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for changelog
+
+      - name: Download Linux package
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-package
+          path: dist
+
+      - name: Download Windows package
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-package
+          path: dist
+
+      # ── Metadata ────────────────────────────────
+      - name: Compute release metadata
+        id: meta
+        run: |
+          SHORT_SHA=$(git rev-parse --short=8 HEAD)
+          FULL_SHA=$(git rev-parse HEAD)
+          NOW=$(date -u +'%Y-%m-%d %H:%M UTC')
+          BUILD_LABEL=$(date -u +%Y%m%d)-${SHORT_SHA}
+          echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "full_sha=${FULL_SHA}" >> $GITHUB_OUTPUT
+          echo "now=${NOW}" >> $GITHUB_OUTPUT
+          echo "build_label=${BUILD_LABEL}" >> $GITHUB_OUTPUT
+
+      # ── Ensure release exists ────────────────────
+      - name: Ensure nightly release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view nightly --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            gh release create nightly \
+              --repo "${{ github.repository }}" \
+              --title "Nightly Build" \
+              --notes "Nightly build — will be updated by CI." \
+              --prerelease
+          fi
+
+      # ── Delete stale assets ──────────────────────
+      - name: Delete existing release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view nightly \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '.assets[].name' \
+          | while read -r ASSET; do
+              echo "  → Deleting asset: $ASSET"
+              gh release delete-asset nightly "$ASSET" \
+                --repo "$GITHUB_REPOSITORY" --yes
+            done
+
+      # ── Upload fresh assets ──────────────────────
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload nightly dist/* \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+      # ── Write release notes to file ──────────────
+      - name: Write release notes
+        run: |
+          NOW="${{ steps.meta.outputs.now }}"
+          SHORT_SHA="${{ steps.meta.outputs.short_sha }}"
+          BUILD_LABEL="${{ steps.meta.outputs.build_label }}"
+          FULL_SHA="${{ steps.meta.outputs.full_sha }}"
+          cat > nightly_release_notes.md << EOF
+          > [!WARNING]
+          > **Automated nightly build** from the \`develop\` branch. May be unstable.
+
+          | | |
+          |---|---|
+          | Date   | ${NOW} |
+          | Commit | [${SHORT_SHA}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}) |
+          | Branch | \`develop\` |
+
+          ### Assets
+
+          | File | Platform |
+          |------|----------|
+          | \`AliceVision-nightly-${BUILD_LABEL}-linux.tar.gz\` | Linux (Rocky 9, CUDA 12.1.1) |
+          | \`AliceVision-nightly-${BUILD_LABEL}-windows.zip\`  | Windows |
+          EOF
+
+      # ── Update release from file ──────────────────
+      - name: Update release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit nightly \
+            --repo "${{ github.repository }}" \
+            --title "Nightly Build (${{ steps.meta.outputs.build_label }})" \
+            --notes-file nightly_release_notes.md \
+            --prerelease
+

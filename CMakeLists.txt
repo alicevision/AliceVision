@@ -46,6 +46,7 @@ set(DEPS_CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type for all external li
 string(TOLOWER ${DEPS_CMAKE_BUILD_TYPE} DEPS_CMAKE_BUILD_TYPE_LOWERCASE)
 set(ALICEVISION_BUNDLE_PREFIX "${CMAKE_INSTALL_PREFIX}/bundle" CACHE STRING "Path for bundle installation")
 set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
+option(ALICEVISION_BUNDLE_SEARCH_LIBS_PATHS "Extra paths to search for external libraries to create the bundle installation" "")
 
 # ==============================================================================
 # GNUInstallDirs CMake module
@@ -123,8 +124,33 @@ endif()
 # Note: require that the install rule has been executed
 # Include VCPKG installed dir for runtime dependencies lookup
 set(BUNDLE_LIBS_PATHS "")
-if (_VCPKG_INSTALLED_DIR)
-    set(BUNDLE_LIBS_PATHS ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin)
+
+if(_VCPKG_INSTALLED_DIR)
+    set(_vcpkg_bin_dir_release "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin")
+    set(_vcpkg_bin_dir_debug   "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin")
+
+    # Generator expressions are not evaluated at install/bundle time,
+    # so we resolve the config explicitly.
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        list(APPEND BUNDLE_LIBS_PATHS "${_vcpkg_bin_dir_debug}")
+    else()
+        list(APPEND BUNDLE_LIBS_PATHS "${_vcpkg_bin_dir_release}")
+    endif()
+endif()
+
+if(ALICEVISION_BUNDLE_SEARCH_LIBS_PATHS)
+    list(APPEND BUNDLE_LIBS_PATHS ${ALICEVISION_BUNDLE_SEARCH_LIBS_PATHS})
+endif()
+
+if(CMAKE_PREFIX_PATH)
+    foreach(_prefix IN LISTS CMAKE_PREFIX_PATH)
+        foreach(_libdir IN ITEMS bin lib lib64)
+            set(_candidate "${_prefix}/${_libdir}")
+            if(EXISTS "${_candidate}")
+                list(APPEND BUNDLE_LIBS_PATHS "${_candidate}")
+            endif()
+        endforeach()
+    endforeach()
 endif()
 
 add_custom_target(bundle
@@ -132,6 +158,7 @@ add_custom_target(bundle
     -DBUNDLE_INSTALL_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     -DBUNDLE_LIBS_PATHS=${BUNDLE_LIBS_PATHS}
+    -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
 )
 

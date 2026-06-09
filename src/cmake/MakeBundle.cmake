@@ -1,162 +1,224 @@
 cmake_minimum_required(VERSION 3.30)
+
 # Perform bundle fixup on all executables of an install directory
 # and generates a standalone bundle with all required runtime dependencies.
 #
-# This scripts accepts the following parameters:
-#   - CMAKE_INSTALL_PREFIX: install target path
-#   - BUNDLE_INSTALL_PREFIX: bundle installation path
-#   - BUNDLE_LIBS_PATHS: additional paths (colon separated) to look for runtime dependencies
+# This script accepts the following parameters (pass via -D on the cmake -P command line):
+#   - CMAKE_INSTALL_PREFIX      : install target path (required)
+#   - BUNDLE_INSTALL_PREFIX     : bundle installation path (required)
+#   - BUNDLE_LIBS_PATHS         : additional paths (semicolon-separated) to look for runtime dependencies
+#   - CMAKE_INSTALL_BINDIR      : relative bin dir  (default: bin)
+#   - CMAKE_INSTALL_LIBDIR      : relative lib dir  (default: lib)
+#   - CMAKE_INSTALL_DATADIR     : relative data dir (default: share)
 
-# Blacklist from AppImage: https://github.com/AppImage/AppImages/blob/master/excludelist
+# ─── Validate required parameters ────────────────────────────────────────────
+
+foreach(_required_var CMAKE_INSTALL_PREFIX BUNDLE_INSTALL_PREFIX)
+    if(NOT ${_required_var})
+        message(FATAL_ERROR "MakeBundle.cmake: ${_required_var} is not set. "
+                            "Pass it with -D${_required_var}=<path>")
+    endif()
+endforeach()
+
+# ─── Replicate GNUInstallDirs for -P script mode ──────────────────────────────
+# include(GNUInstallDirs) cannot resolve lib vs lib64 when invoked via cmake -P,
+# so we compute the FULL_ variants manually from whatever the caller passes in.
+
+if(NOT CMAKE_INSTALL_BINDIR)
+    set(CMAKE_INSTALL_BINDIR "bin")
+endif()
+
+if(NOT CMAKE_INSTALL_LIBDIR)
+    # Attempt to auto-detect lib64 (matches GNUInstallDirs heuristic)
+    if(EXISTS "/etc/debian_version")
+        # Debian/Ubuntu multiarch – keep plain lib; the actual multiarch tuple
+        # would need more work, but lib is the safe default.
+        set(CMAKE_INSTALL_LIBDIR "lib")
+    elseif(CMAKE_SIZEOF_VOID_P EQUAL 8 AND EXISTS "/usr/lib64")
+        set(CMAKE_INSTALL_LIBDIR "lib64")
+    else()
+        set(CMAKE_INSTALL_LIBDIR "lib")
+    endif()
+endif()
+
+if(NOT CMAKE_INSTALL_DATADIR)
+    set(CMAKE_INSTALL_DATADIR "share")
+endif()
+
+# Build absolute paths
+if(NOT CMAKE_INSTALL_FULL_BINDIR)
+    set(CMAKE_INSTALL_FULL_BINDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+endif()
+if(NOT CMAKE_INSTALL_FULL_LIBDIR)
+    set(CMAKE_INSTALL_FULL_LIBDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+if(NOT CMAKE_INSTALL_FULL_DATADIR)
+    set(CMAKE_INSTALL_FULL_DATADIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}")
+endif()
+
+# ─── Blacklist (AppImage excludelist) ────────────────────────────────────────
+# https://github.com/AppImage/AppImages/blob/master/excludelist
+
 set(LINUX_OS_LIB_BLACKLIST
-ld-linux
-ld-linux-x86-64
-libanl
-libBrokenLocale
-libcidn
-libcrypt
-libc
-libdl
-libm
-libmvec
-libnsl
-libnss_compat
-libnss_db
-libnss_dns
-libnss_files
-libnss_hesiod
-libnss_nisplus
-libnss_nis
-libpthread
-libresolv
-librt
-libthread_db
-libutil
-libstdc++
-libGL
-libdrm
-libglapi
-libX11
-libgio-2.0
-libasound
-libgdk_pixbuf-2.0
-libfontconfig
-libthai
-libfreetype
-libharfbuzz
-libcom_err
-libexpat
-libgcc_s
-libglib-2.0
-libgpg-error
-libICE
-libkeyutils
-libp11-kit
-libSM
-libusb-1.0
-libuuid
-libz
-libgobject-2.0
-libpangoft2-1.0
-libpangocairo-1.0
-libpango-1.0
-libgpg-error
-libjack
-    )
+    ld-linux
+    ld-linux-x86-64
+    libanl
+    libBrokenLocale
+    libcidn
+    libcrypt
+    libc
+    libdl
+    libm
+    libmvec
+    libnsl
+    libnss_compat
+    libnss_db
+    libnss_dns
+    libnss_files
+    libnss_hesiod
+    libnss_nisplus
+    libnss_nis
+    libpthread
+    libresolv
+    librt
+    libthread_db
+    libutil
+    libstdc++
+    libGL
+    libdrm
+    libglapi
+    libX11
+    libgio-2.0
+    libasound
+    libgdk_pixbuf-2.0
+    libfontconfig
+    libthai
+    libfreetype
+    libharfbuzz
+    libcom_err
+    libexpat
+    libgcc_s
+    libglib-2.0
+    libgpg-error
+    libICE
+    libkeyutils
+    libp11-kit
+    libSM
+    libusb-1.0
+    libuuid
+    libz
+    libgobject-2.0
+    libpangoft2-1.0
+    libpangocairo-1.0
+    libpango-1.0
+    libjack
+)
+
+# ─── Platform overrides ───────────────────────────────────────────────────────
 
 function(gp_resolve_item_override context item exepath dirs resolved_item_var resolved_var)
-  # avoid log flood for those system libraries with non-absolute path
-  if(item MATCHES "^(api-ms-win-)[^/]+dll")
-    # resolve item with fake absolute system path to keep them identified as system libs
-    # By doing this, fixup_bundle:
-    #   - won't complain about those libraries
-    #   - won't embed them in the bundle
-    set(${resolved_item_var} "$ENV{SystemRoot}/system/${item}" PARENT_SCOPE)
-    set(${resolved_var} TRUE PARENT_SCOPE)
-  endif()
+    # Suppress errors for Windows API sets (api-ms-win-*.dll) — these are
+    # virtual DLLs provided by the OS and must never be bundled.
+    if(item MATCHES "^api-ms-win-[^/]+\\.dll$")
+        set(${resolved_item_var} "$ENV{SystemRoot}/system/${item}" PARENT_SCOPE)
+        set(${resolved_var} TRUE PARENT_SCOPE)
+    endif()
 endfunction()
 
 if(UNIX)
-  function(gp_resolved_file_type_override resolved_file type_var)
-    # We would like to embed all non-blacklisted "system" libs,
-    # based on the AppImage blacklist.
-    if("${${type_var}}" STREQUAL "system")
-      get_filename_component(basename ${resolved_file} NAME_WE)
-      # message(STATUS "SYSTEM LIB: ${resolved_file} [${basename}]")
-      if(NOT basename IN_LIST LINUX_OS_LIB_BLACKLIST)
-        # message(STATUS "${resolved_file} [${basename}]: SYSTEM => EMBEDDED")
-        set(${type_var} "embedded" PARENT_SCOPE)
-      endif()
-    endif()
-  endfunction()
+    function(gp_resolved_file_type_override resolved_file type_var)
+        # Embed all "system" libs that are NOT on the AppImage blacklist.
+        if("${${type_var}}" STREQUAL "system")
+            get_filename_component(basename "${resolved_file}" NAME_WE)
+            if(NOT basename IN_LIST LINUX_OS_LIB_BLACKLIST)
+                set(${type_var} "embedded" PARENT_SCOPE)
+            endif()
+        endif()
+    endfunction()
 endif()
 
+# ─── Diagnostics ─────────────────────────────────────────────────────────────
+
 include(BundleUtilities)
-include(GNUInstallDirs)
 
-message(STATUS "Starting Bundle")
-message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "BUNDLE_INSTALL_PREFIX: ${BUNDLE_INSTALL_PREFIX}")
-message(STATUS "BUNDLE_LIBS_PATHS: ${BUNDLE_LIBS_PATHS}")
+message(STATUS "=== MakeBundle ===")
+message(STATUS "  CMAKE_INSTALL_PREFIX    : ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "  BUNDLE_INSTALL_PREFIX   : ${BUNDLE_INSTALL_PREFIX}")
+message(STATUS "  CMAKE_INSTALL_BINDIR    : ${CMAKE_INSTALL_BINDIR}")
+message(STATUS "  CMAKE_INSTALL_LIBDIR    : ${CMAKE_INSTALL_LIBDIR}")
+message(STATUS "  CMAKE_INSTALL_DATADIR   : ${CMAKE_INSTALL_DATADIR}")
+message(STATUS "  CMAKE_INSTALL_FULL_BINDIR  : ${CMAKE_INSTALL_FULL_BINDIR}")
+message(STATUS "  CMAKE_INSTALL_FULL_LIBDIR  : ${CMAKE_INSTALL_FULL_LIBDIR}")
+message(STATUS "  CMAKE_INSTALL_FULL_DATADIR : ${CMAKE_INSTALL_FULL_DATADIR}")
+message(STATUS "  BUNDLE_LIBS_PATHS       : ${BUNDLE_LIBS_PATHS}")
 
-message(STATUS "CMAKE_INSTALL_FULL_LIBDIR: ${CMAKE_INSTALL_FULL_LIBDIR}")
-message(STATUS "CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
+# ─── Dependency lookup paths ─────────────────────────────────────────────────
 
-# Add installed runtime library folder to dependencies lookup path
-if(WIN32)  # installed next to binaries on Windows
+if(WIN32)
+    # On Windows, DLLs live next to the executables
     set(LIBS_LOOKUPS_PATHS "${CMAKE_INSTALL_FULL_BINDIR}")
-else()     # installed in library dir everywhere else
+else()
     set(LIBS_LOOKUPS_PATHS "${CMAKE_INSTALL_FULL_LIBDIR}")
-    # GNUInstallDirs is not able to resolve between lib and lib64 hen cmake is called as a sub-command line.
-    # As a workaround we always add a second path with "64" suffix, so it works in all cases.
-    # In some cases, that will be useless and point to a non-existing directory.
-    list(APPEND LIBS_LOOKUPS_PATHS ${CMAKE_INSTALL_FULL_LIBDIR}64)
+    # GNUInstallDirs cannot distinguish lib vs lib64 in -P mode;
+    # always probe the "64" variant as well (harmless if absent).
+    list(APPEND LIBS_LOOKUPS_PATHS "${CMAKE_INSTALL_FULL_LIBDIR}64")
 endif()
 
 if(BUNDLE_LIBS_PATHS)
-list(APPEND LIBS_LOOKUPS_PATHS ${BUNDLE_LIBS_PATHS})
+    list(APPEND LIBS_LOOKUPS_PATHS ${BUNDLE_LIBS_PATHS})
 endif()
-message(STATUS "LIBS_LOOKUPS_PATHS: ${LIBS_LOOKUPS_PATHS}")
+message(STATUS "  LIBS_LOOKUPS_PATHS      : ${LIBS_LOOKUPS_PATHS}")
 
-get_bundle_all_executables(${CMAKE_INSTALL_FULL_BINDIR} BUNDLE_APPS)
+# ─── Guard: bin dir must exist ───────────────────────────────────────────────
 
-file(COPY
-     ${CMAKE_INSTALL_FULL_BINDIR}
-     DESTINATION ${BUNDLE_INSTALL_PREFIX}
-     USE_SOURCE_PERMISSIONS
-     )
+if(NOT EXISTS "${CMAKE_INSTALL_FULL_BINDIR}")
+    message(FATAL_ERROR "MakeBundle.cmake: bin directory does not exist: "
+                        "${CMAKE_INSTALL_FULL_BINDIR}")
+endif()
 
-file(COPY
-     ${CMAKE_INSTALL_FULL_LIBDIR}
-     DESTINATION ${BUNDLE_INSTALL_PREFIX}
-     USE_SOURCE_PERMISSIONS
-     )
+# ─── Copy install tree into bundle ───────────────────────────────────────────
 
-file(COPY
-    ${CMAKE_INSTALL_FULL_DATADIR}
-    DESTINATION ${BUNDLE_INSTALL_PREFIX}
-    USE_SOURCE_PERMISSIONS
-    )
+foreach(_dir
+        "${CMAKE_INSTALL_FULL_BINDIR}"
+        "${CMAKE_INSTALL_FULL_LIBDIR}"
+        "${CMAKE_INSTALL_FULL_DATADIR}")
+    if(EXISTS "${_dir}")
+        file(COPY "${_dir}"
+             DESTINATION "${BUNDLE_INSTALL_PREFIX}"
+             USE_SOURCE_PERMISSIONS)
+    else()
+        message(STATUS "  Skipping non-existent directory: ${_dir}")
+    endif()
+endforeach()
 
-# Get first bundled executable as reference app
-# fixup_bundle will automatically fixup all the others executable in the bundle
-get_bundle_all_executables(${BUNDLE_INSTALL_PREFIX} BUNDLE_APPS)
+# ─── fixup_bundle ────────────────────────────────────────────────────────────
+
+get_bundle_all_executables("${BUNDLE_INSTALL_PREFIX}" BUNDLE_APPS)
+
+if(NOT BUNDLE_APPS)
+    message(FATAL_ERROR "MakeBundle.cmake: no executables found under "
+                        "${BUNDLE_INSTALL_PREFIX}")
+endif()
+
+# fixup_bundle uses the first app as anchor; it fixes up all others automatically.
 list(GET BUNDLE_APPS 0 MAIN_APP)
-fixup_bundle(${MAIN_APP} "" "${LIBS_LOOKUPS_PATHS}")
+message(STATUS "  Main app for fixup_bundle: ${MAIN_APP}")
+fixup_bundle("${MAIN_APP}" "" "${LIBS_LOOKUPS_PATHS}")
+
+# ─── Move stray libs that fixup_bundle dropped into bin/ back into lib/ ──────
 
 if(UNIX)
-    file(GLOB _LIBS_TO_MOVE "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/lib*.so*")
-    file(COPY
-        ${_LIBS_TO_MOVE}
-        DESTINATION ${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
-        USE_SOURCE_PERMISSIONS
-        FILES_MATCHING PATTERN "lib*.so*"
-        )
-    file(REMOVE
-        ${_LIBS_TO_MOVE}
-        )
-    
+    set(_bundle_bindir "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+    set(_bundle_libdir "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+
+    file(GLOB _LIBS_TO_MOVE "${_bundle_bindir}/lib*.so*")
+    if(_LIBS_TO_MOVE)
+        message(STATUS "  Moving ${CMAKE_LIST_LENGTH} stray libs from bin/ to lib/")
+        file(COPY ${_LIBS_TO_MOVE}
+             DESTINATION "${_bundle_libdir}"
+             USE_SOURCE_PERMISSIONS)
+        file(REMOVE ${_LIBS_TO_MOVE})
+    endif()
 endif()
 
-message(STATUS "Bundle done: ${BUNDLE_INSTALL_PREFIX}")
-
+message(STATUS "=== Bundle done: ${BUNDLE_INSTALL_PREFIX} ===")
