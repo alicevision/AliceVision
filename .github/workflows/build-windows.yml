@@ -162,7 +162,6 @@ jobs:
                             -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
                             -DALICEVISION_BUILD_SEGMENTATION=OFF
                             -DALICEVISION_BUILD_SWIG_BINDING=ON
-                            -DALICEVISION_INSTALL_MESHROOM_PLUGIN=OFF
                             -DBOOST_NO_CXX11=ON
                             -DVCPKG_MANIFEST_MODE=OFF
                             -DPython3_EXECUTABLE=${{ env.Python3_ROOT_DIR }}\python.exe
