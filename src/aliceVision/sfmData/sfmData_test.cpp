@@ -88,7 +88,6 @@ BOOST_AUTO_TEST_CASE(SfMData_LandmarkTablePacking)
     sfmData::Landmark landmarkA({1.0, 2.0, 3.0});
     landmarkA.setParallaxRobust(true);
     landmarkA.setLocked(false);
-    landmarkA.setState(EEstimatorParameterState::CONSTANT);
     landmarkA.getObservations().emplace(4, sfmData::Observation({10.0, 20.0}, 7, 1.5));
     landmarkA.getObservations().emplace(8, sfmData::Observation({30.0, 40.0}, 9, 2.5));
     sfmData.getLandmarks().emplace(42, landmarkA);
@@ -96,7 +95,6 @@ BOOST_AUTO_TEST_CASE(SfMData_LandmarkTablePacking)
     sfmData::Landmark landmarkB({-1.0, -2.0, -3.0});
     landmarkB.setParallaxRobust(false);
     landmarkB.setLocked(true);
-    landmarkB.setState(EEstimatorParameterState::REFINED);
     landmarkB.getObservations().emplace(8, sfmData::Observation({50.0, 60.0}, 11, 3.5));
     sfmData.getLandmarks().emplace(84, landmarkB);
 
@@ -118,8 +116,6 @@ BOOST_AUTO_TEST_CASE(SfMData_LandmarkTablePacking)
 
     BOOST_CHECK_EQUAL(table.ids[0], 42);
     BOOST_CHECK_EQUAL(table.ids[1], 84);
-    BOOST_CHECK_EQUAL(table.states[0], static_cast<std::uint8_t>(EEstimatorParameterState::CONSTANT));
-    BOOST_CHECK_EQUAL(table.states[1], static_cast<std::uint8_t>(EEstimatorParameterState::REFINED));
     BOOST_CHECK_EQUAL(table.flags[0], 1u);
     BOOST_CHECK_EQUAL(table.flags[1], 2u);
 }

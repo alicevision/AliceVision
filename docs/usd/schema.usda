@@ -90,7 +90,6 @@ class "AvPose" (
 {
     uint av:id = 4294967295
     matrix4d av:worldFromCamera = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1) )
-    uchar av:state = 0
     bool av:locked = false
     bool av:rotationOnly = false
     bool av:removable = true
@@ -224,7 +223,6 @@ class "AvLandmarkTableAPI" (
 )
 {
     uint[] av:ids
-    uchar[] av:state
     uchar[] av:descType
     uchar[] av:flags
     uint[] av:referenceViewId
