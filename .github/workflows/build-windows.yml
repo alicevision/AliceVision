@@ -159,8 +159,6 @@ jobs:
                             -DALICEVISION_USE_CCTAG=OFF
                             -DALICEVISION_USE_POPSIFT=OFF
                             -DALICEVISION_USE_ALEMBIC=ON
-                            -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
-                            -DALICEVISION_BUILD_SEGMENTATION=OFF
                             -DALICEVISION_BUILD_SWIG_BINDING=ON
                             -DBOOST_NO_CXX11=ON
                             -DVCPKG_MANIFEST_MODE=OFF
