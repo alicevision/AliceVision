@@ -6,11 +6,12 @@
 
 %module (package="pyalicevision") track
 
-%include <std_map.i>
-%include <std_string.i>
+%include <aliceVision/config.hpp>
+%include <aliceVision/global.i>
+%include <aliceVision/numeric/eigen.i>
 
-%include <aliceVision/track/Track.hpp>
-%include <aliceVision/track/trackIO.hpp>
+%eigen_typemaps(Vec2)
+
 
 namespace std
 {
@@ -22,11 +23,20 @@ namespace std
 }
 
 %{    
+#include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/track/trackIO.hpp>
 
 using namespace aliceVision;
 %} 
+
+%ignore aliceVision::feature::operator<<;
+%ignore aliceVision::feature::operator>>;
+%ignore aliceVision::track::operator<<;
+
+%include <aliceVision/feature/imageDescriberCommon.hpp>
+%include <aliceVision/track/Track.hpp>
+%include <aliceVision/track/trackIO.hpp>
 
 %template(TrackInfoPerView) std::map<std::size_t, aliceVision::track::TrackItem>;
 %template(TracksMap) std::map<std::size_t, aliceVision::track::Track>;
