@@ -156,13 +156,10 @@ jobs:
                             -DALICEVISION_BUILD_TESTS=ON
                             -DALICEVISION_USE_OPENCV=ON
                             -DALICEVISION_USE_CUDA=ON
-                            -DALICEVISION_USE_CCTAG=OFF
-                            -DALICEVISION_USE_POPSIFT=OFF
+                            -DALICEVISION_USE_CCTAG=ON
+                            -DALICEVISION_USE_POPSIFT=ON
                             -DALICEVISION_USE_ALEMBIC=ON
-                            -DALICEVISION_BUILD_PHOTOMETRICSTEREO=OFF
-                            -DALICEVISION_BUILD_SEGMENTATION=OFF
                             -DALICEVISION_BUILD_SWIG_BINDING=ON
-                            -DALICEVISION_INSTALL_MESHROOM_PLUGIN=OFF
                             -DBOOST_NO_CXX11=ON
                             -DVCPKG_MANIFEST_MODE=OFF
                             -DPython3_EXECUTABLE=${{ env.Python3_ROOT_DIR }}\python.exe
