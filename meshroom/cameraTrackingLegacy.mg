@@ -17,7 +17,7 @@
             "FeatureMatching": "2.0",
             "ImageDetectionPrompt": "1.0",
             "ImageMatching": "2.0",
-            "ImageMatchingMultiSfM": "1.0",
+            "ImageMatchingMultiSfM": "1.1",
             "ImageSegmentationBox": "1.0",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",

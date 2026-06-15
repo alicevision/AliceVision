@@ -31,7 +31,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 using namespace aliceVision::voctree;
@@ -66,6 +66,8 @@ int aliceVision_main(int argc, char** argv)
     std::string weightsFilepath;
     /// flag for the optional weights file
     bool withWeights = false;
+    /// Do we remove views from A if they belong to B ?
+    bool removeDuplicates = true;
 
     // multiple SfM parameters
 
@@ -119,7 +121,8 @@ int aliceVision_main(int argc, char** argv)
         ("matchingMode", po::value<std::string>(&matchingModeName)->default_value(matchingModeName),
          EImageMatchingMode_description().c_str())
         ("outputCombinedSfM", po::value<std::string>(&outputCombinedSfM)->default_value(outputCombinedSfM),
-         "Output file path for the combined SfMData file (if empty, don't combine).");
+         "Output file path for the combined SfMData file (if empty, don't combine).")
+        ("removeDuplicates", po::value<bool>(&removeDuplicates)->default_value(removeDuplicates), "Do we remove views from A if they belong to B ?");
     // clang-format on
 
     CmdLine cmdline("The objective of this software is to find images that are looking to the same areas of the scene. "
@@ -166,11 +169,14 @@ int aliceVision_main(int argc, char** argv)
         }
 
         // remove duplicated view
-        for (const auto& viewPair : sfmDataB.getViews())
+        if (removeDuplicates)
         {
-            sfmData::Views::iterator it = sfmDataA.getViews().find(viewPair.first);
-            if (it != sfmDataA.getViews().end())
-                sfmDataA.getViews().erase(it);
+            for (const auto& viewPair : sfmDataB.getViews())
+            {
+                sfmData::Views::iterator it = sfmDataA.getViews().find(viewPair.first);
+                if (it != sfmDataA.getViews().end())
+                    sfmDataA.getViews().erase(it);
+            }
         }
     }
 
