@@ -4,7 +4,6 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 from pathlib import Path
 
-import distutils.dir_util as du
 import shutil
 import glob
 import os
