@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -90,6 +90,13 @@ Thanks to this node, the FeatureMatching node will only compute the matches betw
                         "- 'a/b' for A with B.",
             value="a/a+a/b",
             values=["a/a+a/b","a/ab", "a/b"],
+        ),
+        desc.BoolParam(
+            name="removeDuplicates",
+            label="Remove duplicates",
+            description="If enabled, views that belong to both A and B will be ignored in A.",
+            value=True,
+            advanced=True
         ),
         desc.IntParam(
             name="minNbImages",
