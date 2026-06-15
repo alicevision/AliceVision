@@ -131,8 +131,7 @@ int aliceVision_main(int argc, char** argv)
     tracksBuilder.build(pairwiseMatches);
 
     ALICEVISION_LOG_INFO("Track filtering");
-    size_t countFiltered = 0;
-    tracksBuilder.filter(countFiltered, filterTrackForks, minInputTrackLength);
+    tracksBuilder.filter(filterTrackForks, minInputTrackLength);
 
     ALICEVISION_LOG_INFO("Track export to structure");
     track::TracksMap mapTracks;
