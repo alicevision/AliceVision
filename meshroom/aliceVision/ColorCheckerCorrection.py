@@ -11,7 +11,7 @@ def outputImagesValueFunct(attr):
     inputExt = os.path.splitext(basename)[1]
     outputExt = ('.' + attr.node.extension.value) if attr.node.extension.value else None
 
-    if inputExt in ['.abc', '.sfm']:
+    if inputExt in ['.abc', '.sfm', '.usda']:
         fileStem = '<FILESTEM>' if attr.node.keepImageName.value else '<VIEW_ID>'
         # If we have an SfM in input
         return "{nodeCacheFolder}/" + fileStem + (outputExt or '.*')
@@ -117,7 +117,7 @@ If multiple color charts are submitted, only the first one will be taken in acco
             name="outSfMData",
             label="SfMData",
             description="Output SfMData.",
-            value=lambda attr: ("{nodeCacheFolder}/" + os.path.basename(attr.node.input.value)) if (os.path.splitext(attr.node.input.value)[1] in [".abc", ".sfm"]) else "",
+            value=lambda attr: ("{nodeCacheFolder}/" + os.path.basename(attr.node.input.value)) if (os.path.splitext(attr.node.input.value)[1] in [".abc", ".sfm", ".usda"]) else "",
             commandLineGroup="",  # do not export on the command line
         ),
         desc.File(

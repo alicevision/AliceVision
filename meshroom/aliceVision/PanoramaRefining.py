@@ -65,7 +65,7 @@ especially in scenes with strong parallax or lens distortion.
             name="output",
             label="SfM File",
             description="Path to the output SfM file.",
-            value="{nodeCacheFolder}/panorama.abc",
+            value="{nodeCacheFolder}/panorama.usda",
         ),
         desc.File(
             name="outputViewsAndPoses",

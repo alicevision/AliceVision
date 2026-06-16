@@ -46,7 +46,7 @@ ensuring that only the foreground object influences the network predictions.
             name="outputSfmData",
             label="Output",
             description="Path to the output sfmData.",
-            value="{nodeCacheFolder}/sfmData.abc",
+            value="{nodeCacheFolder}/sfmData.usda",
         ),
         desc.File(
             name="outputDirectory",

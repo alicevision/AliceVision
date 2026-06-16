@@ -94,7 +94,7 @@ It is known to be faster but less robust to challenging datasets than the Increm
             name="output",
             label="SfMData",
             description="Path to the output SfMData file.",
-            value="{nodeCacheFolder}/sfm.abc",
+            value="{nodeCacheFolder}/sfm.usda",
         ),
         desc.File(
             name="outputViewsAndPoses",

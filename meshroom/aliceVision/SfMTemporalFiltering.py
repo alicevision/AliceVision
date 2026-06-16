@@ -65,7 +65,7 @@ This node takes the result of SfM and fine-tune the camera poses so that the cam
             name="output",
             label="SfMData",
             description="Path to the output SfMData file.",
-            value="{nodeCacheFolder}/sfmFiltered.abc",
+            value="{nodeCacheFolder}/sfmFiltered.usda",
         ),
         desc.File(
             name="outputViewsAndPoses",

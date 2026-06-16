@@ -326,7 +326,7 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
             name="output",
             label="SfMData",
             description="Path to the output SfMData file.",
-            value="{nodeCacheFolder}/sfmExpanded.abc",
+            value="{nodeCacheFolder}/sfmExpanded.usda",
         ),
         desc.File(
             name="outputViewsAndPoses",

@@ -158,13 +158,13 @@ class SfMFilter(desc.Node):
             name="outputSfMData_selected",
             label="Selected SfMData",
             description="Output SfMData file containing selected views.",
-            value="{nodeCacheFolder}/selectedSfmData.abc",
+            value="{nodeCacheFolder}/selectedSfmData.usda",
         ),
         desc.File(
             name="outputSfMData_unselected",
             label="Unselected SfMData",
             description="Output SfMData file containing remaining views.",
-            value="{nodeCacheFolder}/unselectedSfmData.abc",
+            value="{nodeCacheFolder}/unselectedSfmData.usda",
         ),
     ]
 

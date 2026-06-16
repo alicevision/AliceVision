@@ -105,7 +105,7 @@ set of images, or for applying externally computed camera parameters.
             name="output",
             label="SfMData",
             description="Path to the output SfM point cloud file (in SfMData format).",
-            value=lambda attr: "{nodeCacheFolder}/" + (os.path.splitext(os.path.basename(attr.node.input.value))[0] or "sfmData") + ".abc",
+            value=lambda attr: "{nodeCacheFolder}/" + (os.path.splitext(os.path.basename(attr.node.input.value))[0] or "sfmData") + ".usda",
         ),
         desc.File(
             name="outputViewsAndPoses",

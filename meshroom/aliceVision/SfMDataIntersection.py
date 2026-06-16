@@ -54,6 +54,6 @@ that are co-observed by cameras from two distinct acquisition groups.
             name="output",
             label="SfMData",
             description="Path to the output SfMData file containing only intersection landmarks.",
-            value="{nodeCacheFolder}/sfmData.abc",
+            value="{nodeCacheFolder}/sfmData.usda",
         ),
     ]

@@ -52,6 +52,6 @@ calibrated rotations but no translational component, suitable for panorama stitc
             name="output",
             label="SfMData",
             description="Path to the output SfMData file.",
-            value="{nodeCacheFolder}/sfm.abc",
+            value="{nodeCacheFolder}/sfm.usda",
         ),
     ]

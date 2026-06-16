@@ -53,6 +53,6 @@ fitting a new model that approximates the inverse of the original.
             name="output",
             label="Output",
             description="Path to the output SfMData file.",
-            value="{nodeCacheFolder}/sfm.abc",
+            value="{nodeCacheFolder}/sfm.usda",
         ),
     ]

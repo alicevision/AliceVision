@@ -25,7 +25,6 @@ struct LandmarkTable
     std::vector<IndexT> ids;
     std::vector<Vec3> points;
     std::vector<Vec3> colors;
-    std::vector<std::uint8_t> states;
     std::vector<std::uint8_t> descTypes;
     std::vector<std::uint8_t> flags;
     std::vector<IndexT> referenceViewIds;

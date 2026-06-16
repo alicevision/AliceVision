@@ -76,7 +76,7 @@ while preserving the reconstructed poses and 3D structure.
             name="output",
             label="Output SfMData",
             description="Output SfMData file.",
-            value="{nodeCacheFolder}/sfmData.abc",
+            value="{nodeCacheFolder}/sfmData.usda",
         ),
         desc.File(
             name="outputTracks",

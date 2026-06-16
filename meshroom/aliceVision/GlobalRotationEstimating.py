@@ -67,6 +67,6 @@ to handle outlier relative rotations and recover the global rotation of every vi
             name="output",
             label="SfMData",
             description="Path to the output SfMData file.",
-            value="{nodeCacheFolder}/sfm.abc",
+            value="{nodeCacheFolder}/sfm.usda",
         ),
     ]

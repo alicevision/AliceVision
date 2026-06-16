@@ -30,7 +30,6 @@ LandmarkTable buildLandmarkTable(const SfMData& sfmData, bool buildViewIndex)
     table.ids.reserve(landmarkCount);
     table.points.reserve(landmarkCount);
     table.colors.reserve(landmarkCount);
-    table.states.reserve(landmarkCount);
     table.descTypes.reserve(landmarkCount);
     table.flags.reserve(landmarkCount);
     table.referenceViewIds.reserve(landmarkCount);
@@ -66,7 +65,6 @@ LandmarkTable buildLandmarkTable(const SfMData& sfmData, bool buildViewIndex)
         rgb(2) = static_cast<float>(c.b()) / 255.0f;
         table.colors.push_back(rgb);
 
-        table.states.push_back(static_cast<std::uint8_t>(landmark.getState()));
         table.descTypes.push_back(static_cast<std::uint8_t>(landmark.getDescType()));
 
         std::uint8_t packedFlags = 0;

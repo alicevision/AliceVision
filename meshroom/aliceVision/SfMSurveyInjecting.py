@@ -48,6 +48,6 @@ enforce a known metric scale during bundle adjustment.
             name="output",
             label="SfMData",
             description="Path to the output SfM file.",
-            value="{nodeCacheFolder}/sfmData.abc",
+            value="{nodeCacheFolder}/sfmData.usda",
         ),
     ]

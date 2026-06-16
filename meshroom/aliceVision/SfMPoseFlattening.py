@@ -39,7 +39,7 @@ passing rig reconstructions to nodes that do not support rig structures.
             name="output",
             label="SfM File",
             description="Path to the output SfM file.",
-            value="{nodeCacheFolder}/sfmData.abc",
+            value="{nodeCacheFolder}/sfmData.usda",
         )
     ]
 

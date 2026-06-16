@@ -582,7 +582,7 @@ or to export final deliverables.
             name="outSfMData",
             label="SfMData",
             description="Output SfMData file.",
-            value=lambda attr: ("{nodeCacheFolder}/" + os.path.basename(attr.node.input.value)) if (os.path.splitext(attr.node.input.value)[1] in [".abc", ".sfm"]) else "",
+            value=lambda attr: ("{nodeCacheFolder}/" + os.path.basename(attr.node.input.value)) if (os.path.splitext(attr.node.input.value)[1] in [".usda", ".abc", ".sfm"]) else "",
             commandLineGroup="",  # do not export on the command line
         ),
         desc.File(

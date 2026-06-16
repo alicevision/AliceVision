@@ -389,7 +389,6 @@ void writePoses(const UsdStageRefPtr& stage, const sfmData::SfMData& sfmData, co
         const UsdPrim posePrim = stage->DefinePrim(childPath(paths.posesPath, idName("pose", static_cast<std::uint32_t>(poseId))), TfToken("AvPose"));
         setAttr(posePrim, "av:id", SdfValueTypeNames->UInt, static_cast<std::uint32_t>(poseId));
         setAttr(posePrim, "av:worldFromCamera", SdfValueTypeNames->Matrix4d, convertPoseToMayaWorldFromCamera(pose.getTransform()));
-        setAttr(posePrim, "av:state", SdfValueTypeNames->UChar, static_cast<std::uint8_t>(pose.getState()));
         setAttr(posePrim, "av:locked", SdfValueTypeNames->Bool, pose.isLocked());
         setAttr(posePrim, "av:rotationOnly", SdfValueTypeNames->Bool, pose.isRotationOnly());
         setAttr(posePrim, "av:removable", SdfValueTypeNames->Bool, pose.isRemovable());
@@ -708,10 +707,8 @@ void writeLandmarkTable(const UsdStageRefPtr& stage, const sfmData::SfMData& sfm
     }
     setAttr(landmarksPrim, "av:ids", SdfValueTypeNames->UIntArray, ids);
 
-    VtArray<std::uint8_t> state = VtArray<std::uint8_t>(table.states.begin(), table.states.end());
     VtArray<std::uint8_t> desc = VtArray<std::uint8_t>(table.descTypes.begin(), table.descTypes.end());
     VtArray<std::uint8_t> flags = VtArray<std::uint8_t>(table.flags.begin(), table.flags.end());
-    setAttr(landmarksPrim, "av:state", SdfValueTypeNames->UCharArray, state);
     setAttr(landmarksPrim, "av:descType", SdfValueTypeNames->UCharArray, desc);
     setAttr(landmarksPrim, "av:flags", SdfValueTypeNames->UCharArray, flags);
 
@@ -1164,12 +1161,6 @@ void loadPoses(const UsdStageRefPtr& stage, const ExportPaths& paths, sfmData::S
             pose->lock();
         }
 
-        std::uint8_t state = static_cast<std::uint8_t>(pose->getState());
-        if (getAttr(posePrim, "av:state", state))
-        {
-            pose->setState(static_cast<EEstimatorParameterState>(state));
-        }
-
         bool rotationOnly = false;
         if (getAttr(posePrim, "av:rotationOnly", rotationOnly))
         {
@@ -1600,7 +1591,6 @@ void loadLandmarkTable(const UsdStageRefPtr& stage, const ExportPaths& paths, sf
     }
 
     VtArray<std::uint32_t> ids;
-    VtArray<std::uint8_t> states;
     VtArray<std::uint8_t> descTypes;
     VtArray<std::uint8_t> flags;
     VtArray<std::uint32_t> referenceViewIds;
@@ -1612,7 +1602,6 @@ void loadLandmarkTable(const UsdStageRefPtr& stage, const ExportPaths& paths, sf
     VtArray<GfHalf> obsDepth;
 
     getAttr(landmarksPrim, "av:ids", ids);
-    getAttr(landmarksPrim, "av:state", states);
     getAttr(landmarksPrim, "av:descType", descTypes);
     getAttr(landmarksPrim, "av:flags", flags);
     getAttr(landmarksPrim, "av:referenceViewId", referenceViewIds);
@@ -1644,10 +1633,6 @@ void loadLandmarkTable(const UsdStageRefPtr& stage, const ExportPaths& paths, sf
         if (i < descTypes.size())
         {
             lm.setDescType(static_cast<feature::EImageDescriberType>(descTypes[i]));
-        }
-        if (i < states.size())
-        {
-            lm.setState(static_cast<EEstimatorParameterState>(states[i]));
         }
         if (i < flags.size())
         {

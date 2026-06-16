@@ -42,12 +42,12 @@ the remaining views using a different strategy.
             name="reconstructedOutput",
             label="Reconstructed SfMData File",
             description="SfMData file containing the reconstructed cameras.",
-            value="{nodeCacheFolder}/sfmReconstructed.abc",
+            value="{nodeCacheFolder}/sfmReconstructed.usda",
         ),
         desc.File(
             name="notReconstructedOutput",
             label="Not Reconstructed SfMData File",
             description="SfMData file containing the non-reconstructed cameras.",
-            value="{nodeCacheFolder}/sfmNonReconstructed.abc",
+            value="{nodeCacheFolder}/sfmNonReconstructed.usda",
         ),
     ]
