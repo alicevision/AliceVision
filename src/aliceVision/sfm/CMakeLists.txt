@@ -81,6 +81,7 @@ set(sfm_files_sources
     pipeline/expanding/SfmTriangulation.cpp
     pipeline/expanding/SfmResection.cpp
     pipeline/expanding/SfmBundle.cpp
+    pipeline/expanding/DistanceWeighting.cpp
     pipeline/expanding/ExpansionHistory.cpp
     pipeline/expanding/ExpansionChunk.cpp
     pipeline/expanding/ExpansionIteration.cpp
@@ -136,6 +137,7 @@ alicevision_add_library(aliceVision_sfm
         Boost::boost
     PRIVATE_LINKS
         ${LEMON_LIBRARY}
+        nanoflann::nanoflann
 )
 
 # Unit tests

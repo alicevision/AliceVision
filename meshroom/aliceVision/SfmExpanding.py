@@ -286,6 +286,12 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
             description="Bundle adjustment will try to optimize the landmarks positions.",
             value=True,
         ),
+        desc.BoolParam(
+            name="enableObservationsWeighting",
+            label="Enable observations weighting",
+            description="Enable observations weighting to reduce impact of regions with high point density.",
+            value=False,
+        ),
         desc.IntParam(
             name="minNbCamerasToRefinePrincipalPoint",
             label="Min Nb Cameras To Refine Principal Point",

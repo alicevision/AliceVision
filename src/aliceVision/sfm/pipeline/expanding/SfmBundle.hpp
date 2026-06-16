@@ -88,6 +88,15 @@ public:
     }
 
     /**
+     * @brief Set whether to enable weighting of observations
+     * @param flag true to enable observations weighting, false to disable it
+    */
+    void setIsObservationsWeightingEnabled(bool flag)
+    {
+        _enableObservationsWeighting = flag;
+    }
+
+    /**
      * @brief Get the number of valid points per pose required
      * @return the threshold used to discriminate a valid pose
     */
@@ -141,6 +150,7 @@ private:
     size_t _LBAGraphDistanceLimit = 1;
     size_t _LBAMinNbOfMatches = 50;
     bool _isStructureRefinementEnabled = true;
+    bool _enableObservationsWeighting = false;
 };
 
 } // namespace sfm

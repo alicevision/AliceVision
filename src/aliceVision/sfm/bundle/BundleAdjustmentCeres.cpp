@@ -625,6 +625,12 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
             }
 
+            ceres::LossFunction* weightedLossFunction = lossFunction;
+            if (observation.getWeight() != 1.0)
+            {
+                weightedLossFunction = new ceres::ScaledLoss(lossFunction, observation.getWeight(), ceres::TAKE_OWNERSHIP);
+            }
+
             if (view.isPartOfRig() && !view.isPoseIndependant())
             {
                 ceres::CostFunction* costFunction = ProjectionErrorFunctor::createCostFunction(intrinsic, observation);
@@ -639,7 +645,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(rigBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
                 blockIds.push_back(blockId);
             }
             else if (referencePoseBlockPtr != nullptr)
@@ -657,7 +663,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 }
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
                 blockIds.push_back(blockId);
             }
             else
@@ -670,7 +676,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(poseBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
                 blockIds.push_back(blockId);
             }
 
