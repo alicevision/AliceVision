@@ -1444,7 +1444,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         }
 
         // Create the intrinsic for the view
-        auto intrinsic = createIntrinsic(*view, focalLength == -1.0 ? 0 : focalLength, sensorWidth, mediaIndex, imageRatio);
+        auto intrinsic = createIntrinsic(*view, focalLength == -1.0 ? 0 : focalLength, sensorWidth, imageRatio, mediaIndex);
 
         // Update intrinsics ID if this is a new one
         if (previousIntrinsic != nullptr && *previousIntrinsic != *intrinsic)
