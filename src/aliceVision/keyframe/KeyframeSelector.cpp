@@ -695,6 +695,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
     camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
+    IndexT intrinsicId = 0;
 
     for (std::size_t id = 0; id < _mediaPaths.size(); ++id)
     {
@@ -804,7 +805,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                                 << "written on disk. The keyframes' SfMData file cannot be written.");
         }
 
-        if (!writeSfMData(path, feed, brands, models, mmFocals))
+        if (!writeSfMData(path, feed, brands, models, mmFocals, id, intrinsicId))
             ALICEVISION_LOG_ERROR("Failed to write the output SfMData files.");
     }
 
@@ -1237,13 +1238,15 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath,
                                     dataio::FeedProvider& feed,
                                     const std::vector<std::string>& brands,
                                     const std::vector<std::string>& models,
-                                    const std::vector<float>& mmFocals)
+                                    const std::vector<float>& mmFocals,
+                                    const std::size_t mediaIndex,
+                                    IndexT& intrinsicId)
 {
     bool filledOutputs = false;
 
     if (!feed.isSfMData())
     {
-        filledOutputs = writeSfMDataFromSequences(mediaPath, feed, brands, models, mmFocals);
+        filledOutputs = writeSfMDataFromSequences(mediaPath, feed, brands, models, mmFocals, mediaIndex, intrinsicId);
     }
     else
     {
@@ -1362,11 +1365,10 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
                                                  dataio::FeedProvider& feed,
                                                  const std::vector<std::string>& brands,
                                                  const std::vector<std::string>& models,
-                                                 const std::vector<float>& mmFocals)
+                                                 const std::vector<float>& mmFocals,
+                                                 const std::size_t mediaIndex,
+                                                 IndexT& intrinsicId)
 {
-    static std::size_t mediaIndex = 0;
-    static IndexT intrinsicId = 0;
-
     auto& keyframesViews = _outputSfmKeyframes.getViews();
     auto& framesViews = _outputSfmFrames.getViews();
 
@@ -1484,7 +1486,6 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         feed.goToNextFrame();
     }
 
-    ++mediaIndex;
     ++intrinsicId;
 
     return true;
@@ -1562,7 +1563,9 @@ std::shared_ptr<camera::IntrinsicBase> KeyframeSelector::createIntrinsic(const s
     }
 
     if (intrinsic->serialNumber().empty())  // Likely to happen with video feeds
+    {
         intrinsic->setSerialNumber(fs::path(view.getImage().getImagePath()).parent_path().string() + std::to_string(mediaIndex));
+    }
 
     return intrinsic;
 }
