@@ -411,8 +411,9 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness,
                 ALICEVISION_THROW(std::invalid_argument, "Invalid path to masks: " << maskPath);
             }
 
-            const std::size_t nbMasks = static_cast<std::size_t>(feed->nbFrames());
-            if (nbMasks != nbFrames)
+            const std::size_t nbMediaFrames = static_cast<std::size_t>(feed->nbFrames());
+            const std::size_t nbMasks = static_cast<std::size_t>(maskFeed->nbFrames());
+            if (nbMasks != nbMediaFrames)
             {
                 ALICEVISION_THROW_ERROR("The number of masks does not match the number of frames.");
             }
