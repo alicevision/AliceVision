@@ -234,11 +234,19 @@ void KeyframeSelector::processSmart(const float pxDisplacement,
     subsequenceLimits.push_back(sequenceSize - 1);
 
     // Step 2: check whether the min/max output frames constraints are respected
-    if (!(subsequenceLimits.size() - 1 >= _minOutFrames && subsequenceLimits.size() - 1 <= _maxOutFrames))
+    const std::size_t nbSubsequences = subsequenceLimits.size() - 1;
+    if (nbSubsequences < _minOutFrames || (hasMaxOutFrames && nbSubsequences > _maxOutFrames))
+    {
+        if (hasMaxOutFrames)
         {
             ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
-                                 << subsequenceLimits.size() - 1 << " keyframes, should be between " << _minOutFrames << " and " << _maxOutFrames
-                                 << ").");
+                                 << nbSubsequences << " keyframes, should be between " << _minOutFrames << " and " << _maxOutFrames << ").");
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
+                                 << nbSubsequences << " keyframes, should be at least " << _minOutFrames << ").");
+        }
 
         std::vector<unsigned int> newLimits = subsequenceLimits;  // Prevents first 'newLimits.size() - 1' from overflowing
         const double displacementDiff = 0.5;                      // The displacement must be 0.5px smaller/bigger than the previous one
