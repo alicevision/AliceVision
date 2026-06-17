@@ -87,6 +87,11 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
         ALICEVISION_THROW(std::invalid_argument, "Cannot create KeyframeSelector without at least one media file path!");
     }
 
+    if (!maskPaths.empty() && maskPaths.size() != mediaPaths.size())
+    {
+        ALICEVISION_THROW(std::invalid_argument, "The number of provided mask paths must match the number of media paths.");
+    }
+
     scoresMap["Sharpness"] = &_sharpnessScores;
     scoresMap["OpticalFlow"] = &_flowScores;
 
@@ -201,6 +206,17 @@ void KeyframeSelector::processSmart(const float pxDisplacement,
     _selectedFrames.resize(sequenceSize);
     std::fill(_selectedFrames.begin(), _selectedFrames.end(), '0');
 
+    if (sequenceSize == 1)
+    {
+        ALICEVISION_LOG_INFO("Selecting frame with ID 0");
+        _selectedKeyframes.push_back(0);
+        _selectedFrames.at(0) = '1';
+        ALICEVISION_LOG_INFO("Finished selecting all the keyframes! 1/1 frames have been selected.");
+        return;
+    }
+
+    const bool hasMaxOutFrames = _maxOutFrames > 0;
+
     float step = pxDisplacement * std::min(_frameWidth, _frameHeight) / 100.0;
     double motionAcc = 0.0;
 
@@ -219,10 +235,10 @@ void KeyframeSelector::processSmart(const float pxDisplacement,
 
     // Step 2: check whether the min/max output frames constraints are respected
     if (!(subsequenceLimits.size() - 1 >= _minOutFrames && subsequenceLimits.size() - 1 <= _maxOutFrames))
-    {
-        ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
-                             << subsequenceLimits.size() - 1 << " keyframes, should be between " << _minOutFrames << " and " << _maxOutFrames
-                             << ").");
+        {
+            ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
+                                 << subsequenceLimits.size() - 1 << " keyframes, should be between " << _minOutFrames << " and " << _maxOutFrames
+                                 << ").");
 
         std::vector<unsigned int> newLimits = subsequenceLimits;  // Prevents first 'newLimits.size() - 1' from overflowing
         const double displacementDiff = 0.5;                      // The displacement must be 0.5px smaller/bigger than the previous one
@@ -984,14 +1000,13 @@ cv::Mat KeyframeSelector::readImage(dataio::FeedProvider& feed, std::size_t widt
     cv::cvtColor(cvFrame, cvGrayscale, cv::COLOR_BGR2GRAY);
 
     // Resize to smaller size if requested
-    if (width == 0)
+    if (width == 0 || cvGrayscale.cols <= width)
+    {
         return cvGrayscale;
+    }
 
     cv::Mat cvRescaled;
-    if (cvGrayscale.cols > width && width > 0)
-    {
-        cv::resize(cvGrayscale, cvRescaled, cv::Size(width, double(cvGrayscale.rows) * double(width) / double(cvGrayscale.cols)));
-    }
+    cv::resize(cvGrayscale, cvRescaled, cv::Size(width, double(cvGrayscale.rows) * double(width) / double(cvGrayscale.cols)));
 
     return cvRescaled;
 }
@@ -1109,6 +1124,11 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
                                       const std::size_t cellSize,
                                       const cv::Mat& mask)
 {
+    if (cellSize == 0)
+    {
+        ALICEVISION_THROW(std::invalid_argument, "Flow cell size must be greater than 0.");
+    }
+
     if (cellSize > grayscaleImage.size().width)
     {  // If the cell size is bigger than the height, it will be adjusted
         ALICEVISION_THROW(std::invalid_argument,
@@ -1191,9 +1211,9 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
                 totalCount = cv::countNonZero(maskROI);
             }
 
+            // Ignore cells with less than 50% valid pixels 
             if (totalCount > maxCellSizeWidth * maxCellSizeHeight * 0.5)
             {
-                // If at least 50% of the cell is masked, then ignore it and skip to the next one
                 norm = hypot / totalCount;
                 motionByCell.push_back(norm);
             }
