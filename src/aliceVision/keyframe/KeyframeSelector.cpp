@@ -51,8 +51,9 @@ double findMedian(const std::vector<double>& vec)
         std::nth_element(vecCopy.begin(), medianIt1, vecCopy.end());
         const auto med1 = *medianIt1;
 
-        const auto medianIt2 = vecCopy.begin() + vecCopy.size() / 2;
-        std::nth_element(vecCopy.begin(), medianIt2, vecCopy.end());
+        // nth_element partition the set in two, and the second set is guaranteed to be
+        // more thant the value of med1.
+        const auto medianIt2 = std::min_element(medianIt1 + 1, vecCopy.end());
         const auto med2 = *medianIt2;
 
         return (med1 + med2) / 2.0;
