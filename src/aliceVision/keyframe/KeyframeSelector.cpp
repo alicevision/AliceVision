@@ -1014,6 +1014,11 @@ cv::Mat KeyframeSelector::readImage(dataio::FeedProvider& feed, std::size_t widt
 
 double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize, const cv::Mat& mask)
 {
+    if (windowSize < 4)
+    {
+        ALICEVISION_THROW(std::invalid_argument, "Sharpness window size must be at least 4 pixels.");
+    }
+
     if (windowSize > grayscaleImage.size().width || windowSize > grayscaleImage.size().height)
     {
         ALICEVISION_THROW(std::invalid_argument,
