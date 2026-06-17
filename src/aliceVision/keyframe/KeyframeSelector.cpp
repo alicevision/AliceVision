@@ -1156,7 +1156,7 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
         xyChannels[1].copyTo(yChannel, paddedMask);
 
         // Merge back the channels together
-        std::vector<cv::Mat> channels = {xyChannels[0], xyChannels[1]};
+        std::vector<cv::Mat> channels = {xChannel, yChannel};
         cv::merge(channels, maskedSumflow);
     }
 
