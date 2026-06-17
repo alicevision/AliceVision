@@ -16,11 +16,11 @@
             "ImageSegmentationSam3": "1.0",
             "IntrinsicsTransforming": "1.1",
             "KeyframeSelection": "5.0",
-            "MatchMasking": "1.2",
+            "MatchMasking": "1.4",
             "RelativePoseEstimating": "3.1",
-            "RomaMatcher": "1.1",
+            "RomaMatcher": "1.2",
             "RomaReducer": "1.1",
-            "RomaSampler": "1.1",
+            "RomaSampler": "1.3",
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
@@ -229,6 +229,9 @@
             "inputs": {
                 "inputPaths": [
                     "{ApplyCalibration_1.output}"
+                ],
+                "maskPaths": [
+                    "{ImageSegmentationSam3_1.output}"
                 ]
             },
             "internalInputs": {
@@ -244,8 +247,6 @@
             "inputs": {
                 "inputSfMData": "{RomaMatcher_1.inputSfMData}",
                 "imagePairsList": "{RomaMatcher_1.imagePairsList}",
-                "warpFolder": "{RomaMatcher_1.outputWarpFolder}",
-                "confidenceFolder": "{RomaMatcher_1.outputConfidenceFolder}",
                 "masksFolders": [
                     "{ImageSegmentationSam3_1.output}"
                 ]
@@ -327,8 +328,6 @@
             "inputs": {
                 "inputSfMData": "{MatchMasking_1.inputSfMData}",
                 "imagePairsList": "{MatchMasking_1.imagePairsList}",
-                "warpFolder": "{MatchMasking_1.warpFolder}",
-                "confidenceFolder": "{MatchMasking_1.outputConfidenceFolder}",
                 "maxMatches": 5000
             },
             "internalInputs": {
@@ -344,8 +343,6 @@
             "inputs": {
                 "inputSfMData": "{GeometricFilterEstimating_1.input}",
                 "imagePairsList": "{RomaReducer_1.imagePairsList}",
-                "warpFolder": "{RomaSampler_1.warpFolder}",
-                "confidenceFolder": "{RomaSampler_1.confidenceFolder}",
                 "maxMatches": 2500,
                 "filtersFolder": "{GeometricFilterEstimating_1.output}",
                 "describerTypes": "{GeometricFilterEstimating_1.describerTypes}"
