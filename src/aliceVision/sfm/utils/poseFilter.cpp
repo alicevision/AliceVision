@@ -12,11 +12,15 @@
 #include <aliceVision/sfm/sfmFilters.hpp>
 
 #include <ceres/rotation.h>
+#include <algorithm>
+#include <cmath>
 
 namespace aliceVision {
 namespace sfm {
 
-bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation, const int iterationCount, const int scaleFactor)
+bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation,
+                 const int maxIterationCount, const int maxScaleFactor, const double maxErrorIncreasePos,
+                 const double maxErrorIncreaseRot, const int minIterationCount, const int minScaleFactor)
 {
     using namespace Eigen;
 
@@ -71,14 +75,20 @@ bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, c
         if (filterPosition)
         {
             ALICEVISION_LOG_INFO("Apply a temporal filter to view positions");
-            viewCenters = tFilter.applyMultiscale(viewCenters, scaleFactor, iterationCount, false);
+            viewCenters = (maxErrorIncreasePos < 0) ?
+                          tFilter.applyMultiscale(viewCenters, maxScaleFactor, maxIterationCount, false) :
+                          applyLimitedFilter(sfmData, imageGroupID, viewIdIndices, viewCenters, viewRotations, PoseParamType::Positions,
+                                             maxIterationCount, minIterationCount, maxScaleFactor, minScaleFactor, maxErrorIncreasePos);
         }
 
         // Apply a temporal filter to view orientations
         if (filterRotation)
         {
             ALICEVISION_LOG_INFO("Apply a temporal filter to view orientations");
-            viewRotations = tFilter.applyMultiscale(viewRotations, scaleFactor, iterationCount, true);
+            viewRotations = (maxErrorIncreaseRot < 0) ?
+                            tFilter.applyMultiscale(viewRotations, maxScaleFactor, maxIterationCount, true) :
+                            applyLimitedFilter(sfmData, imageGroupID, viewIdIndices, viewCenters, viewRotations, PoseParamType::Rotations,
+                                                maxIterationCount, minIterationCount, maxScaleFactor, minScaleFactor, maxErrorIncreaseRot);
         }
 
         // Save the temporally filtered poses
@@ -93,6 +103,151 @@ bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, c
 
     ALICEVISION_LOG_INFO("poseFilter::process end");
     return true;
+}
+
+
+Eigen::MatrixXd poseFilter::applyLimitedFilter(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::map<IndexT, IndexT>& viewIdIndices,
+                   const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations, PoseParamType paramToFilter, const int maxIterationCount,
+                   const int minIterationCount, const int maxScaleFactor, const int minScaleFactor, const double maxErrorIncrease)
+{
+    using namespace Eigen;
+    using namespace indexing;
+
+    std::string poseParamString = poseParamType_enumToString(paramToFilter);
+
+    // Compute the reprojection error before any filtering
+    double reprojError_0 = reprojectionError(sfmData, imageGroupID, viewIdIndices, viewCenters, viewRotations);
+    ALICEVISION_LOG_INFO("Reprojection error before " << poseParamString << " filtering: " << reprojError_0);
+    ALICEVISION_LOG_DEBUG("Target reprojection error for " << poseParamString << ": " << (1. + maxErrorIncrease) * reprojError_0);
+
+    // The multi-scale filter applies filtering at decreasing scales
+    // controlled by the following constant
+    const double SCALE_REDUCTION_FACTOR = 1.4;
+
+    IndexT viewCount = viewCenters.cols();
+
+    tempFilter tFilter;
+
+    tFilter.init();
+
+    MatrixXd filteredParam(paramToFilter == PoseParamType::Positions ? viewCenters : viewRotations);
+
+    bool isAngle = paramToFilter == PoseParamType::Rotations;
+    // Apply pose parameter filtering using the max iteration and scale factor values
+    filteredParam = tFilter.applyMultiscale(filteredParam, maxScaleFactor, maxIterationCount, isAngle);
+
+    auto paramReprojError = [&sfmData, &imageGroupID, &viewIdIndices, &viewCenters,
+                             &viewRotations, &paramToFilter](const MatrixXd &filteredParam) {
+                                    switch (paramToFilter)
+                                    {
+                                        case PoseParamType::Positions:
+                                            return reprojectionError(sfmData, imageGroupID, viewIdIndices, filteredParam, viewRotations);
+                                        case PoseParamType::Rotations:
+                                            return reprojectionError(sfmData, imageGroupID, viewIdIndices, viewCenters, filteredParam);
+                                    }
+                                    throw std::out_of_range("Invalid PoseParamType enum");
+                                };
+
+    // Compute the reprojection error after filtering using the max iteration and scale factor values
+    double reprojError_1 = paramReprojError(filteredParam);
+
+    if (maxErrorIncrease >= 0 && reprojError_1 > (1. + maxErrorIncrease) * reprojError_0)
+    {
+        // Reset the values to filter
+        filteredParam = paramToFilter == PoseParamType::Positions ? viewCenters : viewRotations;
+
+        int iterationCount = maxIterationCount;
+        // For the biggest scales, the number of iterations is limited by the reprojection error
+        // This number of iterations is determined at the biggest scale
+        bool optimumFound = false;
+
+        for (int scaleF = maxScaleFactor; scaleF >= 1; scaleF = (scaleF > 1) ? std::round(double(scaleF) / SCALE_REDUCTION_FACTOR) : 0)
+        {
+            if (viewCount < scaleF)
+            {
+                continue;
+            }
+
+            std::vector<MatrixXd> filteredParamsList;
+            if (!optimumFound && scaleF > minScaleFactor)
+            {
+                filteredParamsList.reserve(maxIterationCount+1);
+                filteredParamsList.push_back(filteredParam);
+            }
+
+            // Apply at least a minimum number of iterations at the smallest scales in all cases
+            if (scaleF <= minScaleFactor && (!optimumFound || iterationCount < minIterationCount) )
+            {
+                iterationCount = minIterationCount;
+            }
+
+            // Computing the reprojection error can be expensive, so that we first compute the filtered signal
+            // and save it at each iteration. Then we search for the optimum iteration using a bisection algorithm,
+            // lower_bound(), which computes the reprojection error on a limited number of iterations
+
+            for (int iterFilter = 0; iterFilter < iterationCount; iterFilter++)
+            {
+                for (int phase = 0; phase < scaleF; phase++)
+                {
+                    MatrixXd scaledSignal(filteredParam(all, seq(phase, last, scaleF)));
+                    scaledSignal = tFilter.apply(scaledSignal, isAngle);
+                    filteredParam(all, seq(phase, last, scaleF)) = scaledSignal;
+                }
+                if (!optimumFound && scaleF > minScaleFactor)
+                {
+                    // Early stopping in case the maximum is exceeded at the first iteration
+                    if (iterFilter == 0 && paramReprojError(filteredParam) > (1. + maxErrorIncrease) * reprojError_0)
+                    {
+                        break;
+                    }
+                    // Save the filtered values at each iteration to search for the optimum later on
+                    filteredParamsList.push_back(filteredParam);
+                }
+            }
+
+            int effectiveIterCount = iterationCount;
+            if (!optimumFound && scaleF > minScaleFactor)
+            {
+                if (filteredParamsList.size()==1)  // in case of the early stopping
+                {
+                    effectiveIterCount = 0;
+                    filteredParam = filteredParamsList[0];
+                }
+                else
+                {
+                    // Find the biggest iteration with a reprojection error below (1. + maxErrorIncrease) * reprojError_0
+                    // The reprojection error function may not necessarily be monotonically increasing, but since it is
+                    // the case in most cases, it is a good trade-off
+                    auto it = std::lower_bound(filteredParamsList.begin(), filteredParamsList.end(),
+                                               (1. + maxErrorIncrease) * reprojError_0,
+                                               [&paramReprojError](const MatrixXd &M, double val) {
+                                                  return paramReprojError(M) < val;
+                                                });
+                    effectiveIterCount = std::distance(filteredParamsList.begin(), it);
+                    filteredParam = (it == filteredParamsList.begin()) ? *it : *std::prev(it);
+                }
+
+                if (effectiveIterCount > 1)
+                {
+                    iterationCount = effectiveIterCount = effectiveIterCount - 1;
+                    optimumFound = true;
+                }
+                else
+                {
+                    effectiveIterCount = 0;
+                }
+            }
+            double reprojError = paramReprojError(filteredParam);
+            ALICEVISION_LOG_INFO("Reprojection error after " << effectiveIterCount << " iteration(s) of " << poseParamString <<
+                                 " filtering at scale " << scaleF << ": " << reprojError);
+        }
+        // Compute the reprojection error after pose position filtering
+        reprojError_1 = paramReprojError(filteredParam);
+    }
+
+    ALICEVISION_LOG_INFO("Reprojection error after " << poseParamString << " filtering: " << reprojError_1);
+
+    return filteredParam;
 }
 
 
@@ -459,6 +614,63 @@ bool getOrderedPoseIds(const sfmData::SfMData& sfmData, const IndexT imageGroupI
     return true;
 }
 
+inline double huberLoss(const double delta, const double x)
+{
+    double abs_x = std::abs(x);
+
+    if (abs_x <= delta)
+    {
+        return .5 * x * x;
+    }
+    else
+    {
+        return delta * (abs_x - .5 * delta);
+    }
+}
+
+
+double reprojectionError(const sfmData::SfMData& sfmData, const IndexT imageGroupID, const std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations)
+{
+    using namespace Eigen;
+
+    double delta = Square(4.0);  // taken from BundleAdjustmentCeres::CeresOptions::lossFunction: HuberLoss(Square(4.0))
+
+    std::vector<double> vecResiduals;
+
+    // Compute the residual for each observation
+    for (const auto& [landmarkId, landmark]: sfmData.getLandmarks())
+    {
+        for (const auto& [viewId, observation]: landmark.getObservations())
+        {
+            const auto& view = sfmData.getView(viewId);
+            geometry::Pose3 pose;
+
+            if (view.getImageGroupId() != imageGroupID)
+            {
+               pose = sfmData.getPose(view).getTransform();
+            }
+            else
+            {
+                IndexT frameIdx = viewIdIndices.at(viewId);
+                AngleAxisd aa(viewRotations(0, frameIdx), viewRotations(seqN(1,3), frameIdx));
+                pose = geometry::Pose3(aa.toRotationMatrix(), viewCenters.col(frameIdx));
+            }
+
+            const auto& intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
+            const Vec2 residual = intrinsic.residual(pose, landmark.getX().homogeneous(), observation.getCoordinates());
+            const double scale = (observation.getScale() > 1e-12) ? observation.getScale() : 1.0;
+            vecResiduals.push_back(huberLoss(delta, residual.norm() / scale));
+        }
+    }
+
+    ALICEVISION_LOG_DEBUG("Number of residuals : " << vecResiduals.size());
+
+    const Eigen::Map<Eigen::VectorXd> residuals(vecResiduals.data(), vecResiduals.size());
+
+    return residuals.sum();
+}
+
+
 } // namespace sfm
 } // namespace aliceVision
 
@@ -673,7 +885,7 @@ Eigen::MatrixXd tempFilter::applyMultiscale(Eigen::MatrixXd& inputSignal, const 
     bool useMask = posesMask.rows() != 0;
     MatrixX<bool> mask;
 
-    for (int scaleF = scaleFactor; scaleF >= 1; scaleF = (scaleF > 1) ? round(double(scaleF) / SCALE_REDUCTION_FACTOR) : 0)
+    for (int scaleF = scaleFactor; scaleF >= 1; scaleF = (scaleF > 1) ? std::round(double(scaleF) / SCALE_REDUCTION_FACTOR) : 0)
     {
         ALICEVISION_LOG_DEBUG(" Filter scale factor : " << scaleF);
 
