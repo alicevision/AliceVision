@@ -23,11 +23,11 @@ public:
      * @param sfmData the scene description
      * @param filterPosition specify whether to filter camera positions
      * @param filterRotation specify whether to filter camera orientations
-     * @param scaleFactor integer factor to increase the filter range
      * @param iterationCount the number of filter iterations
+     * @param scaleFactor integer factor to increase the filter range
      * @return false if an error occurred
     */
-    bool process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation, const int scaleFactor, const int iterationCount);
+    bool process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation, const int iterationCount, const int scaleFactor);
 
     /**
      * @brief Interpolate poses for views without poses using temporal filtering.
@@ -38,7 +38,7 @@ public:
     bool interpolateMissingPoses(sfmData::SfMData& sfmData, const bool ignoreFirstAndLast);
 
 private:
-    bool getOrderedViewIds(sfmData::SfMData& sfmData, std::vector<IndexT>& viewIdsVec);
+    bool getOrderedViewIds(sfmData::SfMData& sfmData, const IndexT imageGroupID, std::vector<IndexT>& viewIdsVec, std::map<IndexT, IndexT>& viewIdIndices);
 };
 
 /**
