@@ -129,6 +129,27 @@ class E57Reader
         unsigned int readCount = 0;
         while ((readCount = datareader.read()) > 0)
         {
+            ALICEVISION_LOG_DEBUG("cartesianInvalidState pointer: " << static_cast<void*>(data3DPoints.cartesianInvalidState));
+            ALICEVISION_LOG_DEBUG("cartesianX pointer: " << static_cast<void*>(data3DPoints.cartesianX));
+            ALICEVISION_LOG_DEBUG("cartesianY pointer: " << static_cast<void*>(data3DPoints.cartesianY));
+            ALICEVISION_LOG_DEBUG("cartesianZ pointer: " << static_cast<void*>(data3DPoints.cartesianZ));
+            ALICEVISION_LOG_DEBUG("colorBlue pointer: " << static_cast<void*>(data3DPoints.colorBlue));
+            ALICEVISION_LOG_DEBUG("colorGreen pointer: " << static_cast<void*>(data3DPoints.colorGreen));
+            ALICEVISION_LOG_DEBUG("colorRed pointer: " << static_cast<void*>(data3DPoints.colorRed));
+            ALICEVISION_LOG_DEBUG("columnIndex pointer: " << static_cast<void*>(data3DPoints.columnIndex));
+            ALICEVISION_LOG_DEBUG("intensity pointer: " << static_cast<void*>(data3DPoints.intensity));
+            ALICEVISION_LOG_DEBUG("isColorInvalid pointer: " << static_cast<void*>(data3DPoints.isColorInvalid));
+            ALICEVISION_LOG_DEBUG("isIntensityInvalid pointer: " << static_cast<void*>(data3DPoints.isIntensityInvalid));
+            ALICEVISION_LOG_DEBUG("isTimeStampInvalid pointer: " << static_cast<void*>(data3DPoints.isTimeStampInvalid));
+            ALICEVISION_LOG_DEBUG("returnCount pointer: " << static_cast<void*>(data3DPoints.returnCount));
+            ALICEVISION_LOG_DEBUG("returnIndex pointer: " << static_cast<void*>(data3DPoints.returnIndex));
+            ALICEVISION_LOG_DEBUG("rowIndex pointer: " << static_cast<void*>(data3DPoints.rowIndex));
+            ALICEVISION_LOG_DEBUG("sphericalAzimuth pointer: " << static_cast<void*>(data3DPoints.sphericalAzimuth));
+            ALICEVISION_LOG_DEBUG("sphericalElevation pointer: " << static_cast<void*>(data3DPoints.sphericalElevation));
+            ALICEVISION_LOG_DEBUG("sphericalInvalidState pointer: " << static_cast<void*>(data3DPoints.sphericalInvalidState));
+            ALICEVISION_LOG_DEBUG("sphericalRange pointer: " << static_cast<void*>(data3DPoints.sphericalRange));
+            ALICEVISION_LOG_DEBUG("timeStamp pointer: " << static_cast<void*>(data3DPoints.timeStamp));
+
             // Check input compatibility
             if (data3DPoints.sphericalRange != nullptr)
             {
@@ -141,6 +162,7 @@ class E57Reader
                 ALICEVISION_LOG_ERROR("Data contains no cartesian coordinates");
                 continue;
             }
+            
 
             if (data3DPoints.columnIndex == nullptr)
             {
@@ -162,7 +184,7 @@ class E57Reader
 
             for (unsigned int pos = 0; pos < readCount; pos++)
             {
-                if (data3DPoints.cartesianInvalidState[pos])
+                if (data3DPoints.cartesianInvalidState && data3DPoints.cartesianInvalidState[pos])
                 {
                     continue;
                 }

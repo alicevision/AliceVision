@@ -352,7 +352,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<fuseCut::SimpleNode::ptr> list;
     octree.visit(list);
 
-    ALICEVISION_LOG_INFO("Generating " << list.size() << "sub regions");
+    ALICEVISION_LOG_INFO("Generating " << list.size() << " sub regions");
 
     fuseCut::InputSet inputs;
 
