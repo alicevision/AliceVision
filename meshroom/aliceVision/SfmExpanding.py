@@ -1,4 +1,4 @@
-__version__ = "2.4"
+__version__ = "2.5"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -270,6 +270,14 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
             description="Maximum reprojection error in the triangulation process.",
             value=8.0,
             range=(0.1, 10.0, 0.1),
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="maxIterationCount",
+            label="Max Iteration Count",
+            description="Maximum number of solver iterations.",
+            value=50,
+            range=(0, 300, 5),
             advanced=True,
         ),
         desc.BoolParam(
