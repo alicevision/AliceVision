@@ -4,7 +4,9 @@ from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 from pyalicevision import parallelization as avpar
 
-class FeatureMatching(desc.AVCommandLineNode):
+class FeatureMatching(desc.AVCommandLineNode, 
+                      desc.interface.FeatureProviderInterface,
+                      desc.interface.MatchProviderInterface):
     """
 This node performs the matching of all features between the candidate image pairs.
 
@@ -208,3 +210,15 @@ then it checks the number of features that validates this model and iterate thro
             value="{nodeCacheFolder}",
         ),
     ]
+
+    def getFeaturesFolders(self, node) -> list:
+        
+        return [f.value for f in node.featuresFolders]
+    
+    def getDescriberTypes(self, node) -> list:
+
+        return node.describerTypes.value
+    
+    def getMatchesFolders(self, node) -> list:
+        
+        return [node.output.value]

@@ -4,7 +4,9 @@ from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
-class StructureFromMotion(desc.AVCommandLineNode):
+class StructureFromMotion(desc.AVCommandLineNode, 
+                          desc.interface.FeatureProviderInterface,
+                          desc.interface.MatchProviderInterface):
     """
 This node will analyze feature matches to understand the geometric relationship behind all the 2D observations,
 and infer the rigid scene structure (3D points) with the pose (position and orientation) and internal calibration of all cameras.
@@ -391,3 +393,11 @@ It iterates like that, adding cameras and triangulating new 2D features into 3D 
             value="{nodeCacheFolder}",
         ),
     ]
+
+    def getFeaturesFolders(self, node) -> list:
+        
+        return [f.value for f in node.featuresFolders]
+    
+    def getMatchesFolders(self, node) -> list:
+        
+        return [f.value for f in node.matchesFolder]
