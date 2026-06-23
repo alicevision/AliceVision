@@ -273,7 +273,7 @@ void lightCalibrationOneImage(const std::string& picturePath,
         Eigen::MatrixXf imSphereColorMasked(currentIndex, 3);
         imSphereColorMasked = imSphereColor.block(0, 0, currentIndex, 3);
 
-        lightingDirection = normalSphere.colPivHouseholderQr().solve(imSphere);
+        lightingDirection = normalSphereMasked.colPivHouseholderQr().solve(imSphereMasked);
 
         float intensity = lightingDirection.norm();
         lightingDirection = lightingDirection / intensity;
