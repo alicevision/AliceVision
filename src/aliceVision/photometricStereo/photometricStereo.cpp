@@ -21,19 +21,109 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <cstdint>
+#include <cmath>
+#include <limits>
+#include <numeric>
+#include <stdexcept>
+#include <utility>
+#include <unordered_map>
+#include <regex>
 
 namespace fs = std::filesystem;
+
+#ifndef ALICEVISION_PS_EXPERIMENTAL_FIXED_NORMAL_ALBEDO
+#define ALICEVISION_PS_EXPERIMENTAL_FIXED_NORMAL_ALBEDO 1
+#endif
 
 namespace aliceVision {
 namespace photometricStereo {
 
+using PatternId = std::uint32_t;
+
+PatternId internValidLightPattern(std::string pattern,
+                                  std::unordered_map<std::string, PatternId>& patternIdByPattern,
+                                  std::vector<std::string>& validLightPatterns)
+{
+    const auto patternIt = patternIdByPattern.find(pattern);
+    if (patternIt != patternIdByPattern.end())
+    {
+        return patternIt->second;
+    }
+
+    if (validLightPatterns.size() >= static_cast<size_t>(std::numeric_limits<PatternId>::max()))
+    {
+        throw std::runtime_error("Too many shadow-mask patterns to index.");
+    }
+
+    const PatternId patternId = static_cast<PatternId>(validLightPatterns.size());
+    validLightPatterns.push_back(std::move(pattern));
+    patternIdByPattern.emplace(validLightPatterns.back(), patternId);
+    return patternId;
+}
+
+
+std::vector<int> getAllLightIndices(const size_t lightCount)
+{
+    std::vector<int> allLights(lightCount);
+    std::iota(allLights.begin(), allLights.end(), 0);
+    return allLights;
+}
+
+std::vector<int> getValidLightIndicesFromPattern(const std::string& pattern, const size_t lightCount)
+{
+    std::vector<int> validLights;
+    validLights.reserve(pattern.size());
+    for (int lightIdx = 0; lightIdx < static_cast<int>(std::min(pattern.size(), lightCount)); ++lightIdx)
+    {
+        if (pattern[lightIdx] == '1')
+        {
+            validLights.push_back(lightIdx);
+        }
+    }
+
+    return validLights;
+}
+
+Eigen::MatrixXf buildLightSubsetMatrix(const Eigen::MatrixXf& lightMat, const std::vector<int>& lightIndices)
+{
+    Eigen::MatrixXf lightSubset(lightIndices.size(), lightMat.cols());
+    for (int row = 0; row < static_cast<int>(lightIndices.size()); ++row)
+    {
+        lightSubset.row(row) = lightMat.row(lightIndices[row]);
+    }
+
+    return lightSubset;
+}
+
+bool isShadowMaskPixelValid(const image::Image<float>& shadowMask,
+                            const int row,
+                            const int col,
+                            const int expectedRows,
+                            const int expectedCols)
+{
+    // 1x1 mask is used as an "all-valid" fallback.
+    if ((shadowMask.rows() == 1) && (shadowMask.cols() == 1))
+    {
+        return true;
+    }
+
+    if (shadowMask.rows() != expectedRows || shadowMask.cols() != expectedCols)
+    {
+        return false;
+    }
+
+    return shadowMask(row, col) > 0.5f;
+}
 void photometricStereo(const std::string& inputPath,
                        const std::string& lightData,
+                       const std::string& shadowMaskPath,
                        const std::string& outputPath,
                        const PhotometricSteroParameters& PSParameters,
                        image::Image<image::RGBfColor>& normals,
                        image::Image<image::RGBfColor>& albedo)
 {
+    (void)shadowMaskPath;
     size_t dim = 3;
     if (PSParameters.SHOrder != 0)
     {
@@ -75,15 +165,25 @@ void photometricStereo(const std::string& inputPath,
         }
     }
 
-    photometricStereo(imageList, intList, lightMat, mask, pathToAmbient, PSParameters, normals, albedo);
+    std::vector<image::Image<float>> shadowMasks;
+    photometricStereo(imageList,
+                      intList,
+                      lightMat,
+                      mask,
+                      shadowMasks,
+                      pathToAmbient,
+                      PSParameters,
+                      normals,
+                      albedo);
 
-    writePSResults(outputPath, normals, albedo);
-    image::writeImage(outputPath + "/mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
+    //writePSResults(outputPath, normals, albedo);
+    //image::writeImage(outputPath + "/mask.png", mask, image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
 }
 
 void photometricStereo(const sfmData::SfMData& sfmData,
                        const std::string& lightData,
                        const std::string& maskPath,
+                       const std::string& shadowMaskPath,
                        const std::string& outputPath,
                        const PhotometricSteroParameters& PSParameters,
                        image::Image<image::RGBfColor>& normals,
@@ -91,6 +191,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
 {
     bool skipAll = true;
     bool groupedImages = false;
+    std::map<IndexT, std::string> albedoPathPerPose;
     size_t dim = 3;
     if (PSParameters.SHOrder != 0)
     {
@@ -202,19 +303,42 @@ void photometricStereo(const sfmData::SfMData& sfmData,
 
         image::Image<float> mask;
         std::string pictureFolderName = fs::path(sfmData.getView(viewIds[0]).getImage().getImagePath()).parent_path().filename().string();
-        // If no mask folder was provided, do not make up a path anyway
-        std::string currentMaskPath = maskPath.empty() ? maskPath : maskPath + "/" + pictureFolderName.erase(0, 3) + ".png";
+        // Extract numeric id from folder name, typically "ps_<id>".
+        // Example: "ps_05" -> "5".
+        std::string poseFolderId = pictureFolderName;
+        std::smatch poseMatch;
+        const std::regex poseRegex("^ps_([0-9]+)$", std::regex_constants::icase);
+        if (std::regex_match(pictureFolderName, poseMatch, poseRegex) && poseMatch.size() > 1)
+        {
+            poseFolderId = std::to_string(std::stoi(poseMatch[1].str()));
+        }
+        else if (pictureFolderName.size() > 3)
+        {
+            poseFolderId = pictureFolderName.substr(3);
+        }
+
+        // If no mask folder was provided, do not make up a path anyway.
+        std::string currentMaskPath = maskPath.empty()
+                                        ? maskPath
+                                        : (fs::path(maskPath) / (poseFolderId + ".png")).string();
 
         loadMask(currentMaskPath, mask);
 
-        photometricStereo(imageList, intList, lightMat, mask, pathToAmbient, PSParameters, normals, albedo);
+        std::vector<image::Image<float>> shadowMasks;
+        loadShadowMasks(shadowMaskPath, PSParameters.shadowMaskType, poseFolderId, imageList, shadowMasks);
+
+        photometricStereo(imageList,
+                          intList,
+                          lightMat,
+                          mask,
+                          shadowMasks,
+                          pathToAmbient,
+                          PSParameters,
+                          normals,
+                          albedo);
 
         writePSResults(outputPath, normals, albedo, posesIt.first);
-        image::writeImage(outputPath + "/" + std::to_string(posesIt.first) + "_mask.png",
-                          mask,
-                          image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION));
-
-        if (sfmData.getPoses().size() > 0)
+        /* if (sfmData.getPoses().size() > 0)
         {
             Eigen::MatrixXd rotation = sfmData.getPose(sfmData.getView(viewIds[0])).getTransform().rotation().transpose();
             std::cout << "rotation: " << rotation << std::endl;
@@ -226,12 +350,12 @@ void photometricStereo(const sfmData::SfMData& sfmData,
           normals,
           image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
 
-        // image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
-        // convertNormalMap2png(normals, normalsImPNG);
-        // image::writeImage(
-        //     outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.png",
-        //     normalsImPNG,
-        //     image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));
+        image::Image<image::RGBColor> normalsImPNG(normals.cols(), normals.rows());
+        convertNormalMap2png(normals, normalsImPNG);
+        image::writeImage(
+             outputPath + "/" + std::to_string(posesIt.first) + "_normals_w.png",
+             normalsImPNG,
+             image::ImageWriteOptions().toColorSpace(image::EImageColorSpace::NO_CONVERSION).storageDataType(image::EStorageDataType::Float));*/
     }
 
     if (skipAll)
@@ -260,7 +384,12 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         const IndexT viewId = it1->first;
         IndexT poseId = it1->second->getPoseId();
 
-        std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.exr";
+        std::string imagePath = outputPath + "/" + std::to_string(poseId) + "_albedo.png";
+        const auto itAlbedo = albedoPathPerPose.find(poseId);
+        if (itAlbedo != albedoPathPerPose.end())
+        {
+            imagePath = itAlbedo->second;
+        }
         it1->second->getImage().setImagePath(imagePath);
 
         viewToPoseId.insert(std::make_pair(viewId, poseId));
@@ -282,10 +411,8 @@ void photometricStereo(const sfmData::SfMData& sfmData,
         viewIdsToRemove.clear();
     }
 
-    std::cout << "test" << std::endl;
     for (auto& viewsIt : albedoSfmData.getViews())
     {
-        IndexT oldViewId = viewsIt.first;
         IndexT newViewId = viewsIt.second->getPoseId();
 
         viewsIt.second->setViewId(newViewId);
@@ -348,6 +475,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
                        const std::vector<std::array<float, 3>>& intList,
                        const Eigen::MatrixXf& lightMat,
                        image::Image<float>& mask,
+                       std::vector<image::Image<float>>& shadowMasks,
                        const std::string& pathToAmbient,
                        const PhotometricSteroParameters& PSParameters,
                        image::Image<image::RGBfColor>& normals,
@@ -399,6 +527,53 @@ void photometricStereo(const std::vector<std::string>& imageList,
         hasMask = true;
     }
 
+    const bool hasShadowMasks = !shadowMasks.empty();
+    const bool hasConsistentShadowMasks = hasShadowMasks && shadowMasks.size() == imageList.size();
+
+    if (hasShadowMasks && !hasConsistentShadowMasks)
+    {
+        ALICEVISION_LOG_WARNING("Shadow masks count (" << shadowMasks.size() << ") does not match image count (" << imageList.size()
+                                                       << "). Shadow masks are ignored for pattern construction.");
+    }
+    else if (hasConsistentShadowMasks && PSParameters.isRobust)
+    {
+        ALICEVISION_LOG_WARNING("Shadow-mask patterns are computed, but the robust photometric stereo branch still uses all lights.");
+    }
+
+    std::vector<PatternId> validLightPatternIds;
+    std::vector<std::string> validLightPatterns;
+    std::unordered_map<std::string, PatternId> patternIdByPattern;
+    std::vector<int> roiLocalIndexByAbsIndex;
+    if (hasConsistentShadowMasks)
+    {
+        validLightPatternIds.assign(maskSize, 0);
+        validLightPatterns.reserve(std::min(maskSize, static_cast<size_t>(4096)));
+        patternIdByPattern.reserve(std::min(maskSize, static_cast<size_t>(4096)));
+        roiLocalIndexByAbsIndex.assign(static_cast<size_t>(pictRows) * static_cast<size_t>(pictCols), -1);
+
+        for (size_t localIdx = 0; localIdx < maskSize; ++localIdx)
+        {
+            const int currentIdx = indices.at(localIdx);
+            roiLocalIndexByAbsIndex.at(currentIdx) = static_cast<int>(localIdx);
+            const int j = currentIdx / pictRows;
+            const int i = currentIdx - j * pictRows;
+
+            std::string pattern;
+            pattern.reserve(imageList.size());
+
+            for (size_t lightIdx = 0; lightIdx < imageList.size(); ++lightIdx)
+            {
+                const image::Image<float>& shadowMask = shadowMasks.at(lightIdx);
+                const bool isValid = isShadowMaskPixelValid(shadowMask, i, j, pictRows, pictCols);
+
+                pattern.push_back(isValid ? '1' : '0');
+            }
+
+            validLightPatternIds.at(localIdx) =
+              internValidLightPattern(std::move(pattern), patternIdByPattern, validLightPatterns);
+        }
+    }
+
     // Read ambient
     image::Image<image::RGBfColor> imageAmbient;
 
@@ -431,6 +606,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
 
     Eigen::MatrixXf normalsVect = Eigen::MatrixXf::Zero(3, pictRows * pictCols);
     Eigen::MatrixXf albedoVect = Eigen::MatrixXf::Zero(3, pictRows * pictCols);
+    const std::vector<int> allLightIndices = getAllLightIndices(imageList.size());
 
     int remainingPixels = maskSize;
     std::vector<int> currentMaskIndices;
@@ -579,33 +755,122 @@ void photometricStereo(const std::vector<std::string>& imageList,
         }
         else
         {
-            // Normal estimation
-            M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
-
-            for (size_t i = 0; i < currentMaskSize; ++i)
+            if (hasConsistentShadowMasks)
             {
-                if (hasMask)
+                std::unordered_map<PatternId, std::vector<int>> tilePixelsPerPattern;
+                tilePixelsPerPattern.reserve(std::min(static_cast<size_t>(currentMaskSize), validLightPatterns.size()));
+
+                for (int col = 0; col < currentMaskSize; ++col)
                 {
-                    currentIdx = currentMaskIndices.at(i);  // Index in picture
+                    const int absIdx = currentMaskIndices.at(col);
+                    const int roiLocalIdx = roiLocalIndexByAbsIndex.at(absIdx);
+                    const PatternId patternId = validLightPatternIds.at(roiLocalIdx);
+                    tilePixelsPerPattern[patternId].push_back(col);
                 }
-                else
+
+                for (const auto& [patternId, colsInGroup] : tilePixelsPerPattern)
                 {
-                    currentIdx = i;
+                    const std::string& pattern = validLightPatterns.at(patternId);
+                    const std::vector<int> validLightIndices = getValidLightIndicesFromPattern(pattern, imageList.size());
+                    const std::vector<int>& finalLightIndices =
+                      validLightIndices.size() >= 3 ? validLightIndices : allLightIndices;
+                    const Eigen::MatrixXf L_final = buildLightSubsetMatrix(lightMat, finalLightIndices);
+
+                    // Normal estimation for this group
+                    Eigen::MatrixXf I_group_gray(finalLightIndices.size(), colsInGroup.size());
+                    for (int row = 0; row < static_cast<int>(finalLightIndices.size()); ++row)
+                    {
+                        for (int k = 0; k < static_cast<int>(colsInGroup.size()); ++k)
+                        {
+                            I_group_gray(row, k) = imMat_gray(finalLightIndices[row], colsInGroup[k]);
+                        }
+                    }
+
+                    Eigen::MatrixXf M_group = L_final.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(I_group_gray);
+
+                    for (int k = 0; k < static_cast<int>(colsInGroup.size()); ++k)
+                    {
+                        currentIdx = currentMaskIndices.at(colsInGroup[k]);
+                        const float normValue = M_group.col(k).norm();
+                        if (normValue > 1e-12f)
+                        {
+                            normalsVect.col(currentIdx) = M_group.col(k) / normValue;
+                        }
+                        else
+                        {
+                            normalsVect.col(currentIdx).setZero();
+                        }
+                    }
+
+                    // Channelwise albedo estimation for this group
+                    for (size_t ch = 0; ch < 3; ++ch)
+                    {
+                        Eigen::MatrixXf I_group_ch(finalLightIndices.size(), colsInGroup.size());
+                        for (int row = 0; row < static_cast<int>(finalLightIndices.size()); ++row)
+                        {
+                            for (int k = 0; k < static_cast<int>(colsInGroup.size()); ++k)
+                            {
+                                I_group_ch(row, k) = imMat(ch + 3 * finalLightIndices[row], colsInGroup[k]);
+                            }
+                        }
+
+#if ALICEVISION_PS_EXPERIMENTAL_FIXED_NORMAL_ALBEDO
+                        // Experimental albedo estimate: keep the previously estimated normal fixed and solve a scalar LS problem.
+                        // This is intentionally local and guarded so it can be removed by deleting this #if block.
+                        const Eigen::MatrixXf A_groupFallback =
+                          L_final.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(I_group_ch);
+                        constexpr float minAlbedoShading = 1e-3f;
+                        for (int k = 0; k < static_cast<int>(colsInGroup.size()); ++k)
+                        {
+                            currentIdx = currentMaskIndices.at(colsInGroup[k]);
+                            const Eigen::VectorXf shading = L_final * normalsVect.col(currentIdx);
+
+                            const auto accumulateAlbedo = [&](double& numerator, double& denominator) {
+                                numerator = 0.0;
+                                denominator = 0.0;
+                                for (int row = 0; row < static_cast<int>(finalLightIndices.size()); ++row)
+                                {
+                                    const float currentShading = shading(row);
+                                    const float currentIntensity = I_group_ch(row, k);
+                                    if (!std::isfinite(currentShading) || !std::isfinite(currentIntensity) ||
+                                        currentShading <= minAlbedoShading)
+                                    {
+                                        continue;
+                                    }
+
+                                    numerator += static_cast<double>(currentShading) * static_cast<double>(currentIntensity);
+                                    denominator += static_cast<double>(currentShading) * static_cast<double>(currentShading);
+                                }
+                            };
+
+                            double numerator = 0.0;
+                            double denominator = 0.0;
+                            accumulateAlbedo(numerator, denominator);
+
+                            if (denominator > 1e-12)
+                            {
+                                albedoVect(ch, currentIdx) = std::max(0.0f, static_cast<float>(numerator / denominator));
+                            }
+                            else
+                            {
+                                albedoVect(ch, currentIdx) = A_groupFallback.col(k).norm();
+                            }
+                        }
+#else
+                        Eigen::MatrixXf A_group = L_final.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(I_group_ch);
+                        for (int k = 0; k < static_cast<int>(colsInGroup.size()); ++k)
+                        {
+                            currentIdx = currentMaskIndices.at(colsInGroup[k]);
+                            albedoVect(ch, currentIdx) = A_group.col(k).norm();
+                        }
+#endif
+                    }
                 }
-                normalsVect.col(currentIdx) = M_channel.col(i) / M_channel.col(i).norm();
             }
-
-            // Channelwise albedo estimation
-            for (size_t ch = 0; ch < 3; ++ch)
+            else
             {
-                // Create pixelValues_channel matrix for current pixel
-                Eigen::MatrixXf pixelValues_channel(imageList.size(), currentMaskSize);
-                for (size_t i = 0; i < imageList.size(); ++i)
-                {
-                    pixelValues_channel.block(i, 0, 1, currentMaskSize) = imMat.block(ch + 3 * i, 0, 1, currentMaskSize);
-                }
-
-                M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(pixelValues_channel);
+                // Normal estimation
+                M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(imMat_gray);
 
                 for (size_t i = 0; i < currentMaskSize; ++i)
                 {
@@ -617,7 +882,33 @@ void photometricStereo(const std::vector<std::string>& imageList,
                     {
                         currentIdx = i;
                     }
-                    albedoVect(ch, currentIdx) = M_channel.col(i).norm();
+                    normalsVect.col(currentIdx) = M_channel.col(i) / M_channel.col(i).norm();
+                }
+
+                // Channelwise albedo estimation
+                for (size_t ch = 0; ch < 3; ++ch)
+                {
+                    // Create pixelValues_channel matrix for current pixel
+                    Eigen::MatrixXf pixelValues_channel(imageList.size(), currentMaskSize);
+                    for (size_t i = 0; i < imageList.size(); ++i)
+                    {
+                        pixelValues_channel.block(i, 0, 1, currentMaskSize) = imMat.block(ch + 3 * i, 0, 1, currentMaskSize);
+                    }
+
+                    M_channel = lightMat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(pixelValues_channel);
+
+                    for (size_t i = 0; i < currentMaskSize; ++i)
+                    {
+                        if (hasMask)
+                        {
+                            currentIdx = currentMaskIndices.at(i);  // Index in picture
+                        }
+                        else
+                        {
+                            currentIdx = i;
+                        }
+                        albedoVect(ch, currentIdx) = M_channel.col(i).norm();
+                    }
                 }
             }
         }

@@ -22,6 +22,7 @@ struct PhotometricSteroParameters
     bool removeAmbient;  // Do we remove ambient light ? (currently tested)
     bool isRobust;       // Do we use the robust version of the algorithm ? (currently tested)
     int downscale;       // Downscale factor
+    std::string shadowMaskType = "cast";              // Shadow mask source: cast, self, or both.
 };
 
 /**
@@ -35,6 +36,7 @@ struct PhotometricSteroParameters
  */
 void photometricStereo(const std::string& inputPath,
                        const std::string& lightData,
+                       const std::string& shadowMaskPath,
                        const std::string& outputPath,
                        const PhotometricSteroParameters& PSParameters,
                        image::Image<image::RGBfColor>& normals,
@@ -54,6 +56,7 @@ void photometricStereo(const std::string& inputPath,
 void photometricStereo(const sfmData::SfMData& sfmData,
                        const std::string& lightData,
                        const std::string& maskPath,
+                       const std::string& shadowMaskPath,
                        const std::string& outputPath,
                        const PhotometricSteroParameters& PSParameters,
                        image::Image<image::RGBfColor>& normals,
@@ -65,6 +68,7 @@ void photometricStereo(const sfmData::SfMData& sfmData,
  * @param[in] intList List of light intensities
  * @param[in] lightMat List of light direction/coefficients (SH)
  * @param[in] mask Mask that defines region of interest
+ * @param[in,out] shadowMasks Optional per-light shadow masks, preprocessed in place when mask cleanup is enabled
  * @param[in] pathToAmbient Path to picture without any additional lighting
  * @param[in] PSParameters Parameters for the PS algorithm
  * @param[out] normals Normal map of the scene
@@ -74,6 +78,7 @@ void photometricStereo(const std::vector<std::string>& imageList,
                        const std::vector<std::array<float, 3>>& intList,
                        const Eigen::MatrixXf& lightMat,
                        image::Image<float>& mask,
+                       std::vector<image::Image<float>>& shadowMasks,
                        const std::string& pathToAmbient,
                        const PhotometricSteroParameters& PSParameters,
                        image::Image<image::RGBfColor>& normals,
