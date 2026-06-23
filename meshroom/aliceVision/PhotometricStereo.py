@@ -33,6 +33,23 @@ The lighting conditions are assumed to be known.
             description="Path to a folder containing masks or to a mask directly.",
             value="",
         ),
+        desc.File(
+            name="shadowMaskPath",
+            label="Shadow Mask Folder Path",
+            description="Path to a folder containing shadow masks.",
+            value="",
+        ),
+        desc.ChoiceParam(
+            name="shadowMaskType",
+            label="Shadow Mask Type",
+            description="Shadow mask source used to build per-pixel valid-light patterns:\n"
+                        " - cast: use cast-shadow masks only.\n"
+                        " - self: use self-shadow masks only.\n"
+                        " - both: combine cast and self masks.",
+            values=["cast", "self", "both"],
+            value="cast",
+            advanced=True,
+        ),
         desc.ChoiceParam(
             name="SHOrder",
             label="Spherical Harmonics Order",

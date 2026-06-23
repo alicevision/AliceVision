@@ -57,6 +57,7 @@ int aliceVision_main(int argc, char** argv)
 
     std::string inputPath;
     std::string maskPath;
+    std::string shadowMaskPath;
     std::string outputPath;
     std::string pathToLightData;
 
@@ -75,6 +76,10 @@ int aliceVision_main(int argc, char** argv)
          "Output path.")
         ("maskPath,m", po::value<std::string>(&maskPath)->default_value(""),
          "Path to mask folder/file.")
+        ("shadowMaskPath", po::value<std::string>(&shadowMaskPath)->default_value(""),
+         "Path to the shadow masks folder/file.")
+        ("shadowMaskType", po::value<std::string>(&PSParameters.shadowMaskType)->default_value("cast"),
+         "Shadow mask source to use for validity patterns: cast, self, or both.")
         ("pathToJSONLightFile,l", po::value<std::string>(&pathToLightData)->default_value("defaultJSON.txt"),
          "Path to light file (JSON). If empty, .txt files are expected in the image folder.")
         ("SHOrder,s", po::value<size_t>(&PSParameters.SHOrder)->default_value(0),
@@ -108,7 +113,7 @@ int aliceVision_main(int argc, char** argv)
 
     if (fs::is_directory(inputPath))
     {
-        photometricStereo::photometricStereo(inputPath, pathToLightData, outputPath, PSParameters, normalsIm, albedoIm);
+        photometricStereo::photometricStereo(inputPath, pathToLightData, shadowMaskPath, outputPath, PSParameters, normalsIm, albedoIm);
     }
     else
     {
@@ -118,7 +123,7 @@ int aliceVision_main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("The input file '" + inputPath + "' cannot be read.");
             return EXIT_FAILURE;
         }
-        photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, outputPath, PSParameters, normalsIm, albedoIm);
+        photometricStereo::photometricStereo(sfmData, pathToLightData, maskPath, shadowMaskPath, outputPath, PSParameters, normalsIm, albedoIm);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
