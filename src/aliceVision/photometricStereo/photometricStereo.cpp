@@ -628,9 +628,17 @@ void photometricStereo(const std::vector<std::string>& imageList,
     normals = normalsIm;
 
     image::Image<image::RGBfColor> albedoIm(pictCols, pictRows);
-    albedoVect = albedoVect / albedoVect.maxCoeff();
-    reshapeInImage(albedoVect, albedoIm);
+    float normalizationScale = albedoVect.maxCoeff();
+    if (normalizationScale > 1e-12f)
+    {
+        albedoVect = albedoVect / normalizationScale;
+    }
+    else
+    {
+        ALICEVISION_LOG_WARNING("Albedo normalization scale is near zero. Albedo map is kept unnormalized.");
+    }
 
+    reshapeInImage(albedoVect, albedoIm);
     albedo = albedoIm;
 }
 
