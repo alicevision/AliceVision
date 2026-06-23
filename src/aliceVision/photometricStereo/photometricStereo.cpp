@@ -718,7 +718,7 @@ void median(const Eigen::MatrixXf& d, float& median)
     Eigen::MatrixXf aux = d;
     std::sort(aux.data(), aux.data() + aux.size());
     size_t middle = aux.size() / 2;
-    aux.size() % 2 == 0 ? median = aux((aux.size() - 1) / 2) + aux((aux.size() + 1) / 2) : median = aux(middle);
+    aux.size() % 2 == 0 ? median = (aux((aux.size() - 1) / 2) + aux((aux.size() + 1) / 2))/2 : median = aux(middle);
 }
 
 void slice(const std::vector<int>& inputVector, int start, int numberOfElements, std::vector<int>& currentMaskIndices)
