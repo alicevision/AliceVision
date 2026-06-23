@@ -79,6 +79,22 @@ void buildLightMatFromLP(const std::string& fileName,
 void loadMask(std::string const& maskName, image::Image<float>& mask);
 
 /**
+ * @brief Load one combined shadow mask per image using:
+ *        <shadowMaskPath>/pose_<poseFolderId>/shadow_masks/cast_mask_<poseFolderId>_light_<lightId>.png
+ *        <shadowMaskPath>/pose_<poseFolderId>/shadow_masks/self_mask_<poseFolderId>_light_<lightId>.png
+ * @param[in] shadowMaskPath Root path containing shadow masks
+ * @param[in] shadowMaskType Shadow mask source to use: "cast", "self", or "both"
+ * @param[in] poseFolderId Current PS folder identifier (X in pose_X)
+ * @param[in] imageList Images associated with the current PS solve (used to infer lightId from image name)
+ * @param[out] shadowMasks Loaded masks, aligned with imageList order
+ */
+void loadShadowMasks(const std::string& shadowMaskPath,
+                     const std::string& shadowMaskType,
+                     const std::string& poseFolderId,
+                     const std::vector<std::string>& imageList,
+                     std::vector<image::Image<float>>& shadowMasks);
+
+/**
  * @brief Get the column-wise absolute indices of the pixels in mask
  * @param[in] mask Mask to get the column-wise absolute indices of the pixels from
  * @param[out] indices Vector containing the column-wise absolute indices of the mask's pixels

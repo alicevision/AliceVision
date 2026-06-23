@@ -16,8 +16,12 @@
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 #include <filesystem>
 #include <fstream>
+#include <regex>
+#include <cmath>
+#include <utility>
 
 namespace bpt = boost::property_tree;
 namespace fs = std::filesystem;
@@ -25,6 +29,28 @@ namespace fs = std::filesystem;
 namespace aliceVision {
 namespace photometricStereo {
 
+ShadowMaskTypeSelection parseShadowMaskType(const std::string& shadowMaskType)
+{
+    std::string normalizedType = boost::algorithm::to_lower_copy(shadowMaskType);
+    boost::algorithm::trim(normalizedType);
+
+    if (normalizedType.empty() || normalizedType == "cast")
+    {
+        return {true, false};
+    }
+
+    if (normalizedType == "self")
+    {
+        return {false, true};
+    }
+
+    if (normalizedType == "both" || normalizedType == "cast+self" || normalizedType == "cast_self")
+    {
+        return {true, true};
+    }
+
+    ALICEVISION_THROW_ERROR("Invalid shadow mask type '" << shadowMaskType << "'. Expected 'cast', 'self', or 'both'.");
+}
 void loadLightIntensities(const std::string& intFileName, std::vector<std::array<float, 3>>& intList)
 {
     std::stringstream stream;
@@ -333,6 +359,184 @@ void loadMask(std::string const& maskName, image::Image<float>& mask)
     else
     {
         image::readImage(maskName, mask, image::EImageColorSpace::SRGB);
+    }
+}
+
+void loadShadowMasks(const std::string& shadowMaskPath,
+                     const std::string& shadowMaskType,
+                     const std::string& poseFolderId,
+                     const std::vector<std::string>& imageList,
+                     std::vector<image::Image<float>>& shadowMasks)
+{
+    shadowMasks.clear();
+    shadowMasks.reserve(imageList.size());
+
+    if (shadowMaskPath.empty())
+    {
+        ALICEVISION_LOG_INFO("No shadow masks path was provided. Shadow masks loading is skipped.");
+        return;
+    }
+
+    const ShadowMaskTypeSelection maskTypeSelection = parseShadowMaskType(shadowMaskType);
+    const fs::path poseFolder = fs::path(shadowMaskPath) / ("pose_" + poseFolderId) / "shadow_masks";
+    const std::regex lightPattern(".*(?:led|light)[_\\-]([0-9]+).*", std::regex_constants::icase);
+
+    for (const std::string& imagePath : imageList)
+    {
+        image::Image<float> currentShadowMask;
+        const std::string imageStem = fs::path(imagePath).stem().string();
+
+        std::smatch match;
+        std::string lightIdStr;
+        if (std::regex_match(imageStem, match, lightPattern) && match.size() > 1)
+        {
+            lightIdStr = match[1].str();
+        }
+
+        fs::path castMaskPath;
+        fs::path selfMaskPath;
+        if (!lightIdStr.empty())
+        {
+            std::vector<std::string> lightIdCandidates;
+            lightIdCandidates.push_back(lightIdStr);
+
+            try
+            {
+                const int lightIdValue = std::stoi(lightIdStr);
+                const std::string unpadded = std::to_string(lightIdValue);
+                if (unpadded != lightIdStr)
+                {
+                    lightIdCandidates.push_back(unpadded);
+                }
+
+                std::ostringstream padded2;
+                padded2 << std::setw(2) << std::setfill('0') << lightIdValue;
+                if (padded2.str() != lightIdStr && padded2.str() != unpadded)
+                {
+                    lightIdCandidates.push_back(padded2.str());
+                }
+            }
+            catch (const std::exception&)
+            {
+                // Keep the original extracted id only.
+            }
+
+            for (const std::string& candidate : lightIdCandidates)
+            {
+                const fs::path candidateCastMaskPath = poseFolder / ("cast_mask_" + poseFolderId + "_light_" + candidate + ".png");
+                if (maskTypeSelection.useCast && castMaskPath.empty() && fs::exists(candidateCastMaskPath))
+                {
+                    castMaskPath = candidateCastMaskPath;
+                }
+
+                const fs::path candidateSelfMaskPath = poseFolder / ("self_mask_" + poseFolderId + "_light_" + candidate + ".png");
+                if (maskTypeSelection.useSelf && selfMaskPath.empty() && fs::exists(candidateSelfMaskPath))
+                {
+                    selfMaskPath = candidateSelfMaskPath;
+                }
+
+                if ((!maskTypeSelection.useCast || !castMaskPath.empty()) && (!maskTypeSelection.useSelf || !selfMaskPath.empty()))
+                {
+                    break;
+                }
+            }
+
+            if (maskTypeSelection.useCast && castMaskPath.empty())
+            {
+                castMaskPath = poseFolder / ("cast_mask_" + poseFolderId + "_light_" + lightIdStr + ".png");
+            }
+            if (maskTypeSelection.useSelf && selfMaskPath.empty())
+            {
+                selfMaskPath = poseFolder / ("self_mask_" + poseFolderId + "_light_" + lightIdStr + ".png");
+            }
+        }
+
+        const bool hasCastMask = maskTypeSelection.useCast && !lightIdStr.empty() && fs::exists(castMaskPath);
+        const bool hasSelfMask = maskTypeSelection.useSelf && !lightIdStr.empty() && fs::exists(selfMaskPath);
+
+        if (hasCastMask || hasSelfMask)
+        {
+            int rows = 0;
+            int cols = 0;
+            bool hasReferenceDimensions = false;
+
+            const auto mergeInvalidMask = [&](const fs::path& invalidMaskPath) {
+                image::Image<float> externalInvalidMask;
+                image::readImage(invalidMaskPath.string(), externalInvalidMask, image::EImageColorSpace::SRGB);
+
+                if (!hasReferenceDimensions)
+                {
+                    rows = externalInvalidMask.rows();
+                    cols = externalInvalidMask.cols();
+                    currentShadowMask = Eigen::MatrixXf::Ones(rows, cols);
+                    hasReferenceDimensions = true;
+                }
+
+                if (externalInvalidMask.rows() != rows || externalInvalidMask.cols() != cols)
+                {
+                    ALICEVISION_LOG_WARNING("Shadow masks for image '" << imageStem << "' have inconsistent dimensions. "
+                                                                       << "Ignoring one mismatching mask.");
+                    return;
+                }
+
+                // Input convention: 1 = shadow (invalid), 0 = lit (valid).
+                // Internal convention used downstream: 1 = valid, 0 = invalid.
+                for (int row = 0; row < rows; ++row)
+                {
+                    for (int col = 0; col < cols; ++col)
+                    {
+                        if (externalInvalidMask(row, col) > 0.5f)
+                        {
+                            currentShadowMask(row, col) = 0.0f;
+                        }
+                    }
+                }
+            };
+
+            if (hasCastMask)
+            {
+                mergeInvalidMask(castMaskPath);
+            }
+
+            if (hasSelfMask)
+            {
+                mergeInvalidMask(selfMaskPath);
+            }
+
+            if (maskTypeSelection.useCast && !hasCastMask)
+            {
+                ALICEVISION_LOG_WARNING("Could not open cast shadow mask '" << castMaskPath.string() << "'. Using self shadow mask only.");
+            }
+            if (maskTypeSelection.useSelf && !hasSelfMask)
+            {
+                ALICEVISION_LOG_WARNING("Could not open self shadow mask '" << selfMaskPath.string() << "'. Using cast shadow mask only.");
+            }
+        }
+        else
+        {
+            if (lightIdStr.empty())
+            {
+                ALICEVISION_LOG_WARNING("Could not infer light id from image '" << imageStem << "'. This image will default to all-valid.");
+            }
+            else
+            {
+                std::string missingMasks;
+                if (maskTypeSelection.useCast)
+                {
+                    missingMasks += " cast shadow mask '" + castMaskPath.string() + "'";
+                }
+                if (maskTypeSelection.useSelf)
+                {
+                    missingMasks += (missingMasks.empty() ? "" : " or") + std::string(" self shadow mask '") + selfMaskPath.string() + "'";
+                }
+                ALICEVISION_LOG_WARNING("Could not open" << missingMasks << ". This image will default to all-valid.");
+            }
+            Eigen::MatrixXf defaultMask(1, 1);
+            defaultMask(0, 0) = 1.0f;
+            currentShadowMask = defaultMask;
+        }
+
+        shadowMasks.push_back(std::move(currentShadowMask));
     }
 }
 
