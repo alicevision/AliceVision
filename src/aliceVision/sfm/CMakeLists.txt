@@ -112,6 +112,7 @@ alicevision_add_library(aliceVision_sfm_bundle
         aliceVision_geometry
         aliceVision_camera
         aliceVision_sfmData
+        Boost::boost
         ${CERES_LIBRARIES}
 )
 

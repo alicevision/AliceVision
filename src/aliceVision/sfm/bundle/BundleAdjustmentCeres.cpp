@@ -27,6 +27,8 @@
 
 #include <ceres/rotation.h>
 
+#include <boost/format.hpp>
+
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -204,6 +206,7 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
     solverOptions.sparse_linear_algebra_library_type = _ceresOptions.sparseLinearAlgebraLibraryType;
     solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
     solverOptions.logging_type = ceres::SILENT;
+    solverOptions.update_state_every_iteration = true;
     solverOptions.num_threads = _ceresOptions.nbThreads;
     solverOptions.max_num_iterations = _ceresOptions.maxNumIterations;
     solverOptions.max_num_consecutive_invalid_steps = 10;
@@ -1276,6 +1279,13 @@ void BundleAdjustmentCeres::surveyInfos(const sfmData::SfMData & sfmData) const
     }
 }
 
+ceres::CallbackReturnType BundleAdjustmentCeres::IterationInfos::operator()(const ceres::IterationSummary& summary)
+{
+    ALICEVISION_LOG_DEBUG(boost::format("iteration: %3d cost: %8e change: %3.2e")
+                          % summary.iteration % summary.cost % summary.cost_change);
+    return ceres::SOLVER_CONTINUE;
+}
+
 bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions)
 {
     ALICEVISION_LOG_INFO("BundleAdjustmentCeres::adjust start");
@@ -1308,6 +1318,10 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
     // make Ceres automatically detect the bundle structure.
     ceres::Solver::Options options;
     setSolverOptions(options);
+
+    // Add the logging interface
+    IterationInfos iterationInfos;
+    options.callbacks.push_back(&iterationInfos);
 
     // solve BA
     ceres::Solver::Summary summary;

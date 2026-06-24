@@ -12,6 +12,24 @@
 namespace aliceVision {
 namespace sfm {
 
+enum class PoseParamType
+{
+    Positions,
+    Rotations,
+};
+
+inline std::string poseParamType_enumToString(const PoseParamType poseParam)
+{
+    switch (poseParam)
+    {
+        case PoseParamType::Positions:
+            return "pose position";
+        case PoseParamType::Rotations:
+            return "pose rotation";
+    }
+    throw std::out_of_range("Invalid PoseParamType enum");
+}
+
 class poseFilter
 {
 public:
@@ -23,11 +41,15 @@ public:
      * @param sfmData the scene description
      * @param filterPosition specify whether to filter camera positions
      * @param filterRotation specify whether to filter camera orientations
-     * @param scaleFactor integer factor to increase the filter range
-     * @param iterationCount the number of filter iterations
+     * @param maxIterationCount the maximum number of filter iterations
+     * @param maxScaleFactor integer factor to increase the filter range
+     * @param maxErrorIncreasePos the maximum reprojection error increase ratio for the camera positions (-1 to bypass this reprojection error test)
+     * @param maxErrorIncreaseRot the maximum reprojection error increase ratio for the camera orientations (-1 to bypass this reprojection error test)
+     * @param minIterationCount the minimum number of filter iterations to apply at the smallest scales (in case the filter is limited by the reprojection error)
+     * @param minScaleFactor the minimum scale to apply the filter with the minimum iteration count (in case the filter is limited by the reprojection error)
      * @return false if an error occurred
     */
-    bool process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation, const int scaleFactor, const int iterationCount);
+    bool process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation, const int maxIterationCount, const int maxScaleFactor, const double maxErrorIncreasePos, const double maxErrorIncreaseRot, const int minIterationCount, const int minScaleFactor);
 
     /**
      * @brief Interpolate poses for views without poses using temporal filtering.
@@ -38,7 +60,8 @@ public:
     bool interpolateMissingPoses(sfmData::SfMData& sfmData, const bool ignoreFirstAndLast);
 
 private:
-    bool getOrderedViewIds(sfmData::SfMData& sfmData, std::vector<IndexT>& viewIdsVec);
+    bool getOrderedViewIds(sfmData::SfMData& sfmData, const IndexT imageGroupID, std::vector<IndexT>& viewIdsVec, std::map<IndexT, IndexT>& viewIdIndices);
+    Eigen::MatrixXd applyLimitedFilter(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations, const PoseParamType paramToFilter, const int maxIterationCount, const int minIterationCount, const int maxScaleFactor, const int minScaleFactor, const double maxErrorIncrease);
 };
 
 /**
@@ -55,6 +78,20 @@ private:
  * @return true if at least one pose was found and the output parameters were set, false otherwise.
  */
 bool getOrderedPoseIds(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::vector<IndexT>& poseIdsVec, IndexT& firstViewWithPose, IndexT& lastViewWithPose);
+
+/**
+ * @brief Compute the reprojection error for all observations corresponding to an imageGroup in a SfMData,
+ * and the camera poses from provided camera positions and rotations
+ *
+ * @param[in]  sfmData            The scene description containing views and observations.
+ * @param[in]  imageGroupID       The imageGroupID of the views to consider.
+ * @param[in]  viewIdIndices      A map from viewID to indices in the view positions/rotations vectors
+ * @param[in]  viewCenters        Vector of view positions.
+ * @param[in]  viewRotations      Vector of view rotations.
+ * @return the sum of the reprojection errors.
+ */
+double reprojectionError(const sfmData::SfMData& sfmData, const IndexT imageGroupID, const std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations);
+
 } // namespace sfm
 } // namespace aliceVision
 

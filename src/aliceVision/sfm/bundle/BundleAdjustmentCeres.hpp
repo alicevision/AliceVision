@@ -145,6 +145,18 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
      */
     inline const Statistics& getStatistics() const { return _statistics; }
 
+    /**
+     * @brief Custom interface to log the progress of the solver optimization
+     */
+    class IterationInfos : public ceres::IterationCallback
+    {
+      public:
+        explicit IterationInfos() {}
+        ~IterationInfos() {}
+
+        ceres::CallbackReturnType operator()(const ceres::IterationSummary& summary) final;
+    };
+
   private:
     /**
      * @brief Clear structures for a new problem

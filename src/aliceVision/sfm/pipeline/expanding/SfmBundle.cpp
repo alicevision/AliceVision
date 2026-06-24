@@ -19,6 +19,8 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
     ALICEVISION_LOG_INFO("SfmBundle::process start");
 
     BundleAdjustmentCeres::CeresOptions options;
+    options.maxNumIterations = _maxIterationCount;
+
     BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
 
     refineOptions |= BundleAdjustment::REFINE_ROTATION;
