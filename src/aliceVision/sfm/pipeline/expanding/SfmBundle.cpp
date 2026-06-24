@@ -9,7 +9,9 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
 #include <aliceVision/sfm/utils/poseFilter.hpp>
+#include <aliceVision/sfm/sfmStatistics.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/pipeline/expanding/DistanceWeighting.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -53,6 +55,11 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
     //Repeat until nothing change
     do
     {
+        // Compute statistics on residuals
+        double mean, median;
+        computeResidualsMeanMedian(sfmData, mean, median);
+        ALICEVISION_LOG_INFO("SfmBundle statistics before minimization - mean " << mean << ", median " << median);
+
         if (!initializeIteration(sfmData, tracksHandler, viewIds))
         {
             return false;
@@ -63,6 +70,9 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
         {
             return false;
         }
+
+        computeResidualsMeanMedian(sfmData, mean, median);
+        ALICEVISION_LOG_INFO("SfmBundle statistics after minimization - mean " << mean << ", median " << median);
     }
     while (cleanup(sfmData));
 
@@ -121,6 +131,11 @@ bool SfmBundle::initializeIteration(sfmData::SfMData & sfmData, const track::Tra
     else
     {
         sfmData.resetParameterStates();
+    }
+
+    if (_enableObservationsWeighting)
+    {
+        weightObservationsFromDistance(sfmData, 15, 5.0);
     }
 
     return true;

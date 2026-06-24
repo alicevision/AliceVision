@@ -73,6 +73,51 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData,
     }
 }
 
+void computeResidualsMeanMedian(const sfmData::SfMData& sfmData,
+                            double & mean,
+                            double & median,
+                            const std::set<IndexT>& specificViews)
+{
+    mean = 0;
+    median = 0;
+
+    if (sfmData.getLandmarks().empty())
+    {
+        return;
+    }
+
+    // Collect residuals for each observation
+    std::vector<double> vecResiduals;
+    vecResiduals.reserve(sfmData.getLandmarks().size());
+
+    for (const auto& track : sfmData.getLandmarks())
+    {
+        const aliceVision::sfmData::Observations& observations = track.second.getObservations();
+        for (const auto& obs : observations)
+        {
+            if (!specificViews.empty() && specificViews.count(obs.first) == 0)
+            {
+                continue;
+            }
+
+            const sfmData::View& view = sfmData.getView(obs.first);
+            const aliceVision::geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+            const aliceVision::camera::IntrinsicBase& intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
+            const Vec2 residual = intrinsic.residual(pose, track.second.getX().homogeneous(), obs.second.getCoordinates());
+            vecResiduals.push_back(residual.norm());
+        }
+    }
+
+    if (vecResiduals.empty())
+    {
+        return;
+    }
+
+    BoxStats<double> stats(vecResiduals.begin(), vecResiduals.end());
+    mean = stats.mean;
+    median = stats.median;
+}
+
 void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData,
                                          BoxStats<double>& outStats,
                                          int& overallNbObservations,
