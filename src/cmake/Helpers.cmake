@@ -460,8 +460,12 @@ macro(av_add_cmake_dep)
         if(_D_GIT_TAG)
             list(APPEND _D_SRC_ARGS GIT_TAG      ${_D_GIT_TAG})
         endif()
-        # Shallow clone : plus rapide, économise le réseau
-        list(APPEND _D_SRC_ARGS GIT_SHALLOW TRUE)
+        # Shallow clone only fetches the default-branch tip: a GIT_TAG that is
+        # a commit hash not at that tip fails to check out. Use it only for
+        # named refs (branches/tags), not for pinned commits.
+        if(NOT "${_D_GIT_TAG}" MATCHES "^[0-9a-fA-F]+$")
+            list(APPEND _D_SRC_ARGS GIT_SHALLOW TRUE)
+        endif()
     endif()
 
     ExternalProject_Add(${_D_TARGET}
