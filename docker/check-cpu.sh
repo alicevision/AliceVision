@@ -21,16 +21,16 @@ MIN_RAM_PER_CORE=2
 MIN_RESERVE_RAM=2
 
 # The number of processes we can run in parallel to guarantee at least N GB of RAM per process in keeping with the minimum RAM requirement for the system to function.
-MAX_CORES_RAM=$(($((${FREE_MEM}-${MIN_RESERVE_RAM})) / ${MIN_RAM_PER_CORE}))
+MAX_CORES_RAM=$(( (FREE_MEM - MIN_RESERVE_RAM) / MIN_RAM_PER_CORE ))
 
 #If the number of cores goes negative, that means the system has either 2 GB of RAM or less than that. We can warn the user of a potential for the build to fail the system, since this does not meet the minimum requirement to build AliceVision.
 
 test ${MAX_CORES_RAM} -ge 0 || >&2 echo "Warning: The system does not support the minimum amount of RAM needed to run the build system. We will attempt to build it anyway, but the system may fail to have enough memory for operations, or may end up using copious amounts of swap space."
 
-PRACTICAL_MAX_CORES_RAM=$((${MAX_CORES_RAM} < 0 ? 1 : ${MAX_CORES_RAM}))
+PRACTICAL_MAX_CORES_RAM=$(( MAX_CORES_RAM < 0 ? 1 : MAX_CORES_RAM ))
 
 # Maximum usable cores regarding the number of available cores and the amount of available memory
-USABLE_CORES=$((${PRACTICAL_MAX_CORES_RAM} < ${NPROC} ? ${PRACTICAL_MAX_CORES_RAM} : ${NPROC}))
+USABLE_CORES=$(( PRACTICAL_MAX_CORES_RAM < NPROC ? PRACTICAL_MAX_CORES_RAM : NPROC ))
 
 # echo "NPROC=${NPROC}"
 # echo "FREE_MEM=${FREE_MEM}"
@@ -39,4 +39,4 @@ USABLE_CORES=$((${PRACTICAL_MAX_CORES_RAM} < ${NPROC} ? ${PRACTICAL_MAX_CORES_RA
 # echo " => USABLE_CORES=${USABLE_CORES}"
 # echo ""
 
-echo -n ${USABLE_CORES}
+printf '%s' "${USABLE_CORES}"
