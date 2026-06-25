@@ -2,6 +2,7 @@ __version__ = "1.0"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
+from pyalicevision import parallelization as avpar
 
 class LidarDecimating(desc.AVCommandLineNode):
     """
@@ -15,7 +16,7 @@ It processes multiple input meshes in parallel using a range-based parallelizati
 
     commandLine = "aliceVision_lidarDecimating {allParams}"
 
-    size = desc.StaticNodeSize(10)
+    size = avpar.DynamicJsonListSize("input")
     parallelization = desc.Parallelization(blockSize=1)
     commandLineRange = "--rangeStart {rangeStart} --rangeSize {rangeFullSize}"
 

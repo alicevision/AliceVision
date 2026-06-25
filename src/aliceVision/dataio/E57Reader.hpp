@@ -31,6 +31,7 @@ class E57Reader
       : _paths(paths),
         _idPath(-1),
         _idMesh(-1),
+        _idMeshInFile(-1),
         _countMeshesForFile(0),
         _requiredIntensity(0.0)
     {}
@@ -39,19 +40,23 @@ class E57Reader
     {
         _idPath = -1;
         _idMesh = -1;
+        _idMeshInFile = -1;
         _countMeshesForFile = 0;
     }
 
     bool getNext(Eigen::Vector3d& sensorPosition, std::vector<PointInfo>& vertices, Eigen::Matrix<size_t, -1, -1>& grid)
     {
         // Go to next mesh of current file
+        _idMeshInFile++;
+
+        // Keep a unique counter for all files
         _idMesh++;
 
         // Load next file if needed
-        if (_idMesh >= static_cast<int>(_countMeshesForFile))
+        if (_idMeshInFile >= static_cast<int>(_countMeshesForFile))
         {
             _idPath++;
-            _idMesh = 0;
+            _idMeshInFile = 0;
             if (_idPath >= static_cast<int>(_paths.size()))
             {
                 return false;
@@ -74,7 +79,7 @@ class E57Reader
             _countMeshesForFile = _reader->GetData3DCount();
         }
 
-        if (_idMesh >= static_cast<int>(_countMeshesForFile))
+        if (_idMeshInFile >= static_cast<int>(_countMeshesForFile))
         {
             return false;
         }
@@ -86,9 +91,9 @@ class E57Reader
 
         // Get header
         e57::Data3D scanHeader;
-        if (!_reader->ReadData3D(_idMesh, scanHeader))
+        if (!_reader->ReadData3D(_idMeshInFile, scanHeader))
         {
-            ALICEVISION_LOG_ERROR("Error reading mesh #" << _idMesh);
+            ALICEVISION_LOG_ERROR("Error reading mesh #" << _idMeshInFile);
             return false;
         }
 
@@ -109,14 +114,14 @@ class E57Reader
         int64_t maxGroupSize = 0;
         bool isColumnIndex;
 
-        if (!_reader->GetData3DSizes(0, maxRows, maxColumns, countPoints, countGroups, maxGroupSize, isColumnIndex))
+        if (!_reader->GetData3DSizes(_idMeshInFile, maxRows, maxColumns, countPoints, countGroups, maxGroupSize, isColumnIndex))
         {
-            ALICEVISION_LOG_ERROR("Error reading content of mesh #" << _idMesh);
+            ALICEVISION_LOG_ERROR("Error reading content of mesh #" << _idMeshInFile);
             return false;
         }
 
         e57::Data3DPointsFloat data3DPoints(scanHeader);
-        e57::CompressedVectorReader datareader = _reader->SetUpData3DPointsData(_idMesh, countPoints, data3DPoints);
+        e57::CompressedVectorReader datareader = _reader->SetUpData3DPointsData(_idMeshInFile, countPoints, data3DPoints);
 
         // Prepare list of vertices
         vertices.clear();
@@ -129,6 +134,27 @@ class E57Reader
         unsigned int readCount = 0;
         while ((readCount = datareader.read()) > 0)
         {
+            ALICEVISION_LOG_DEBUG("cartesianInvalidState pointer: " << static_cast<void*>(data3DPoints.cartesianInvalidState));
+            ALICEVISION_LOG_DEBUG("cartesianX pointer: " << static_cast<void*>(data3DPoints.cartesianX));
+            ALICEVISION_LOG_DEBUG("cartesianY pointer: " << static_cast<void*>(data3DPoints.cartesianY));
+            ALICEVISION_LOG_DEBUG("cartesianZ pointer: " << static_cast<void*>(data3DPoints.cartesianZ));
+            ALICEVISION_LOG_DEBUG("colorBlue pointer: " << static_cast<void*>(data3DPoints.colorBlue));
+            ALICEVISION_LOG_DEBUG("colorGreen pointer: " << static_cast<void*>(data3DPoints.colorGreen));
+            ALICEVISION_LOG_DEBUG("colorRed pointer: " << static_cast<void*>(data3DPoints.colorRed));
+            ALICEVISION_LOG_DEBUG("columnIndex pointer: " << static_cast<void*>(data3DPoints.columnIndex));
+            ALICEVISION_LOG_DEBUG("intensity pointer: " << static_cast<void*>(data3DPoints.intensity));
+            ALICEVISION_LOG_DEBUG("isColorInvalid pointer: " << static_cast<void*>(data3DPoints.isColorInvalid));
+            ALICEVISION_LOG_DEBUG("isIntensityInvalid pointer: " << static_cast<void*>(data3DPoints.isIntensityInvalid));
+            ALICEVISION_LOG_DEBUG("isTimeStampInvalid pointer: " << static_cast<void*>(data3DPoints.isTimeStampInvalid));
+            ALICEVISION_LOG_DEBUG("returnCount pointer: " << static_cast<void*>(data3DPoints.returnCount));
+            ALICEVISION_LOG_DEBUG("returnIndex pointer: " << static_cast<void*>(data3DPoints.returnIndex));
+            ALICEVISION_LOG_DEBUG("rowIndex pointer: " << static_cast<void*>(data3DPoints.rowIndex));
+            ALICEVISION_LOG_DEBUG("sphericalAzimuth pointer: " << static_cast<void*>(data3DPoints.sphericalAzimuth));
+            ALICEVISION_LOG_DEBUG("sphericalElevation pointer: " << static_cast<void*>(data3DPoints.sphericalElevation));
+            ALICEVISION_LOG_DEBUG("sphericalInvalidState pointer: " << static_cast<void*>(data3DPoints.sphericalInvalidState));
+            ALICEVISION_LOG_DEBUG("sphericalRange pointer: " << static_cast<void*>(data3DPoints.sphericalRange));
+            ALICEVISION_LOG_DEBUG("timeStamp pointer: " << static_cast<void*>(data3DPoints.timeStamp));
+
             // Check input compatibility
             if (data3DPoints.sphericalRange != nullptr)
             {
@@ -141,6 +167,7 @@ class E57Reader
                 ALICEVISION_LOG_ERROR("Data contains no cartesian coordinates");
                 continue;
             }
+            
 
             if (data3DPoints.columnIndex == nullptr)
             {
@@ -159,10 +186,11 @@ class E57Reader
                 ALICEVISION_LOG_ERROR("Data contains no intensities");
                 continue;
             }
+            
 
             for (unsigned int pos = 0; pos < readCount; pos++)
             {
-                if (data3DPoints.cartesianInvalidState[pos])
+                if (data3DPoints.cartesianInvalidState && data3DPoints.cartesianInvalidState[pos])
                 {
                     continue;
                 }
@@ -187,6 +215,7 @@ class E57Reader
                 vertices.push_back(pi);
             }
         }
+        datareader.close();
 
         sensorPosition = t;
 
@@ -196,13 +225,16 @@ class E57Reader
     bool getNext(Eigen::Vector3d& sensorPosition)
     {
         // Go to next mesh of current file
+        _idMeshInFile++;
+
+        // Keep a unique counter for all files
         _idMesh++;
 
         // Load next file if needed
-        if (_idMesh >= static_cast<int>(_countMeshesForFile))
+        if (_idMeshInFile >= static_cast<int>(_countMeshesForFile))
         {
             _idPath++;
-            _idMesh = 0;
+            _idMeshInFile = 0;
             if (_idPath >= static_cast<int>(_paths.size()))
             {
                 return false;
@@ -225,7 +257,7 @@ class E57Reader
             _countMeshesForFile = _reader->GetData3DCount();
         }
 
-        if (_idMesh >= static_cast<int>(_countMeshesForFile))
+        if (_idMeshInFile >= static_cast<int>(_countMeshesForFile))
         {
             return false;
         }
@@ -237,9 +269,9 @@ class E57Reader
 
         // Get header
         e57::Data3D scanHeader;
-        if (!_reader->ReadData3D(_idMesh, scanHeader))
+        if (!_reader->ReadData3D(_idMeshInFile, scanHeader))
         {
-            ALICEVISION_LOG_ERROR("Error reading mesh #" << _idMesh);
+            ALICEVISION_LOG_ERROR("Error reading mesh #" << _idMeshInFile);
             return false;
         }
 
@@ -264,6 +296,7 @@ class E57Reader
 
     int _idPath;
     int _idMesh;
+    int _idMeshInFile;
     size_t _countMeshesForFile;
     double _requiredIntensity;
 };
