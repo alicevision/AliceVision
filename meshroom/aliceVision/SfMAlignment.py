@@ -106,7 +106,7 @@ The alignment can be based on:
             name="output",
             label="SfMData File",
             description="Output SfMData file.",
-            value=lambda attr: "{nodeCacheFolder}/" + (os.path.splitext(os.path.basename(attr.node.input.value))[0] or "sfmData") + "usda",
+            value=lambda attr: "{nodeCacheFolder}/" + (os.path.splitext(os.path.basename(attr.node.input.value))[0] or "sfmData") + ".usda",
         ),
         desc.File(
             name="outputViewsAndPoses",
