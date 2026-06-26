@@ -53,11 +53,12 @@ print_push() {
   echo ""
 }
 
-deps_no_cache=()
-test -n "${DEPS_NO_CACHE:-}" && deps_no_cache=(--no-cache)
+deps_no_cache=""
+test -n "${DEPS_NO_CACHE:-}" && deps_no_cache="--no-cache"
 
 echo "--== BUILD DEPENDENCIES ==--"
-"${CONTAINER_ENGINE}" build "${deps_no_cache[@]}" \
+# shellcheck disable=SC2086
+"${CONTAINER_ENGINE}" build ${deps_no_cache} \
   --rm \
   --progress=plain \
   --build-arg CUDA_VERSION="${CUDA_VERSION}" \
