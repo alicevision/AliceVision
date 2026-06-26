@@ -1,30 +1,19 @@
-ARG AV_DEPS_VERSION
-ARG AV_VERSION
-ARG CUDA_VERSION
-ARG UBUNTU_VERSION
-FROM alicevision/alicevision-deps:${AV_DEPS_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
+# =============================================================================
+# Dockerfile
+#
+# Builds AliceVision on top of a prebuilt alicevision-deps image (Rocky or
+# Ubuntu). The dependencies image is passed as DEPS_IMAGE; this single file
+# replaces the former Dockerfile_rocky / Dockerfile_ubuntu, which only differed
+# by their base image.
+#
+# Built by docker/build-image.sh (which sets DEPS_IMAGE to the deps tag).
+# =============================================================================
+
+ARG DEPS_IMAGE
+FROM ${DEPS_IMAGE}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
+
 ARG TARGET_ARCHITECTURE=core
-
-# use CUDA_VERSION to select the image version to use
-# see https://hub.docker.com/r/nvidia/cuda/
-#
-# AV_VERSION=2.2.8
-# CUDA_VERSION=11.0
-# UBUNTU_VERSION=20.04
-# docker build \
-#    --build-arg CUDA_VERSION=${CUDA_VERSION} \
-#    --build-arg UBUNTU_VERSION${UBUNTU_VERSION} \
-#    --build-arg AV_VERSION=2.2.8.develop \
-#    --tag alicevision/alicevision:${AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION} \
-#     -f Dockerfile_ubuntu .
-#
-# then execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
-# docker run -it --runtime=nvidia alicevision/alicevision:{AV_VERSION}-ubuntu${UBUNTU_VERSION}-cuda${CUDA_VERSION}
-
-
-# OS/Version (FILE): cat /etc/issue.net
-# Cuda version (ENV): $CUDA_VERSION
 
 ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
@@ -36,13 +25,16 @@ ENV AV_DEV=/opt/AliceVision_git \
 COPY CMakeLists.txt *.md ${AV_DEV}/
 COPY src ${AV_DEV}/src
 COPY meshroom ${AV_DEV}/meshroom
+COPY docker ${AV_DEV}/docker
 
 WORKDIR "${AV_BUILD}"
 
-COPY docker ${AV_DEV}/docker
-
-RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
-         cmake -DCMAKE_BUILD_TYPE=Release \
+# Configure, build, install and bundle in a single RUN so CPU_CORES (computed
+# by check-cpu.sh) stays in scope for the build: a separate `RUN export ...`
+# would be lost, leaving the build parallelism unbounded and exhausting memory.
+RUN CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
+    echo "Build multithreading number of cores: ${CPU_CORES}" && \
+    cmake -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS:BOOL=ON \
         -DTARGET_ARCHITECTURE=${TARGET_ARCHITECTURE} \
         -DALICEVISION_BUILD_DEPENDENCIES:BOOL=OFF \
@@ -61,8 +53,8 @@ RUN export CPU_CORES=`${AV_DEV}/docker/check-cpu.sh`; \
         -DSWIG_DIR:PATH="${AV_INSTALL}/share/swig/4.3.0" -DSWIG_EXECUTABLE:PATH="${AV_INSTALL}/bin-deps/swig" \
         -DPython3_EXECUTABLE:PATH=/usr/bin/python \
         "${AV_DEV}" && \
-    make install -j${CPU_CORES} && \
-    make bundle && \
+    cmake --build . --target install --parallel "${CPU_CORES}" && \
+    cmake --build . --target bundle && \
     rm -rf "${AV_BUILD}" "${AV_DEV}" && \
     echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
     echo "export ALICEVISION_ROOT=${AV_BUNDLE}" >> /etc/profile.d/alicevision.sh
