@@ -182,7 +182,24 @@ foreach(_dir
         "${CMAKE_INSTALL_FULL_BINDIR}"
         "${CMAKE_INSTALL_FULL_LIBDIR}"
         "${CMAKE_INSTALL_FULL_DATADIR}")
-    if(EXISTS "${_dir}")
+    if(IS_SYMLINK "${_dir}")
+        # Symlink directory (e.g. lib64 -> lib): file(COPY) would reproduce the
+        # dangling symlink without its target. Copy the real directory instead,
+        # then recreate the symlink so both names are valid in the bundle.
+        get_filename_component(_link_name "${_dir}" NAME)
+        get_filename_component(_real      "${_dir}" REALPATH)
+        get_filename_component(_real_name "${_real}" NAME)
+        if(EXISTS "${_real}")
+            file(COPY "${_real}"
+                 DESTINATION "${BUNDLE_INSTALL_PREFIX}"
+                 USE_SOURCE_PERMISSIONS)
+        endif()
+        if(NOT EXISTS "${BUNDLE_INSTALL_PREFIX}/${_link_name}")
+            file(CREATE_LINK "${_real_name}"
+                 "${BUNDLE_INSTALL_PREFIX}/${_link_name}" SYMBOLIC)
+            message(STATUS "  Created symlink: ${_link_name} -> ${_real_name}")
+        endif()
+    elseif(EXISTS "${_dir}")
         file(COPY "${_dir}"
              DESTINATION "${BUNDLE_INSTALL_PREFIX}"
              USE_SOURCE_PERMISSIONS)
