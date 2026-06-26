@@ -71,11 +71,8 @@ echo "--== BUILD ALICEVISION ==--"
 "${CONTAINER_ENGINE}" build \
   --rm \
   --progress=plain \
-  --build-arg CUDA_VERSION="${CUDA_VERSION}" \
-  --build-arg "${OS_VERSION_ARG}" \
-  --build-arg AV_DEPS_VERSION="${AV_DEPS_VERSION}" \
-  --build-arg AV_VERSION="${AV_VERSION}" \
+  --build-arg DEPS_IMAGE="${DEPS_DOCKER_TAG}" \
   --tag "${DOCKER_TAG}" \
-  -f "docker/Dockerfile_${OS}" .
+  -f docker/Dockerfile .
 
 print_push "${DEPS_DOCKER_TAG}" "${DOCKER_TAG}"
