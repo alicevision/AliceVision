@@ -213,11 +213,15 @@ if(UNIX)
 
     file(GLOB _LIBS_TO_MOVE "${_bundle_bindir}/lib*.so*")
     if(_LIBS_TO_MOVE)
-        message(STATUS "  Moving ${CMAKE_LIST_LENGTH} stray libs from bin/ to lib/")
-        file(COPY ${_LIBS_TO_MOVE}
-             DESTINATION "${_bundle_libdir}"
-             USE_SOURCE_PERMISSIONS)
-        file(REMOVE ${_LIBS_TO_MOVE})
+        list(LENGTH _LIBS_TO_MOVE _n_libs)
+        message(STATUS "  Moving ${_n_libs} stray libs from bin/ to lib/")
+        # Move with RENAME (not COPY): it relocates symlinks as-is instead of
+        # dereferencing them. fixup_bundle may leave a dangling symlink in bin/
+        # (its target left in lib/), which file(COPY) cannot duplicate.
+        foreach(_lib IN LISTS _LIBS_TO_MOVE)
+            get_filename_component(_lib_name "${_lib}" NAME)
+            file(RENAME "${_lib}" "${_bundle_libdir}/${_lib_name}")
+        endforeach()
     endif()
 endif()
 
