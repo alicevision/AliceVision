@@ -29,10 +29,14 @@ test -e "docker/Dockerfile_${OS}_deps" || {
 : "${AV_DEPS_VERSION:?AV_DEPS_VERSION must be set}"
 : "${REPO_OWNER:=alicevision}"
 
-if [ -z "${AV_VERSION:-}" ]; then
-  # '/' (e.g. in "feat/..." branch names) is invalid in a Docker image tag.
-  av_branch=$(git rev-parse --abbrev-ref HEAD)
-  AV_VERSION="${av_branch//\//-}-$(git rev-parse --short HEAD)"
+if [[ -z "${AV_VERSION:-}" ]]; then
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    # '/' (e.g. in "feat/..." branch names) is invalid in a Docker image tag.
+    av_branch=$(git rev-parse --abbrev-ref HEAD)
+    AV_VERSION="${av_branch//\//-}-$(git rev-parse --short HEAD)"
+  else
+    AV_VERSION="unknown"
+  fi
 fi
 
 OS_VERSION_ARG="${OS^^}_VERSION=${OS_VERSION}"
