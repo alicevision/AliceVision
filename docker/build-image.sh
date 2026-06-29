@@ -39,7 +39,8 @@ if [[ -z "${AV_VERSION:-}" ]]; then
   fi
 fi
 
-OS_VERSION_ARG="${OS^^}_VERSION=${OS_VERSION}"
+OS_UPPER=$(echo "$OS" | tr '[:lower:]' '[:upper:]')
+OS_VERSION_ARG="${OS_UPPER}_VERSION=${OS_VERSION}"
 DEPS_DOCKER_TAG="${REPO_OWNER}/alicevision-deps:${AV_DEPS_VERSION}-${OS}${OS_VERSION}-cuda${CUDA_VERSION}"
 DOCKER_TAG="${REPO_OWNER}/alicevision:${AV_VERSION}-${OS}${OS_VERSION}-cuda${CUDA_VERSION}"
 
