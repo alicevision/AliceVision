@@ -183,23 +183,21 @@ COPY src/cmake/OFA/                        ${AV_DEV}/src/cmake/OFA/
 WORKDIR "${AV_BUILD}"
 
 RUN --mount=type=cache,target=${AV_BUILD}/external/download \
-    mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib"   \
-    && cmake "${AV_DEV}"                            \
+    CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
+    cmake "${AV_DEV}"                               \
         -DCMAKE_BUILD_TYPE=Release                  \
         -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON    \
         -DAV_BUILD_ALICEVISION:BOOL=OFF             \
-        -DAV_BUILD_ZLIB:BOOL=ON                     \
-        -DAV_BUILD_CCTAG:BOOL=ON                    \
         -DPython_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
         -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
         -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
-        -DAV_BUILD_DEPENDENCIES_PARALLEL=0          \
+        -DAV_BUILD_DEPENDENCIES_PARALLEL=${CPU_CORES} \
+    && mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib" \
     && ln -sf lib "${AV_INSTALL}/lib64"             \
     && { test -e /usr/local/cuda/lib64/libcublas.so \
          || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \
                   /usr/local/cuda/lib64/libcublas.so; }  \
-    && CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh)   \
-    && cmake --build . --parallel 1    \
+    && cmake --build . --parallel 1                 \
     && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
     && /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' \
     && find "${AV_BUILD}" -mindepth 1 -maxdepth 1 ! -name external -exec rm -rf {} + \
