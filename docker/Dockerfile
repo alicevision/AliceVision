@@ -19,8 +19,9 @@ ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
     AV_INSTALL=/opt/AliceVision_install \
     AV_BUNDLE=/opt/AliceVision_bundle \
-    PATH="${PATH}:${AV_BUNDLE}" \
     VERBOSE=1
+
+ENV PATH="${AV_BUNDLE}/bin:${PATH}"
 
 COPY CMakeLists.txt *.md ${AV_DEV}/
 COPY src ${AV_DEV}/src
