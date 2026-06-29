@@ -153,14 +153,13 @@ WORKDIR "${AV_BUILD}"
 
 RUN --mount=type=cache,target=${AV_BUILD}/external/download \
     mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib"   \
+    CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
     && cmake "${AV_DEV}"                            \
         -DCMAKE_BUILD_TYPE=Release                  \
         -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON    \
         -DAV_BUILD_ALICEVISION:BOOL=OFF             \
-        -DAV_BUILD_ZLIB:BOOL=ON                     \
-        -DAV_BUILD_CCTAG:BOOL=ON                    \
         -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
-        -DAV_BUILD_DEPENDENCIES_PARALLEL=0          \
+        -DAV_BUILD_DEPENDENCIES_PARALLEL=${CPU_CORES} \
     && ln -sf lib "${AV_INSTALL}/lib64"             \
     && { test -e /usr/local/cuda/lib64/libcublas.so \
          || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \
