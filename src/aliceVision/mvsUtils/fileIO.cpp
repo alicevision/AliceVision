@@ -12,6 +12,8 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
+#include <cmath>
+
 namespace aliceVision {
 namespace mvsUtils {
 
@@ -417,6 +419,14 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
         {
             exposureCompensation = 1.0f;
             ALICEVISION_LOG_INFO("Cannot compensate exposure. PrepareDenseScene needs to be update");
+        }
+        else if (!std::isfinite(exposureCompensation) || exposureCompensation <= 0.f)
+        {
+            // reject a degenerate compensation factor (-inf/nan/0/negative) that an upstream node may write when the
+            // source images lack exposure metadata; applying it would crush the texture to black, so fall back to neutral
+            ALICEVISION_LOG_WARNING("Invalid EV compensation (" << exposureCompensation << ") for image " << camId + 1
+                                                                << "; resetting to neutral 1.0.");
+            exposureCompensation = 1.0f;
         }
         else
         {
