@@ -244,9 +244,9 @@ bool prepareDenseScene(const SfMData& sfmData,
 
             // add exposure values to images metadata
             const double cameraExposure = view->getImage().getCameraExposureSetting().getExposure();
-            const double ev = std::log2(1.0 / cameraExposure);
-            // only a strictly positive median and camera exposure give a meaningful factor; otherwise getExposure()
-            // returned the -1 sentinel (missing metadata) and dividing would write a degenerate (-inf) EVComp
+            // getExposure() returns the -1 sentinel when metadata is missing; guard both derived values so we never
+            // write a degenerate EV (log2 of a negative -> NaN) or EVComp (division -> -inf) into the image metadata
+            const double ev = (cameraExposure > 0.0) ? std::log2(1.0 / cameraExposure) : 0.0;
             const float exposureCompensation =
                 (medianCameraExposure > 0.0 && cameraExposure > 0.0) ? float(medianCameraExposure / cameraExposure) : 1.0f;
             metadata.push_back(oiio::ParamValue("AliceVision:EV", float(ev)));

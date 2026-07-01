@@ -438,9 +438,9 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
                 img(i)[1] *= exposureCompensation;
                 img(i)[2] *= exposureCompensation;
             }
-
-            imageAlgo::colorconvert(img, image::EImageColorSpace::LINEAR, colorspace);
         }
+
+        imageAlgo::colorconvert(img, image::EImageColorSpace::LINEAR, colorspace);
     }
 
     // scale chosen by the user and apply during the process
