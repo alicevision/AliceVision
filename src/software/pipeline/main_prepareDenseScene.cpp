@@ -130,7 +130,9 @@ bool prepareDenseScene(const SfMData& sfmData,
 
     // for exposure correction
     const double medianCameraExposure = sfmData.getMedianCameraExposureSetting().getExposure();
-    ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0 / medianCameraExposure));
+    // guard the log2 as above: a missing-metadata median (-1 sentinel) would otherwise print a NaN Median EV
+    const double medianEV = (medianCameraExposure > 0.0) ? std::log2(1.0 / medianCameraExposure) : 0.0;
+    ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << medianEV);
 
 #pragma omp parallel for num_threads(3)
     for (int i = 0; i < viewIds.size(); ++i)
