@@ -292,8 +292,8 @@ class KeyframeSelector
      * @param[in] brands brand name for each camera
      * @param[in] models model name for each camera
      * @param[in] mmFocals focal in millimeters for each camera
-    * @param[in] mediaIndex index of the media path being written
-    * @param[in,out] intrinsicId current intrinsic ID counter
+     * @param[in] mediaIndex index of the media path being written
+     * @param[in,out] intrinsicId current intrinsic ID counter
      * @return true if the output SfMData files were written as expected, false otherwise
      */
     bool writeSfMData(const std::string& mediaPath,
@@ -321,8 +321,8 @@ class KeyframeSelector
      * @param brands brand name for each camera
      * @param models model name for each camera
      * @param mmFocals focal in millimeters for each camera
-    * @param mediaIndex index of the media path being written
-    * @param intrinsicId current intrinsic ID counter
+     * @param mediaIndex index of the media path being written
+     * @param intrinsicId current intrinsic ID counter
      * @return true if the output SfMData files have successfully been filled, false otherwise
      */
     bool writeSfMDataFromSequences(const std::string& mediaPath,
