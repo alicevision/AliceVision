@@ -1,14 +1,14 @@
 {
     "header": {
         "releaseVersion": "2026.1.0+develop",
-        "fileVersion": "2.0",
+        "fileVersion": "2.1",
         "nodesVersions": {
             "ApplyCalibration": "1.0",
             "CameraInit": "12.1",
             "CheckerboardDetection": "2.0",
             "ConvertSfMFormat": "2.0",
             "CopyFiles": "1.3",
-            "Depthmap": "5.1",
+            "DepthMap": "5.1",
             "DepthMapFilter": "4.0",
             "DepthMapTracksInjecting": "1.0",
             "DistortionCalibration": "6.1",
@@ -16,7 +16,7 @@
             "ExportDistortion": "2.0",
             "ExportImages": "1.1",
             "FeatureExtraction": "1.3",
-            "FeatureMatching": "2.0",
+            "FeatureMatching": "2.1",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.1",
             "ImageSegmentationSam3": "1.0",
@@ -30,7 +30,7 @@
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.3",
+            "SfMExpanding": "2.4",
             "SfMFilter": "2.0",
             "SfMTransfer": "2.1",
             "SfMTransform": "3.2",
@@ -385,8 +385,8 @@
         "ImageSegmentationSam3_1": {
             "nodeType": "ImageSegmentationSam3",
             "position": [
-                199,
-                201
+                0,
+                200
             ],
             "inputs": {
                 "input": "{CameraInit_1.output}",
@@ -432,6 +432,9 @@
             "inputs": {
                 "inputPaths": [
                     "{ApplyCalibration_1.output}"
+                ],
+                "maskPaths": [
+                    "{ImageSegmentationSam3_1.output}"
                 ]
             },
             "internalInputs": {

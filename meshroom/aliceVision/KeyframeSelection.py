@@ -80,6 +80,7 @@ class KeyframeSelection(desc.AVCommandLineNode):
             name="inputPaths",
             label="Input Paths",
             description="Input video files, image sequence directories or SfMData file.",
+            exposed=True
         ),
         desc.ListAttribute(
             elementDesc=desc.File(

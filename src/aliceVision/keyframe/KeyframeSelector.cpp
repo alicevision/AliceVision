@@ -51,8 +51,9 @@ double findMedian(const std::vector<double>& vec)
         std::nth_element(vecCopy.begin(), medianIt1, vecCopy.end());
         const auto med1 = *medianIt1;
 
-        const auto medianIt2 = vecCopy.begin() + vecCopy.size() / 2;
-        std::nth_element(vecCopy.begin(), medianIt2, vecCopy.end());
+        // nth_element partition the set in two, and the second set is guaranteed to be
+        // more thant the value of med1.
+        const auto medianIt2 = std::min_element(medianIt1 + 1, vecCopy.end());
         const auto med2 = *medianIt2;
 
         return (med1 + med2) / 2.0;
@@ -84,6 +85,11 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
     if (mediaPaths.empty())
     {
         ALICEVISION_THROW(std::invalid_argument, "Cannot create KeyframeSelector without at least one media file path!");
+    }
+
+    if (!maskPaths.empty() && maskPaths.size() != mediaPaths.size())
+    {
+        ALICEVISION_THROW(std::invalid_argument, "The number of provided mask paths must match the number of media paths.");
     }
 
     scoresMap["Sharpness"] = &_sharpnessScores;
@@ -200,6 +206,17 @@ void KeyframeSelector::processSmart(const float pxDisplacement,
     _selectedFrames.resize(sequenceSize);
     std::fill(_selectedFrames.begin(), _selectedFrames.end(), '0');
 
+    if (sequenceSize == 1)
+    {
+        ALICEVISION_LOG_INFO("Selecting frame with ID 0");
+        _selectedKeyframes.push_back(0);
+        _selectedFrames.at(0) = '1';
+        ALICEVISION_LOG_INFO("Finished selecting all the keyframes! 1/1 frames have been selected.");
+        return;
+    }
+
+    const bool hasMaxOutFrames = _maxOutFrames > 0;
+
     float step = pxDisplacement * std::min(_frameWidth, _frameHeight) / 100.0;
     double motionAcc = 0.0;
 
@@ -217,11 +234,19 @@ void KeyframeSelector::processSmart(const float pxDisplacement,
     subsequenceLimits.push_back(sequenceSize - 1);
 
     // Step 2: check whether the min/max output frames constraints are respected
-    if (!(subsequenceLimits.size() - 1 >= _minOutFrames && subsequenceLimits.size() - 1 <= _maxOutFrames))
+    const std::size_t nbSubsequences = subsequenceLimits.size() - 1;
+    if (nbSubsequences < _minOutFrames || (hasMaxOutFrames && nbSubsequences > _maxOutFrames))
     {
-        ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
-                             << subsequenceLimits.size() - 1 << " keyframes, should be between " << _minOutFrames << " and " << _maxOutFrames
-                             << ").");
+        if (hasMaxOutFrames)
+        {
+            ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
+                                 << nbSubsequences << " keyframes, should be between " << _minOutFrames << " and " << _maxOutFrames << ").");
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("Preliminary selection does not provide the right number of frames ("
+                                 << nbSubsequences << " keyframes, should be at least " << _minOutFrames << ").");
+        }
 
         std::vector<unsigned int> newLimits = subsequenceLimits;  // Prevents first 'newLimits.size() - 1' from overflowing
         const double displacementDiff = 0.5;                      // The displacement must be 0.5px smaller/bigger than the previous one
@@ -394,8 +419,9 @@ bool KeyframeSelector::computeScores(const std::size_t rescaledWidthSharpness,
                 ALICEVISION_THROW(std::invalid_argument, "Invalid path to masks: " << maskPath);
             }
 
-            const std::size_t nbMasks = static_cast<std::size_t>(feed->nbFrames());
-            if (nbMasks != nbFrames)
+            const std::size_t nbMediaFrames = static_cast<std::size_t>(feed->nbFrames());
+            const std::size_t nbMasks = static_cast<std::size_t>(maskFeed->nbFrames());
+            if (nbMasks != nbMediaFrames)
             {
                 ALICEVISION_THROW_ERROR("The number of masks does not match the number of frames.");
             }
@@ -677,6 +703,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
     camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
     std::string currentImgName;
+    IndexT intrinsicId = 0;
 
     for (std::size_t id = 0; id < _mediaPaths.size(); ++id)
     {
@@ -786,7 +813,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                                 << "written on disk. The keyframes' SfMData file cannot be written.");
         }
 
-        if (!writeSfMData(path, feed, brands, models, mmFocals))
+        if (!writeSfMData(path, feed, brands, models, mmFocals, id, intrinsicId))
             ALICEVISION_LOG_ERROR("Failed to write the output SfMData files.");
     }
 
@@ -983,20 +1010,24 @@ cv::Mat KeyframeSelector::readImage(dataio::FeedProvider& feed, std::size_t widt
     cv::cvtColor(cvFrame, cvGrayscale, cv::COLOR_BGR2GRAY);
 
     // Resize to smaller size if requested
-    if (width == 0)
+    if (width == 0 || cvGrayscale.cols <= width)
+    {
         return cvGrayscale;
+    }
 
     cv::Mat cvRescaled;
-    if (cvGrayscale.cols > width && width > 0)
-    {
-        cv::resize(cvGrayscale, cvRescaled, cv::Size(width, double(cvGrayscale.rows) * double(width) / double(cvGrayscale.cols)));
-    }
+    cv::resize(cvGrayscale, cvRescaled, cv::Size(width, double(cvGrayscale.rows) * double(width) / double(cvGrayscale.cols)));
 
     return cvRescaled;
 }
 
 double KeyframeSelector::computeSharpness(const cv::Mat& grayscaleImage, const std::size_t windowSize, const cv::Mat& mask)
 {
+    if (windowSize < 4)
+    {
+        ALICEVISION_THROW(std::invalid_argument, "Sharpness window size must be at least 4 pixels.");
+    }
+
     if (windowSize > grayscaleImage.size().width || windowSize > grayscaleImage.size().height)
     {
         ALICEVISION_THROW(std::invalid_argument,
@@ -1108,6 +1139,11 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
                                       const std::size_t cellSize,
                                       const cv::Mat& mask)
 {
+    if (cellSize == 0)
+    {
+        ALICEVISION_THROW(std::invalid_argument, "Flow cell size must be greater than 0.");
+    }
+
     if (cellSize > grayscaleImage.size().width)
     {  // If the cell size is bigger than the height, it will be adjusted
         ALICEVISION_THROW(std::invalid_argument,
@@ -1155,7 +1191,7 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
         xyChannels[1].copyTo(yChannel, paddedMask);
 
         // Merge back the channels together
-        std::vector<cv::Mat> channels = {xyChannels[0], xyChannels[1]};
+        std::vector<cv::Mat> channels = {xChannel, yChannel};
         cv::merge(channels, maskedSumflow);
     }
 
@@ -1190,9 +1226,9 @@ double KeyframeSelector::estimateFlow(const cv::Ptr<cv::DenseOpticalFlow>& ptrFl
                 totalCount = cv::countNonZero(maskROI);
             }
 
+            // Ignore cells with less than 50% valid pixels 
             if (totalCount > maxCellSizeWidth * maxCellSizeHeight * 0.5)
             {
-                // If at least 50% of the cell is masked, then ignore it and skip to the next one
                 norm = hypot / totalCount;
                 motionByCell.push_back(norm);
             }
@@ -1210,13 +1246,15 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath,
                                     dataio::FeedProvider& feed,
                                     const std::vector<std::string>& brands,
                                     const std::vector<std::string>& models,
-                                    const std::vector<float>& mmFocals)
+                                    const std::vector<float>& mmFocals,
+                                    const std::size_t mediaIndex,
+                                    IndexT& intrinsicId)
 {
     bool filledOutputs = false;
 
     if (!feed.isSfMData())
     {
-        filledOutputs = writeSfMDataFromSequences(mediaPath, feed, brands, models, mmFocals);
+        filledOutputs = writeSfMDataFromSequences(mediaPath, feed, brands, models, mmFocals, mediaIndex, intrinsicId);
     }
     else
     {
@@ -1335,11 +1373,10 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
                                                  dataio::FeedProvider& feed,
                                                  const std::vector<std::string>& brands,
                                                  const std::vector<std::string>& models,
-                                                 const std::vector<float>& mmFocals)
+                                                 const std::vector<float>& mmFocals,
+                                                 const std::size_t mediaIndex,
+                                                 IndexT& intrinsicId)
 {
-    static std::size_t mediaIndex = 0;
-    static IndexT intrinsicId = 0;
-
     auto& keyframesViews = _outputSfmKeyframes.getViews();
     auto& framesViews = _outputSfmFrames.getViews();
 
@@ -1423,7 +1460,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         }
 
         // Create the intrinsic for the view
-        auto intrinsic = createIntrinsic(*view, focalLength == -1.0 ? 0 : focalLength, sensorWidth, mediaIndex, imageRatio);
+        auto intrinsic = createIntrinsic(*view, focalLength == -1.0 ? 0 : focalLength, sensorWidth, imageRatio, mediaIndex);
 
         // Update intrinsics ID if this is a new one
         if (previousIntrinsic != nullptr && *previousIntrinsic != *intrinsic)
@@ -1457,7 +1494,6 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         feed.goToNextFrame();
     }
 
-    ++mediaIndex;
     ++intrinsicId;
 
     return true;
@@ -1535,7 +1571,9 @@ std::shared_ptr<camera::IntrinsicBase> KeyframeSelector::createIntrinsic(const s
     }
 
     if (intrinsic->serialNumber().empty())  // Likely to happen with video feeds
+    {
         intrinsic->setSerialNumber(fs::path(view.getImage().getImagePath()).parent_path().string() + std::to_string(mediaIndex));
+    }
 
     return intrinsic;
 }
