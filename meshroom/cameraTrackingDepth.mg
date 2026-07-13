@@ -385,12 +385,13 @@
         "ImageSegmentationSam3_1": {
             "nodeType": "ImageSegmentationSam3",
             "position": [
-                199,
-                201
+                0,
+                200
             ],
             "inputs": {
                 "input": "{CameraInit_1.output}",
-                "maskInvert": true
+                "maskInvert": true,
+                "keepFilename": true
             },
             "internalInputs": {
                 "color": "#575963"
