@@ -169,7 +169,7 @@ bool SfMDataFeed::isInit() const { return (_sfmDataFeed->isInit()); }
 bool SfMDataFeed::isSupported(const std::string& extension)
 {
     std::string ext = boost::to_lower_copy(extension);
-    return (ext == ".sfm" || ext == ".abc" || ext == ".json");
+    return (ext == ".sfm" || ext == ".abc" || ext == ".json" || ext == ".usda");
 }
 
 SfMDataFeed::~SfMDataFeed() {}
