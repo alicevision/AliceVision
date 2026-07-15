@@ -76,6 +76,19 @@ class SafeFilterParser:
                     return False
                 left = right
             return True
+        elif isinstance(node, ast.BoolOp):
+            if isinstance(node.op, ast.And):
+                for value in node.values:
+                    if not self._eval_node(value, obj):
+                        return False
+                return True
+            elif isinstance(node.op, ast.Or):
+                for value in node.values:
+                    if self._eval_node(value, obj):
+                        return True
+                return False
+            else:
+                raise ValueError(f"Unsupported boolean operator: {type(node.op)}")
         elif isinstance(node, ast.Call):
             # Handle function calls
             if not isinstance(node.func, ast.Name):
@@ -116,6 +129,7 @@ class SfMFilter(desc.Node):
     The result SfMData are kept clean (e.g. observations from a removed view are removed).
 
     Allowed binary operators are (>,<,<=,>=,==,!=).
+    Allowed boolean operators are (and, or).
     
     Allowed functions are :
         - lower(str) : return the lowercase version of the string
