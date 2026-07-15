@@ -148,7 +148,7 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     }
 
     ALICEVISION_LOG_INFO("Trajectory seems to be singular. Use another algorithm.");
-    
+
 
     // If point cloud is badly conditioned let's try to add some
     // Points from the axis
@@ -161,11 +161,11 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
         auto poseA = sfmDataA.getPose(sfmDataA.getView(viewIdPair.first)).getTransform();
         auto poseB = sfmDataB.getPose(sfmDataB.getView(viewIdPair.second)).getTransform();
 
-        
+
         poseA = poseA.transformSRt(S,Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero());
         poseA = poseA.inverse();
         poseB = poseB.inverse();
-        
+
         xA.col(i * 4 + 0) = poseA(Eigen::Vector3d::Zero());
         xA.col(i * 4 + 1) = poseA(Eigen::Vector3d::UnitX());
         xA.col(i * 4 + 2) = poseA(Eigen::Vector3d::UnitY());
@@ -188,10 +188,52 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
 
     geometry::Pose3 p;
     p = p.transformSRt(S, R, t);
-    
+
     *out_S = S * nS;
     *out_R = nR;
     *out_t = nt;
+
+    return true;
+}
+
+bool computeSimilarityFromCommonCameras_singleViewId(const sfmData::SfMData& sfmDataA,
+                                                     const sfmData::SfMData& sfmDataB,
+                                                     double* out_S,
+                                                     Mat3* out_R,
+                                                     Vec3* out_t)
+{
+    assert(out_S != nullptr);
+    assert(out_R != nullptr);
+    assert(out_t != nullptr);
+
+    std::vector<IndexT> commonViewIds;
+    getCommonViewsWithPoses(sfmDataA, sfmDataB, commonViewIds);
+    ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
+
+    std::vector<IndexT> reconstructedCommonViewIds;
+    for (IndexT id : commonViewIds)
+    {
+        if (sfmDataA.isPoseAndIntrinsicDefined(id) && sfmDataB.isPoseAndIntrinsicDefined(id))
+        {
+            reconstructedCommonViewIds.emplace_back(id);
+        }
+    }
+
+    if (reconstructedCommonViewIds.size() != 1)
+    {
+        ALICEVISION_LOG_ERROR("Incompatible number of common reconstructed views ("<<reconstructedCommonViewIds.size()<<")");
+        return false;
+    }
+
+    IndexT viewId = reconstructedCommonViewIds[0];
+
+    geometry::Pose3 poseA = sfmDataA.getPose(sfmDataA.getView(viewId)).getTransform();
+    geometry::Pose3 poseB = sfmDataB.getPose(sfmDataB.getView(viewId)).getTransform();
+
+    geometry::Pose3 result = (poseA.inverse() * poseB).inverse();
+    *out_S = 1.0; // We can't estimate scale here
+    *out_R = result.rotation();
+    *out_t = poseB.center() - result.rotation() * poseA.center();
 
     return true;
 }
@@ -581,7 +623,7 @@ bool computeSimilarityFromCommonLandmarks(const sfmData::SfMData& sfmDataA,
     // Move input point in appropriate container
     Mat xA(3, mapLandmarkAtoLandmarkB.size());
     Mat xB(3, mapLandmarkAtoLandmarkB.size());
-    
+
     int count = 0;
     for (auto & pair : mapLandmarkAtoLandmarkB)
     {
@@ -754,7 +796,7 @@ bool computeSimilarityFromPairs(const std::vector<Vec3> & ptsA,
     // Move input point in appropriate container
     Mat xA(3, ptsA.size());
     Mat xB(3, ptsB.size());
-    
+
     int count = 0;
     for (auto & p : ptsA)
     {
@@ -815,7 +857,7 @@ bool computeNewCoordinateSystemFromPairs(const sfmData::SfMData& sfmDataA,
         for (const auto & pobs : plandmark.second.getObservations())
         {
             IndexT featureId = pobs.second.getFeatureId();
-            
+
             auto found = mapFeatureIdToLandmarkId.find(featureId);
             if (found == mapFeatureIdToLandmarkId.end())
             {
@@ -829,7 +871,7 @@ bool computeNewCoordinateSystemFromPairs(const sfmData::SfMData& sfmDataA,
     // Move input point in appropriate container
     Mat xA(3, mapLandmarkAtoLandmarkB.size());
     Mat xB(3, mapLandmarkAtoLandmarkB.size());
-    
+
     int count = 0;
     for (auto & pair : mapLandmarkAtoLandmarkB)
     {
