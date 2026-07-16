@@ -26,7 +26,9 @@ class ExportColmap(desc.CommandLineNode):
         desc.BoolParam(
             name="copyImages",
             label="Copy Images",
-            description="Copy original images to the Colmap folder.\n",
+            description="Copy original images to the Colmap folder.\n"
+                        "If disabled, symbolic link(s) will be created for each compatible image,\n"
+                        "or, if unique, for the image folder.",
             value=False,
         ),
         desc.ChoiceParam(
