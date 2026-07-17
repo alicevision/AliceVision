@@ -69,7 +69,12 @@ int aliceVision_main(int argc, char** argv)
     int weakResectionSize = 100;
     bool enableDepthPrior = true;
     bool ignoreMultiviewOnPrior = false;
-    bool enableObservationsWeighting = false;
+    bool enableObservationsDensityWeighting = false;
+    bool enableObservationsTrackWeighting = false;
+    int observationsTrackWeightFadingSize = 5;
+    double trackLengthMaxWeight = 5.;
+    int trackLengthWeightingLowerThreshold = 5;
+    int trackLengthWeightingUpperThreshold = 20;
 
     int randomSeed = std::mt19937::default_seed;
 
@@ -132,7 +137,12 @@ int aliceVision_main(int argc, char** argv)
          "If minNbCamerasToRefinePrincipalPoint==1, the principal point is always refined.")
     ("useRigConstraint", po::value<bool>(&useRigConstraint)->default_value(useRigConstraint), "Enable/Disable rig constraint.")
     ("rigMinNbCamerasForCalibration", po::value<int>(&minNbCamerasForRigCalibration)->default_value(minNbCamerasForRigCalibration),"Minimal number of cameras to start the calibration of the rig.")
-    ("enableObservationsWeighting", po::value<bool>(&enableObservationsWeighting)->default_value(enableObservationsWeighting), "Enable observations weighting to reduce impact of regions with high point density.")
+    ("enableObservationsDensityWeighting", po::value<bool>(&enableObservationsDensityWeighting)->default_value(enableObservationsDensityWeighting), "Enable observations weighting to reduce impact of regions with high point density.")
+    ("enableObservationsTrackWeighting", po::value<bool>(&enableObservationsTrackWeighting)->default_value(enableObservationsTrackWeighting), "Enable weighting observations depending on their position within the track.")
+    ("observationsTrackWeightFadingSize", po::value<int>(&observationsTrackWeightFadingSize)->default_value(observationsTrackWeightFadingSize), "The fading size used to weight observations based on their temporal position within the track. (if enableObservationsTrackWeighting is set)")
+    ("trackLengthMaxWeight", po::value<double>(&trackLengthMaxWeight)->default_value(trackLengthMaxWeight), "The weight to give to long tracks vs. the reference weight of 1 given to shorter tracks. (if enableObservationsTrackWeighting is set)")
+    ("trackLengthWeightingLowerThreshold", po::value<int>(&trackLengthWeightingLowerThreshold)->default_value(trackLengthWeightingLowerThreshold), "The number of observations under which a landmark is given a weight of 1. (if enableObservationsTrackWeighting is set)")
+    ("trackLengthWeightingUpperThreshold", po::value<int>(&trackLengthWeightingUpperThreshold)->default_value(trackLengthWeightingUpperThreshold), "The number of observations above which a landmark is given the maximum weight. (if enableObservationsTrackWeighting is set)")
     ("meshFilename,t", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh file.");
     ;
      // clang-format on
@@ -216,7 +226,12 @@ int aliceVision_main(int argc, char** argv)
     sfmBundle->setIsStructureRefinementEnabled(enableStructureRefinement);
     sfmBundle->setMaxIterationCount(maxIterationCount);
     sfmBundle->setTemporalConstraintParams(tempConstrParams, useTemporalConstraint);
-    sfmBundle->setIsObservationsWeightingEnabled(enableObservationsWeighting);
+    sfmBundle->setIsObservationsDensityWeightingEnabled(enableObservationsDensityWeighting);
+    sfmBundle->setIsObservationsTrackWeightingEnabled(enableObservationsTrackWeighting);
+    sfmBundle->setObservationsTrackWeightingFadingSize(observationsTrackWeightFadingSize);
+    sfmBundle->setTrackLengthMaxWeight(trackLengthMaxWeight);
+    sfmBundle->setTrackLengthLowerThreshold(trackLengthWeightingLowerThreshold);
+    sfmBundle->setTrackLengthUpperThreshold(trackLengthWeightingUpperThreshold);
 
     sfmData::PointFetcher::sptr pointFetcherHandler;
     if (!meshFilename.empty())

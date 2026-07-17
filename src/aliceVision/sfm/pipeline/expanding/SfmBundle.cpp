@@ -12,6 +12,7 @@
 #include <aliceVision/sfm/sfmStatistics.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/expanding/DistanceWeighting.hpp>
+#include <aliceVision/sfm/pipeline/expanding/TrackWeighting.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -133,9 +134,17 @@ bool SfmBundle::initializeIteration(sfmData::SfMData & sfmData, const track::Tra
         sfmData.resetParameterStates();
     }
 
-    if (_enableObservationsWeighting)
+    resetObservationWeights(sfmData);
+
+    if (_enableObservationsDensityWeighting)
     {
         weightObservationsFromDistance(sfmData, 15, 5.0);
+    }
+
+    if (_enableObservationsTrackWeighting)
+    {
+        weightObservationsAlongTrack(sfmData, _obsWeightFadingSize);
+        weightTracks(sfmData, _trackLengthMaxWeight, _trackLengthLowerThreshold, _trackLengthUpperThreshold);
     }
 
     return true;

@@ -659,7 +659,7 @@ double reprojectionError(const sfmData::SfMData& sfmData, const IndexT imageGrou
             const auto& intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
             const Vec2 residual = intrinsic.residual(pose, landmark.getX().homogeneous(), observation.getCoordinates());
             const double scale = (observation.getScale() > 1e-12) ? observation.getScale() : 1.0;
-            vecResiduals.push_back(huberLoss(delta, residual.norm() / scale));
+            vecResiduals.push_back(observation.getWeight() * huberLoss(delta, residual.norm() / scale));
         }
     }
 

@@ -131,7 +131,7 @@ void generateSphereScene(sfmData::SfMData& output, int pointsNb, int posesNb)
 {
     // Generate random points on a sphere
 
-    size_t sphereSceneHash = 4546135487;
+    size_t sphereSceneHash = 4246135487;
 
     const int w = 4092;
     const int h = 2048;

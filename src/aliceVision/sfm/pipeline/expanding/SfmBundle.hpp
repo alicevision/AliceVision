@@ -97,12 +97,57 @@ public:
     }
 
     /**
-     * @brief Set whether to enable weighting of observations
-     * @param flag true to enable observations weighting, false to disable it
+     * @brief Set whether to enable density weighting of observations
+     * @param flag true to enable observations density weighting, false to disable it
     */
-    void setIsObservationsWeightingEnabled(bool flag)
+    void setIsObservationsDensityWeightingEnabled(bool flag)
     {
-        _enableObservationsWeighting = flag;
+        _enableObservationsDensityWeighting = flag;
+    }
+
+    /**
+     * @brief Set whether to enable track weighting of observations
+     * @param flag true to enable observations track weighting, false to disable it
+    */
+    void setIsObservationsTrackWeightingEnabled(bool flag)
+    {
+        _enableObservationsTrackWeighting = flag;
+    }
+
+    /**
+     * @brief Set the fading size used to weight observations based on their temporal position within the track
+     * @param fadingSize the number of frames used for the fading (0 means no fading)
+    */
+    void setObservationsTrackWeightingFadingSize(int fadingSize)
+    {
+        _obsWeightFadingSize = fadingSize;
+    }
+
+    /**
+     * @brief Set the weight to give to long tracks vs. the reference weight of 1 given to shorter tracks
+     * @param maxWeight the weight to give to long tracks
+    */
+    void setTrackLengthMaxWeight(double maxWeight)
+    {
+        _trackLengthMaxWeight = maxWeight;
+    }
+
+    /**
+     * @brief Set the number of observations under which a landmark is given a weight of 1
+     * @param lowerThreshold the lower threshold used to weight observations based on the number of observations of the landmark
+    */
+    void setTrackLengthLowerThreshold(int lowerThreshold)
+    {
+        _trackLengthLowerThreshold = lowerThreshold;
+    }
+
+    /**
+     * @brief Set the number of observations above which a landmark is given the maximum weight
+     * @param upperThreshold the upper threshold used to weight observations based on the number of observations of the landmark
+    */
+    void setTrackLengthUpperThreshold(int upperThreshold)
+    {
+        _trackLengthUpperThreshold = upperThreshold;
     }
 
     /**
@@ -160,7 +205,12 @@ private:
     size_t _LBAGraphDistanceLimit = 1;
     size_t _LBAMinNbOfMatches = 50;
     bool _isStructureRefinementEnabled = true;
-    bool _enableObservationsWeighting = false;
+    bool _enableObservationsDensityWeighting = false;
+    bool _enableObservationsTrackWeighting = false;
+    int _obsWeightFadingSize = 5;
+    double _trackLengthMaxWeight = 5.;
+    int _trackLengthLowerThreshold = 5;
+    int _trackLengthUpperThreshold = 20;
 };
 
 } // namespace sfm

@@ -82,6 +82,7 @@ set(sfm_files_sources
     pipeline/expanding/SfmResection.cpp
     pipeline/expanding/SfmBundle.cpp
     pipeline/expanding/DistanceWeighting.cpp
+    pipeline/expanding/TrackWeighting.cpp
     pipeline/expanding/ExpansionHistory.cpp
     pipeline/expanding/ExpansionChunk.cpp
     pipeline/expanding/ExpansionIteration.cpp
@@ -176,6 +177,12 @@ alicevision_add_test(utils/alignment_test.cpp
         aliceVision_multiview
         aliceVision_multiview_test_data
         ${LEMON_LIBRARY}
+)
+
+alicevision_add_test(pipeline/expanding/TrackWeighting_test.cpp
+    NAME "sfm_trackWeighting"
+    LINKS
+        aliceVision_sfm
 )
 
 alicevision_add_test(utils/poseFilter_test.cpp

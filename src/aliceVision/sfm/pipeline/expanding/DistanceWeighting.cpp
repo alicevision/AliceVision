@@ -72,10 +72,6 @@ bool weightObservationsFromDistance(sfmData::SfMData & sfmData, size_t neighboor
 
         if (N < 10)
         {
-            for (size_t i = 0; i < N; ++i)
-            {
-                pointCloud.pts[i]->setWeight(1.0);
-            }
             continue;
         }
 
@@ -107,7 +103,9 @@ bool weightObservationsFromDistance(sfmData::SfMData & sfmData, size_t neighboor
         for (size_t i = 0; i < N; ++i)
         {
             knnSquaredDistance[i] /= meanNormalizedDistance;
-            pointCloud.pts[i]->setWeight(knnSquaredDistance[i]);
+            double ptWeight = pointCloud.pts[i]->getWeight();
+            ptWeight *= knnSquaredDistance[i];
+            pointCloud.pts[i]->setWeight(ptWeight);
         }
     }
 
