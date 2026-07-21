@@ -48,7 +48,7 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
 bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature::Regions>>>& featuresPerDescPerView,
                                 const std::vector<IndexT>& viewIds,
                                 const std::vector<std::string>& folders,
-                                const std::vector<feature::EImageDescriberType>& imageDescriberTypes);
+                                const std::vector<feature::EImageDescriberType>& imageDescriberTypes, bool errorOnMissing = true);
 
 /**
  * @brief Load Regions (Features & Descriptors) for each view of the provided SfMData container.
