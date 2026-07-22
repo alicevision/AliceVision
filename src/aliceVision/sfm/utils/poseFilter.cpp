@@ -27,7 +27,7 @@ bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, c
     ALICEVISION_LOG_INFO("poseFilter::process start");
 
     // Fill in the blanks by interpolating new poses (so that every view gets a pose)
-    interpolateMissingPoses(sfmData, false);
+    interpolateMissingPoses(sfmData);
 
     for (const auto & [imageGroupID, imageGroup] : sfmData.getImageGroups().valueRange())
     {
@@ -254,13 +254,13 @@ Eigen::MatrixXd poseFilter::applyLimitedFilter(const sfmData::SfMData& sfmData, 
 }
 
 
-bool poseFilter::interpolateMissingPoses(sfmData::SfMData& sfmData, const bool ignoreFirstAndLast)
+bool poseFilter::interpolateMissingPoses(sfmData::SfMData& sfmData)
 {
     using namespace Eigen;
 
     ALICEVISION_LOG_INFO("poseFilter::interpolateMissingPoses start");
 
-    bool noInterpolationDone = true;
+    bool validImageSequence = false;
 
     for (const auto & [imageGroupID, imageGroup] : sfmData.getImageGroups().valueRange())
     {
@@ -269,14 +269,16 @@ bool poseFilter::interpolateMissingPoses(sfmData::SfMData& sfmData, const bool i
             continue;
         }
 
-        const sfmData::Views& sfmViews = sfmData.getViews();
+        IndexT minFrameId = UndefinedIndexT;
+        IndexT maxFrameId = UndefinedIndexT;
 
-        const int viewCount = std::count_if(sfmViews.begin(), sfmViews.end(), [&imageGroupID](const auto& viewPair)
+        if (!getFrameIdRange(sfmData, imageGroupID, minFrameId, maxFrameId))
         {
-            return viewPair.second->getImageGroupId() == imageGroupID;
-        });
+            ALICEVISION_LOG_WARNING("poseFilter::interpolateMissingPoses Missing or duplicate frame in ImageSequence " << imageGroupID);
+            return false;
+        }
 
-        ALICEVISION_LOG_INFO("imageGroup " << imageGroupID << " has " << viewCount << " views.");
+        const int viewCount = maxFrameId - minFrameId + 1;
 
         if (viewCount <= 1)
         {
@@ -284,100 +286,53 @@ bool poseFilter::interpolateMissingPoses(sfmData::SfMData& sfmData, const bool i
         }
 
         std::vector<IndexT> viewIdsVec(viewCount);
-
-        IndexT minFrameId = UndefinedIndexT;
-        IndexT maxFrameId = UndefinedIndexT;
-        IndexT minFrameIdWithPose;
-        IndexT maxFrameIdWithPose;
-
-        bool existingPoseFound = false;
-
-        // Get the frameIDs range and the frameID of the first and last views with an existing pose
-        for (const auto& [viewID, viewPtr] : sfmData.getViews())
+        std::map<IndexT, IndexT> viewIdIndices;
+        // Get the temporally ordered viewIDs in viewIdsVec
+        if (!getOrderedViewIds(sfmData, imageGroupID, viewIdsVec, viewIdIndices))
         {
-            if (viewPtr->getImageGroupId() != imageGroupID)
-            {
-                continue;
-            }
-
-            const IndexT frameId = viewPtr->getFrameId();
-            if (frameId < minFrameId || minFrameId == UndefinedIndexT)
-            {
-                minFrameId = frameId;
-            }
-            if (frameId > maxFrameId || maxFrameId == UndefinedIndexT)
-            {
-                maxFrameId = frameId;
-            }
-            if ( sfmData.existsPose(*viewPtr) )
-            {
-                if (!existingPoseFound || frameId < minFrameIdWithPose)
-                {
-                    minFrameIdWithPose = frameId;
-                }
-
-                if (!existingPoseFound || frameId > maxFrameIdWithPose)
-                {
-                    maxFrameIdWithPose = frameId;
-                }
-
-                existingPoseFound = true;
-            }
-        }
-
-        const int frameIdRange = maxFrameId - minFrameId + 1;
-
-        if ( !existingPoseFound || (frameIdRange != viewCount) )
-        {
-            ALICEVISION_LOG_WARNING("Invalid imageSequence found (with missing view(s) or missing pose(s))");
             return false;
         }
 
-        noInterpolationDone = false;
-
-        // Store the temporally ordered view IDs
-        for (const auto& [viewID, viewPtr] : sfmData.getViews())
+        std::vector<IndexT> poseIdsVec;
+        IndexT firstViewWithPose;
+        IndexT lastViewWithPose;
+        // Get the temporally ordered poseIDs in poseIdsVec
+        if (!getOrderedPoseIds(sfmData, imageGroupID, poseIdsVec, firstViewWithPose, lastViewWithPose))
         {
-            if (viewPtr->getImageGroupId() != imageGroupID)
-            {
-                continue;
-            }
-
-            const IndexT frameId = viewPtr->getFrameId();
-            viewIdsVec[frameId-minFrameId] = viewID;
-
-            if (!sfmData.existsPose(*viewPtr))
-            {
-                ALICEVISION_LOG_INFO(" frame in imageGroup " << imageGroupID  << " without pose: " << frameId);
-            }
+            return false;
         }
 
-        const sfmData::View& lastValidView = sfmData.getView(viewIdsVec[minFrameIdWithPose-minFrameId]);
-        sfmData::CameraPose lastValidPose = sfmData.getPose(lastValidView);
+        validImageSequence = true;
+
+        IndexT lastValidPoseViewId = viewIdsVec[firstViewWithPose];
 
         VectorX<bool> missingPosesMask(viewCount);
         missingPosesMask.setZero();
 
+        bool anyMissingPose = false;
+
         // Initialize the pose of the views without pose
         for (int frameIdx = 0; frameIdx < viewCount; frameIdx++)
         {
-            IndexT frameViewID = viewIdsVec[frameIdx];
-            const sfmData::View& currentView = sfmData.getView(frameViewID);
-
-            if (!sfmData.existsPose(currentView))
+            if (poseIdsVec[frameIdx] == UndefinedIndexT)
             {
+                anyMissingPose = true;
                 // Create a binary mask to be able to restore the original values
                 missingPosesMask(frameIdx) = true;
-
-                if (!ignoreFirstAndLast || (minFrameIdWithPose < (frameIdx + minFrameId) && (frameIdx + minFrameId) < maxFrameIdWithPose) )
-                {
-                    sfmData.setPose(currentView, lastValidPose);
-                }
+                const sfmData::View& currentView = sfmData.getView(viewIdsVec[frameIdx]);
+                sfmData::CameraPose lastValidPose = sfmData.getPose(sfmData.getView(lastValidPoseViewId));
+                sfmData.setPose(currentView, lastValidPose);
             }
             else
             {
-                lastValidPose = sfmData.getPose(currentView);
+                lastValidPoseViewId = viewIdsVec[frameIdx];
             }
+        }
+
+        if (!anyMissingPose)
+        {
+            // Fast path: no missing pose in this imageSequence, so that we can skip the interpolation
+            continue;
         }
 
         tempFilter tFilter;
@@ -422,7 +377,7 @@ bool poseFilter::interpolateMissingPoses(sfmData::SfMData& sfmData, const bool i
         }
     }
 
-    if (noInterpolationDone)
+    if (!validImageSequence)
     {
         ALICEVISION_LOG_WARNING("No valid imageSequence found");
         return false;
@@ -437,47 +392,8 @@ bool poseFilter::getOrderedViewIds(sfmData::SfMData& sfmData, const IndexT image
 {
     IndexT minFrameId = UndefinedIndexT;
     IndexT maxFrameId = UndefinedIndexT;
-    IndexT minFrameIdWithPose;
 
-    IndexT viewCount = 0;
-    bool existingPoseFound = false;
-
-    // Get the frameIDs range and the frameID of the first view with an existing pose
-    for (const auto& [viewID, viewPtr] : sfmData.getViews())
-    {
-        if (viewPtr->getImageGroupId() != imageGroupID)
-        {
-            continue;
-        }
-
-        viewCount++;
-
-        const IndexT frameId = viewPtr->getFrameId();
-        if (frameId < minFrameId || minFrameId == UndefinedIndexT)
-        {
-            minFrameId = frameId;
-        }
-        if ( (!existingPoseFound || frameId < minFrameIdWithPose) && sfmData.existsPose(*viewPtr) )
-        {
-            existingPoseFound = true;
-            minFrameIdWithPose = frameId;
-        }
-        if (frameId > maxFrameId || maxFrameId == UndefinedIndexT)
-        {
-            maxFrameId = frameId;
-        }
-    }
-
-    const int frameIdRange = maxFrameId - minFrameId + 1;
-
-    ALICEVISION_LOG_DEBUG(" minFrameId : " << minFrameId);
-
-    ALICEVISION_LOG_DEBUG(" maxFrameId : " << maxFrameId);
-
-    if ( !existingPoseFound || (frameIdRange != viewCount) )
-    {
-        return false;
-    }
+    getFrameIdRange(sfmData, imageGroupID, minFrameId, maxFrameId);
 
     // Store the temporally ordered view IDs
     for (const auto& [viewID, viewPtr] : sfmData.getViews())
@@ -497,116 +413,51 @@ bool poseFilter::getOrderedViewIds(sfmData::SfMData& sfmData, const IndexT image
         }
     }
 
-    ALICEVISION_LOG_DEBUG(" minFrameIdWithPose : " << minFrameIdWithPose);
-
-    const sfmData::View& lastValidView = sfmData.getView(viewIdsVec[minFrameIdWithPose-minFrameId]);
-    sfmData::CameraPose lastValidPose = sfmData.getPose(lastValidView);
-
-    // Fill in the blanks within the camera poses list (so that every view gets a pose)
-    // using the first view with an existing pose for the first views without existing pose
-    // and using the last known view with an existing pose for any other view without existing pose
-
-    for (IndexT frameViewID : viewIdsVec)
-    {
-        const sfmData::View& currentView = sfmData.getView(frameViewID);
-
-        if (!sfmData.existsPose(currentView))
-        {
-            sfmData.setPose(currentView, lastValidPose);
-        }
-        else
-        {
-            lastValidPose = sfmData.getPose(currentView);
-        }
-    }
-
     return true;
 }
 
 
 bool getOrderedPoseIds(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::vector<IndexT>& poseIdsVec, IndexT& firstViewWithPose, IndexT& lastViewWithPose)
 {
-    std::map<std::string, std::vector<IndexT>> candidateViewIdLists;
-    std::map<std::string, std::vector<IndexT>> candidateFrameIdLists;
-
-    IndexT viewCount = 0;
-    // Group views by common filename pattern
-    for (const auto& [viewID, viewPtr] : sfmData.getViews())
+    IndexT minFrameId = UndefinedIndexT;
+    IndexT maxFrameId = UndefinedIndexT;
+    if (!getFrameIdRange(sfmData, imageGroupID, minFrameId, maxFrameId))
     {
-        if (viewPtr->getImageGroupId() != imageGroupID)
-        {
-            continue;
-        }
-        const std::filesystem::path imagePath = std::filesystem::path(viewPtr->getImage().getImagePath());
-        std::string parentPath = imagePath.parent_path().string();
-        // Remove every digit in the filename
-        std::string filePattern = std::regex_replace(imagePath.filename().string(), std::regex("\\d"), "");
-        candidateViewIdLists[parentPath+filePattern].push_back(viewID);
-        candidateFrameIdLists[parentPath+filePattern].push_back(viewPtr->getFrameId());
-        viewCount++;
-    }
-
-    if (viewCount <= 1)
-    {
-        firstViewWithPose = lastViewWithPose = 0;
         return false;
     }
 
-    IndexT minFrameId;
+    IndexT viewCount = maxFrameId - minFrameId + 1;
 
-    int longestValidRange = 1;
-    std::string longestValidList;
+    poseIdsVec.resize(viewCount);
+    std::fill(poseIdsVec.begin(), poseIdsVec.end(), UndefinedIndexT);
 
-    // Select the longest list of views having no hole in the frameIds range
-    for (const auto& [filePattern, frameIDs] : candidateFrameIdLists)
-    {
-        auto [listMin, listMax] = std::minmax_element(frameIDs.begin(), frameIDs.end());
-        auto listRange = *listMax + 1 - *listMin;
-        bool noHole = frameIDs.size() == listRange;
-        if (noHole && listRange > longestValidRange)
-        {
-            longestValidRange = listRange;
-            longestValidList = filePattern;
-            minFrameId = *listMin;
-        }
-    }
-
-    if (longestValidRange == 1)
-        return false;
-
-    poseIdsVec.resize(longestValidRange);
-
-    bool existingPoseFound = false;
-    IndexT minFrameIdWithPose;
-    IndexT maxFrameIdWithPose;
+    IndexT minFrameIdWithPose = UndefinedIndexT;
+    IndexT maxFrameIdWithPose = UndefinedIndexT;
 
     // Get the frameID of the first and last views with an existing pose
     // And store the temporally ordered poseIDs
-    for (const auto& viewID : candidateViewIdLists[longestValidList])
+    for (const auto& [viewID, viewPtr] : sfmData.getViews())
     {
-        const sfmData::View& view = sfmData.getView(viewID);
-
-        if ( sfmData.existsPose(view) )
+        if (viewPtr->getImageGroupId() != imageGroupID || !sfmData.existsPose(*viewPtr))
         {
-            const IndexT frameId = view.getFrameId();
-
-            if (!existingPoseFound || frameId < minFrameIdWithPose)
-            {
-                minFrameIdWithPose = frameId;
-            }
-
-            if (!existingPoseFound || frameId > maxFrameIdWithPose)
-            {
-                maxFrameIdWithPose = frameId;
-            }
-
-            existingPoseFound = true;
-
-            poseIdsVec[frameId-minFrameId] = view.getPoseId();
+            continue;
         }
+
+        const IndexT frameId = viewPtr->getFrameId();
+
+        if (frameId < minFrameIdWithPose || minFrameIdWithPose == UndefinedIndexT )
+        {
+            minFrameIdWithPose = frameId;
+        }
+        if (frameId > maxFrameIdWithPose || maxFrameIdWithPose == UndefinedIndexT)
+        {
+            maxFrameIdWithPose = frameId;
+        }
+
+        poseIdsVec[frameId-minFrameId] = viewPtr->getPoseId();
     }
 
-    if (!existingPoseFound)
+    if (minFrameIdWithPose == UndefinedIndexT)
     {
         return false;
     }
@@ -616,6 +467,42 @@ bool getOrderedPoseIds(const sfmData::SfMData& sfmData, const IndexT imageGroupI
 
     return true;
 }
+
+
+bool getFrameIdRange(const sfmData::SfMData& sfmData, const IndexT imageGroupID, IndexT& minFrameId, IndexT& maxFrameId)
+{
+    minFrameId = UndefinedIndexT;
+    maxFrameId = UndefinedIndexT;
+    IndexT viewCount = 0;
+
+    // Get the frameIDs range
+    for (const auto& [viewID, viewPtr] : sfmData.getViews())
+    {
+        if (viewPtr->getImageGroupId() != imageGroupID)
+        {
+            continue;
+        }
+
+        viewCount++;
+
+        const IndexT frameId = viewPtr->getFrameId();
+        if (frameId < minFrameId || minFrameId == UndefinedIndexT)
+        {
+            minFrameId = frameId;
+        }
+        if (frameId > maxFrameId || maxFrameId == UndefinedIndexT)
+        {
+            maxFrameId = frameId;
+        }
+    }
+
+    ALICEVISION_LOG_DEBUG(" frameID range: " << minFrameId  << " -- " << maxFrameId);
+
+    const int frameIdRange = maxFrameId - minFrameId + 1;
+
+    return (frameIdRange == viewCount);
+}
+
 
 inline double huberLoss(const double delta, const double x)
 {

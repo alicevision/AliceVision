@@ -54,15 +54,16 @@ public:
     /**
      * @brief Interpolate poses for views without poses using temporal filtering.
      * @param sfmData The scene description containing the views and poses.
-     * @param ignoreFirstAndLast If true, the first and last views without poses are not interpolated.
      * @return false if an error occurred during interpolation, true otherwise.
      */
-    bool interpolateMissingPoses(sfmData::SfMData& sfmData, const bool ignoreFirstAndLast);
+    bool interpolateMissingPoses(sfmData::SfMData& sfmData);
 
 private:
     bool getOrderedViewIds(sfmData::SfMData& sfmData, const IndexT imageGroupID, std::vector<IndexT>& viewIdsVec, std::map<IndexT, IndexT>& viewIdIndices);
     Eigen::MatrixXd applyLimitedFilter(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations, const PoseParamType paramToFilter, const int maxIterationCount, const int minIterationCount, const int maxScaleFactor, const int minScaleFactor, const double maxErrorIncrease);
 };
+
+bool getFrameIdRange(const sfmData::SfMData& sfmData, const IndexT imageGroupID, IndexT& minFrameId, IndexT& maxFrameId);
 
 /**
  * @brief Retrieve the ordered list of pose IDs from the given SfMData.
