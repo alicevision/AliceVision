@@ -26,6 +26,9 @@ bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, c
 
     ALICEVISION_LOG_INFO("poseFilter::process start");
 
+    // Fill in the blanks by interpolating new poses (so that every view gets a pose)
+    interpolateMissingPoses(sfmData, false);
+
     for (const auto & [imageGroupID, imageGroup] : sfmData.getImageGroups().valueRange())
     {
         if (imageGroup.getType() != sfmData::ImageGroup::Type::ImageSequence)
