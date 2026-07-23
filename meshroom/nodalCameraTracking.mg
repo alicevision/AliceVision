@@ -17,7 +17,7 @@
             "ImageMatching": "2.0",
             "ImageSegmentationSam3": "1.0",
             "IntrinsicsTransforming": "1.1",
-            "NodalSfM": "2.0",
+            "NodalSfM": "2.1",
             "RelativePoseEstimating": "3.1",
             "ScenePreview": "2.0",
             "TracksBuilding": "1.0"
