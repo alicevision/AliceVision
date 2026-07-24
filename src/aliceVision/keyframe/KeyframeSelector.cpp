@@ -1366,6 +1366,18 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
         }
     }
 
+    for (const auto & [viewId, surveyPoints] : inputSfm.getSurveyPoints())
+    {
+        if (keyframesViews.find(viewId) != keyframesViews.end())
+        {
+            _outputSfmKeyframes.getSurveyPoints().emplace(viewId, surveyPoints);
+        }
+        else if (framesViews.find(viewId) != framesViews.end())
+        {
+            _outputSfmFrames.getSurveyPoints().emplace(viewId, surveyPoints);
+        }
+    }
+
     return true;
 }
 

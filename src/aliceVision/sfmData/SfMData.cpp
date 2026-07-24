@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 
+#include <algorithm>
 #include <filesystem>
 
 namespace aliceVision {
@@ -27,6 +28,7 @@ SfMData::SfMData(const SfMData & other, bool unused)
     _landmarks = other._landmarks;
     _constraints2d = other._constraints2d;
     _constraintsPoint = other._constraintsPoint;
+    _surveyPoints = other._surveyPoints;
     _rotationpriors = other._rotationpriors;
     _absolutePath = other._absolutePath;
     _featuresFolders = other._featuresFolders;
@@ -45,6 +47,7 @@ SfMData::SfMData(const SfMData & other, const Eigen::Vector3d & bbMin, const Eig
     //First copy all the non pointers
     _constraints2d = other._constraints2d;
     _constraintsPoint = other._constraintsPoint;
+    _surveyPoints = other._surveyPoints;
     _rotationpriors = other._rotationpriors;
     _absolutePath = other._absolutePath;
     _featuresFolders = other._featuresFolders;
@@ -155,6 +158,27 @@ bool SfMData::operator==(const SfMData& other) const
     for (; constraintPointIt != _constraintsPoint.end() && otherconstraintPointIt != other._constraintsPoint.end(); ++constraintPointIt, ++otherconstraintPointIt)
     {
         if (*constraintPointIt != *otherconstraintPointIt)
+        {
+            return false;
+        }
+    }
+
+    if (_surveyPoints.size() != other._surveyPoints.size())
+    {
+        return false;
+    }
+
+    for (const auto& [viewId, surveyVec] : _surveyPoints)
+    {
+        auto it = other._surveyPoints.find(viewId);
+        if (it == other._surveyPoints.end())
+        {
+            return false;
+        }
+
+        // There is no way to guarantee the order as it is a vector.
+        // So just make sure the content is equal up to a permutation.
+        if (!std::is_permutation(surveyVec.begin(), surveyVec.end(), it->second.begin(), it->second.end()))
         {
             return false;
         }
@@ -338,6 +362,35 @@ void SfMData::combine(const SfMData& sfmData)
     // constraints
     _constraintsPoint.insert(sfmData._constraintsPoint.begin(), sfmData._constraintsPoint.end());
 
+    // Survey points
+    for (const auto & [viewId, surveyPoints] : sfmData._surveyPoints)
+    {
+        if (_surveyPoints.find(viewId) == _surveyPoints.end())
+        {
+            _surveyPoints[viewId] = surveyPoints;
+            continue;
+        }
+
+        // We have to manually check for non duplicate.
+        for (const auto & item : surveyPoints)
+        {
+            bool found = false;
+            for (const auto & existingItem : _surveyPoints.at(viewId))
+            {
+                if (item == existingItem)
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                _surveyPoints[viewId].push_back(item);
+            }
+        }
+    }
+
     // image groups
     for (const auto & [imageGroupID, imageGroupPtr] : sfmData._imageGroups)
     {
@@ -359,6 +412,7 @@ void SfMData::clear()
     _landmarksUncertainty.clear();
     _constraints2d.clear();
     _constraintsPoint.clear();
+    _surveyPoints.clear();
     _rotationpriors.clear();
     _absolutePath.clear();
     _featuresFolders.clear();
@@ -508,6 +562,15 @@ void SfMData::removeUnusedImageGroups()
     });
 }
 
+void SfMData::removeUnusedSurveyPoints()
+{
+    std::erase_if(_surveyPoints, [this](const auto & item)
+    {
+        // If current viewId not found in _views
+        return (_views.find(item.first) == _views.end());
+    });
+}
+
 void SfMData::repair()
 {
     removeUnusedIntrinsics();
@@ -515,6 +578,7 @@ void SfMData::repair()
     removeInvalidObservations();
     removeUnusedLandmarks();
     removeUnusedImageGroups();
+    removeUnusedSurveyPoints();
 }
 
 bool SfMData::isFullyReconstructed() const

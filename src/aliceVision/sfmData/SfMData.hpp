@@ -752,6 +752,11 @@ class SfMData
     void removeInvalidObservations();
 
     /**
+    * @brief Remove SurveyPoints pointing to invalid views
+    */
+    void removeUnusedSurveyPoints();
+
+    /**
     * @brief Remove landmarks without any observations
     */
     void removeUnusedLandmarks();
