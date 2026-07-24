@@ -694,13 +694,12 @@ bool readCamera(const Version& abcVersion,
             // For compatibility with versions < 1.2 (value was in pixels)
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_initialFocalLengthPix"))
             {
-                initialFocalLengthPix(0) =
-                  getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+                initialFocalLengthPix(0) = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
             }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_initialFocalLength"))
             {
-                initialFocalLengthPix(0) = (sensorSize_pix.at(0) / sensorSize_mm[0]) *
-                                           getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLength", sampleFrame);
+                const double initialFocalLengthMm = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLength", sampleFrame);
+                initialFocalLengthPix(0) = (initialFocalLengthMm < 0) ? initialFocalLengthMm : (sensorSize_pix.at(0) / sensorSize_mm[0]) * initialFocalLengthMm;                      
             }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleCenterX"))
             {
