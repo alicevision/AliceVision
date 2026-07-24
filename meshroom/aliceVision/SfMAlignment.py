@@ -1,4 +1,4 @@
-__version__ = "2.0"
+__version__ = "2.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -43,10 +43,11 @@ The alignment can be based on:
                         " - from_cameras_poseid: Align cameras with same pose ID.\n"
                         " - from_cameras_filepath: Align cameras with a filepath matching, using 'fileMatchingPattern'.\n"
                         " - from_cameras_metadata: Align cameras with matching metadata, using 'metadataMatchingList'.\n"
+                        " - from_single_camera_viewid: Align cameras using a single view. Only work if the reference has exactly one shared reconstructed view.\n"
                         " - from_markers: Align from markers with the same ID.\n"
                         " - from_landmarks: Align from matched features.\n",
             value="from_cameras_viewid",
-            values=["from_cameras_viewid", "from_cameras_poseid", "from_cameras_filepath", "from_cameras_metadata", "from_markers", 'from_landmarks'],
+            values=["from_cameras_viewid", "from_cameras_poseid", "from_cameras_filepath", "from_cameras_metadata", "from_single_camera_viewid", "from_markers", 'from_landmarks'],
         ),
         desc.StringParam(
             name="fileMatchingPattern",
