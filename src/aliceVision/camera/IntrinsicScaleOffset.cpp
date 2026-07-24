@@ -25,7 +25,13 @@ bool IntrinsicScaleOffset::operator==(const IntrinsicBase& otherBase) const
 
     const IntrinsicScaleOffset& other = static_cast<const IntrinsicScaleOffset&>(otherBase);
 
-    return _scale.isApprox(other._scale) && _offset.isApprox(other._offset);
+    bool initialScaleEqual = (_initialScale.isApprox(other._initialScale) || (_initialScale(0) < 0 && other._initialScale(0) < 0));
+
+    return _scale.isApprox(other._scale) && _offset.isApprox(other._offset) &&
+           initialScaleEqual &&
+           _ratioLocked == other._ratioLocked &&
+           _offsetLocked == other._offsetLocked &&
+           _scaleLocked == other._scaleLocked;
 }
 
 std::shared_ptr<IntrinsicScaleOffset> IntrinsicScaleOffset::cast(std::shared_ptr<IntrinsicBase> sptr)
@@ -240,6 +246,7 @@ void IntrinsicScaleOffset::setInitialFocalLength(double initialFocalInMillimeter
     {
         _initialScale(0) = -1.0;
         _initialScale(1) = -1.0;
+        return;
     }
 
     const double millimetersToPixels = double(w()) / sensorWidth();
