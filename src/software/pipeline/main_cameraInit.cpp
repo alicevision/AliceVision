@@ -43,7 +43,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 12
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 using namespace aliceVision::sfmDataIO;
@@ -189,6 +189,7 @@ int aliceVision_main(int argc, char** argv)
     image::ERawColorInterpretation rawColorInterpretation = image::ERawColorInterpretation::LibRawWhiteBalancing;
     bool lensCorrectionProfileSearchIgnoreCameraModel = true;
     bool isSequence = false;
+    bool isNodalCamera = false;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -244,7 +245,9 @@ int aliceVision_main(int argc, char** argv)
          "Allow the program to process a single view.\n"
          "Warning: if a single view is processed, the output file cannot be used in many other programs.")
         ("isSequence", po::value<bool>(&isSequence)->default_value(isSequence),
-         "The images provided as input are part of a sequence with temporal coherency.");
+         "The images provided as input are part of a sequence with temporal coherency.")
+        ("isNodalCamera", po::value<bool>(&isNodalCamera)->default_value(isNodalCamera),
+         "The camera rotates around its optical center (nodal head setup).");
     // clang-format on
 
     CmdLine cmdline("AliceVision cameraInit");
@@ -942,6 +945,7 @@ int aliceVision_main(int argc, char** argv)
     {
         // Create the image group
         auto ptrImageGroup = sfmData::ImageGroup::create(isSequence ? sfmData::ImageGroup::Type::ImageSequence : sfmData::ImageGroup::Type::ImageSet);
+        ptrImageGroup->setIsNodalCamera(isNodalCamera);
         sfmData.getImageGroups().emplace(imageGroupId, ptrImageGroup);
     }
 

@@ -174,6 +174,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     {
         sfmData::ImageGroup::Type type = imageGroup->getType();
         OStringProperty(userProps, "mvg_imageGroupType").set(sfmData::ImageGroup::typeToString(type));
+        OBoolProperty(userProps, "mvg_imageGroupIsNodal").set(imageGroup->isNodalCamera());
     }
 
     if (view.isPoseIndependant() == false)

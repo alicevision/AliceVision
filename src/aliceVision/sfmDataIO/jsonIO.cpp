@@ -156,6 +156,7 @@ void saveImageGroup(const std::string& name, IndexT imageGroupId, const sfmData:
     bpt::ptree imageGroupTree;
     imageGroupTree.put("imageGroupId", imageGroupId);
     imageGroupTree.put("imageGroupType", sfmData::ImageGroup::typeToString(group.getType()));
+    imageGroupTree.put("isNodalCamera", group.isNodalCamera());
     parentTree.push_back(std::make_pair(name, imageGroupTree));
 }
 
@@ -166,6 +167,7 @@ void loadImageGroup(sfmData::ImageGroups & groups, bpt::ptree& imageGroupTree)
     sfmData::ImageGroup::Type type = sfmData::ImageGroup::stringToType(typeString);
 
     sfmData::ImageGroup::sptr group = sfmData::ImageGroup::create(type);
+    group->setIsNodalCamera(imageGroupTree.get<bool>("isNodalCamera", false));
     groups.emplace(imageGroupId, group);
 }
 

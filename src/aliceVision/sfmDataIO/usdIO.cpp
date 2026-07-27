@@ -608,6 +608,7 @@ void writeImageGroups(const UsdStageRefPtr& stage, const sfmData::SfMData& sfmDa
         const UsdPrim groupPrim = stage->DefinePrim(childPath(paths.imageGroupsPath, idName("imageGroup", static_cast<std::uint32_t>(groupId))), TfToken("AvImageGroup"));
         setAttr(groupPrim, "av:id", SdfValueTypeNames->UInt, static_cast<std::uint32_t>(groupId));
         setAttr(groupPrim, "av:type", SdfValueTypeNames->Int, static_cast<int>(groupPtr->getType()));
+        setAttr(groupPrim, "av:isNodalCamera", SdfValueTypeNames->Bool, groupPtr->isNodalCamera());
     }
 }
 
@@ -1422,11 +1423,13 @@ void loadImageGroups(const UsdStageRefPtr& stage, const ExportPaths& paths, sfmD
     {
         std::uint32_t groupId = 0;
         int groupType = static_cast<int>(sfmData::ImageGroup::Type::ImageSet);
+        bool isNodalCamera = false;
         if (!getAttr(groupPrim, "av:id", groupId))
         {
             continue;
         }
         getAttr(groupPrim, "av:type", groupType);
+        getAttr(groupPrim, "av:isNodalCamera", isNodalCamera);
 
         sfmData::ImageGroup::sptr group;
         try
@@ -1440,6 +1443,7 @@ void loadImageGroups(const UsdStageRefPtr& stage, const ExportPaths& paths, sfmD
 
         if (group)
         {
+            group->setIsNodalCamera(isNodalCamera);
             sfmData.getImageGroups().insert_or_assign(static_cast<IndexT>(groupId), group);
         }
     }

@@ -1,4 +1,4 @@
-__version__ = "12.1"
+__version__ = "12.2"
 
 import os
 import json
@@ -477,6 +477,12 @@ The needed metadata are:
             name="isSequence",
             label="Images are a sequence",
             description="The images provided as input are part of a sequence with temporal coherency.",
+            value=False,
+        ),
+        desc.BoolParam(
+            name="isNodalCamera",
+            label="Nodal Camera",
+            description="The camera rotates around its optical center (nodal head setup).",
             value=False,
         ),
         desc.ChoiceParam(
