@@ -89,6 +89,21 @@ public:
     * @return an element of the enum 'Type'
     */
     virtual Type getType() const = 0;
+
+    /**
+     * @brief Check if this group is a nodal camera group
+     * @return true if this is a nodal camera group
+     */
+    bool isNodalCamera() const { return _isNodalCamera; }
+
+    /**
+     * @brief Set whether this group is a nodal camera group
+     * @param isNodal true if this is a nodal camera group
+     */
+    void setIsNodalCamera(bool isNodal) { _isNodalCamera = isNodal; }
+
+protected:
+    bool _isNodalCamera = false;
 };
 
 }  // namespace sfmData

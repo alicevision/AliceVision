@@ -541,6 +541,7 @@ bool readCamera(const Version& abcVersion,
     IndexT resectionId = UndefinedIndexT;
     IndexT imageGroupId = UndefinedIndexT;
     std::string mvg_imageGroupType = sfmData::ImageGroup::typeToString(sfmData::ImageGroup::Type::ImageSet);
+    bool mvg_imageGroupIsNodal = false;
     bool intrinsicLocked = false;
     bool poseLocked = false;
     bool rotationOnly = false;
@@ -668,6 +669,10 @@ bool readCamera(const Version& abcVersion,
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_imageGroupType"))
             {
                 mvg_imageGroupType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_imageGroupType", sampleFrame);
+            }
+            if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_imageGroupIsNodal"))
+            {
+                mvg_imageGroupIsNodal = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_imageGroupIsNodal", sampleFrame);
             }
             if (const Alembic::Abc::PropertyHeader* propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
             {
@@ -916,6 +921,7 @@ bool readCamera(const Version& abcVersion,
     {
         sfmData::ImageGroup::Type type = sfmData::ImageGroup::stringToType(mvg_imageGroupType);
         sfmData::ImageGroup::sptr group = sfmData::ImageGroup::create(type);
+        group->setIsNodalCamera(mvg_imageGroupIsNodal);
         sfmData.getImageGroups().emplace(imageGroupId, group);
     }
 
