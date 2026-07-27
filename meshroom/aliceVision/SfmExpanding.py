@@ -1,4 +1,4 @@
-__version__ = "2.5"
+__version__ = "2.6"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -299,6 +299,14 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
             label="Enable observations weighting",
             description="Enable observations weighting to reduce impact of regions with high point density.",
             value=False,
+        ),
+        desc.FloatParam(
+            name="lossParameter",
+            label="Loss Parameter",
+            description="Huber loss threshold used in bundle adjustment.",
+            value=4.0,
+            range=(0.1, 100.0, 0.1),
+            advanced=True,
         ),
         desc.IntParam(
             name="minNbCamerasToRefinePrincipalPoint",

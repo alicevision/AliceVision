@@ -106,6 +106,15 @@ public:
     }
 
     /**
+     * @brief Set the Huber loss parameter for bundle adjustment
+     * @param lossParameter the Huber loss threshold value
+    */
+    void setLossParameter(double lossParameter)
+    {
+        _lossParameter = lossParameter;
+    }
+
+    /**
      * @brief Get the number of valid points per pose required
      * @return the threshold used to discriminate a valid pose
     */
@@ -161,6 +170,7 @@ private:
     size_t _LBAMinNbOfMatches = 50;
     bool _isStructureRefinementEnabled = true;
     bool _enableObservationsWeighting = false;
+    double _lossParameter = 4.0;
 };
 
 } // namespace sfm
