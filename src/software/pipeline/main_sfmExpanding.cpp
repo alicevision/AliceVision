@@ -30,7 +30,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 5
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 6
 
 using namespace aliceVision;
 
@@ -70,6 +70,7 @@ int aliceVision_main(int argc, char** argv)
     bool enableDepthPrior = true;
     bool ignoreMultiviewOnPrior = false;
     bool enableObservationsWeighting = false;
+    double lossParameter = 4.0;
 
     int randomSeed = std::mt19937::default_seed;
 
@@ -133,6 +134,7 @@ int aliceVision_main(int argc, char** argv)
     ("useRigConstraint", po::value<bool>(&useRigConstraint)->default_value(useRigConstraint), "Enable/Disable rig constraint.")
     ("rigMinNbCamerasForCalibration", po::value<int>(&minNbCamerasForRigCalibration)->default_value(minNbCamerasForRigCalibration),"Minimal number of cameras to start the calibration of the rig.")
     ("enableObservationsWeighting", po::value<bool>(&enableObservationsWeighting)->default_value(enableObservationsWeighting), "Enable observations weighting to reduce impact of regions with high point density.")
+    ("lossParameter", po::value<double>(&lossParameter)->default_value(lossParameter), "Huber loss threshold used in bundle adjustment.")
     ("meshFilename,t", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh file.");
     ;
      // clang-format on
@@ -217,6 +219,7 @@ int aliceVision_main(int argc, char** argv)
     sfmBundle->setMaxIterationCount(maxIterationCount);
     sfmBundle->setTemporalConstraintParams(tempConstrParams, useTemporalConstraint);
     sfmBundle->setIsObservationsWeightingEnabled(enableObservationsWeighting);
+    sfmBundle->setLossParameter(lossParameter);
 
     sfmData::PointFetcher::sptr pointFetcherHandler;
     if (!meshFilename.empty())
