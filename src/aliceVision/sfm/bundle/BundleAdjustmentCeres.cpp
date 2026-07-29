@@ -232,9 +232,12 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
     const bool refineCenter = refineOptions & BundleAdjustment::REFINE_CENTER;
     const bool refineRotation = refineOptions & BundleAdjustment::REFINE_ROTATION;
 
-    const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isConstant, std::array<double, 6>& poseBlock) {
+    const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isRotationConstant, bool isCenterConstant, std::array<double, 6>& poseBlock) {
+        
         const Mat3& R = cameraPose.getTransform().rotation();
         const Vec3& c = cameraPose.getTransform().center();
+
+        bool isConstant = isRotationConstant && isCenterConstant;
 
         double angleAxis[3];
         ceres::RotationMatrixToAngleAxis(static_cast<const double*>(R.data()), angleAxis);
@@ -252,7 +255,7 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
         _allParametersBlocks.push_back(poseBlockPtr);
 
         // keep the camera extrinsics constants
-        if (cameraPose.isLocked() || isConstant || (!refineCenter && !refineRotation))
+        if (cameraPose.isLocked() || isConstant)
         {
             // set the whole parameter block as constant.
             _statistics.addState(EParameter::POSE, EEstimatorParameterState::CONSTANT);
@@ -264,7 +267,7 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
         std::vector<int> constantExtrinsic;
 
         // don't refine rotations
-        if (!refineRotation)
+        if (isRotationConstant)
         {
             constantExtrinsic.push_back(0);
             constantExtrinsic.push_back(1);
@@ -272,7 +275,7 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
         }
 
         // don't refine translations
-        if (!refineCenter)
+        if (isCenterConstant)
         {
             constantExtrinsic.push_back(3);
             constantExtrinsic.push_back(4);
@@ -290,8 +293,18 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
     };
 
     // setup poses data
-    for (const auto& [poseId, pose] : sfmData.getPoses().valueRange())
+    const sfmData::ImageGroups & groups = sfmData.getImageGroups();
+    for (const auto& [idView, view]: sfmData.getViews().valueRange())
     {
+        if (!sfmData.isPoseDefined(view))
+        {
+            continue;
+        }
+
+        IndexT poseId = view.getPoseId();
+    
+        const auto & pose = *sfmData.getPoses().at(poseId);
+        
         // skip camera pose set as Ignored in the Local strategy
         if (pose.getState() == EEstimatorParameterState::IGNORED)
         {
@@ -299,9 +312,22 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
             continue;
         }
 
-        const bool isConstant = (pose.getState() == EEstimatorParameterState::CONSTANT);
+        bool isRotationConstant = (pose.getState() == EEstimatorParameterState::CONSTANT) || (!refineRotation);
+        bool isCenterConstant = (pose.getState() == EEstimatorParameterState::CONSTANT) || (!refineCenter);
 
-        addPose(pose, isConstant, _posesBlocks[poseId]);
+        const IndexT gid = view.getImageGroupId();
+        if (gid != UndefinedIndexT)
+        {
+            if (groups.find(gid) != groups.end())
+            {
+                if (groups.at(gid)->isNodalCamera())
+                {
+                    isCenterConstant = true;
+                }
+            }
+        }
+
+        addPose(pose, isRotationConstant, isCenterConstant, _posesBlocks[poseId]);
     }
 
     // setup sub-poses data
@@ -316,11 +342,14 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
             const sfmData::RigSubPose& rigSubPose = rig.getSubPose(subPoseId);
 
             if (rigSubPose.status == sfmData::ERigSubPoseStatus::UNINITIALIZED)
+            {
                 continue;
+            }
 
-            const bool isConstant = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
+            bool isRotationConstant = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT) || (!refineRotation);
+            bool isCenterConstant = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT) || (!refineCenter);
 
-            addPose(sfmData::CameraPose(rigSubPose.pose), isConstant, _rigBlocks[rigId][subPoseId]);
+            addPose(sfmData::CameraPose(rigSubPose.pose), isRotationConstant, isCenterConstant, _rigBlocks[rigId][subPoseId]);
         }
     }
 }
@@ -528,6 +557,8 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
     // note: set it to NULL if you don't want use a lossFunction.
     ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
 
+    const sfmData::ImageGroups & groups = sfmData.getImageGroups();
+
     // build the residual blocks corresponding to the track observations
     for (const auto& landmarkPair : sfmData.getLandmarks())
     {
@@ -608,6 +639,24 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 continue;
             }
 
+            IndexT groupId = view.getImageGroupId();
+
+            bool groupFound = false;
+            if (groups.find(groupId) != groups.end())
+            {
+                if (groups.at(groupId)->isNodalCamera())
+                {
+                    groupFound = true;
+                }
+            }
+
+            if (!groupFound)
+            {
+                groupId = UndefinedIndexT;
+            }
+
+            double* centerBlockPtr = _centersBlocks.at(groupId).data();
+
             // needed parameters to create a residual block (K, pose)
             double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
             double* intrinsicBlockPtr = _intrinsicsBlocks.at(intrinsicId).data();
@@ -624,6 +673,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             {
                 _linearSolverOrdering.AddElementToGroup(landmarkBlockPtr, 0);
                 _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
+                _linearSolverOrdering.AddElementToGroup(centerBlockPtr, 1);
                 _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
                 _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
             }
@@ -665,6 +715,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                     params.push_back(referencePoseBlockPtr);
                 }
                 params.push_back(landmarkBlockPtr);
+                params.push_back(centerBlockPtr);
 
                 ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
                 blockIds.push_back(blockId);
@@ -678,6 +729,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(distortionBlockPtr);
                 params.push_back(poseBlockPtr);
                 params.push_back(landmarkBlockPtr);
+                params.push_back(centerBlockPtr);
 
                 ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
                 blockIds.push_back(blockId);
@@ -712,6 +764,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
 void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
 {
+    const sfmData::ImageGroups & groups = sfmData.getImageGroups();
 
     // build the residual blocks corresponding to the track observations
     for (const auto& [idView, vspoints] : sfmData.getSurveyPoints())
@@ -739,10 +792,23 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
             continue;
         }
 
-        // each residual block takes a point and a camera as input and outputs a 2
-        // dimensional residual. Internally, the cost function stores the observed
-        // image location and compares the reprojection against the observation.
-        const auto& pose = sfmData.getPose(view);
+        IndexT groupId = view.getImageGroupId();
+
+        bool groupFound = false;
+        if (groups.find(groupId) != groups.end())
+        {
+            if (groups.at(groupId)->isNodalCamera())
+            {
+                groupFound = true;
+            }
+        }
+
+        if (!groupFound)
+        {
+            groupId = UndefinedIndexT;
+        }
+
+        double* centerBlockPtr = _centersBlocks.at(groupId).data();
 
         // needed parameters to create a residual block (K, pose)
 
@@ -760,6 +826,7 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         if (_ceresOptions.useParametersOrdering)
         {
             _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
+            _linearSolverOrdering.AddElementToGroup(centerBlockPtr, 1);
             _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
             _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
         }
@@ -768,13 +835,13 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         for (const auto & spoint: vspoints)
         {
             sfmData::Observation observation(spoint.survey, 0, 1.0);
-            ceres::CostFunction* costFunction =
-                    SurveyErrorFunctor::createCostFunction(intrinsic, spoint.point3d, spoint.residual, observation, 1.0);
+            ceres::CostFunction* costFunction = SurveyErrorFunctor::createCostFunction(intrinsic, spoint.point3d, spoint.residual, observation, 1.0);
 
             std::vector<double*> params;
             params.push_back(intrinsicBlockPtr);
             params.push_back(distortionBlockPtr);
             params.push_back(poseBlockPtr);
+            params.push_back(centerBlockPtr);
 
             problem.AddResidualBlock(costFunction, nullptr, params);
         }
@@ -1054,6 +1121,37 @@ void BundleAdjustmentCeres::addTemporalSmoothnessToProblem(const sfmData::SfMDat
     ALICEVISION_LOG_INFO("SfmBundle::Temporal Smoothness added to problem");
 }
 
+void BundleAdjustmentCeres::addCentersToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+    std::array<double, 3> & fakeCenter = _centersBlocks[UndefinedIndexT];
+    fakeCenter[0] = 0;
+    fakeCenter[1] = 1;
+    fakeCenter[2] = 2;
+
+    problem.AddParameterBlock(fakeCenter.data(), 3);
+    problem.SetParameterBlockConstant(fakeCenter.data());
+
+    for (const auto & [groupId, group]: sfmData.getImageGroups().valueRange())
+    {
+        if (!group.isNodalCamera())
+        {
+            continue;
+        }
+
+        std::array<double, 3> & center = _centersBlocks[groupId];
+        center[0] = group.getCenter()[0];
+        center[1] = group.getCenter()[1];
+        center[2] = group.getCenter()[2];
+
+        problem.AddParameterBlock(center.data(), 3);
+
+        if (!(refineOptions & REFINE_CENTER))
+        {
+            problem.SetParameterBlockConstant(fakeCenter.data());
+        }
+    }
+}
+
 void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem, std::vector<ceres::ResidualBlockId>& landmarksBlockIds, std::vector<ceres::ResidualBlockId>& temporalConstraintBlockIds)
 {
     // clear previously computed data
@@ -1065,6 +1163,9 @@ void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData, ERefi
 
     // add SfM extrincics to the Ceres problem
     addExtrinsicsToProblem(sfmData, refineOptions, problem);
+
+    // add group level centers to the ceres problem
+    addCentersToProblem(sfmData, refineOptions, problem);
 
     // add SfM intrinsics to the Ceres problem
     addIntrinsicsToProblem(sfmData, refineOptions, problem);
@@ -1100,6 +1201,7 @@ void BundleAdjustmentCeres::resetProblem()
     _intrinsicObjects.clear();
     _distortionsBlocks.clear();
     _linearSolverOrdering.Clear();
+    _centersBlocks.clear();
 }
 
 void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const
@@ -1145,6 +1247,30 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
                 subPose.pose.setRotation(R_refined);
                 subPose.pose.setCenter(c_refined);
             }
+        }
+
+        // Centers
+        sfmData::ImageGroups & groups = sfmData.getImageGroups();
+        for (auto & [groupId, groupBlock]: _centersBlocks)
+        {
+            if (groups.find(groupId) == groups.end())
+            {
+                continue;
+            }
+
+            sfmData::ImageGroup::sptr group = sfmData.getImageGroups().at(groupId);
+
+            if (!group->isNodalCamera())
+            {
+                continue;
+            }
+
+            Vec3 center;
+            center[0] = groupBlock[0];
+            center[1] = groupBlock[1];
+            center[2] = groupBlock[2];
+
+            group->setCenter(center);
         }
     }
 

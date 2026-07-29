@@ -79,12 +79,24 @@ private:
             double &errorMax
         );
 
+    bool internalNodal(
+            std::shared_ptr<camera::IntrinsicBase> & intrinsic,
+            std::mt19937 &randomNumberGenerator,
+            const std::vector<Eigen::Vector3d> & structure,
+            const std::vector<Eigen::Vector2d> & observations,
+            const std::vector<feature::EImageDescriberType> & featureTypes,
+            Eigen::Matrix4d & pose,
+            std::vector<size_t> & inliers,
+            double &errorMax
+        );
+
     bool internalRefinement(
             const std::vector<Eigen::Vector3d> & structure,
             const std::vector<Eigen::Vector2d> & observations,
             const std::vector<size_t> & inliers,
             Eigen::Matrix4d & pose, 
             std::shared_ptr<camera::IntrinsicBase> & intrinsics,
+            bool isNodal,
             double & errorMax
         );
 

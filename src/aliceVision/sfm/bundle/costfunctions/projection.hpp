@@ -35,6 +35,7 @@ struct ProjectionSimpleErrorFunctor
         const T* parameter_distortion = parameters[1];
         const T* parameter_pose = parameters[2];
         const T* parameter_point = parameters[3];
+        const T* parameter_center = parameters[4];
 
         //--
         // Apply external parameters (Pose)
@@ -43,9 +44,9 @@ struct ProjectionSimpleErrorFunctor
         const T* cam_c = &parameter_pose[3];
         
         T centeredPoint[3];
-        centeredPoint[0] = parameter_point[0] - cam_c[0];
-        centeredPoint[1] = parameter_point[1] - cam_c[1];
-        centeredPoint[2] = parameter_point[2] - cam_c[2];
+        centeredPoint[0] = parameter_point[0] - cam_c[0] - parameter_center[0];
+        centeredPoint[1] = parameter_point[1] - cam_c[1] - parameter_center[1];
+        centeredPoint[2] = parameter_point[2] - cam_c[2] - parameter_center[2];
 
         T transformedPoint[3];
         // Rotate the point according the camera rotation
@@ -84,6 +85,7 @@ struct ProjectionSimpleErrorFunctor
         costFunction->AddParameterBlock(intrinsic->getParameters().size());
         costFunction->AddParameterBlock(distortionSize);
         costFunction->AddParameterBlock(6);
+        costFunction->AddParameterBlock(3);
         costFunction->AddParameterBlock(3);
         costFunction->SetNumResiduals(2);
 

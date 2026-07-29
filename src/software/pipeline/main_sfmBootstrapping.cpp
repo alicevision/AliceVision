@@ -114,7 +114,15 @@ bool landmarksFromMesh(
         const sfmData::CameraPose & cpose = sfmData.getAbsolutePose(v.getPoseId());
         const camera::IntrinsicBase & intrinsic = sfmData.getIntrinsic(v.getIntrinsicId());
 
-        pFetcher->setPose(cpose.getTransform());
+        geometry::Pose3 pose = cpose.getTransform();
+
+        const sfmData::ImageGroup & group = *sfmData.getImageGroups().at(vsptr->getImageGroupId());
+        if (group.isNodalCamera())
+        {
+            Vec3 center = group.getCenter();
+            pose.setCenter(center);
+        }
+        pFetcher->setPose(pose);
 
         const auto & trackIds = tracksHandler.getTracksPerView().at(referenceViewId);
         const auto & tracksMap = tracksHandler.getAllTracks();

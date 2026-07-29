@@ -1312,9 +1312,12 @@ bool KeyframeSelector::writeSfMDataFromSfMData(const std::string& mediaPath)
     }
 
     // Copy image groups into imageSets
-    for (const auto & [imageGroupID, _] : inputSfm.getImageGroups())
+    for (const auto & [imageGroupID, group] : inputSfm.getImageGroups().valueRange())
     {
         auto imageGroupPtr = std::make_shared<sfmData::ImageSet>();
+        imageGroupPtr->setCenter(group.getCenter());
+        imageGroupPtr->setIsNodalCamera(group.isNodalCamera());
+
         _outputSfmKeyframes.getImageGroups().emplace(imageGroupID, imageGroupPtr);
         _outputSfmFrames.getImageGroups().emplace(imageGroupID, imageGroupPtr);
     }

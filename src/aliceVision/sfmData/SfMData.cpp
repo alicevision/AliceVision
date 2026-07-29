@@ -395,6 +395,7 @@ void SfMData::combine(const SfMData& sfmData)
     for (const auto & [imageGroupID, imageGroupPtr] : sfmData._imageGroups)
     {
         auto imageGroup = _imageGroups.find(imageGroupID);
+        
         // Priority is given to ImageSequence over ImageSet
         if (imageGroup == _imageGroups.end() || imageGroupPtr.get()->getType() == sfmData::ImageGroup::Type::ImageSequence)
         {
@@ -617,6 +618,36 @@ LandmarksPerView getLandmarksPerViews(const SfMData& sfmData)
     }
 
     return landmarksPerView;
+}
+
+void SfMData::applyCenter()
+{
+    for (const auto & [groupId, group] : getImageGroups().valueRange())   
+    {
+        if (!group.isNodalCamera())
+        {
+            continue;
+        }
+
+        for (const auto & [viewId, view] : getViews().valueRange())
+        {
+            if (view.getImageGroupId() != groupId)
+            {
+                continue;
+            }
+
+            if (!isPoseDefined(view))
+            {
+                continue;
+            }
+
+            sfmData::CameraPose & cp = getAbsolutePose(view.getPoseId());
+
+            geometry::Pose3 pose = cp.getTransform();
+            pose.setCenter(group.getCenter());
+            cp.setTransform(pose);
+        }
+    }
 }
 
 }  // namespace sfmData

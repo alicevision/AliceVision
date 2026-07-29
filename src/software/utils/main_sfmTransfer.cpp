@@ -299,7 +299,7 @@ int aliceVision_main(int argc, char** argv)
                             viewA.setPoseId(viewA.getViewId());
                             viewA.setIndependantPose(true);
                         }
-                        sfmData.setPose(viewA, sfmDataRef.getPose(viewB));
+                        sfmData.setPose(viewA, sfmDataRef.getAbsolutePose(viewB.getPoseId()));
                     }
                 }
                 if (transferIntrinsics)
@@ -356,6 +356,8 @@ int aliceVision_main(int argc, char** argv)
             }
         }
     }
+
+    sfmData.getImageGroups() = sfmDataRef.getImageGroups();
 
     // Pose Id to remove
     {

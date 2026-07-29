@@ -26,6 +26,7 @@
 #include <pxr/base/gf/vec2d.h>
 #include <pxr/base/gf/vec2f.h>
 #include <pxr/base/gf/vec3f.h>
+#include <pxr/base/gf/vec3d.h>
 #include <pxr/base/gf/vec3i.h>
 #include <pxr/usd/sdf/path.h>
 #include <pxr/usd/sdf/payload.h>
@@ -609,6 +610,11 @@ void writeImageGroups(const UsdStageRefPtr& stage, const sfmData::SfMData& sfmDa
         setAttr(groupPrim, "av:id", SdfValueTypeNames->UInt, static_cast<std::uint32_t>(groupId));
         setAttr(groupPrim, "av:type", SdfValueTypeNames->Int, static_cast<int>(groupPtr->getType()));
         setAttr(groupPrim, "av:isNodalCamera", SdfValueTypeNames->Bool, groupPtr->isNodalCamera());
+        if (groupPtr->isNodalCamera())
+        {
+            const Vec3& c = groupPtr->getCenter();
+            setAttr(groupPrim, "av:center", SdfValueTypeNames->Double3, GfVec3d(c.x(), c.y(), c.z()));
+        }
     }
 }
 
@@ -1444,6 +1450,14 @@ void loadImageGroups(const UsdStageRefPtr& stage, const ExportPaths& paths, sfmD
         if (group)
         {
             group->setIsNodalCamera(isNodalCamera);
+            if (isNodalCamera)
+            {
+                GfVec3d center(0.0);
+                if (getAttr(groupPrim, "av:center", center))
+                {
+                    group->setCenter(Vec3(center[0], center[1], center[2]));
+                }
+            }
             sfmData.getImageGroups().insert_or_assign(static_cast<IndexT>(groupId), group);
         }
     }

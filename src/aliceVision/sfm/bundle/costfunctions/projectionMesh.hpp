@@ -44,6 +44,7 @@ struct ProjectionMeshErrorFunctor
         const T* parameter_currentPose = parameters[2];
         const T* parameter_referencePose = _samePose ? parameter_currentPose : parameters[3];
         const T* parameter_point = _samePose ? parameters[3] : parameters[4];
+        const T* parameter_center = _samePose ? parameters[4] : parameters[5];
 
 
         const T* refcam_r_world = parameter_referencePose;
@@ -68,10 +69,14 @@ struct ProjectionMeshErrorFunctor
         T direction[3];
         ceres::AngleAxisRotatePoint(world_r_refcam, refcam_point, direction);
 
+        T world_t_center[3];
+        world_t_center[0] = world_t_refcam[0] + parameter_center[0];
+        world_t_center[1] = world_t_refcam[1] + parameter_center[1];
+        world_t_center[2] = world_t_refcam[2] + parameter_center[2];
 
         T worldPoint[3];
         const T * intersectParameters[2];
-        intersectParameters[0] = world_t_refcam;
+        intersectParameters[0] = world_t_center;
         intersectParameters[1] = direction;
         if (!_meshIntersectFunctor(intersectParameters, worldPoint))
         {
@@ -80,9 +85,9 @@ struct ProjectionMeshErrorFunctor
 
         // Compute point in camera coordinates
         T transformedPoint[3];
-        worldPoint[0] -= world_t_curcam[0];
-        worldPoint[1] -= world_t_curcam[1];
-        worldPoint[2] -= world_t_curcam[2];
+        worldPoint[0] -= (world_t_curcam[0] + parameter_center[0]);
+        worldPoint[1] -= (world_t_curcam[1] + parameter_center[1]);
+        worldPoint[2] -= (world_t_curcam[2] + parameter_center[2]);
         ceres::AngleAxisRotatePoint(curcam_r_world, worldPoint, transformedPoint);
 
         // Project
@@ -134,6 +139,8 @@ struct ProjectionMeshErrorFunctor
 
         // Only consider the first two coordinates
         costFunction->AddParameterBlock(2);
+
+        costFunction->AddParameterBlock(3);
 
         // Residual is pixel error
         costFunction->SetNumResiduals(2);

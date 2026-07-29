@@ -12,6 +12,7 @@
 #include <aliceVision/robustEstimation/NACRansac.hpp>
 #include <aliceVision/numeric/Container.hpp>
 #include <aliceVision/multiview/resection/ResectionSphericalKernel.hpp>
+#include <aliceVision/multiview/resection/ResectionNodalSphericalKernel.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 
 namespace aliceVision {
@@ -66,8 +67,19 @@ bool SfmResection::processView(
 
 
     //Get information about this view
-    const std::shared_ptr<sfmData::View> view = sfmData.getViews().at(viewId);
-    std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicSharedPtr(view->getIntrinsicId());
+    const sfmData::View & view = sfmData.getView(viewId);
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicSharedPtr(view.getIntrinsicId());
+
+    // Retrieve the image group And associated information
+
+    bool isNodal = false;
+    Vec3 center = Vec3::Zero();
+    if (view.getImageGroupId() != UndefinedIndexT)
+    { 
+        const auto & group = *sfmData.getImageGroups().at(view.getImageGroupId());
+        isNodal = group.isNodalCamera();
+        center = group.getCenter();
+    }
 
     //Loop over tracks to build data needed by resection process
     std::vector<Eigen::Vector3d> structure;
@@ -78,7 +90,7 @@ bool SfmResection::processView(
         const auto & track = tracks.at(trackId);
 
         const feature::EImageDescriberType descType = track.descType;        
-        const Eigen::Vector3d X = sfmData.getLandmarks().at(trackId).getX();
+        const Eigen::Vector3d X = sfmData.getLandmarks().at(trackId).getX() - center;
         const Eigen::Vector2d x = track.featPerView.at(viewId).coords;
 
         structure.push_back(X);
@@ -90,17 +102,29 @@ bool SfmResection::processView(
     Eigen::Matrix4d pose;
     std::vector<size_t> inliers;
     double errorMax = 0.0;
-    if (!internalResection(intrinsic, randomNumberGenerator, structure, observations, featureTypes, pose, inliers, errorMax))
+    if (isNodal)
     {
-        ALICEVISION_LOG_INFO("SfmResection::processView internalResection failed " << viewId);
-        return false;
+        if (!internalNodal(intrinsic, randomNumberGenerator, structure, observations, featureTypes, pose, inliers, errorMax))
+        {
+            ALICEVISION_LOG_INFO("SfmResection::processView internalNodal failed " << viewId);
+            return false;
+        }
     }
+    else
+    {
+        if (!internalResection(intrinsic, randomNumberGenerator, structure, observations, featureTypes, pose, inliers, errorMax))
+        {
+            ALICEVISION_LOG_INFO("SfmResection::processView internalResection failed " << viewId);
+            return false;
+        }
+    }
+    
 
     inliersCount = inliers.size();
     ALICEVISION_LOG_INFO("Resection for view " << viewId << " had " << inliersCount << " inliers.");
 
     //Refine the pose
-    if (!internalRefinement(structure, observations, inliers, pose, intrinsic, errorMax))
+    if (!internalRefinement(structure, observations, inliers, pose, intrinsic, isNodal, errorMax))
     {
         ALICEVISION_LOG_INFO("SfmResection::processView internalRefinemanet failed " << viewId);
         return false;
@@ -145,16 +169,53 @@ bool SfmResection::internalResection(
     return false;
 }
 
+bool SfmResection::internalNodal(
+            std::shared_ptr<camera::IntrinsicBase> & intrinsic,
+            std::mt19937 &randomNumberGenerator,
+            const std::vector<Eigen::Vector3d> & structure,
+            const std::vector<Eigen::Vector2d> & observations,
+            const std::vector<feature::EImageDescriberType> & featureTypes,
+            Eigen::Matrix4d & pose,
+            std::vector<size_t> & inliers,
+            double & errorMax
+        )
+{
+    multiview::resection::ResectionNodalSphericalKernel kernel(intrinsic, structure, observations);
+
+    robustEstimation::Mat3Model model;
+
+    inliers.clear();
+    auto pairResult = robustEstimation::NACRANSAC(kernel, randomNumberGenerator, inliers, _maxIterations, &model, _precision);
+
+    Eigen::Matrix4d model4;
+    model4.setIdentity();
+    model4.topLeftCorner(3, 3) = model.getMatrix();
+    
+    errorMax = pairResult.first;
+
+    const bool resection = _validationPolicy->validate(*intrinsic, structure, observations, featureTypes, model4, inliers);
+
+    if (resection)
+    {
+        pose = model4;
+        return true;
+    }
+
+    return false;
+}
+
 bool SfmResection::internalRefinement(
         const std::vector<Eigen::Vector3d> & structure,
         const std::vector<Eigen::Vector2d> & observations,
         const std::vector<size_t> & inliers,
         Eigen::Matrix4d & pose, 
         std::shared_ptr<camera::IntrinsicBase> & intrinsics,
+        bool isNodal,
         double & errorMax)
 {
     // Setup a tiny SfM scene with the corresponding 2D-3D data
     sfmData::SfMData tinyScene;
+
 
     // view
     std::shared_ptr<sfmData::View> view = std::make_shared<sfmData::View>("", 0, 0, 0);
@@ -180,7 +241,11 @@ bool SfmResection::internalRefinement(
     }
 
     BundleAdjustmentCeres BA;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_CENTER;
+    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION;
+    if (!isNodal)
+    {
+        refineOptions |= BundleAdjustment::REFINE_CENTER;
+    }
 
     const bool success = BA.adjust(tinyScene, refineOptions);
     if(!success)

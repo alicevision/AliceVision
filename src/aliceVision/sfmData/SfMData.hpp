@@ -101,6 +101,7 @@ class SfMData
 
     inline bool operator!=(const SfMData& other) const { return !(*this == other); }
 
+    void applyCenter();
     // Accessors
 
     /**
@@ -513,7 +514,20 @@ class SfMData
         // check the view has valid pose / rig etc
         if (!view.isPartOfRig() || view.isPoseIndependant())
         {
-            return *_poses.at(view.getPoseId());
+            CameraPose cp = *_poses.at(view.getPoseId());
+            
+            if (view.getImageGroupId() != UndefinedIndexT)
+            {
+                const ImageGroup & group = *getImageGroups().at(view.getImageGroupId());
+                if (group.isNodalCamera())
+                {
+                    geometry::Pose3 pose = cp.getTransform();
+                    pose.setCenter(group.getCenter());
+                    cp.setTransform(pose);
+                }
+            }
+
+            return cp;
         }
 
         // get the pose of the rig

@@ -301,19 +301,65 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("A keyframe has been found in reference with frameId " << rpose.frameId << " (With offset : " << rpose.frameId + offset << ").");
     }
 
+    std::map<IndexT, geometry::Pose3> posePerView;
+
     // Set the pose for all the views with frame IDs found in the JSON file
-    for (const auto& [id, pview] : sfmData.getViews())
+    for (const auto& [id, view] : sfmData.getViews().valueRange())
     {
         for (const auto& rpose : readPoses)
         {
-            if (pview->getFrameId() == rpose.frameId + offset)
+            if (view.getFrameId() == rpose.frameId + offset)
             {
                 ALICEVISION_LOG_INFO("Assigning view " << id << "(frame " << rpose.frameId << ")");
                 geometry::Pose3 pose(rpose.T);
-                sfmData::CameraPose cpose(pose, lockPoses);
+                posePerView[id] = pose;
+                /*sfmData::CameraPose cpose(pose, lockPoses);
                 cpose.setRemovable(false);
-                sfmData.setAbsolutePose(id, cpose);
+                sfmData.setAbsolutePose(id, cpose);*/
             }
+        }
+    }
+
+    for (const auto & [groupId, group] : sfmData.getImageGroups().valueRange())
+    {
+        bool first = true;
+        Vec3 center;
+
+        for (const auto& [viewId, view] : sfmData.getViews().valueRange())
+        {
+            if (view.getImageGroupId() != groupId)
+            {
+                continue;
+            }
+
+            if (posePerView.find(viewId) == posePerView.end())
+            {
+                continue;
+            }
+
+            geometry::Pose3 pose = posePerView[viewId];
+
+            if (group.isNodalCamera())
+            {
+                if (first)
+                {
+                    center = pose.center();
+                    first = true;
+                }
+
+                if ((center - pose.center()).norm() > 1e-6)
+                {
+                    ALICEVISION_LOG_ERROR("Camera is nodal but different centers are found.");
+                    return EXIT_FAILURE;
+                }
+
+                group.setCenter(pose.center());
+                pose.setTranslation(Vec3::Zero());
+            }
+
+            sfmData::CameraPose cpose(pose, lockPoses);
+            cpose.setRemovable(false);
+            sfmData.setAbsolutePose(viewId, cpose);
         }
     }
 
