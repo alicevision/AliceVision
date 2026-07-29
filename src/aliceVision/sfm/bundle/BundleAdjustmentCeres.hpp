@@ -178,6 +178,14 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     void addExtrinsicsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
     /**
+     * @brief Create a parameter block for each Image group center
+     * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the poses and sub-poses
+     * @param[in] refineOptions The chosen refine flag
+     * @param[out] problem The Ceres bundle adjustment problem
+     */
+    void addCentersToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+    /**
      * @brief Create a parameter block for each intrinsic according to the Ceres format
      * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
      * @param[in] refineOptions The chosen refine flag
@@ -280,6 +288,9 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     std::map<IndexT, std::vector<double>> _intrinsicsBlocks;
     std::map<IndexT, std::vector<double>> _distortionsBlocks;
     std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
+    
+    /// Image group center indexed by image group
+    std::map<IndexT, std::array<double, 3>> _centersBlocks;
 
     double _fakeDistortionBlock;
     /// landmarks blocks wrapper

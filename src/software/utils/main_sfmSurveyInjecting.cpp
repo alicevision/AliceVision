@@ -361,6 +361,13 @@ int aliceVision_main(int argc, char** argv)
         //We assume this pose is also coming from 3DE and has not been modified !
         geometry::Pose3 pose = sfmData.getPose(view).getTransform();
 
+        const sfmData::ImageGroup & group = *sfmData.getImageGroups().at(view.getImageGroupId());
+        if (group.isNodalCamera())
+        {
+            Vec3 center = group.getCenter();
+            pose.setCenter(center);
+        }
+
         for (const auto & point: survey.points)
         {
             sfmData::SurveyPoint p;

@@ -360,6 +360,8 @@ int aliceVision_main(int argc, char* argv[])
         }
     }
 
+    outputSfmData.applyCenter();
+
     ALICEVISION_LOG_INFO("Export SfM: " << outputSfmDataFilename);
     if (!sfmDataIO::save(outputSfmData, outputSfmDataFilename, flagsPart))
     {

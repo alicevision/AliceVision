@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 #include <memory>
 #include <string>
 #include <stdexcept>
@@ -102,8 +103,23 @@ public:
      */
     void setIsNodalCamera(bool isNodal) { _isNodalCamera = isNodal; }
 
+    /**
+     * @brief Get the shared nodal center for all cameras in this group.
+     *        Only meaningful when isNodalCamera() is true.
+     * @return The shared center position
+     */
+    const Vec3& getCenter() const { return _center; }
+
+    /**
+     * @brief Set the shared nodal center for all cameras in this group.
+     *        Only meaningful when isNodalCamera() is true.
+     * @param center The shared center position
+     */
+    void setCenter(const Vec3& center) { _center = center; }
+
 protected:
     bool _isNodalCamera = false;
+    Vec3 _center = Vec3::Zero();
 };
 
 }  // namespace sfmData

@@ -327,6 +327,8 @@ class "AvImageGroup" (
 {
     uint av:id = 4294967295
     int av:type = 0
+    bool av:isNodalCamera = false
+    double3 av:center = (0, 0, 0)
 }
 
 # Example application target:

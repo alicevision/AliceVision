@@ -175,6 +175,12 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
         sfmData::ImageGroup::Type type = imageGroup->getType();
         OStringProperty(userProps, "mvg_imageGroupType").set(sfmData::ImageGroup::typeToString(type));
         OBoolProperty(userProps, "mvg_imageGroupIsNodal").set(imageGroup->isNodalCamera());
+        if (imageGroup->isNodalCamera())
+        {
+            const Vec3& c = imageGroup->getCenter();
+            std::vector<double> centerVec = {c.x(), c.y(), c.z()};
+            ODoubleArrayProperty(userProps, "mvg_imageGroupCenter").set(centerVec);
+        }
     }
 
     if (view.isPoseIndependant() == false)

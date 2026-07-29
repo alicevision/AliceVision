@@ -157,6 +157,14 @@ void saveImageGroup(const std::string& name, IndexT imageGroupId, const sfmData:
     imageGroupTree.put("imageGroupId", imageGroupId);
     imageGroupTree.put("imageGroupType", sfmData::ImageGroup::typeToString(group.getType()));
     imageGroupTree.put("isNodalCamera", group.isNodalCamera());
+    if (group.isNodalCamera())
+    {
+        bpt::ptree centerTree;
+        centerTree.put("x", group.getCenter().x());
+        centerTree.put("y", group.getCenter().y());
+        centerTree.put("z", group.getCenter().z());
+        imageGroupTree.add_child("center", centerTree);
+    }
     parentTree.push_back(std::make_pair(name, imageGroupTree));
 }
 
@@ -167,7 +175,19 @@ void loadImageGroup(sfmData::ImageGroups & groups, bpt::ptree& imageGroupTree)
     sfmData::ImageGroup::Type type = sfmData::ImageGroup::stringToType(typeString);
 
     sfmData::ImageGroup::sptr group = sfmData::ImageGroup::create(type);
-    group->setIsNodalCamera(imageGroupTree.get<bool>("isNodalCamera", false));
+    const bool isNodal = imageGroupTree.get<bool>("isNodalCamera", false);
+    group->setIsNodalCamera(isNodal);
+    if (isNodal)
+    {
+        if (auto centerNode = imageGroupTree.get_child_optional("center"))
+        {
+            Vec3 center;
+            center.x() = centerNode->get<double>("x", 0.0);
+            center.y() = centerNode->get<double>("y", 0.0);
+            center.z() = centerNode->get<double>("z", 0.0);
+            group->setCenter(center);
+        }
+    }
     groups.emplace(imageGroupId, group);
 }
 

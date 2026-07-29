@@ -28,12 +28,13 @@ struct SurveyErrorFunctor
         const T* parameter_intrinsics = parameters[0];
         const T* parameter_distortion = parameters[1];
         const T* parameter_pose = parameters[2];
+        const T* parameter_center = parameters[3];
         
         //Create input point
         T parameter_point[3];
-        parameter_point[0] = T(_point.x());
-        parameter_point[1] = T(_point.y());
-        parameter_point[2] = T(_point.z());
+        parameter_point[0] = T(_point.x()) - parameter_center[0];
+        parameter_point[1] = T(_point.y()) - parameter_center[1];
+        parameter_point[2] = T(_point.z()) - parameter_center[2];
 
         //--
         // Apply external parameters (Pose)
@@ -102,6 +103,7 @@ struct SurveyErrorFunctor
         costFunction->AddParameterBlock(intrinsic->getParameters().size());
         costFunction->AddParameterBlock(distortionSize);
         costFunction->AddParameterBlock(6);
+        costFunction->AddParameterBlock(3);
         costFunction->SetNumResiduals(2);
 
         return costFunction;
