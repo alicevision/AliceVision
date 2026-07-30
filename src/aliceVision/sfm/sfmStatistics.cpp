@@ -76,7 +76,8 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData,
 void computeResidualsMeanMedian(const sfmData::SfMData& sfmData,
                             double & mean,
                             double & median,
-                            const std::set<IndexT>& specificViews)
+                            const std::set<IndexT>& specificViews,
+                            const bool weightedResiduals)
 {
     mean = 0;
     median = 0;
@@ -103,8 +104,10 @@ void computeResidualsMeanMedian(const sfmData::SfMData& sfmData,
             const sfmData::View& view = sfmData.getView(obs.first);
             const aliceVision::geometry::Pose3 pose = sfmData.getPose(view).getTransform();
             const aliceVision::camera::IntrinsicBase& intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
-            const Vec2 residual = intrinsic.residual(pose, track.second.getX().homogeneous(), obs.second.getCoordinates());
-            vecResiduals.push_back(residual.norm());
+            const Vec2 residualVec = intrinsic.residual(pose, track.second.getX().homogeneous(), obs.second.getCoordinates());
+            const double scale = (obs.second.getScale() > 1e-12) ? obs.second.getScale() : 1.0;
+            double residual = weightedResiduals ? obs.second.getWeight() * residualVec.norm() / scale : residualVec.norm();
+            vecResiduals.push_back(residual);
         }
     }
 
