@@ -393,11 +393,11 @@ int aliceVision_main(int argc, char** argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
     ("output,o", po::value<std::string>(&sfmDataOutputFilename)->required(), "SfMData output file.")
     ("method", po::value<std::string>(&methodString)->required(), "Bootstrapping method: classic (epipolar geometry), mesh (3D mesh constraints), or depth (depth map information).")
-    ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(), "Tracks file.")
-    ("pairs,p", po::value<std::string>(&pairsDirectory)->required(), "Path to the pairs directory.");
+    ("tracksFilename,t", po::value<std::string>(&tracksFilename)->required(), "Tracks file.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+    ("pairs", po::value<std::string>(&pairsDirectory)->default_value(pairsDirectory), "Path to the pairs directory.")
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
     ("minAngleSoftInitialPair", po::value<double>(&minAngleSoft)->default_value(minAngleSoft), "Minimum angle for the initial pair (Score is downgraded heavily if angle is under this value).")
     ("minAngleHardInitialPair", po::value<double>(&minAngleHard)->default_value(minAngleHard), "Minimum angle for the initial pair validation.")
@@ -497,59 +497,69 @@ int aliceVision_main(int argc, char** argv)
     //Result of pair estimations are stored in multiple files
     std::vector<sfm::ReconstructedPair> reconstructedPairs;
     const std::regex regex("pairs\\_[0-9]+\\.json");
-    for(fs::directory_entry & file : boost::make_iterator_range(fs::directory_iterator(pairsDirectory), {}))
+
+    if (method != MESH_SINGLE)
     {
-        if (!std::regex_search(file.path().string(), regex))
+        if (pairsDirectory.empty())
         {
-            continue;
+            ALICEVISION_LOG_ERROR("Missing path to the pairs directory.");
+            return EXIT_FAILURE;
         }
-
-        std::ifstream inputfile(file.path().string());        
-
-        boost::system::error_code ec;
-        std::vector<boost::json::value> values = readJsons(inputfile, ec);
-        for (const boost::json::value & value : values)
-        {
-            std::vector<sfm::ReconstructedPair> localVector = boost::json::value_to<std::vector<sfm::ReconstructedPair>>(value);
         
-            for (const auto & pair: localVector)
+        for(fs::directory_entry & file : boost::make_iterator_range(fs::directory_iterator(pairsDirectory), {}))
+        {
+            if (!std::regex_search(file.path().string(), regex))
             {
-                // One of the view must match one of the first view filters
-                // If there is an existing filter
-                if (!firstViewFilters.empty())
-                {
-                    bool passFirstFilter = false;
+                continue;
+            }
 
-                    for (auto filter : firstViewFilters)
+            std::ifstream inputfile(file.path().string());        
+
+            boost::system::error_code ec;
+            std::vector<boost::json::value> values = readJsons(inputfile, ec);
+            for (const boost::json::value & value : values)
+            {
+                std::vector<sfm::ReconstructedPair> localVector = boost::json::value_to<std::vector<sfm::ReconstructedPair>>(value);
+            
+                for (const auto & pair: localVector)
+                {
+                    // One of the view must match one of the first view filters
+                    // If there is an existing filter
+                    if (!firstViewFilters.empty())
                     {
-                        if (pair.reference == filter || pair.next == filter)
+                        bool passFirstFilter = false;
+
+                        for (auto filter : firstViewFilters)
                         {
-                            passFirstFilter = true;
-                            break;
+                            if (pair.reference == filter || pair.next == filter)
+                            {
+                                passFirstFilter = true;
+                                break;
+                            }
+                        }
+
+                        if (!passFirstFilter)
+                        {
+                            continue;
                         }
                     }
 
-                    if (!passFirstFilter)
+                    //If the secondview filter is valid, use it.
+                    if (secondViewFilter != UndefinedIndexT)
                     {
-                        continue;
+                        if (pair.reference != secondViewFilter && pair.next != secondViewFilter)
+                        {
+                            continue;
+                        }
                     }
-                }
 
-                //If the secondview filter is valid, use it.
-                if (secondViewFilter != UndefinedIndexT)
-                {
-                    if (pair.reference != secondViewFilter && pair.next != secondViewFilter)
-                    {
-                        continue;
-                    }
+                    reconstructedPairs.push_back(pair);
                 }
-
-                reconstructedPairs.push_back(pair);
             }
         }
-    }
 
-    ALICEVISION_LOG_INFO("Pairs to process : " << reconstructedPairs.size());
+        ALICEVISION_LOG_INFO("Pairs to process : " << reconstructedPairs.size());
+    }
 
     
     bool ret;
