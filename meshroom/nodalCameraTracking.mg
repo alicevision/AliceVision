@@ -15,7 +15,7 @@
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
             "ImageMatching": "2.0",
-            "ImageSegmentationSam3": "1.0",
+            "ImageSegmentationSam3": "2.0",
             "IntrinsicsTransforming": "1.1",
             "NodalSfM": "2.1",
             "RelativePoseEstimating": "3.1",

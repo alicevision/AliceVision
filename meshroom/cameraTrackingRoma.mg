@@ -13,7 +13,7 @@
             "ExportDistortion": "2.0",
             "ExportImages": "1.1",
             "GeometricFilterEstimating": "1.1",
-            "ImageSegmentationSam3": "1.0",
+            "ImageSegmentationSam3": "2.0",
             "IntrinsicsTransforming": "1.1",
             "KeyframeSelection": "5.0",
             "MatchMasking": "1.4",
