@@ -5,7 +5,7 @@
         "nodesVersions": {
             "CameraInit": "12.1",
             "CopyFiles": "1.3",
-            "ImageProcessing": "4.0"
+            "ImageProcessing": "4.1"
         },
         "template": true
     },
