@@ -19,7 +19,7 @@
             "FeatureMatching": "2.1",
             "ImageMatching": "2.0",
             "ImageMatchingMultiSfM": "1.1",
-            "ImageSegmentationSam3": "1.0",
+            "ImageSegmentationSam3": "2.0",
             "IntrinsicsTransforming": "1.1",
             "KeyframeSelection": "5.0",
             "MeshDecimate": "1.0",
