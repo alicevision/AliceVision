@@ -654,6 +654,12 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             else if (referencePoseBlockPtr != nullptr)
             {
                 bool samePose = (referencePoseBlockPtr == poseBlockPtr);
+
+                if (_ceresOptions.useParametersOrdering && !samePose)
+                {
+                    _linearSolverOrdering.AddElementToGroup(referencePoseBlockPtr, 1);
+                }
+
                 ceres::CostFunction* costFunction = ProjectionMeshErrorFunctor::createCostFunction(intrinsic, observation, landmark.getPointFetcher(), samePose);
 
                 std::vector<double*> params;
