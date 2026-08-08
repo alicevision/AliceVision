@@ -84,10 +84,10 @@ Please have a look at the [project code of conduct](CODE_OF_CONDUCT.md) to provi
 Please have a look at the [project contributing guide](CONTRIBUTING.md) to provide an efficient workflow that minimize waste of time for contributors and maintainers as well as maximizing the project quality and efficiency.
 
 Use github Pull Requests to submit contributions:
-> [http://github.com/alicevision/AliceVision/issues](http://github.com/alicevision/AliceVision/issues)
+> [http://github.com/alicevision/AliceVision/pulls](http://github.com/alicevision/AliceVision/pulls)
 
 Use the public mailing-list to ask questions or request features and use github issues to report bugs:
-> [http://github.com/alicevision/AliceVision/pulls](http://github.com/alicevision/AliceVision/pulls)
+> [http://github.com/alicevision/AliceVision/issues](http://github.com/alicevision/AliceVision/issues)
 
 
 ## Project history
