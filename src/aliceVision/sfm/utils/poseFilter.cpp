@@ -20,7 +20,8 @@ namespace sfm {
 
 bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation,
                  const int maxIterationCount, const int maxScaleFactor, const double maxErrorIncreasePos,
-                 const double maxErrorIncreaseRot, const int minIterationCount, const int minScaleFactor)
+                 const double maxErrorIncreaseRot, const int minIterationCount, const int minScaleFactor,
+                 const double lossParameter)
 {
     using namespace Eigen;
 
@@ -81,7 +82,8 @@ bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, c
             viewCenters = (maxErrorIncreasePos < 0) ?
                           tFilter.applyMultiscale(viewCenters, maxScaleFactor, maxIterationCount, false) :
                           applyLimitedFilter(sfmData, imageGroupID, viewIdIndices, viewCenters, viewRotations, PoseParamType::Positions,
-                                             maxIterationCount, minIterationCount, maxScaleFactor, minScaleFactor, maxErrorIncreasePos);
+                                             maxIterationCount, minIterationCount, maxScaleFactor, minScaleFactor, maxErrorIncreasePos,
+                                             lossParameter);
         }
 
         // Apply a temporal filter to view orientations
@@ -91,7 +93,8 @@ bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, c
             viewRotations = (maxErrorIncreaseRot < 0) ?
                             tFilter.applyMultiscale(viewRotations, maxScaleFactor, maxIterationCount, true) :
                             applyLimitedFilter(sfmData, imageGroupID, viewIdIndices, viewCenters, viewRotations, PoseParamType::Rotations,
-                                                maxIterationCount, minIterationCount, maxScaleFactor, minScaleFactor, maxErrorIncreaseRot);
+                                                maxIterationCount, minIterationCount, maxScaleFactor, minScaleFactor, maxErrorIncreaseRot,
+                                                lossParameter);
         }
 
         // Save the temporally filtered poses
@@ -111,7 +114,7 @@ bool poseFilter::process(sfmData::SfMData& sfmData, const bool filterPosition, c
 
 Eigen::MatrixXd poseFilter::applyLimitedFilter(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::map<IndexT, IndexT>& viewIdIndices,
                    const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations, PoseParamType paramToFilter, const int maxIterationCount,
-                   const int minIterationCount, const int maxScaleFactor, const int minScaleFactor, const double maxErrorIncrease)
+                   const int minIterationCount, const int maxScaleFactor, const int minScaleFactor, const double maxErrorIncrease, const double lossParameter)
 {
     using namespace Eigen;
     using namespace indexing;
@@ -119,7 +122,7 @@ Eigen::MatrixXd poseFilter::applyLimitedFilter(const sfmData::SfMData& sfmData, 
     std::string poseParamString = poseParamType_enumToString(paramToFilter);
 
     // Compute the reprojection error before any filtering
-    double reprojError_0 = reprojectionError(sfmData, imageGroupID, viewIdIndices, viewCenters, viewRotations);
+    double reprojError_0 = reprojectionError(sfmData, imageGroupID, viewIdIndices, viewCenters, viewRotations, lossParameter);
     ALICEVISION_LOG_INFO("Reprojection error before " << poseParamString << " filtering: " << reprojError_0);
     ALICEVISION_LOG_DEBUG("Target reprojection error for " << poseParamString << ": " << (1. + maxErrorIncrease) * reprojError_0);
 
@@ -139,14 +142,14 @@ Eigen::MatrixXd poseFilter::applyLimitedFilter(const sfmData::SfMData& sfmData, 
     // Apply pose parameter filtering using the max iteration and scale factor values
     filteredParam = tFilter.applyMultiscale(filteredParam, maxScaleFactor, maxIterationCount, isAngle);
 
-    auto paramReprojError = [&sfmData, &imageGroupID, &viewIdIndices, &viewCenters,
-                             &viewRotations, &paramToFilter](const MatrixXd &filteredParam) {
+    auto paramReprojError = [&sfmData, &imageGroupID, &viewIdIndices, &viewCenters, &viewRotations, &lossParameter,
+                             &paramToFilter](const MatrixXd &filteredParam) {
                                     switch (paramToFilter)
                                     {
                                         case PoseParamType::Positions:
-                                            return reprojectionError(sfmData, imageGroupID, viewIdIndices, filteredParam, viewRotations);
+                                            return reprojectionError(sfmData, imageGroupID, viewIdIndices, filteredParam, viewRotations, lossParameter);
                                         case PoseParamType::Rotations:
-                                            return reprojectionError(sfmData, imageGroupID, viewIdIndices, viewCenters, filteredParam);
+                                            return reprojectionError(sfmData, imageGroupID, viewIdIndices, viewCenters, filteredParam, lossParameter);
                                     }
                                     throw std::out_of_range("Invalid PoseParamType enum");
                                 };
@@ -519,11 +522,9 @@ inline double huberLoss(const double delta, const double x)
 }
 
 
-double reprojectionError(const sfmData::SfMData& sfmData, const IndexT imageGroupID, const std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations)
+double reprojectionError(const sfmData::SfMData& sfmData, const IndexT imageGroupID, const std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations, const double lossParameter)
 {
     using namespace Eigen;
-
-    double delta = Square(4.0);  // taken from BundleAdjustmentCeres::CeresOptions::lossFunction: HuberLoss(Square(4.0))
 
     std::vector<double> vecResiduals;
 
@@ -549,7 +550,7 @@ double reprojectionError(const sfmData::SfMData& sfmData, const IndexT imageGrou
             const auto& intrinsic = sfmData.getIntrinsic(view.getIntrinsicId());
             const Vec2 residual = intrinsic.residual(pose, landmark.getX().homogeneous(), observation.getCoordinates());
             const double scale = (observation.getScale() > 1e-12) ? observation.getScale() : 1.0;
-            vecResiduals.push_back(huberLoss(delta, residual.norm() / scale));
+            vecResiduals.push_back(huberLoss(lossParameter, residual.norm() / scale));
         }
     }
 

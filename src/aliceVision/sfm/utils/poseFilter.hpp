@@ -47,9 +47,10 @@ public:
      * @param maxErrorIncreaseRot the maximum reprojection error increase ratio for the camera orientations (-1 to bypass this reprojection error test)
      * @param minIterationCount the minimum number of filter iterations to apply at the smallest scales (in case the filter is limited by the reprojection error)
      * @param minScaleFactor the minimum scale to apply the filter with the minimum iteration count (in case the filter is limited by the reprojection error)
+     * @param lossParameter the loss parameter for the reprojection error computation (used in the Huber loss function)
      * @return false if an error occurred
     */
-    bool process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation, const int maxIterationCount, const int maxScaleFactor, const double maxErrorIncreasePos, const double maxErrorIncreaseRot, const int minIterationCount, const int minScaleFactor);
+    bool process(sfmData::SfMData& sfmData, const bool filterPosition, const bool filterRotation, const int maxIterationCount, const int maxScaleFactor, const double maxErrorIncreasePos, const double maxErrorIncreaseRot, const int minIterationCount, const int minScaleFactor, const double lossParameter);
 
     /**
      * @brief Interpolate poses for views without poses using temporal filtering.
@@ -60,7 +61,7 @@ public:
 
 private:
     bool getOrderedViewIds(sfmData::SfMData& sfmData, const IndexT imageGroupID, std::vector<IndexT>& viewIdsVec, std::map<IndexT, IndexT>& viewIdIndices);
-    Eigen::MatrixXd applyLimitedFilter(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations, const PoseParamType paramToFilter, const int maxIterationCount, const int minIterationCount, const int maxScaleFactor, const int minScaleFactor, const double maxErrorIncrease);
+    Eigen::MatrixXd applyLimitedFilter(const sfmData::SfMData& sfmData, const IndexT imageGroupID, std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations, const PoseParamType paramToFilter, const int maxIterationCount, const int minIterationCount, const int maxScaleFactor, const int minScaleFactor, const double maxErrorIncrease, const double lossParameter);
 };
 
 bool getFrameIdRange(const sfmData::SfMData& sfmData, const IndexT imageGroupID, IndexT& minFrameId, IndexT& maxFrameId);
@@ -89,9 +90,10 @@ bool getOrderedPoseIds(const sfmData::SfMData& sfmData, const IndexT imageGroupI
  * @param[in]  viewIdIndices      A map from viewID to indices in the view positions/rotations vectors
  * @param[in]  viewCenters        Vector of view positions.
  * @param[in]  viewRotations      Vector of view rotations.
+ * @param[in]  lossParameter      The loss parameter for the reprojection error computation (used in the Huber loss function)
  * @return the sum of the reprojection errors.
  */
-double reprojectionError(const sfmData::SfMData& sfmData, const IndexT imageGroupID, const std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations);
+double reprojectionError(const sfmData::SfMData& sfmData, const IndexT imageGroupID, const std::map<IndexT, IndexT>& viewIdIndices, const Eigen::MatrixXd& viewCenters, const Eigen::MatrixXd& viewRotations, const double lossParameter);
 
 } // namespace sfm
 } // namespace aliceVision
