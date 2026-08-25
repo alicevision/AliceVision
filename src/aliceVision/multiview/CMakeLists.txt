@@ -80,9 +80,9 @@ alicevision_add_library(aliceVision_multiview
         aliceVision_robustEstimation
         aliceVision_camera
         ${CERES_LIBRARIES}
+        LEMON::lemon
     PRIVATE_LINKS
         aliceVision_system
-        ${LEMON_LIBRARY}
 )
 
 alicevision_add_library(aliceVision_multiview_test_data
