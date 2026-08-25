@@ -417,6 +417,37 @@ In order to run the image, [nvidia docker](https://github.com/nvidia/nvidia-dock
 docker run -it --runtime=nvidia alicevision:rocky9-cuda12.1.0
 ```
 
+#### Runtime data assets
+
+The Docker images do **not** bundle the optional runtime data assets (vocabulary
+tree and ML models): they are large and only needed at run time, not to build
+AliceVision. The corresponding environment variables are pre-set in the image and
+point to `/opt/AliceVision_install/share/aliceVision`:
+
+| Asset | Environment variable | Source |
+| --- | --- | --- |
+| Vocabulary tree | `ALICEVISION_VOCTREE` | https://gitlab.com/alicevision/trainedVocabularyTreeData |
+| Sphere detection model | `ALICEVISION_SPHERE_DETECTION_MODEL` | https://gitlab.com/alicevision/SphereDetectionModel |
+| Semantic segmentation model | `ALICEVISION_SEMANTIC_SEGMENTATION_MODEL` | https://gitlab.com/alicevision/semanticSegmentationModel |
+| Color chart detection model | `ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER` | https://gitlab.com/alicevision/ColorchartDetectionModel |
+
+Download the assets you need into a local directory (keeping the file/folder
+names shown below, as the environment variables point to them), then mount that
+directory when running the container. For example:
+
+```
+mkdir -p assets && cd assets
+wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree
+wget https://gitlab.com/alicevision/SphereDetectionModel/-/raw/main/sphereDetection_Mask-RCNN.onnx
+wget https://gitlab.com/alicevision/semanticSegmentationModel/-/raw/main/fcn_resnet50.onnx
+git clone https://gitlab.com/alicevision/ColorchartDetectionModel.git ColorChartDetectionModel
+cd ..
+
+docker run -it --runtime=nvidia \
+    -v "$(pwd)/assets:/opt/AliceVision_install/share/aliceVision" \
+    alicevision:rocky9-cuda12.1.0
+```
+
 To retrieve the generated files:
 
 ```

@@ -110,14 +110,12 @@ ENV AV_DEV="/opt/AliceVision_git"         \
     PATH="/usr/local/bin:${PATH}"
 
 # =============================================================================
-# Static ML / data assets + environment variables
-# Grouped into one RUN to avoid one layer per echo.
+# Static ML / data asset environment variables
+#
+# The asset files themselves (vocabulary tree, ONNX models, ColorChart model)
+# are runtime-only and large, so they are NOT shipped in the image. Mount them
+# at run time under ${AV_INSTALL}/share/aliceVision (paths defined below).
 # =============================================================================
-COPY dl/vlfeat_K80L3.SIFT.tree                 ${AV_INSTALL}/share/aliceVision/
-COPY dl/sphereDetection_Mask-RCNN.onnx         ${AV_INSTALL}/share/aliceVision/
-COPY dl/fcn_resnet50.onnx                      ${AV_INSTALL}/share/aliceVision/
-COPY dl/ColorChartDetectionModel               ${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel/
-
 RUN { \
     echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree"                                 ; \
     echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx"          ; \
@@ -141,26 +139,26 @@ COPY CMakeLists.txt                        ${AV_DEV}/
 COPY src/cmake/                            ${AV_DEV}/src/cmake/
 COPY src/cmake/deps/                       ${AV_DEV}/src/cmake/deps/
 COPY src/cmake/OFA/                        ${AV_DEV}/src/cmake/OFA/
-COPY dl/deps                               ${AV_BUILD}/external/download/
 
 # =============================================================================
 # Configure + build all dependencies
 #
-# Grouped into one RUN so the large build artefacts (AV_BUILD) are removed
-# in the same layer, keeping the final image size minimal.
+# Dependency archives are downloaded by the ExternalProjects into
+# ${AV_BUILD}/external/download, kept across rebuilds by the BuildKit cache
+# mount. The build tree is removed in the same layer (except that cache mount,
+# which is never part of the image) to keep the final image size minimal.
 # =============================================================================
 WORKDIR "${AV_BUILD}"
 
-RUN mkdir -p "${AV_INSTALL}/bin"                 \
-    && mkdir -p "${AV_INSTALL}/lib"                  \
-    && cmake "${AV_DEV}"                               \
+RUN --mount=type=cache,target=${AV_BUILD}/external/download \
+    mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib"   \
+    CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
+    && cmake "${AV_DEV}"                            \
         -DCMAKE_BUILD_TYPE=Release                  \
         -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON    \
         -DAV_BUILD_ALICEVISION:BOOL=OFF             \
-        -DAV_BUILD_ZLIB:BOOL=ON                     \
-        -DAV_BUILD_CCTAG:BOOL=ON                    \
         -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
-        -DAV_BUILD_DEPENDENCIES_PARALLEL=0          \
+        -DAV_BUILD_DEPENDENCIES_PARALLEL=${CPU_CORES} \
     && ln -sf lib "${AV_INSTALL}/lib64"             \
     && { test -e /usr/local/cuda/lib64/libcublas.so \
          || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \
@@ -168,4 +166,5 @@ RUN mkdir -p "${AV_INSTALL}/bin"                 \
     && CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh)   \
     && cmake --build . --parallel 1    \
     && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
-    && rm -rf "${AV_BUILD}"
+    && find "${AV_BUILD}" -mindepth 1 -maxdepth 1 ! -name external -exec rm -rf {} + \
+    && find "${AV_BUILD}/external" -mindepth 1 -maxdepth 1 ! -name download -exec rm -rf {} +
