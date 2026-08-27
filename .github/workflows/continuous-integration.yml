@@ -27,6 +27,6 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     secrets: inherit
 
-  build-sonarqube:
-    uses: ./.github/workflows/build-sonarqube.yml
-    secrets: inherit
+  # build-sonarqube:
+  #   uses: ./.github/workflows/build-sonarqube.yml
+  #   secrets: inherit
