@@ -912,7 +912,6 @@ set(ALICEVISION_INCLUDE_DIRS
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${generatedDir}
         ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
-        ${LEMON_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIRS}
         ${CERES_INCLUDE_DIRS}
         ${UNCERTAINTYTE_INCLUDE_DIRS}

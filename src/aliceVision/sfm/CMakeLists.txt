@@ -117,6 +117,7 @@ alicevision_add_library(aliceVision_sfm_bundle
         aliceVision_sfmData
         Boost::boost
         ${CERES_LIBRARIES}
+        LEMON::lemon
 )
 
 alicevision_add_library(aliceVision_sfm
@@ -138,8 +139,8 @@ alicevision_add_library(aliceVision_sfm
         aliceVision_sfm_bundle
         aliceVision_dataio
         Boost::boost
+        LEMON::lemon
     PRIVATE_LINKS
-        ${LEMON_LIBRARY}
         nanoflann::nanoflann
 )
 
@@ -152,7 +153,7 @@ alicevision_add_test(bundle/bundleAdjustment_test.cpp
           aliceVision_multiview_test_data
           aliceVision_feature
           aliceVision_system
-          ${LEMON_LIBRARY}
+          LEMON::lemon
 )
 
 alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
@@ -162,7 +163,7 @@ alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
           aliceVision_multiview_test_data
           aliceVision_feature
           aliceVision_system
-          ${LEMON_LIBRARY}
+          LEMON::lemon
 )
 
 alicevision_add_test(bundle/bundleAdjustment_temporalConstraint_test.cpp
@@ -177,7 +178,7 @@ alicevision_add_test(utils/alignment_test.cpp
         aliceVision_sfm
         aliceVision_multiview
         aliceVision_multiview_test_data
-        ${LEMON_LIBRARY}
+        LEMON::lemon
 )
 
 alicevision_add_test(utils/poseFilter_test.cpp
