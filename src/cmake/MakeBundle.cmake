@@ -182,7 +182,24 @@ foreach(_dir
         "${CMAKE_INSTALL_FULL_BINDIR}"
         "${CMAKE_INSTALL_FULL_LIBDIR}"
         "${CMAKE_INSTALL_FULL_DATADIR}")
-    if(EXISTS "${_dir}")
+    if(IS_SYMLINK "${_dir}")
+        # Symlink directory (e.g. lib64 -> lib): file(COPY) would reproduce the
+        # dangling symlink without its target. Copy the real directory instead,
+        # then recreate the symlink so both names are valid in the bundle.
+        get_filename_component(_link_name "${_dir}" NAME)
+        get_filename_component(_real      "${_dir}" REALPATH)
+        get_filename_component(_real_name "${_real}" NAME)
+        if(EXISTS "${_real}")
+            file(COPY "${_real}"
+                 DESTINATION "${BUNDLE_INSTALL_PREFIX}"
+                 USE_SOURCE_PERMISSIONS)
+        endif()
+        if(NOT EXISTS "${BUNDLE_INSTALL_PREFIX}/${_link_name}")
+            file(CREATE_LINK "${_real_name}"
+                 "${BUNDLE_INSTALL_PREFIX}/${_link_name}" SYMBOLIC)
+            message(STATUS "  Created symlink: ${_link_name} -> ${_real_name}")
+        endif()
+    elseif(EXISTS "${_dir}")
         file(COPY "${_dir}"
              DESTINATION "${BUNDLE_INSTALL_PREFIX}"
              USE_SOURCE_PERMISSIONS)
@@ -213,11 +230,15 @@ if(UNIX)
 
     file(GLOB _LIBS_TO_MOVE "${_bundle_bindir}/lib*.so*")
     if(_LIBS_TO_MOVE)
-        message(STATUS "  Moving ${CMAKE_LIST_LENGTH} stray libs from bin/ to lib/")
-        file(COPY ${_LIBS_TO_MOVE}
-             DESTINATION "${_bundle_libdir}"
-             USE_SOURCE_PERMISSIONS)
-        file(REMOVE ${_LIBS_TO_MOVE})
+        list(LENGTH _LIBS_TO_MOVE _n_libs)
+        message(STATUS "  Moving ${_n_libs} stray libs from bin/ to lib/")
+        # Move with RENAME (not COPY): it relocates symlinks as-is instead of
+        # dereferencing them. fixup_bundle may leave a dangling symlink in bin/
+        # (its target left in lib/), which file(COPY) cannot duplicate.
+        foreach(_lib IN LISTS _LIBS_TO_MOVE)
+            get_filename_component(_lib_name "${_lib}" NAME)
+            file(RENAME "${_lib}" "${_bundle_libdir}/${_lib_name}")
+        endforeach()
     endif()
 endif()
 
