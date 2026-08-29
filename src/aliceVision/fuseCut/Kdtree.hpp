@@ -47,12 +47,14 @@ struct PointVectorAdaptator
 typedef nanoflann::L2_Simple_Adaptor<double, PointVectorAdaptator> KdTreeDist;
 typedef nanoflann::KDTreeSingleIndexAdaptor<KdTreeDist, PointVectorAdaptator, 3> KdTree;
 
-template<typename _DistanceType, typename IndexType = size_t>
+template<typename _DistanceType, typename _IndexType = size_t>
 class SmallerPixSizeInRadius
 {
   public:
     // Necessary since nanoflann 1.7.0: https://github.com/jlblancoc/nanoflann/commit/9c84c4c32c2bfa7077cc8873dd3b5bcbb557da90
     using DistanceType = _DistanceType;
+    // Necessary since nanoflann 1.10.0: result sets must expose an IndexType typedef
+    using IndexType = _IndexType;
     const DistanceType radius;
 
     const std::vector<double>& m_pixSizePrepare;
@@ -81,7 +83,7 @@ class SmallerPixSizeInRadius
      * Called during search to add an element matching the criteria.
      * @return true if the search should be continued, false if the results are sufficient
      */
-    inline bool addPoint(DistanceType dist, IndexType index)
+    inline bool addPoint(DistanceType dist, _IndexType index)
     {
         if (dist < radius)
         {

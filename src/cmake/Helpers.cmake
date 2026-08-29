@@ -51,7 +51,28 @@ function(alicevision_add_library library_name)
     if (LIBRARY_USE_SYCL)
         add_sycl_to_target(TARGET ${library_name} SOURCES ${LIBRARY_SOURCES})
         if(CMAKE_COMPILER_IS_GNUCXX)
-          target_link_options(${library_name} PUBLIC "-lomp")
+          # When AliceVision is built with GCC, the SYCL sources are still compiled
+          # by AdaptiveCpp/clang with -fopenmp and depend on LLVM's OpenMP runtime
+          # (libomp: __kmpc_* symbols). GCC-linked consumers (e.g. the executables
+          # linking this library) do not pull libomp in automatically, so a bare
+          # "-lomp" link option is not always enough to resolve those symbols at
+          # final link time. Resolve libomp to a full path (searching the
+          # AdaptiveCpp/ROCm LLVM lib dirs when known) and link it explicitly so it
+          # propagates to consumers; fall back to "-lomp" if it cannot be located.
+          set(_acpp_omp_hints "")
+          if(DEFINED AdaptiveCpp_DIR)
+            get_filename_component(_acpp_root "${AdaptiveCpp_DIR}" DIRECTORY)
+            list(APPEND _acpp_omp_hints "${_acpp_root}/../lib" "${_acpp_root}/../../lib")
+          endif()
+          if(DEFINED ROCM_PATH)
+            list(APPEND _acpp_omp_hints "${ROCM_PATH}/lib" "${ROCM_PATH}/llvm/lib")
+          endif()
+          find_library(ACPP_LIBOMP NAMES omp libomp HINTS ${_acpp_omp_hints})
+          if(ACPP_LIBOMP)
+            target_link_libraries(${library_name} PUBLIC ${ACPP_LIBOMP})
+          else()
+            target_link_options(${library_name} PUBLIC "-lomp")
+          endif()
         endif()
     endif()
 

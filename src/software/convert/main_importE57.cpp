@@ -61,12 +61,14 @@ struct PointInfoVectorAdaptator
 using PointInfoKdTree =
   nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, PointInfoVectorAdaptator>, PointInfoVectorAdaptator, 3>;
 
-template<typename _DistanceType, typename IndexType = size_t>
+template<typename _DistanceType, typename _IndexType = size_t>
 class BestPointInRadius
 {
   public:
     // Necessary since nanoflann 1.7.0: https://github.com/jlblancoc/nanoflann/commit/9c84c4c32c2bfa7077cc8873dd3b5bcbb557da90
     using DistanceType = _DistanceType;
+    // Necessary since nanoflann 1.10.0: result sets must expose an IndexType typedef
+    using IndexType = _IndexType;
     const DistanceType m_radius;
     const std::vector<dataio::E57Reader::PointInfo>& m_points;
     const std::map<int, Eigen::Vector3d>& m_cameras;
@@ -99,7 +101,7 @@ class BestPointInRadius
      * Called during search to add an element matching the criteria.
      * @return true if the search should be continued, false if the results are sufficient
      */
-    inline bool addPoint(DistanceType dist, IndexType index)
+    inline bool addPoint(DistanceType dist, _IndexType index)
     {
         if (index == m_i)
         {
