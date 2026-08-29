@@ -773,6 +773,23 @@ bool saveJSON(const sfmData::SfMData& sfmData, const std::string& filename, ESfM
             fileTree.add_child("poses", posesTree);
         }
 
+        // poses uncertainties
+        if (!sfmData.getPosesUncertainty().empty())
+        {
+            bpt::ptree posesUncertaintyTree;
+
+            for (const auto& [poseId, poseUncertainty] : sfmData.getPosesUncertainty())
+            {
+                bpt::ptree poseUncertaintyTree;
+
+                poseUncertaintyTree.put("poseId", poseId);
+                saveMatrix("poseUncertainty", poseUncertainty, poseUncertaintyTree);
+                posesUncertaintyTree.push_back(std::make_pair("", poseUncertaintyTree));
+            }
+
+            fileTree.add_child("posesUncertainty", posesUncertaintyTree);
+        }
+
         // rigs
         if (!sfmData.getRigs().empty())
         {
@@ -994,6 +1011,23 @@ bool loadJSON(sfmData::SfMData& sfmData,
 
                 rigs.emplace(rigId, rig);
             }
+        }
+
+        if (fileTree.count("posesUncertainty"))
+        {
+            sfmData::PosesUncertainty & posesUncertainties = sfmData.getPosesUncertainty(); 
+
+            for (bpt::ptree::value_type& poseUncertaintyNode : fileTree.get_child("posesUncertainty"))
+            {
+                bpt::ptree& poseUncertaintyTree = poseUncertaintyNode.second;
+
+                sfmData::PoseUncertainty poseUncertainty;
+
+                loadMatrix("poseUncertainty", poseUncertainty, poseUncertaintyTree);
+                IndexT poseId = poseUncertaintyTree.get<IndexT>("poseId");
+
+                posesUncertainties[poseId] = poseUncertainty;
+            }            
         }
     }
 

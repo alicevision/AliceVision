@@ -68,8 +68,9 @@ trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
 trilean_option(ALICEVISION_USE_APRILTAG "Enable AprilTag markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
-trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" AUTO)
+trilean_option(ALICEVISION_USE_MAGMA "Enable Magma for Uncertainty computation" AUTO)
+
 option(ALICEVISION_USE_ONNX_GPU "Use CUDA with ONNX Runtime" ON)
 if(APPLE)
     trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" OFF)
@@ -219,6 +220,7 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(OFA/OptimizeForArchitecture)
 OptimizeForArchitecture()
+
 set(ALICEVISION_HAVE_SSE 0 CACHE BOOL "SSE2 is available" FORCE)
 if (USE_SSE2 OR TARGET_ARCHITECTURE STREQUAL "native")
     if (MSVC AND NOT ${CMAKE_CL_64})
@@ -506,6 +508,7 @@ if (ALICEVISION_BUILD_SFM)
     endif()
 endif()
 
+
 # ==============================================================================
 # CoinUtils, Clp, Osi
 # ==============================================================================
@@ -633,31 +636,6 @@ if (NOT ALICEVISION_USE_USD STREQUAL "OFF")
         message(STATUS "USD version ${PXR_VERSION} found.")
     elseif (ALICEVISION_USE_USD STREQUAL "ON")
         message(SEND_ERROR "Failed to find USD.")
-    endif()
-endif()
-
-# ==============================================================================
-# UncertaintyTE
-# ==============================================================================
-# - optional, only external and enabled only if ALICEVISION_USE_UNCERTAINTYTE is ON
-# ==============================================================================
-set(ALICEVISION_HAVE_UNCERTAINTYTE 0)
-
-if (ALICEVISION_BUILD_SFM)
-    if (NOT ALICEVISION_USE_UNCERTAINTYTE STREQUAL "OFF")
-        find_package(UncertaintyTE)
-
-        if (UNCERTAINTYTE_FOUND)
-            set(ALICEVISION_HAVE_UNCERTAINTYTE 1)
-            message(STATUS "UncertaintyTE found.")
-        elseif (ALICEVISION_USE_UNCERTAINTYTE STREQUAL "ON")
-            message(SEND_ERROR "Failed to find UncertaintyTE.")
-        endif()
-    endif()
-
-    if (ALICEVISION_HAVE_UNCERTAINTYTE)
-        include_directories(${UNCERTAINTYTE_INCLUDE_DIR})
-        link_directories(${UNCERTAINTYTE_LIBRARY_DIR})
     endif()
 endif()
 
@@ -896,6 +874,26 @@ if (ALICEVISION_BUILD_SFM)
     endif()
 endif()
 
+# ==============================================================================
+# Magma
+# ==============================================================================
+
+if ((NOT ALICEVISION_BUILD_SFM) OR (NOT ALICEVISION_HAVE_CUDA))
+    set(ALICEVISION_USE_MAGMA "OFF")
+endif()
+
+set(ALICEVISION_HAVE_MAGMA 0)
+if (NOT ALICEVISION_USE_MAGMA STREQUAL "OFF")
+    
+    find_package(magma CONFIG)
+
+    if (TARGET magma::magma)
+        set(MAGMA_LIBRARIES magma::magma)
+        set(ALICEVISION_HAVE_MAGMA 1)
+    elseif (ALICEVISION_USE_MAGMA STREQUAL "ON")
+        message(SEND_ERROR "Failed to find Magma.")
+    endif()
+endif()
 
 # ==============================================================================
 # Include directories
@@ -915,7 +913,6 @@ set(ALICEVISION_INCLUDE_DIRS
         ${LEMON_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIRS}
         ${CERES_INCLUDE_DIRS}
-        ${UNCERTAINTYTE_INCLUDE_DIRS}
         ${MAGMA_INCLUDE_DIRS}
         ${FLANN_INCLUDE_DIRS}
         ${LP_INCLUDE_DIRS}
@@ -1017,7 +1014,6 @@ message("** Build LIDAR part: " ${ALICEVISION_BUILD_LIDAR})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
 message("** Build AliceVision+OpenCV samples programs: " ${ALICEVISION_HAVE_OPENCV})
-message("** Build UncertaintyTE: " ${ALICEVISION_HAVE_UNCERTAINTYTE})
 message("** Build MeshSDFilter: " ${ALICEVISION_HAVE_MESHSDFILTER})
 message("** Build Alembic exporter: " ${ALICEVISION_HAVE_ALEMBIC})
 message("** Build SWIG Python binding: " ${ALICEVISION_BUILD_SWIG_BINDING})
