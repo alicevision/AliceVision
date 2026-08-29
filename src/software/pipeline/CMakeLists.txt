@@ -370,6 +370,18 @@ if (ALICEVISION_BUILD_SFM)
               Boost::timer
     )
 
+    # Lock SfMData elements (intrinsics, poses, landmarks)
+    alicevision_add_software(aliceVision_lockSfmData
+        SOURCE main_lockSfmData.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_feature
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+    )
+
 endif() # if(ALICEVISION_BUILD_SFM)
 
 if (ALICEVISION_BUILD_PANORAMA)
