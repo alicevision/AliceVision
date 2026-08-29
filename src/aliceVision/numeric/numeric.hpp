@@ -286,7 +286,7 @@ Mat3 LookAt(const Vec3& center, const Vec3& up = Vec3::UnitY());
 
 Mat3 LookAt2(const Vec3& eyePosition3D, const Vec3& center3D = Vec3::Zero(), const Vec3& upVector3D = Vec3::UnitY());
 
-#define SUM_OR_DYNAMIC(x, y) (x == Eigen::Dynamic || y == Eigen::Dynamic) ? Eigen::Dynamic : (x + y)
+#define SUM_OR_DYNAMIC(x, y) (x == Eigen::Dynamic || y == Eigen::Dynamic) ? Eigen::Dynamic : (int(x) + int(y))
 
 template<typename Derived1, typename Derived2>
 struct hstack_return
