@@ -95,6 +95,15 @@ This node takes the result of SfM and fine-tune the camera poses so that the cam
             advanced=True,
             enabled=lambda node: node.limitReprojError.value,
         ),
+        desc.FloatParam(
+            name="lossParameter",
+            label="Loss Parameter",
+            description="Huber loss threshold, as used in bundle adjustment.",
+            value=4.0,
+            range=(0.0, 100.0, 1.0),
+            advanced=True,
+            enabled=lambda node: node.limitReprojError.value,
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
