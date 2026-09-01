@@ -69,6 +69,10 @@
       "version": "3.0.9.1#1"
     },
     {
+      "name": "geogram",
+      "version": "1.9.3#1"
+    },
+    {
       "name": "opencolorio",
       "version": "2.4.2"
     },
@@ -114,7 +118,11 @@
     },
     {
       "name": "python3",
-      "version": "3.11.10#0"
+      "version": "3.12.13#1"
+    },
+    {
+      "name": "zlib",
+      "version": "1.3.2#0"
     },
     {
       "name": "usd",
