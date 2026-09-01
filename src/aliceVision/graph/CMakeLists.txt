@@ -14,5 +14,5 @@ alicevision_add_interface(aliceVision_graph
 )
 
 # Unit tests
-alicevision_add_test(connectedComponent_test.cpp NAME "graph_connectedComponent" LINKS aliceVision_graph ${LEMON_LIBRARY})
-alicevision_add_test(triplet_test.cpp            NAME "graph_triplet"            LINKS aliceVision_graph ${LEMON_LIBRARY})
+alicevision_add_test(connectedComponent_test.cpp NAME "graph_connectedComponent" LINKS aliceVision_graph LEMON::lemon )
+alicevision_add_test(triplet_test.cpp            NAME "graph_triplet"            LINKS aliceVision_graph LEMON::lemon )
