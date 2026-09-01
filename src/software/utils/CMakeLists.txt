@@ -421,7 +421,7 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
               Boost::boost
               Boost::timer
-              ${LEMON_LIBRARY}
+              LEMON::lemon 
     )
 
     # Keyframe selection

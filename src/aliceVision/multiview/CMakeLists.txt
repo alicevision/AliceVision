@@ -82,7 +82,7 @@ alicevision_add_library(aliceVision_multiview
         ${CERES_LIBRARIES}
     PRIVATE_LINKS
         aliceVision_system
-        ${LEMON_LIBRARY}
+        LEMON::lemon 
 )
 
 alicevision_add_library(aliceVision_multiview_test_data
