@@ -59,7 +59,7 @@
     },
     {
       "name": "usd",
-      "features": [],
+      "features": ["imaging"],
       "default-features": false
     }
   ],
@@ -126,7 +126,7 @@
     },
     {
       "name": "usd",
-      "version": "25.2"
-    }  
+      "version": "26.5#0"
+    }   
   ]
 }
