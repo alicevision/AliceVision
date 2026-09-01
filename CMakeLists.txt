@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.30)
+
+# Must be set before project() so the vcpkg toolchain picks it up
+set(VCPKG_APPLOCAL_DEPS OFF CACHE BOOL "")
+
 project(aliceVision LANGUAGES C CXX)
 
 include(CMakeDependentOption)
