@@ -2,21 +2,12 @@ vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 
 set(VERSION ed2c21cbd6ef)
 
-vcpkg_download_distfile(ARCHIVE
-    URLS "http://lemon.cs.elte.hu/hg/lemon/archive/${VERSION}.zip"
-    FILENAME "lemon-${VERSION}.zip"
-    SHA512 029640e4f791a18068cb2e2b4e794d09822d9d56fb957eb3e2cceae3a30065c0041a31c465637cfcadf7b2473564070b34adc88513439cdf9046831854e2aa70
-)
-
-vcpkg_extract_source_archive(
-    SOURCE_PATH
-    ARCHIVE "${ARCHIVE}"
-    SOURCE_BASE "${VERSION}"
-    PATCHES
-        fix-cmake.patch
-        fix-cmake-version.patch
-        cpp-20-arraymap.patch
-        cpp-20-adaptors.patch
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO alicevision/lemon
+    REF 5493d5317605f56076e94b04caa6199d52957d74
+    SHA512 ea46f74c70c30569b4c18fe54fe2cc157b8d0dc17b8052851d543fb5d2a24b28bf770ff7002519aaf6f9de02aa22926db4790b9615deac0f834d24c3c18df526
+    HEAD_REF develop
 )
 
 vcpkg_cmake_configure(

@@ -59,7 +59,7 @@
     },
     {
       "name": "usd",
-      "features": [],
+      "features": ["imaging"],
       "default-features": false
     }
   ],
@@ -67,6 +67,10 @@
     {
       "name": "openimageio",
       "version": "3.0.9.1#1"
+    },
+    {
+      "name": "geogram",
+      "version": "1.9.3#1"
     },
     {
       "name": "opencolorio",
@@ -78,11 +82,11 @@
     },
     {
       "name": "opencv4",
-      "version": "4.11.0"
+      "version": "4.12.0#3"
     },
     {
       "name": "liblemon",
-      "version": "2019-06-13#10"
+      "version": "2026-08-26#0"
     },
     {
       "name": "clp",
@@ -102,7 +106,7 @@
     },
     {
       "name": "popsift",
-      "version": "0.9"
+      "version": "0.10.0#1"
     },
     {
       "name": "cctag",
@@ -114,11 +118,15 @@
     },
     {
       "name": "python3",
-      "version": "3.11.10#0"
+      "version": "3.12.13#1"
+    },
+    {
+      "name": "zlib",
+      "version": "1.3.2#0"
     },
     {
       "name": "usd",
-      "version": "25.2"
-    }  
+      "version": "26.5#0"
+    }   
   ]
 }

@@ -5,55 +5,57 @@ on:
 
 jobs:
   build-windows:
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
 
     env:
+      BUILD_TYPE: Release
+      CUDA_VERSION: '13.2.1'
+      CUDA_MAJOR_MINOR: '13.2'
+      VCPKG_VERSION: '2026.09.01'
+      SCCACHE_GHA_ENABLED: "true"
+
       buildDir: '${{ github.workspace }}\build\'
       dependenciesDir: '${{ github.workspace }}\dependencies'
       archivePath: '${{ github.workspace }}\dependencies\installed.zip'
-      BUILD_TYPE: Release
-      CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: '${{ github.workspace }}/install'
       ALICEVISION_BUNDLE: ${{ github.workspace }}/install/bundle
       ALICEVISION_LIBPATH: '${{ github.workspace }}/install/bundle/bin'
       PYTHONPATH: '${{ github.workspace }}/install/bundle/lib/python'
-      SCCACHE_GHA_ENABLED: "true"
       CUDA_ENV_FILE: '${{ github.workspace }}\cuda_env.txt'
 
     steps:
 
       # ---- PREPARE ENV -----
 
+      # Clone the repository together with all submodules (vendored third-party code).
       - name: Checkout
         uses: actions/checkout@v4
         with:
             submodules: recursive
       
+      # Initialize the MSVC toolchain environment (cl.exe, link.exe, SDK paths) for x64.
       - name: Set up Visual Studio shell
         uses: egor-tensin/vs-shell@v2
         with:
           arch: x64
 
+      # Pre-create output directories so later steps can write to them unconditionally.
       - name: Create Directories
         run: |
           New-Item -ItemType Directory -Force -Path "${{ env.dependenciesDir }}"
           New-Item -ItemType Directory -Force -Path "${{ env.ALICEVISION_ROOT }}"
 
+      # Install Python 3.12 — required by the SWIG binding build and pyTests.
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements.txt
 
        # ---- CACHES ----
 
-      - name: Cache pip packages
-        uses: actions/cache@v4
-        with:
-          path: ~\AppData\Local\pip\Cache
-          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            pip-${{ runner.os }}-
-
+      # Restore the prebuilt vcpkg binary tree; skips the multi-GB download when the key matches.
       - name: Cache vcpkg prebuilt binaries
         id: cache-vcpkg
         uses: actions/cache@v4
@@ -61,48 +63,55 @@ jobs:
           path: ${{ env.dependenciesDir }}\x64-windows-release
           key: vcpkg-${{ runner.os }}-${{ env.VCPKG_VERSION }}
 
+      # Restore the full CUDA Toolkit installation to avoid re-installing it on every run.
       - name: Cache CUDA Toolkit
         id: cache-cuda
         uses: actions/cache@v4
         with:
           path: |
-            C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8
-            C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\BuildCustomizations
+            C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2
+            C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\BuildCustomizations\
             ${{ env.CUDA_ENV_FILE }}
           key: cuda-${{ runner.os }}-${{ env.CUDA_VERSION }}
 
+      # Start the sccache daemon and connect it to the GHA cache backend for compiler caching.
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
       
       # ---- REQUIREMENTS -----
 
+      # Install Python packages from requirements.txt (used by pyTests and build tooling).
       - name: Install Python requirements
         run: |
           pip install -r requirements.txt 
 
+      # Download prebuilt vcpkg binaries only when the cache is cold (avoids redundant transfer).
       - name: Download zip file with prebuilt binaries
         if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         run: |
-          Invoke-WebRequest -Uri "https://github.com/alicevision/vcpkg/releases/download/2026.03.11/x64-windows-release.zip" -OutFile "${{ env.archivePath }}"
+          Invoke-WebRequest -Uri "https://github.com/alicevision/vcpkg/releases/download/${{ env.VCPKG_VERSION }}/x64-windows-release.zip" -OutFile "${{ env.archivePath }}"
 
+      # Extract the vcpkg archive into dependenciesDir.
       - name: vcpkg - Unzip prebuilt binaries
         if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         run: |
-          tar -xvzf "${{ env.archivePath }}" -C "${{ env.dependenciesDir }}"
+          tar -xzf "${{ env.archivePath }}" -C "${{ env.dependenciesDir }}"
       
+      # Delete the archive after extraction to reclaim disk space.
       - name: vcpkg - Remove zip file with prebuilt binaries
         if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         run: |
           rm ${{ env.archivePath }}
 
+      # Install the CUDA Toolkit (nvcc, headers, libraries) when not restored from cache.
       - name: Get CUDA Toolkit
         if: steps.cache-cuda.outputs.cache-hit != 'true'
-        uses: Jimver/cuda-toolkit@v0.2.30
+        uses: Jimver/cuda-toolkit@v0.2.36
         id: cuda-toolkit
         with:
-          cuda: '12.8.0'
-          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "cusparse", "npp", "npp_dev", "cufft", "cufft_dev", "visual_studio_integration"]'
+          cuda: '${{ env.CUDA_VERSION }}'
 
+      # Write CUDA_PATH and CUDACXX to a file so they survive the cache/restore cycle.
       - name: Save CUDA path metadata
         if: steps.cache-cuda.outputs.cache-hit != 'true'
         shell: pwsh
@@ -119,6 +128,7 @@ jobs:
           "CUDA_PATH=$cudaRoot" | Out-File -FilePath "${{ env.CUDA_ENV_FILE }}" -Encoding utf8
           "CUDACXX=$nvccPath" | Out-File -FilePath "${{ env.CUDA_ENV_FILE }}" -Encoding utf8 -Append
 
+      # Export CUDA_PATH/CUDACXX from the metadata file into GITHUB_ENV and add nvcc to PATH.
       - name: Configure CUDA environment
         shell: pwsh
         run: |
@@ -132,10 +142,12 @@ jobs:
           }
           "$cudaRoot\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
+      # Install a recent CMake and Ninja into PATH.
       - uses: lukka/get-cmake@latest
 
       # ------ BUILD ----- 
 
+      # CMake configure + compile the full AliceVision project and install it to ALICEVISION_ROOT.
       - name: Build
         uses: lukka/run-cmake@v3
         with:
@@ -144,10 +156,9 @@ jobs:
           cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
           buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release --target install --parallel ${{ env.NUM_CORES }}'
+          buildWithCMakeArgs: '--config Release --target install --parallel'
           cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.dependenciesDir }}\x64-windows-release\scripts\buildsystems\vcpkg.cmake
                             -DVCPKG_TARGET_TRIPLET=x64-windows-release
-                            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
                             -G "Ninja Multi-Config"
                             -DBUILD_SHARED_LIBS=ON
                             -DTARGET_ARCHITECTURE=core
@@ -159,41 +170,33 @@ jobs:
                             -DALICEVISION_USE_CCTAG=ON
                             -DALICEVISION_USE_POPSIFT=ON
                             -DALICEVISION_USE_ALEMBIC=ON
+                            -DALICEVISION_USE_USD=ON
                             -DALICEVISION_BUILD_SWIG_BINDING=ON
                             -DBOOST_NO_CXX11=ON
                             -DVCPKG_MANIFEST_MODE=OFF
                             -DPython3_EXECUTABLE=${{ env.Python3_ROOT_DIR }}\python.exe
+                            -DCMAKE_CUDA_COMPILER="${{ env.CUDACXX }}"
+                            -DCUDAToolkit_ROOT="${{ env.CUDA_PATH }}"
                             -DCMAKE_C_COMPILER_LAUNCHER=sccache
                             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
+      # Assemble a self-contained redistributable bundle with all runtime DLL dependencies.
       - name: Bundle
-        uses: lukka/run-cmake@v3
-        with:
-          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release --target bundle --parallel ${{ env.NUM_CORES }}'
-          cmakeAppendedArgs: -DBUNDLE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_BUNDLE }}
-          cmakeBuildType: Release
-          buildWithCMake: true
+        run: cmake --build "${{ env.buildDir }}" --config Release --target bundle --parallel
 
       # ------ TESTS ------
 
+      # Validate the Python (SWIG) bindings against the installed bundle.
       - name: Python Binding - Unit Tests
         run: |
+          $env:PATH = "${{ env.ALICEVISION_LIBPATH }};$env:PATH"
           python -m pytest ./pyTests
 
+      # Run the C++ unit tests via ctest.
       - name: Unit Tests
-        uses: lukka/run-cmake@v3
-        with:
-          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release --target test'
-          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
-          cmakeBuildType: Release
-          useVcpkgToolchainFile: true
-          buildWithCMake: true
+        run: |
+          $env:PATH = "${{ env.dependenciesDir }}\x64-windows-release\installed\x64-windows-release\bin;$env:PATH"
+          ctest --test-dir "${{ env.buildDir }}" --build-config Release --output-on-failure --parallel
 
       # ── Archive & upload for nightly release ────────
       # Only runs when called from nightly.yml; skipped on regular CI.
@@ -208,6 +211,7 @@ jobs:
           Compress-Archive -Path "$env:ALICEVISION_BUNDLE\*" -DestinationPath $archive
           echo "filename=$archive" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
  
+      # Upload the zip so nightly.yml can attach it to the GitHub release.
       - name: Upload archive artifact
         if: github.workflow == 'Nightly'
         uses: actions/upload-artifact@v4

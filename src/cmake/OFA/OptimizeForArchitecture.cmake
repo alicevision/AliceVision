@@ -151,9 +151,19 @@ macro(OptimizeForArchitecture)
             else()
                 message(STATUS "[OptimizeForArchitecture] (!) ${CMAKE_SYSTEM_PROCESSOR} architecture optimization flags applied: ${ARCHITECTURE_CXX_FLAGS}.\nIn case of runtime errors re-compile with TARGET_ARCHITECTURE=none or TARGET_ARCHITECTURE=generic.")
             endif()
-            # Set the flags
-            add_compile_options(${ARCHITECTURE_CXX_FLAGS})
         endif()
+        # Persist computed flags to cache so they survive subsequent cmake runs
+        set(ARCHITECTURE_CXX_FLAGS ${ARCHITECTURE_CXX_FLAGS} CACHE STRING "CPU architecture compiler flags" FORCE)
+    endif()
+
+    # Always (re-)apply the architecture flags on every cmake run.
+    # add_compile_options must be called each time cmake regenerates project files,
+    # not only when the architecture changes.
+    if(ARCHITECTURE_CXX_FLAGS)
+        # Set the flags (iterate to avoid semicolons splitting the generator expression)
+        foreach(_arch_flag ${ARCHITECTURE_CXX_FLAGS})
+            add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:${_arch_flag}>)
+        endforeach()
     endif()
 
 endmacro(OptimizeForArchitecture)

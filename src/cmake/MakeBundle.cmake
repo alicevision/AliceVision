@@ -117,12 +117,22 @@ set(LINUX_OS_LIB_BLACKLIST
 # ─── Platform overrides ───────────────────────────────────────────────────────
 
 function(gp_resolve_item_override context item exepath dirs resolved_item_var resolved_var)
-    # Suppress errors for Windows API sets (api-ms-win-*.dll) — these are
-    # virtual DLLs provided by the OS and must never be bundled.
-    if(item MATCHES "^api-ms-win-[^/]+\\.dll$")
-        set(${resolved_item_var} "$ENV{SystemRoot}/system/${item}" PARENT_SCOPE)
-        set(${resolved_var} TRUE PARENT_SCOPE)
-    endif()
+  # avoid log flood for those system libraries with non-absolute path
+  if(item MATCHES "^(api-ms-win-)[^/]+dll"
+     OR item MATCHES "^libomp[0-9]*\\.x86_64\\.dll$"
+     OR item MATCHES "^(cublas|cublasLt|cufft|curand|cusolver|cusparse|nvrtc|nvJitLink)[0-9_]*\\.dll$"
+     OR item MATCHES "^npp[a-z]+[0-9_]*\\.dll$"
+     OR item MATCHES "^cudart[0-9_]*\\.dll$")
+    # resolve item with fake absolute system path to keep them identified as system libs
+    # By doing this, fixup_bundle:
+    #   - won't complain about those libraries
+    #   - won't embed them in the bundle
+    # Note: libomp*.x86_64.dll is the LLVM OpenMP runtime (/openmp:llvm).
+    # CUDA runtime DLLs (cuBLAS, cuFFT, NPP, etc.) require CUDA to be installed
+    # on the target machine and must not be bundled.
+    set(${resolved_item_var} "$ENV{SystemRoot}/system/${item}" PARENT_SCOPE)
+    set(${resolved_var} TRUE PARENT_SCOPE)
+  endif()
 endfunction()
 
 if(UNIX)
@@ -220,5 +230,20 @@ if(UNIX)
         file(REMOVE ${_LIBS_TO_MOVE})
     endif()
 endif()
+
+# ─── Copy USD plugin directory from lookup paths ─────────────────────────────
+# plugInfo.json and plugin subdirs must sit alongside the DLLs for the USD resolver.
+
+if (WIN32)
+    set(_bundle_bindir "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+    foreach(_lookup_path IN LISTS BUNDLE_LIBS_PATHS)
+        set(_usd_src "${_lookup_path}/usd")
+        if(EXISTS "${_usd_src}")
+            message(STATUS "  Copying USD plugin dir: ${_usd_src} -> ${_bundle_bindir}/usd")
+            file(COPY "${_usd_src}" DESTINATION "${_bundle_bindir}" USE_SOURCE_PERMISSIONS)
+            break()
+        endif()
+    endforeach()
+endif(WIN32)
 
 message(STATUS "=== Bundle done: ${BUNDLE_INSTALL_PREFIX} ===")
