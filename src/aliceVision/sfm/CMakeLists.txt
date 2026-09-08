@@ -117,6 +117,7 @@ alicevision_add_library(aliceVision_sfm_bundle
         aliceVision_sfmData
         Boost::boost
         ${CERES_LIBRARIES}
+        LEMON::lemon
 )
 
 alicevision_add_library(aliceVision_sfm
@@ -139,7 +140,6 @@ alicevision_add_library(aliceVision_sfm
         aliceVision_dataio
         Boost::boost
     PRIVATE_LINKS
-        LEMON::lemon 
         nanoflann::nanoflann
 )
 
