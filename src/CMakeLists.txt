@@ -545,6 +545,14 @@ if (ALICEVISION_BUILD_MVS OR ALICEVISION_BUILD_SFM)
 endif()
 
 # ==============================================================================
+# meshoptimizer
+# ==============================================================================
+if (ALICEVISION_BUILD_MVS OR ALICEVISION_BUILD_SFM)
+    find_package(meshoptimizer CONFIG REQUIRED)
+    message(STATUS "meshoptimizer found.")
+endif()
+
+# ==============================================================================
 # OpenCV
 # ==============================================================================
 # - optional, only external and enabled only if ALICEVISION_USE_OPENCV is ON
@@ -920,7 +928,7 @@ set(ALICEVISION_INCLUDE_DIRS
         ${FLANN_INCLUDE_DIRS}
         ${LP_INCLUDE_DIRS}
         ${COINUTILS_INCLUDE_DIRS}
-        ${CLP_INCLUDE_DIRS}
+        ${CLP_INCLUDE_DIRS}R
         ${OSI_INCLUDE_DIRS}
 )
 

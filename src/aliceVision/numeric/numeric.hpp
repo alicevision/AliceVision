@@ -73,6 +73,7 @@ using EigenDoubleTraits = Eigen::NumTraits<double>;
 
 using Vec3 = Eigen::Vector3d;
 using Vec3i = Eigen::Vector3i;
+using Vec3u = Eigen::Vector<unsigned, 3>;
 using Vec3f = Eigen::Vector3f;
 
 using Vec2i = Eigen::Vector2i;

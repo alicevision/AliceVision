@@ -16,6 +16,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <meshoptimizer.h>
+#include <aliceVision/mesh/Octree.hpp>
+
 #include <unordered_map>
 #include <unordered_set>
 #include <cstdint>
@@ -32,511 +35,266 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-using GridCoord = Eigen::Vector<unsigned, 3>;
 
-struct GridCoordHash
+void buildChildAggregateMesh(const mesh::OctreeNode& parent, mesh::IndexedMeshStreams& out)
 {
-    std::size_t operator()(const GridCoord& coord) const noexcept
-    {
-        std::size_t seed = 0;
+    out.positions.clear();
+    out.normals.clear();
+    out.indices.clear();
 
-        for (int axis = 0; axis < 3; ++axis)
+    std::size_t totalVertexCount = 0;
+    std::size_t totalIndexCount = 0;
+
+    for (const auto& child : parent.getChildren())
+    {
+        if (!child || !child->hasFaces())
         {
-            const std::size_t value = std::hash<unsigned>{}(coord[axis]);
-            seed ^= value + 0x9e3779b9u + (seed << 6) + (seed >> 2);
+            continue;
         }
 
-        return seed;
+        totalVertexCount += child->getVertices().size();
+        totalIndexCount += child->getIndices().size();
     }
-};
 
-struct GridCoordEqual
+    out.positions.reserve(totalVertexCount);
+    out.normals.reserve(totalVertexCount);
+    out.indices.reserve(totalIndexCount);
+
+    unsigned int baseVertexOffset = 0;
+
+    for (const auto& child : parent.getChildren())
+    {
+        if (!child || !child->hasFaces())
+        {
+            continue;
+        }
+
+        const std::vector<Vec3f>& childVertices = child->getVertices();
+        const std::vector<Vec3f>& childNormals = child->getNormals();
+
+        out.positions.insert(out.positions.end(), childVertices.begin(), childVertices.end());
+        out.normals.insert(out.normals.end(), childNormals.begin(), childNormals.end());
+
+        for (const unsigned & idx : child->getIndices())
+        {
+            out.indices.push_back(baseVertexOffset + idx);
+        }
+
+        baseVertexOffset += static_cast<unsigned int>(childVertices.size());
+    }
+}
+
+mesh::IndexedMeshStreams buildIndexedMeshStreams(const mesh::OctreeNode& node)
 {
-    bool operator()(const GridCoord& lhs, const GridCoord& rhs) const noexcept
-    {
-        return lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2];
-    }
-};
+    mesh::IndexedMeshStreams mesh;
+    mesh.positions = node.getVertices();
+    mesh.normals = node.getNormals();
+    mesh.indices = node.getIndices();
 
-template<typename TValue>
-using GridCoordMap = std::unordered_map<GridCoord, TValue, GridCoordHash, GridCoordEqual>;
+    return mesh;
+}
 
-
-
-class OctreeNode
+void weldIndexedMeshStreams(mesh::IndexedMeshStreams& mesh)
 {
-public:
-    using uptr = std::unique_ptr<OctreeNode>;
-
-public:
-
-    /**
-     * @brief Returns the mesh vertices stored in this node.
-     * @return Read-only reference to the vertex list.
-     */
-    const std::vector<Vec3f>& getVertices() const
+    if (mesh.positions.empty() || mesh.indices.empty())
     {
-        return _vertices;
+        return;
     }
 
-    /**
-     * @brief Returns a mutable reference to the mesh vertices stored in this node.
-     * @return Mutable reference to the vertex list.
-     */
-    std::vector<Vec3f>& getVertices()
+    std::vector<unsigned int> remap(mesh.positions.size());
+
+    const meshopt_Stream streams[] = {
+        {mesh.positions.data(), sizeof(Vec3f), sizeof(Vec3f)},
+        {mesh.normals.data(), sizeof(Vec3f), sizeof(Vec3f)},
+    };
+
+    const std::size_t uniqueVertexCount = meshopt_generateVertexRemapMulti(
+        remap.data(),
+        mesh.indices.data(),
+        mesh.indices.size(),
+        mesh.positions.size(),
+        streams,
+        2);
+
+    std::vector<Vec3f> weldedPositions(uniqueVertexCount);
+    std::vector<Vec3f> weldedNormals(uniqueVertexCount);
+    std::vector<unsigned int> weldedIndices(mesh.indices.size());
+
+    meshopt_remapVertexBuffer(
+        weldedPositions.data(),
+        mesh.positions.data(),
+        mesh.positions.size(),
+        sizeof(Vec3f),
+        remap.data());
+    meshopt_remapVertexBuffer(
+        weldedNormals.data(),
+        mesh.normals.data(),
+        mesh.normals.size(),
+        sizeof(Vec3f),
+        remap.data());
+    meshopt_remapIndexBuffer(
+        weldedIndices.data(),
+        mesh.indices.data(),
+        mesh.indices.size(),
+        remap.data());
+
+    mesh.positions = std::move(weldedPositions);
+    mesh.normals = std::move(weldedNormals);
+    mesh.indices = std::move(weldedIndices);
+}
+
+bool simplifyIndexedMeshStreams(const mesh::IndexedMeshStreams& input,
+                                mesh::IndexedMeshStreams& output,
+                                std::size_t targetTriangleCount,
+                                float targetError,
+                                float& resultError,
+                                unsigned int options = meshopt_SimplifyLockBorder)
+{
+    output = input;
+
+    if (input.positions.empty() || input.indices.size() < 3)
     {
-        return _vertices;
+        resultError = 0.0f;
+        return false;
     }
 
-    /**
-     * @brief Sets the mesh vertices for this node.
-     * @param vertices New vertex list.
-     */
-    void setVertices(const std::vector<Vec3f>& vertices)
+    const std::size_t inputTriangleCount = input.indices.size() / 3;
+
+    if (targetTriangleCount >= inputTriangleCount)
     {
-        _vertices = vertices;
+        resultError = 0.0f;
+        return false;
     }
 
-    /**
-     * @brief Returns the per-vertex normals stored in this node.
-     * @return Read-only reference to the normal list.
-     */
-    const std::vector<Vec3f>& getNormals() const
+    const float scale = meshopt_simplifyScale(
+        input.positions[0].data(),
+        input.positions.size(),
+        sizeof(Vec3f));
+
+    const float relativeTargetError = (targetError < 1.0f) ? targetError / scale : 1.0f;
+
+    const std::size_t targetIndexCount = targetTriangleCount * 3;
+    std::vector<unsigned int> simplifiedIndices(input.indices.size());
+    float localError = 0.0f;
+    std::size_t simplifiedIndexCount = 0;
+
+    if (input.normals.size() == input.positions.size())
     {
-        return _normals;
+        //Let ignore those normals as they may be more noisy than useful.
+        static constexpr float normalWeights[3] = {0.0f, 0.0f, 0.0f};
+
+        simplifiedIndexCount = meshopt_simplifyWithAttributes(
+            simplifiedIndices.data(),
+            input.indices.data(),
+            input.indices.size(),
+            input.positions[0].data(),
+            input.positions.size(),
+            sizeof(Vec3f),
+            input.normals[0].data(),
+            sizeof(Vec3f),
+            normalWeights,
+            3,
+            nullptr,
+            targetIndexCount,
+            relativeTargetError,
+            options,
+            &localError);
+    }
+    else
+    {
+        simplifiedIndexCount = meshopt_simplify(
+            simplifiedIndices.data(),
+            input.indices.data(),
+            input.indices.size(),
+            input.positions[0].data(),
+            input.positions.size(),
+            sizeof(Vec3f),
+            targetIndexCount,
+            relativeTargetError,
+            options,
+            &localError);
     }
 
-    /**
-     * @brief Returns a mutable reference to the per-vertex normals stored in this node.
-     * @return Mutable reference to the normal list.
-     */
-    std::vector<Vec3f>& getNormals()
+    if (simplifiedIndexCount < 3)
     {
-        return _normals;
+        resultError = localError * scale;
+        return false;
     }
 
-    /**
-     * @brief Sets the per-vertex normals for this node.
-     * @param normals New normal list.
-     */
-    void setNormals(const std::vector<Vec3f>& normals)
+    simplifiedIndices.resize(simplifiedIndexCount);
+
+    std::vector<unsigned int> remap(input.positions.size());
+    const std::size_t simplifiedVertexCount = meshopt_optimizeVertexFetchRemap(
+        remap.data(),
+        simplifiedIndices.data(),
+        simplifiedIndices.size(),
+        input.positions.size());
+
+    output.positions.resize(simplifiedVertexCount);
+    output.indices.resize(simplifiedIndices.size());
+
+    meshopt_remapVertexBuffer(
+        output.positions.data(),
+        input.positions.data(),
+        input.positions.size(),
+        sizeof(Vec3f),
+        remap.data());
+    meshopt_remapIndexBuffer(
+        output.indices.data(),
+        simplifiedIndices.data(),
+        simplifiedIndices.size(),
+        remap.data());
+
+    if (input.normals.size() == input.positions.size())
     {
-        _normals = normals;
+        output.normals.resize(simplifiedVertexCount);
+        meshopt_remapVertexBuffer(
+            output.normals.data(),
+            input.normals.data(),
+            input.normals.size(),
+            sizeof(Vec3f),
+            remap.data());
+    }
+    else
+    {
+        output.normals.clear();
     }
 
-    /**
-     * @brief Returns the triangular faces (index triplets) stored in this node.
-     * @return Read-only reference to the face list.
-     */
-    const std::vector<Eigen::Vector<unsigned, 3>>& getFaces() const
-    {
-        return _faces;
-    }
+    ALICEVISION_LOG_INFO(scale);
+    ALICEVISION_LOG_INFO(localError);
+    resultError = localError * scale;
 
-    /**
-     * @brief Returns a mutable reference to the triangular faces stored in this node.
-     * @return Mutable reference to the face list.
-     */
-    std::vector<Eigen::Vector<unsigned, 3>>& getFaces()
-    {
-        return _faces;
-    }
+    return true;
+}
 
-    /**
-     * @brief Sets the triangular faces for this node.
-     * @param faces New face list.
-     */
-    void setFaces(const std::vector<Eigen::Vector<unsigned, 3>>& faces)
-    {
-        _faces = faces;
-    }
+std::vector<mesh::IndexedMeshStreams> buildLeafMeshes(const mesh::OctreeNode& octree)
+{
+    std::vector<mesh::IndexedMeshStreams> meshes;
 
-    /**
-     * @brief Returns the minimum corner of the node's axis-aligned bounding box.
-     * @return Read-only reference to the minimum bound.
-     */
-    const Vec3f& getBMin() const
+    for (const mesh::OctreeNode* node : octree.getLeaves())
     {
-        return _bMin;
-    }
-
-    /**
-     * @brief Sets the minimum corner of the node's axis-aligned bounding box.
-     * @param bMin New minimum bound.
-     */
-    void setBMin(const Vec3f& bMin)
-    {
-        _bMin = bMin;
-    }
-
-    /**
-     * @brief Returns the maximum corner of the node's axis-aligned bounding box.
-     * @return Read-only reference to the maximum bound.
-     */
-    const Vec3f& getBMax() const
-    {
-        return _bMax;
-    }
-
-    /**
-     * @brief Sets the maximum corner of the node's axis-aligned bounding box.
-     * @param bMax New maximum bound.
-     */
-    void setBMax(const Vec3f& bMax)
-    {
-        _bMax = bMax;
-    }
-
-    /**
-     * @brief Returns the depth of this node in the octree (root = 0).
-     * @return Depth level of this node.
-     */
-    uint32_t getDepth() const
-    {
-        return _depth;
-    }
-
-    /**
-     * @brief Sets the depth of this node in the octree.
-     * @param depth Depth level to assign (root = 0).
-     */
-    void setDepth(uint32_t depth)
-    {
-        _depth = depth;
-    }
-
-    bool isLeaf() const 
-    {
-        return (!_children[0]);
-    }
-
-    bool hasFaces() const
-    {
-        return !_faces.empty();
-    }
-
-    /**
-     * @brief Computes the axis-aligned bounding box from @c _vertices
-     *        and stores the result in @c _bMin and @c _bMax.
-     *
-     * If the vertex list is empty, both bounds are set to zero.
-     */
-    void computeBounds()
-    {
-        if (_vertices.empty())
+        if (!node->hasFaces())
         {
-            _bMin = Vec3f::Zero();
-            _bMax = Vec3f::Zero();
-            return;
+            continue;
         }
 
-        _bMin = _vertices[0];
-        _bMax = _vertices[0];
-        for (const Vec3f& v : _vertices)
-        {
-            _bMin = _bMin.cwiseMin(v);
-            _bMax = _bMax.cwiseMax(v);
-        }
+        mesh::IndexedMeshStreams mesh = buildIndexedMeshStreams(*node);
+
+       
+        weldIndexedMeshStreams(mesh);
+
+        meshes.push_back(std::move(mesh));
     }
 
-    void buildDown(size_t maxTriangles, size_t maxLevel = std::numeric_limits<size_t>::max())
-    {
-        if (_depth == maxLevel)
-        {
-            return;
-        }
-
-        if (_vertices.size() < maxTriangles)
-        {
-            return;
-        }
-
-        if (!subdivide())
-        {
-            return;
-        }
-
-        //Build children recursively
-        if (maxLevel == _depth)
-        {
-            return;
-        }
-            
-        for (const auto & child : _children)
-        {
-            child->buildDown(maxTriangles, maxLevel);
-        }
-    }
-
-    bool subdivide()
-    {
-        if (!isLeaf())
-        {
-            return false;
-        }
-
-        if (_faces.empty())
-        {
-            return false;
-        }
-
-        const Vec3f center = (_bMin + _bMax) * 0.5f;
-
-        // Allocate the 8 children
-        for (int i = 0; i < 8; ++i)
-        {
-            _children[i] = std::make_unique<OctreeNode>();
-            _children[i]->setDepth(_depth + 1);
-        }
-
-        // Per-child remapping: global vertex index -> local index within child
-        std::array<std::unordered_map<unsigned, unsigned>, 8> indexRemap;
+    return meshes;
+}
 
 
-        // Loop over all faces and move them to the 
-        // Correct children according to the centroid position
-        for (unsigned f = 0; f < _faces.size(); ++f)
-        {
-            const Eigen::Vector<unsigned, 3> & face = _faces[f];
-
-            // Assign face to the octant of its centroid
-            const Vec3f centroid = (_vertices[face[0]] + _vertices[face[1]] + _vertices[face[2]]) / 3.0f;
-
-            // Encore octant to int
-            const int octant = ((centroid[0] >= center[0]) ? 1 : 0) | ((centroid[1] >= center[1]) ? 2 : 0) | ((centroid[2] >= center[2]) ? 4 : 0);
-
-            OctreeNode& child = *_children[octant];
-            Eigen::Vector<unsigned, 3> localFace;
-
-            for (int k = 0; k < 3; ++k)
-            {
-                const unsigned globalIdx = face[k];
-                const unsigned nextLocalIdx = static_cast<unsigned>(child.getVertices().size());
-
-                auto [it, inserted] = indexRemap[octant].emplace(globalIdx, nextLocalIdx);
-
-                if (inserted)
-                {
-                    const Vec3f& vertex = _vertices[globalIdx];
-                    const Vec3f& normal = _normals[globalIdx];
-                    child.getVertices().push_back(vertex);
-                    child.getNormals().push_back(normal);
-                }
-
-                // May be a previous value if inserted is false;
-                const unsigned localIdx = it->second;
-                localFace[k] = localIdx;
-            }
-
-            child.getFaces().push_back(localFace);
-        }
-
-        // Set each child's bounding box from the parent bounds and center.
-        // Bit 0 = x, bit 1 = y, bit 2 = z: 0 → [bMin, center], 1 → [center, bMax].
-        for (int octant = 0; octant < 8; ++octant)
-        {
-            Vec3f childMin, childMax;
-            for (int axis = 0; axis < 3; ++axis)
-            {
-                const bool upper = (octant >> axis) & 1;
-                childMin[axis] = upper ? center[axis] : _bMin[axis];
-                childMax[axis] = upper ? _bMax[axis]  : center[axis];
-                _children[octant]->_position[axis] = _position[axis] * 2 + ((upper)? 1 : 0);
-            }
-
-            _children[octant]->setBMin(childMin);
-            _children[octant]->setBMax(childMax);
-        }
-
-        // Don't keep data to avoid redundancy
-        _vertices.clear();
-        _normals.clear();
-        _faces.clear();
-
-        return true;
-    }
-
-
-    uint32_t getRemainingDepth()
-    {
-        uint32_t maxDepth = 0;
-
-        // Collect all the leafs
-        std::stack<OctreeNode*> stack;
-        stack.push(this);
-
-        while (!stack.empty())
-        {
-            OctreeNode * cur = stack.top();
-            stack.pop();
-
-            if (!cur->_children[0])
-            {
-                maxDepth = std::max(maxDepth, cur->_depth);
-            }
-            else 
-            {
-                for (auto & child : cur->_children)
-                {
-                    stack.push(child.get());
-                }
-            }
-        }
-
-        return maxDepth;
-    }
-
-    std::vector<OctreeNode*> getLeaves()
-    {
-        std::vector<OctreeNode*> leaves;
-
-        std::stack<OctreeNode*> stack;
-        stack.push(this);
-
-        while (!stack.empty())
-        {
-            OctreeNode * cur = stack.top();
-            stack.pop();
-
-            if (cur->isLeaf())
-            {
-                leaves.push_back(cur);
-            }
-            else 
-            {
-                for (auto & child : cur->_children)
-                {
-                    stack.push(child.get());
-                }
-            }
-        }
-
-        return leaves;
-    }
-
-    void balance()
-    {
-        while (balanceOnce())
-        {
-        }
-    }
-
-private:
-    bool balanceOnce()
-    {
-        std::vector<OctreeNode*> leaves = getLeaves();
-        const uint32_t maxDepth = getRemainingDepth();
-
-        std::vector<GridCoordMap<OctreeNode*>> leavesByDepth(maxDepth + 1);
-
-        for (OctreeNode* leaf : leaves)
-        {
-            leavesByDepth[leaf->_depth].emplace(leaf->_position, leaf);
-        }
-
-        std::unordered_set<OctreeNode*> leavesToSplit;
-
-        // Loop over all leaf nodes
-        for (OctreeNode* leaf : leaves)
-        {
-            const GridCoord leafMin = leaf->getScaledPosition(maxDepth);
-            const unsigned leafSpan = getSpanAtDepth(maxDepth, leaf->_depth);
-            const GridCoord leafMax = leafMin.array() + leafSpan;
-
-            for (int axis = 0; axis < 3; ++axis)
-            {
-                //For each axis, get the two other axis
-                const int axisA = (axis + 1) % 3;
-                const int axisB = (axis + 2) % 3;
-
-                for (int side = 0; side < 2; ++side)
-                {
-                    for (uint32_t depth = 0; depth + 1 < leaf->_depth; ++depth)
-                    {
-                        const unsigned neighborSpan = getSpanAtDepth(maxDepth, depth);
-
-                        // A coarser neighbor can only exist if this leaf face lies on
-                        // a boundary of the coarser grid cell. If the face is inside a
-                        // coarser cell, that depth cannot contain a face-adjacent leaf.
-                        if (side == 0)
-                        {
-                            if (leafMin[axis] == 0 || (leafMin[axis] % neighborSpan) != 0)
-                            {
-                                continue;
-                            }
-                        }
-                        else
-                        {
-                            if ((leafMax[axis] % neighborSpan) != 0)
-                            {
-                                continue;
-                            }
-                        }
-
-                        // Build the only coarse-grid coordinate that can share this face.
-                        GridCoord neighborPos = GridCoord::Zero();
-                        neighborPos[axis] = (side == 0) ? (leafMin[axis] / neighborSpan) - 1 : (leafMax[axis] / neighborSpan);
-                        neighborPos[axisA] = leafMin[axisA] / neighborSpan;
-                        neighborPos[axisB] = leafMin[axisB] / neighborSpan;
-
-                        auto it = leavesByDepth[depth].find(neighborPos);
-                        if (it == leavesByDepth[depth].end())
-                        {
-                            continue;
-                        }
-
-                        OctreeNode* neighbor = it->second;
-
-                        if (!neighbor->hasFaces())
-                        {
-                            continue;
-                        }
-
-                        leavesToSplit.insert(neighbor);
-                    }
-                }
-            }
-        }
-
-        bool split = false;
-
-        ALICEVISION_LOG_ERROR(leavesToSplit.size());
-        for (OctreeNode* leaf : leavesToSplit)
-        {
-            split = leaf->subdivide() || split;
-        }
-
-        return split;
-    }
-
-    static unsigned getSpanAtDepth(uint32_t targetDepth, uint32_t depth)
-    {
-        return 1u << (targetDepth - depth);
-    }
-
-    GridCoord getScaledPosition(uint32_t targetDepth) const
-    {
-        return _position * getSpanAtDepth(targetDepth, _depth);
-    }
-
-    std::vector<Vec3f> _vertices;
-    std::vector<Vec3f> _normals;
-    std::vector<Eigen::Vector<unsigned, 3>> _faces;
-
-    std::array<uptr, 8> _children;
-
-    Vec3f _bMin = Vec3f::Zero();
-    Vec3f _bMax = Vec3f::Zero();
-    Eigen::Vector<unsigned, 3> _position = Eigen::Vector<unsigned, 3>::Zero();
-    
-    uint32_t _depth = 0;
-};
-
-bool importScene(const std::string & path, std::vector<Vec3f> & vertices, std::vector<Vec3f> & normals, std::vector<Eigen::Vector<unsigned, 3>> & faces)
+bool importScene(const std::string & path, std::vector<Vec3f> & vertices, std::vector<Vec3f> & normals, std::vector<unsigned> & indices)
 {
     vertices.clear();
     normals.clear();
-    faces.clear();
+    indices.clear();
 
     Assimp::Importer importer;
 
@@ -572,7 +330,7 @@ bool importScene(const std::string & path, std::vector<Vec3f> & vertices, std::v
 
     vertices.resize(mesh->mNumVertices);
     normals.resize(mesh->mNumVertices);
-    faces.resize(mesh->mNumFaces);
+    indices.resize(mesh->mNumFaces * 3);
     
     // Vertices
     for (unsigned int v = 0; v < mesh->mNumVertices; ++v) {
@@ -589,16 +347,19 @@ bool importScene(const std::string & path, std::vector<Vec3f> & vertices, std::v
     }
 
     // Indices
+    int pos = 0;
     for (unsigned int f = 0; f < mesh->mNumFaces; ++f) 
     {
         const aiFace &face = mesh->mFaces[f];
         // aiProcess_Triangulate guarantees 3 indices per face
 
-        Eigen::Vector<unsigned, 3> & oface = faces[f];
+        unsigned * oindices = &indices[pos];
 
-        oface[0] = face.mIndices[0];
-        oface[1] = face.mIndices[1];
-        oface[2] = face.mIndices[2];
+        oindices[0] = face.mIndices[0];
+        oindices[1] = face.mIndices[1];
+        oindices[2] = face.mIndices[2];
+
+        pos += 3;
     }
 
     return true;
@@ -625,31 +386,66 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    OctreeNode octree;
+    mesh::IndexedMeshStreams mesh;
 
     ALICEVISION_LOG_INFO("Importing mesh.");
-    if (!importScene(inputFilename, octree.getVertices(), octree.getNormals(), octree.getFaces()))
+    if (!importScene(inputFilename, mesh.positions, mesh.normals, mesh.indices))
     {
         ALICEVISION_LOG_ERROR("Failed loading scene.");
         return EXIT_FAILURE;
     }
 
-    ALICEVISION_LOG_INFO("Computing bounds.");
+    /*ALICEVISION_LOG_INFO("Computing bounds.");
     octree.computeBounds();
     
-    size_t maxTriangles = 100;
+    ALICEVISION_LOG_INFO("Build root.");
+    IndexedMeshStreams mesh = buildIndexedMeshStreams(octree);
+    IndexedMeshStreams output;
+
+    
+    ALICEVISION_LOG_INFO("First lossless level");
+    float error;
+    simplifyIndexedMeshStreams(mesh, output, 0, 0.0f, error);
+    
+    ALICEVISION_LOG_ERROR(error);
+    ALICEVISION_LOG_ERROR(mesh.indices.size() / 3);
+    ALICEVISION_LOG_ERROR(output.indices.size() / 3);
+
+    for (int i = 0; i < 20; i++)
+    {
+        float target = 0.00022 * pow(1.5, i);
+        simplifyIndexedMeshStreams(mesh, output, 0, target, error);
+    
+        ALICEVISION_LOG_ERROR(error);
+        ALICEVISION_LOG_ERROR(mesh.indices.size() / 3);
+        ALICEVISION_LOG_ERROR(output.indices.size() / 3);
+    }
+
+
+    ALICEVISION_LOG_INFO("Last level");
+    simplifyIndexedMeshStreams(mesh, output, 5000000, 1.0f, error);
+    
+    ALICEVISION_LOG_ERROR(error);
+    ALICEVISION_LOG_ERROR(mesh.indices.size() / 3);
+    ALICEVISION_LOG_ERROR(output.indices.size() / 3);*/
+
+    
+    /*size_t maxTriangles = 5000;
 
     ALICEVISION_LOG_INFO("Splitting.");
-    octree.buildDown(maxTriangles);
+    octree.buildDown(maxTriangles, 0.01);
 
     ALICEVISION_LOG_INFO("Balancing.");
-    octree.balance();
+    octree.balance();*/
 
-    ALICEVISION_LOG_INFO("Balancing.");
-    octree.balance();
-    
-    ALICEVISION_LOG_INFO("Balancing.");
-    octree.balance();
+    /*IndexedMeshStats meshStats;
+    std::vector<IndexedMeshStreams> leafMeshes = buildLeafMeshes(octree, &meshStats);
+
+    ALICEVISION_LOG_INFO(
+        "Built " << leafMeshes.size() << " welded leaf meshes ("
+        << meshStats.vertexCountBeforeWeld << " -> " << meshStats.vertexCountAfterWeld
+        << " vertices across " << meshStats.triangleCount << " triangles).");
+*/
 
     return EXIT_SUCCESS;
 }

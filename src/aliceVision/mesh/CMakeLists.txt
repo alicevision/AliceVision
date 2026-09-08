@@ -13,6 +13,8 @@ set(mesh_files_headers
     ModQuadricMetricT.hpp
     QuadricMetricT.hpp
     MeshIntersection.hpp
+    IndexedMeshStreams.hpp
+    Octree.hpp
 )
 
 # Sources
@@ -28,6 +30,7 @@ set(mesh_files_sources
     UVAtlas.cpp
     ModQuadricMetricT.cpp
     MeshIntersection.cpp
+    Octree.cpp
 )
 
 alicevision_add_library(aliceVision_mesh

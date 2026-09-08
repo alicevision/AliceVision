@@ -18,16 +18,6 @@ endif()
 
 if (ALICEVISION_BUILD_SFM)
 
-    alicevision_add_software(aliceVision_meshPreprocessing 
-        SOURCE main_meshPreprocessing.cpp
-        FOLDER ${FOLDER_SOFTWARE_UTILS}
-        LINKS aliceVision_system
-              aliceVision_cmdline
-              aliceVision_numeric
-              ${Boost_LIBRARIES}
-              assimp::assimp
-    )
-
     # Uncertainty
     if (ALICEVISION_HAVE_UNCERTAINTYTE)
         if (ALICEVISION_HAVE_CUDA)
@@ -299,6 +289,18 @@ if (ALICEVISION_BUILD_SFM)
                 aliceVision_sfmDataIO
                 Boost::program_options
                 Boost::json
+        )
+
+        alicevision_add_software(aliceVision_meshPreprocessing 
+            SOURCE main_meshPreprocessing.cpp
+            FOLDER ${FOLDER_SOFTWARE_UTILS}
+            LINKS aliceVision_system
+                aliceVision_cmdline
+                aliceVision_numeric
+                aliceVision_mesh
+                ${Boost_LIBRARIES}
+                assimp::assimp
+                meshoptimizer::meshoptimizer
         )
     endif()
 
