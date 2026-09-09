@@ -40,6 +40,7 @@ int aliceVision_main(int argc, char** argv)
     double maxErrorIncreaseRot = -1.;
     int minIterationCount = 50;
     int minScaleFactor = 3;
+    double lossParameter = 4.0;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -57,7 +58,8 @@ int aliceVision_main(int argc, char** argv)
         ("maxErrorIncreaseRot", po::value<double>(&maxErrorIncreaseRot)->default_value(maxErrorIncreaseRot), "The maximum reprojection error increase ratio for the camera orientations. (-1 to bypass this reprojection error test)")
         ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
         ("minIterationCount", po::value<int>(&minIterationCount)->default_value(minIterationCount), "The minimum number of filter iterations to apply at the smallest scales. (in case the filter is limited by the reprojection error)")
-        ("minScaleFactor", po::value<int>(&minScaleFactor)->default_value(minScaleFactor), "The minimum scale to apply the filter with the minimum iteration count. (in case the filter is limited by the reprojection error)");
+        ("minScaleFactor", po::value<int>(&minScaleFactor)->default_value(minScaleFactor), "The minimum scale to apply the filter with the minimum iteration count. (in case the filter is limited by the reprojection error)")
+        ("lossParameter", po::value<double>(&lossParameter)->default_value(lossParameter), "Huber loss threshold, as used in bundle adjustment.");
     // clang-format on
 
     CmdLine cmdline("AliceVision SfM Temporal Filtering");
@@ -86,7 +88,7 @@ int aliceVision_main(int argc, char** argv)
     if (!poseFilter->process(sfmData, filterPosition, filterRotation,
                              maxIterationCount, maxScaleFactor,
                              maxErrorIncreasePos, maxErrorIncreaseRot,
-                             minIterationCount, minScaleFactor))
+                             minIterationCount, minScaleFactor, lossParameter))
     {
         ALICEVISION_LOG_INFO("Error processing sfmData");
         return EXIT_FAILURE;
