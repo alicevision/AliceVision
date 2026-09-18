@@ -277,9 +277,9 @@ void Mesher::graphCutPostProcessing(const Point3d hexah[8])
 
     int minSegmentSize = _mp.userParams.get<int>("hallucinationsFiltering.minSegmentSize", 10);
     int invertTetrahedronBasedOnNeighborsNbIterations =
-      _mp.userParams.get<bool>("hallucinationsFiltering.invertTetrahedronBasedOnNeighborsNbIterations", 10);
+      _mp.userParams.get<int>("hallucinationsFiltering.invertTetrahedronBasedOnNeighborsNbIterations", 10);
     double minSolidAngleRatio = _mp.userParams.get<double>("hallucinationsFiltering.minSolidAngleRatio", 0.2);
-    int nbSolidAngleFilteringIterations = _mp.userParams.get<double>("hallucinationsFiltering.nbSolidAngleFilteringIterations", 10);
+    int nbSolidAngleFilteringIterations = _mp.userParams.get<int>("hallucinationsFiltering.nbSolidAngleFilteringIterations", 10);
 
     removeBubbles();
 
