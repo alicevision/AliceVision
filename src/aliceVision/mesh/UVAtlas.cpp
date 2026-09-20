@@ -63,7 +63,7 @@ void UVAtlas::createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams
             commonCameraIDs.emplace_back(area, cameraID);
         }
         // sort cameras by score
-        std::sort(commonCameraIDs.begin(), commonCameraIDs.end(), std::greater<std::pair<int, int>>());
+        std::sort(commonCameraIDs.begin(), commonCameraIDs.end(), std::greater<std::pair<float, int>>());
 
         // Declare into the charts only the best ones
         Chart& chart = charts[i];
