@@ -15,5 +15,6 @@ if(AV_BUILD_PYBIND11)
         EXTRA_CMAKE_FLAGS
             -DPython_EXECUTABLE=${Python_EXECUTABLE}
             -DCMAKE_INSTALL_DATAROOTDIR=lib
+            -DPYBIND11_TEST=OFF
     )
 endif()
