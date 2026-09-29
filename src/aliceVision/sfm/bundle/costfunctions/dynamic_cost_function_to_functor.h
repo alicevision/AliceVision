@@ -32,9 +32,16 @@
 #ifndef CERES_PUBLIC_DYNAMIC_COST_FUNCTION_TO_FUNCTOR_TMP_H_
 #define CERES_PUBLIC_DYNAMIC_COST_FUNCTION_TO_FUNCTOR_TMP_H_
 
+#if ((CERES_VERSION_MAJOR == 2 && CERES_VERSION_MINOR >= 3) || (CERES_VERION_MAJOR >= 3))
+namespace ceres {
+  using DynamicCostFunctionToFunctorTmp = DynamicCostFunctionToFunctor;
+}
+#else
+
 #include <memory>
 #include <numeric>
 #include <vector>
+
 
 #include <ceres/dynamic_cost_function.h>
 #include <ceres/internal/disable_warnings.h>
@@ -102,6 +109,8 @@ namespace ceres {
 //  private:
 //   DynamicCostFunctionToFunctor intrinsic_projection_;
 // };
+
+
 class DynamicCostFunctionToFunctorTmp {
  public:
   // Takes ownership of cost_function.
@@ -191,4 +200,5 @@ class DynamicCostFunctionToFunctorTmp {
 
 //#include "ceres/internal/reenable_warnings.h"
 
+#endif
 #endif  // CERES_PUBLIC_DYNAMIC_COST_FUNCTION_TO_FUNCTOR_TMP_H_
