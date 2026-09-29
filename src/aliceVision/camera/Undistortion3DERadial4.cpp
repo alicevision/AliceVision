@@ -223,12 +223,12 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DERadial4::getDerivativeUn
 
     Eigen::Matrix<double, 2, 4> d_np_d_m;
     d_np_d_m(0, 0) = radial.x();
-    d_np_d_m(0, 1) = radial.y();
-    d_np_d_m(0, 2) = 0;
+    d_np_d_m(0, 1) = 0;
+    d_np_d_m(0, 2) = radial.y();
     d_np_d_m(0, 3) = 0;
     d_np_d_m(1, 0) = 0;
-    d_np_d_m(1, 1) = 0;
-    d_np_d_m(1, 2) = radial.x();
+    d_np_d_m(1, 1) = radial.x();
+    d_np_d_m(1, 2) = 0;
     d_np_d_m(1, 3) = radial.y();
 
     Eigen::Matrix<double, 2, 8> J = Eigen::Matrix<double, 2, 8>::Zero();
