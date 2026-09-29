@@ -419,7 +419,7 @@ endif()
 # ==============================================================================
 # Eigen
 # ==============================================================================
-find_package(Eigen3 3.3 REQUIRED)
+find_package(Eigen3 REQUIRED)
 if (Eigen3_FOUND OR EIGEN3_FOUND)
     # message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
     if (AV_EIGEN_MEMORY_ALIGNMENT)
