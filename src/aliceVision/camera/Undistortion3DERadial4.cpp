@@ -160,22 +160,22 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DERadial4::getDerivativeUn
     const double d_m22_d_sphi = 2.0 * sphi * q;
 
     const double d_m11_d_q = cphi * cphi + sphi * sphi * d_invq_d_q;
-    const double d_m21_d_q = (q - d_invq_d_q) * cphi * sphi;
+    const double d_m21_d_q = (1.0 - d_invq_d_q) * cphi * sphi;
     const double d_m22_d_q = cphi * cphi * d_invq_d_q + sphi * sphi;
 
     Eigen::Matrix<double, 4, 3> d_m_d_intermediatecylindricparams;
 
     d_m_d_intermediatecylindricparams(0, 0) = d_m11_d_cphi;
     d_m_d_intermediatecylindricparams(1, 0) = d_m21_d_cphi;
-    d_m_d_intermediatecylindricparams(2, 0) = d_m11_d_cphi;
+    d_m_d_intermediatecylindricparams(2, 0) = d_m21_d_cphi;
     d_m_d_intermediatecylindricparams(3, 0) = d_m22_d_cphi;
     d_m_d_intermediatecylindricparams(0, 1) = d_m11_d_sphi;
     d_m_d_intermediatecylindricparams(1, 1) = d_m21_d_sphi;
-    d_m_d_intermediatecylindricparams(2, 1) = d_m11_d_sphi;
+    d_m_d_intermediatecylindricparams(2, 1) = d_m21_d_sphi;
     d_m_d_intermediatecylindricparams(3, 1) = d_m22_d_sphi;
     d_m_d_intermediatecylindricparams(0, 2) = d_m11_d_q;
     d_m_d_intermediatecylindricparams(1, 2) = d_m21_d_q;
-    d_m_d_intermediatecylindricparams(2, 2) = d_m11_d_q;
+    d_m_d_intermediatecylindricparams(2, 2) = d_m21_d_q;
     d_m_d_intermediatecylindricparams(3, 2) = d_m22_d_q;
 
     const double x = p.x();
@@ -199,15 +199,15 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DERadial4::getDerivativeUn
 
     Eigen::Matrix<double, 2, 6> d_radial_d_radialparams;
     d_radial_d_radialparams(0, 0) = x * r2;
-    d_radial_d_radialparams(0, 1) = x * r4;
-    d_radial_d_radialparams(0, 2) = 3.0 * x2 + y2;
-    d_radial_d_radialparams(0, 3) = 2.0 * xy;
+    d_radial_d_radialparams(0, 1) = 3.0 * x2 + y2;
+    d_radial_d_radialparams(0, 2) = 2.0 * xy;
+    d_radial_d_radialparams(0, 3) = x * r4;
     d_radial_d_radialparams(0, 4) = r2 * (3.0 * x2 + y2);
     d_radial_d_radialparams(0, 5) = 2.0 * xy * r2;
     d_radial_d_radialparams(1, 0) = y * r2;
-    d_radial_d_radialparams(1, 1) = y * r4;
-    d_radial_d_radialparams(1, 2) = 2.0 * xy;
-    d_radial_d_radialparams(1, 3) = x2 + 3.0 * y2;
+    d_radial_d_radialparams(1, 1) = 2.0 * xy;
+    d_radial_d_radialparams(1, 2) = x2 + 3.0 * y2;
+    d_radial_d_radialparams(1, 3) = y * r4;
     d_radial_d_radialparams(1, 4) = 2.0 * xy * r2;
     d_radial_d_radialparams(1, 5) = r2 * (x2 + 3.0 * y2);
 
@@ -223,12 +223,12 @@ Eigen::Matrix<double, 2, Eigen::Dynamic> Undistortion3DERadial4::getDerivativeUn
 
     Eigen::Matrix<double, 2, 4> d_np_d_m;
     d_np_d_m(0, 0) = radial.x();
-    d_np_d_m(0, 1) = radial.x();
+    d_np_d_m(0, 1) = radial.y();
     d_np_d_m(0, 2) = 0;
     d_np_d_m(0, 3) = 0;
     d_np_d_m(1, 0) = 0;
     d_np_d_m(1, 1) = 0;
-    d_np_d_m(1, 2) = radial.y();
+    d_np_d_m(1, 2) = radial.x();
     d_np_d_m(1, 3) = radial.y();
 
     Eigen::Matrix<double, 2, 8> J = Eigen::Matrix<double, 2, 8>::Zero();
