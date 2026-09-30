@@ -59,3 +59,33 @@ BOOST_AUTO_TEST_CASE(cameraPinholeFisheye_disto_undisto_Fisheye1)
         EXPECT_MATRIX_NEAR(ptImage_gt, pt2d_proj, epsilon);
     }
 }
+
+//-----------------
+// Test summary:
+//-----------------
+// - getDerivativeRemoveDistoWrtDisto must match a central finite difference of removeDistortion
+//   with respect to the distortion parameter, at a set of fixed distorted points.
+//-----------------
+BOOST_AUTO_TEST_CASE(cameraPinholeFisheye1_derivativeRemoveDistoWrtDisto)
+{
+    DistortionFisheye1 distortion(0.05);
+
+    const std::vector<Vec2> points = {Vec2(0.3, -0.2), Vec2(-0.15, 0.42), Vec2(0.55, 0.1)};
+    const double h = 1e-6;
+
+    for (const Vec2& p : points)
+    {
+        const Eigen::MatrixXd analytic = distortion.getDerivativeRemoveDistoWrtDisto(p);
+
+        const std::vector<double> params = distortion.getParameters();
+        distortion.setParameters({params[0] + h});
+        const Vec2 plus = distortion.removeDistortion(p);
+        distortion.setParameters({params[0] - h});
+        const Vec2 minus = distortion.removeDistortion(p);
+        distortion.setParameters(params);
+
+        const Vec2 numeric = (plus - minus) / (2.0 * h);
+
+        EXPECT_MATRIX_NEAR(analytic, numeric, 1e-4);
+    }
+}
