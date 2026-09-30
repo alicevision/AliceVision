@@ -190,7 +190,8 @@ endif()
 
 foreach(_dir
         "${CMAKE_INSTALL_FULL_BINDIR}"
-        "${CMAKE_INSTALL_FULL_LIBDIR}"
+        "${CMAKE_INSTALL_PREFIX}/lib"
+        "${CMAKE_INSTALL_PREFIX}/lib64"
         "${CMAKE_INSTALL_FULL_DATADIR}")
     if(EXISTS "${_dir}")
         file(COPY "${_dir}"
