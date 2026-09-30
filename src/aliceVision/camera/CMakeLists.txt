@@ -58,6 +58,7 @@ alicevision_add_test(pinholeFisheye_test.cpp    NAME "camera_pinholeFisheye"    
 alicevision_add_test(pinholeFisheye1_test.cpp   NAME "camera_pinholeFisheye1"     LINKS aliceVision_camera)
 alicevision_add_test(pinholeRadial_test.cpp     NAME "camera_pinholeRadial"       LINKS aliceVision_camera)
 alicevision_add_test(equidistant_test.cpp       NAME "camera_equidistant"         LINKS aliceVision_camera)
+alicevision_add_test(undistortion_test.cpp      NAME "camera_undistortion"        LINKS aliceVision_camera)
 
 
 # SWIG Binding
