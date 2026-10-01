@@ -150,12 +150,20 @@ int aliceVision_main(int argc, char** argv)
                 const IndexT viewId = findFrameIt->second;
 
                 const sfmData::View & view = sfmData.getView(viewId);
+
+                
+                sfmData::PoseUncertainty * pu = nullptr;
+                if (sfmData.existsPoseUncertainty(view))
+                {
+                    pu = &sfmData.getPosesUncertainty().at(view.getPoseId());
+                }
+
                 const IndexT intrinsicId = view.getIntrinsicId();
                 const camera::Pinhole * cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
                 const sfmData::CameraPose pose = sfmData.getPose(view);
                 const std::string& imagePath = view.getImage().getImagePath();
 
-                exporter.addCameraKeyframe(pose.getTransform(), cam, imagePath, viewId, intrinsicId);
+                exporter.addCameraKeyframe(pose.getTransform(), cam, imagePath, viewId, intrinsicId, pu);
             }
             else
             {
@@ -175,11 +183,18 @@ int aliceVision_main(int argc, char** argv)
         for (const auto& [key, id] : views)
         {
             const sfmData::View& view = sfmData.getView(id);
+
+            sfmData::PoseUncertainty * pu = nullptr;
+            if (sfmData.existsPoseUncertainty(view))
+            {
+                pu = &sfmData.getPosesUncertainty().at(view.getPoseId());
+            }
+
             const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(view.getIntrinsicId()));
             const sfmData::CameraPose pose = sfmData.getPose(view);
             const std::string& imagePath = view.getImage().getImagePath();
 
-            exporter.addCameraKeyframe(pose.getTransform(), cam, imagePath, view.getViewId(), view.getIntrinsicId());
+            exporter.addCameraKeyframe(pose.getTransform(), cam, imagePath, view.getViewId(), view.getIntrinsicId(), pu);
         }
     }
 

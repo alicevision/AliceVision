@@ -93,7 +93,8 @@ class "AvPose" (
     bool av:locked = false
     bool av:rotationOnly = false
     bool av:removable = true
-    float6 av:uncertainty = (0, 0, 0, 0, 0, 0)
+    doc = "Symmetric 6x6 uncertainty matrix (upper-triangular: 21 elements)"
+    double[] av:uncertainty = []
 }
 
 class "AvIntrinsic" (

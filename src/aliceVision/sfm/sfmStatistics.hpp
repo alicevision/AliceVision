@@ -131,5 +131,6 @@ void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData,
                                        std::vector<double>& nbResidualsPerViewFirstQuartile,
                                        std::vector<double>& nbResidualsPerViewThirdQuartile);
 
+
 }  // namespace sfm
 }  // namespace aliceVision

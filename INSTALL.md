@@ -42,13 +42,12 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * Alembic (data I/O)
 * CCTag (feature extraction/matching and localization on CPU or GPU)
 * Cuda >= 11.0 (feature extraction and depth map computation)
-* Magma (required for UncertaintyTE)
+* Magma
 * Mosek >= 6 (linear programming)
 * OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
 * OpenMP (enable multi-threading)
 * PCL (Point Cloud Library) >= 1.12.1 for the registration module
 * PopSift (feature extraction on GPU)
-* UncertaintyTE (Uncertainty computation)
 * Lemon >= 1.3
 * libe57format (support reading .e57 files)
 * SWIG, Python 3 and NumPy 1.26 (Python binding for AliceVision modules)
@@ -221,11 +220,6 @@ At the end of the cmake process, a report shows for each library which version (
 * `ALICEVISION_USE_POPSIFT` (default: `AUTO`)  
   Enable GPU SIFT implementation.  
   `-DPopSift_DIR:PATH=/path/to/popsift/install/lib/cmake/PopSift` (where PopSiftConfig.cmake can be found)
-
-* `ALICEVISION_USE_UNCERTAINTYTE` (default: `AUTO`)  
-  Enable Uncertainty computation.  
-  `-DUNCERTAINTYTE_DIR:PATH=/path/to/uncertaintyTE/install/` (where the `include` and `lib` folders can be found)
-  `-DMAGMA_ROOT:PATH=/path/to/magma/install/` (where the `include` and `lib` folders can be found)
 
 * `ALICEVISION_USE_OPENCV` (default: `OFF`)  
   Build with OpenCV.  
