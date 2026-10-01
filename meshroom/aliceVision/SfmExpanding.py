@@ -4,7 +4,9 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 
-class SfMExpanding(desc.AVCommandLineNode):
+class SfMExpanding(desc.AVCommandLineNode, 
+                   desc.interface.FeatureProviderInterface, 
+                   desc.interface.TrackProviderInterface):
     """
 Expand an incremental Structure-from-Motion reconstruction by localizing additional cameras.
 
@@ -365,3 +367,18 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
     def onUseLocalBAChanged(self, node):
         if node.useLocalBA.value:
             node.useTemporalConstraint.value = False
+
+    def getFeaturesFolders(self, node) -> list:
+        folders = []
+        for provider in self.upstreamNodesWithInterface(node, node.tracksFilename, "FeatureProviderInterface"):
+            folders.extend(provider.nodeDesc.getFeaturesFolders(provider))
+        return folders
+    
+    def getDescriberTypes(self, node) -> list:
+        describerTypes = []
+        for provider in self.upstreamNodesWithInterface(node, node.tracksFilename, "FeatureProviderInterface"):
+            describerTypes.extend(provider.nodeDesc.getDescriberTypes(provider))
+        return describerTypes
+
+    def getTracksFile(self, node) -> str:
+        return node.tracksFilename.value
