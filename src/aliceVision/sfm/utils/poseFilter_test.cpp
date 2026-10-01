@@ -8,6 +8,10 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
+#include <aliceVision/sfmDataIO/sceneSample.hpp>
+#include <aliceVision/sfmData/ImageSequence.hpp>
+#include <aliceVision/sfmData/ImageSet.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/utils/poseFilter.hpp>
 
 
@@ -175,4 +179,124 @@ BOOST_AUTO_TEST_CASE(PoseFilter_angles)
             EXPECT_MATRIX_NEAR(aa.toRotationMatrix(), filteredAA.toRotationMatrix(), 2e-15);
         }
     }
+}
+
+
+BOOST_AUTO_TEST_CASE(PoseFilter_interpolateMissingPoses)
+{
+    // Check that PoseFilter correctly interpolates missing poses
+
+    using namespace aliceVision;
+
+    makeRandomOperationsReproducible();
+
+    sfmData::SfMData sfmData;
+    sfmDataIO::generateSphereScene(sfmData, 100, 240);
+
+    // Generate new ImageSet
+    size_t imageGroupID2 = 3454613548;
+    for (IndexT idPV = 300; idPV <410; idPV++)
+    {
+        IndexT grpID1_viewID = idPV - 300;
+        sfmData.getPoses().assign(idPV, sfmData.getPose(sfmData.getView(grpID1_viewID)));
+        sfmData.getViews().emplace(idPV, std::make_shared<sfmData::View>("", idPV, 0, idPV, 100, 100));
+        sfmData::View& view = sfmData.getView(idPV);
+        view.setFrameId(idPV);
+        view.setImageGroupId(imageGroupID2);
+    }
+    auto imageGroupPtr2 = std::make_shared<sfmData::ImageSet>();
+    sfmData.getImageGroups().emplace(imageGroupID2, imageGroupPtr2);
+
+    // Generate new ImageSequence
+    size_t imageGroupID3 = 845461354;
+    for (IndexT idPV = 500; idPV <640; idPV++)
+    {
+        IndexT grpID1_viewID = idPV - 500;
+        sfmData.getPoses().assign(idPV, sfmData.getPose(sfmData.getView(grpID1_viewID)));
+        sfmData.getViews().emplace(idPV, std::make_shared<sfmData::View>("", idPV, 0, idPV, 100, 100));
+        sfmData.getView(idPV).setFrameId(idPV);
+        sfmData.getView(idPV).setImageGroupId(imageGroupID3);
+    }
+    auto imageGroupPtr3 = std::make_shared<sfmData::ImageSequence>();
+    sfmData.getImageGroups().emplace(imageGroupID3, imageGroupPtr3);
+
+    IndexT poses2remove[] = {0, 1, 2, 3, 24, 45, 46, 47, 48, 239, 350,
+                            500, 501, 502, 503, 504, 518, 519, 520, 521, 522, 523, 524,
+                            560, 561, 562, 563, 633, 634, 635, 636, 637, 638, 639};
+    for (IndexT i=0; i<sizeof(poses2remove)/sizeof(IndexT); i++)
+    {
+        sfmData.erasePose(poses2remove[i]);
+    }
+
+    for (IndexT i=0; i<sizeof(poses2remove)/sizeof(IndexT); i++)
+    {
+        BOOST_CHECK(!sfmData.isPoseDefined(poses2remove[i]));
+    }
+
+    sfm::poseFilter poseFilter;
+    BOOST_CHECK(poseFilter.interpolateMissingPoses(sfmData));
+    for (IndexT i=0; i<sizeof(poses2remove)/sizeof(IndexT); i++)
+    {
+        if (poses2remove[i] < 240 || poses2remove[i] >= 500)
+        {
+            BOOST_CHECK(sfmData.isPoseDefined(poses2remove[i]));
+        }
+        else
+        {
+            BOOST_CHECK(!sfmData.isPoseDefined(poses2remove[i]));
+        }
+    }
+    BOOST_CHECK(poseFilter.interpolateMissingPoses(sfmData));
+    for (IndexT i=0; i<sizeof(poses2remove)/sizeof(IndexT); i++)
+    {
+        if (poses2remove[i] < 240 || poses2remove[i] >= 500)
+        {
+            BOOST_CHECK(sfmData.isPoseDefined(poses2remove[i]));
+        }
+        else
+        {
+            BOOST_CHECK(!sfmData.isPoseDefined(poses2remove[i]));
+        }
+    }
+
+    // Generate new ImageSequence with a missing frame in the sequence
+    size_t imageGroupID4 = 875461355;
+    for (IndexT idPV = 800; idPV < 900; idPV++)
+    {
+        if (idPV == 850)
+        {
+            // Skip this view to create a missing frame in the sequence
+            continue;
+        }
+        IndexT grpID1_viewID = idPV - 800;
+        sfmData.getPoses().assign(idPV, sfmData.getPose(sfmData.getView(grpID1_viewID)));
+        sfmData.getViews().emplace(idPV, std::make_shared<sfmData::View>("", idPV, 0, idPV, 100, 100));
+        sfmData.getView(idPV).setFrameId(idPV);
+        sfmData.getView(idPV).setImageGroupId(imageGroupID4);
+    }
+    auto imageGroupPtr4 = std::make_shared<sfmData::ImageSequence>();
+    sfmData.getImageGroups().emplace(imageGroupID4, imageGroupPtr4);
+
+    // InterpolateMissingPoses should fail because there is a missing frame in the sequence
+    BOOST_CHECK(!poseFilter.interpolateMissingPoses(sfmData));
+
+    IndexT idPV = 850;
+    IndexT grpID1_viewID = idPV - 800;
+    sfmData.getPoses().assign(idPV, sfmData.getPose(sfmData.getView(grpID1_viewID)));
+    sfmData.getViews().emplace(idPV, std::make_shared<sfmData::View>("", idPV, 0, idPV, 100, 100));
+    sfmData.getView(idPV).setFrameId(idPV);
+    sfmData.getView(idPV).setImageGroupId(imageGroupID4);
+
+    // InterpolateMissingPoses should now succeed because the missing frame has been added back
+    BOOST_CHECK(poseFilter.interpolateMissingPoses(sfmData));
+
+    idPV = 900;
+    grpID1_viewID = idPV - 800;
+    sfmData.getPoses().assign(idPV, sfmData.getPose(sfmData.getView(grpID1_viewID)));
+    sfmData.getViews().emplace(idPV, std::make_shared<sfmData::View>("", idPV, 0, idPV, 100, 100));
+    sfmData.getView(idPV).setFrameId(850);
+    sfmData.getView(idPV).setImageGroupId(imageGroupID4);
+
+    // InterpolateMissingPoses should now fail because there is a duplicate frame in the sequence
+    BOOST_CHECK(!poseFilter.interpolateMissingPoses(sfmData));
 }
