@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <boost/algorithm/string.hpp>
 
 namespace fs = std::filesystem;
 

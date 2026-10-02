@@ -16,6 +16,7 @@
 
 #include <random>
 #include <numeric>
+#include <cfloat>
 
 namespace aliceVision {
 namespace mvsUtils {

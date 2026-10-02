@@ -8,7 +8,9 @@
 
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
-#include <boost/atomic/atomic_ref.hpp>
+#include <atomic>
+
+#include <numbers>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -553,7 +555,7 @@ void Mesher::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIter
     if (nbSolidAngleFilteringIterations <= 0 || minSolidAngleRatio <= 0.0)
         return;
 
-    constexpr double fullSphereSolidAngle = 4.0 * boost::math::constants::pi<double>();
+    constexpr double fullSphereSolidAngle = 4.0 * std::numbers::pi;
 
     // Change cells status on surface around vertices to improve smoothness
     // using solid angle ratio between full/empty parts.
@@ -657,7 +659,7 @@ void Mesher::cellsStatusFilteringBySolidAngleRatio(int nbSolidAngleFilteringIter
             {
                 if (_cellIsFull[ci] == invertFull)
                 {
-                    boost::atomic_ref<std::uint8_t>{cellsInvertStatus[ci]} = true;
+                    std::atomic_ref<std::uint8_t>{cellsInvertStatus[ci]} = true;
                     ++toInvertCount;
                 }
             }

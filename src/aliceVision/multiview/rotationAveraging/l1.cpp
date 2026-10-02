@@ -17,7 +17,6 @@
     #include <boost/accumulators/statistics/min.hpp>
     #include <boost/accumulators/statistics/mean.hpp>
     #include <boost/accumulators/statistics/max.hpp>
-    #include <boost/foreach.hpp>
 #else
     #include "lemon/list_graph.h"
     #include "lemon/kruskal.h"
