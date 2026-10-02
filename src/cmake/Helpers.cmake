@@ -59,7 +59,7 @@ function(alicevision_add_library library_name)
           # final link time. Resolve libomp to a full path (searching the
           # AdaptiveCpp/ROCm LLVM lib dirs when known) and link it explicitly so it
           # propagates to consumers; fall back to "-lomp" if it cannot be located.
-          set(_acpp_omp_hints "")
+          set(_acpp_omp_hints)
           if(DEFINED AdaptiveCpp_DIR)
             get_filename_component(_acpp_root "${AdaptiveCpp_DIR}" DIRECTORY)
             list(APPEND _acpp_omp_hints "${_acpp_root}/../lib" "${_acpp_root}/../../lib")
