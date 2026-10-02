@@ -127,12 +127,12 @@ inline Eigen::Vector3d logm(const Eigen::Matrix3d& R)
         Eigen::Matrix3d S = R + R.transpose() + (1.0 - R.trace()) * Eigen::Matrix3d::Identity();
 
         Eigen::Vector3d signs;
-        // Use the sign of the biggest absolute values to define the rotation axis direction (its global sign)
-        if ( abs(p1) >= abs(p2) && abs(p1) >= abs(p3) )
+        // Use the largest diagonal entry to recover the axis signs, including at pi.
+        if (S(0, 0) >= S(1, 1) && S(0, 0) >= S(2, 2))
         {
             signs << SIGN(p1), SIGN(p1) * SIGN(S(1, 0)), SIGN(p1) * SIGN(S(2, 0));
         }
-        else if ( abs(p2) >= abs(p1) && abs(p2) >= abs(p3) )
+        else if (S(1, 1) >= S(0, 0) && S(1, 1) >= S(2, 2))
         {
             signs << SIGN(p2) * SIGN(S(0, 1)), SIGN(p2), SIGN(p2) * SIGN(S(2, 1));
         }
