@@ -145,6 +145,74 @@ You need `automake` to compile `libpng`.
 Else if you have png already install on your OS, you can disable the PNG build with `-DAV_BUILD_PNG=OFF`.
 
 
+### Rocky Linux Docker Python runtime and Meshroom packaging
+
+The Rocky Linux 9 x86_64 deps image installs an intact, relocatable
+[python-build-standalone](https://github.com/astral-sh/python-build-standalone)
+runtime at **/opt/python**. Both the AliceVision child image and a Meshroom image
+inheriting it retain this directory. It is not a system Python installation or a
+venv, and it is not automatically added to the AliceVision bundle.
+
+The pinned distribution is CPython **3.11.17**, release **20261001**, target
+**x86_64-unknown-linux-gnu**, `pgo+lto-full`. Its archive SHA-256 is
+`a98646d6a9b5366be6af3f8cfb1f15abc1f7841472edf326328342ac2dc23b0d`, verified
+before extraction. The [upstream release](https://github.com/astral-sh/python-build-standalone/releases/tag/20261001)
+publishes the digest. Update the archive version, release and checksum together
+in [docker/Dockerfile_rocky_deps](docker/Dockerfile_rocky_deps); do not use a moving
+latest-release URL. The baseline GNU/Linux build requires glibc >= 2.17 and does
+not introduce x86_64_v3/AVX requirements. Rocky 9 remains the supported image
+baseline; this is not a musl build or an OS-library-free executable. The optional
+Python 3.11 `crypt` module additionally requires the host's libcrypt.so.1.
+
+The full archive supplies the installed runtime plus upstream license texts and
+metadata. The image retains the entire install tree (including libpython, native
+stdlib modules, headers, shared data, `venv`, `ensurepip` and its offline wheels),
+plus all upstream licenses under **/opt/python/licenses** and the distribution
+metadata at **/opt/python/PYTHON.json**. Metadata still describes the original
+full archive; its build-object paths are provenance, not installed files.
+This release omits the zlib-ng license referenced by that metadata. The Dockerfile
+also downloads the license from the matching cpython-source-deps zlib-ng-2.2.4 tag,
+verified against SHA-256
+`6c9f0d975b41afaa34d22f55bb8986ce69e5cb7ad327cb2b28820cd425edf5ee`.
+Only temporary archive/extraction files and non-runtime build artifacts are removed.
+
+Dependency build packages are installed separately in **/opt/python-build-venv**,
+created from the standalone interpreter without system site-packages. Currently
+this adds NumPy 1.26.4; it does not add NumPy to /opt/python. Build PATH and the
+CMake `Python_EXECUTABLE` / `Python3_EXECUTABLE` selectors use the build venv
+explicitly, including OpenImageIO, pybind11, OpenCV and AliceVision's SWIG build.
+System Python required by Rocky's package manager is left alone.
+
+Meshroom's packaging Dockerfile should create **/opt/Meshroom_bundle/python** and
+copy the **whole /opt/python directory**, preserving permissions and symlinks
+(for example, `cp -a /opt/python/. /opt/Meshroom_bundle/python/` in an inherited
+image, or `COPY --from=<alicevision-stage> /opt/python/ /opt/Meshroom_bundle/python/`
+in a multi-stage image). Do not copy /opt/python-build-venv, prune the stdlib or
+licenses, or replace the standalone distribution with a copied venv. Invoke
+**/opt/Meshroom_bundle/python/bin/python3.11** directly and use `-m pip` rather
+than the archive's pip console-script shebang, which may retain a build-time path.
+No activation, PYTHONHOME, PYTHONPATH or LD_LIBRARY_PATH is needed. Meshroom must
+install its own runtime requirements separately; the build venv is not a source
+of release packages. Create any new application venv at its final location after
+copying the runtime: existing venvs are not generally relocatable.
+
+[docker/check-python-relocation.sh](docker/check-python-relocation.sh) is run in
+a network-disabled build step before building dependencies. It tests the base
+interpreter, moves /opt/python to a temporary Meshroom-like location so the
+original path is unavailable, and directly tests the relocated interpreter and
+fresh symlink/copy venv interpreters. A cleared environment and a PATH with no
+Python prevent reliance on system Python or loader/Python overrides. Venv creation
+bootstraps pip offline from ensurepip; pip location, isolation, native stdlib
+operations, internal symlinks and license preservation are checked. The helper
+restores the original directory and removes test venvs on exit.
+
+For a Python-only build validation, select Docker target `python-build-env` in
+the Rocky deps Dockerfile with the usual CUDA_VERSION and ROCKY_VERSION build
+arguments; no pre-fetched AliceVision assets or C++ dependency build is needed.
+For release validation, copy only the runtime and this helper into a Python-free
+Rocky 9 minimal container and run the helper via bash with networking disabled.
+Do not remove package-manager Python from the actual dependency image to test this.
+
 ### Building the project using external dependencies
 
 In order to build the library with existing versions of the dependencies (e.g. system-installed libraries or user-built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:

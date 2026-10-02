@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 # =============================================================================
 # Dockerfile_rocky_deps
 #
@@ -12,13 +14,11 @@
 #     -f docker/Dockerfile_rocky_deps .
 # =============================================================================
 
-# syntax=docker/dockerfile:1.4
-
 ARG CUDA_VERSION
 ARG ROCKY_VERSION
 ARG CMAKE_VERSION=3.31.11
 
-FROM nvidia/cuda:${CUDA_VERSION}-devel-rockylinux${ROCKY_VERSION}
+FROM nvidia/cuda:${CUDA_VERSION}-devel-rockylinux${ROCKY_VERSION} AS python-build-env
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 # Re-declare ARGs after FROM so they are visible in this build stage
@@ -62,9 +62,6 @@ RUN --mount=type=cache,target=/var/cache/dnf \
         libubsan                                                          \
         openssl-devel                                                     \
         pcre2-devel                                                       \
-        python3.11-devel                                                  \
-        python3.11-pip                                                    \
-        python3.11-pybind11-devel                                         \
         texinfo                                                           \
         unzip                                                             \
         wget                                                              \
@@ -72,6 +69,7 @@ RUN --mount=type=cache,target=/var/cache/dnf \
         xerces-c-devel                                                    \
         yaml-cpp                                                          \
         yasm                                                              \
+        zstd                                                              \
         ninja-build
 
 # =============================================================================
@@ -85,12 +83,46 @@ ENV PATH="/opt/rh/gcc-toolset-12/root/usr/bin:${PATH}" \
 RUN gcc --version && g++ --version && gfortran --version
 
 # =============================================================================
-# Python packages + convenience symlink
-# BuildKit cache mount on pip avoids re-downloading wheels on rebuild.
+# Relocatable release runtime: baseline x86_64 GNU/Linux, glibc >= 2.17.
+# Pin version, release and checksum together; never resolve "latest" at build time.
+# Use the full archive to retain the upstream licensing texts and metadata.
+# This release omits LICENSE.zlib-ng.txt referenced by its metadata; fetch the
+# license from the exact dependency tag in its downloads.json, checksum-pinned.
+# Keep the installation intact; build packages belong ONLY in the separate venv.
 # =============================================================================
+ENV PYTHON_BUILD_VENV="/opt/python-build-venv"
+
+RUN test "$(uname -m)" = x86_64 && \
+    mkdir -p /tmp/python-standalone /opt/python && \
+    wget -q "https://github.com/astral-sh/python-build-standalone/releases/download/20261001/cpython-3.11.17+20261001-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst" \
+        -O /tmp/python-standalone/python.tar.zst && \
+    echo "a98646d6a9b5366be6af3f8cfb1f15abc1f7841472edf326328342ac2dc23b0d  /tmp/python-standalone/python.tar.zst" | sha256sum -c - && \
+    tar --zstd -xf /tmp/python-standalone/python.tar.zst -C /tmp/python-standalone && \
+    cp -a /tmp/python-standalone/python/install/. /opt/python/ && \
+    cp -a /tmp/python-standalone/python/licenses /opt/python/licenses && \
+    cp -a /tmp/python-standalone/python/PYTHON.json /opt/python/PYTHON.json && \
+    wget -q "https://raw.githubusercontent.com/python/cpython-source-deps/zlib-ng-2.2.4/LICENSE.md" \
+        -O /opt/python/licenses/LICENSE.zlib-ng.txt && \
+    echo "6c9f0d975b41afaa34d22f55bb8986ce69e5cb7ad327cb2b28820cd425edf5ee  /opt/python/licenses/LICENSE.zlib-ng.txt" | sha256sum -c - && \
+    rm -rf /tmp/python-standalone
+
+# Test before creating the build venv; no network or Python/loader overrides.
+COPY docker/check-python-relocation.sh /usr/local/bin/check-python-relocation.sh
+RUN --network=none bash /usr/local/bin/check-python-relocation.sh /opt/python
+
+# Suppress build-time bytecode writes to the release runtime. This variable is
+# NOT required to run the bundled interpreter, as the relocation test proves.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/opt/python-build-venv/bin:${PATH}"
+
 RUN --mount=type=cache,target=/root/.cache/pip \
-    python3.11 -m pip install "numpy==1.*"     && \
-    ln -sf /usr/bin/python3.11 /usr/bin/python
+    /opt/python/bin/python3.11 -m venv "${PYTHON_BUILD_VENV}" && \
+    "${PYTHON_BUILD_VENV}/bin/python" -m pip install "numpy==1.26.4" && \
+    /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' && \
+    "${PYTHON_BUILD_VENV}/bin/python" -c 'import numpy, sys; assert sys.prefix != sys.base_prefix; assert numpy.__version__ == "1.26.4"'
+
+# Allows --target python-build-env validation without fetching/building C++ deps.
+FROM python-build-env AS alicevision-deps
 
 # =============================================================================
 # CMake — official binary distribution (avoids a full source build)
@@ -159,6 +191,8 @@ RUN mkdir -p "${AV_INSTALL}/bin"                 \
         -DAV_BUILD_ALICEVISION:BOOL=OFF             \
         -DAV_BUILD_ZLIB:BOOL=ON                     \
         -DAV_BUILD_CCTAG:BOOL=ON                    \
+        -DPython_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
+        -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
         -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
         -DAV_BUILD_DEPENDENCIES_PARALLEL=0          \
     && ln -sf lib "${AV_INSTALL}/lib64"             \
@@ -168,4 +202,5 @@ RUN mkdir -p "${AV_INSTALL}/bin"                 \
     && CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh)   \
     && cmake --build . --parallel 1    \
     && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
+    && /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' \
     && rm -rf "${AV_BUILD}"
