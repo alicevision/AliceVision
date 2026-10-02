@@ -16,6 +16,7 @@
 #include "algorithm.h"
 #include <functional>
 #include <numeric>
+#include <numbers>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -104,7 +105,6 @@ template<typename T>
 VLD::VLD(const ImageScale& series, T const& P1, T const& P2)
   : contrast(0.0)
 {
-    using namespace boost::math;
 
     //============== initializing============//
     principleAngle.fill(0);
@@ -165,12 +165,12 @@ VLD::VLD(const ImageScale& series, T const& P1, T const& P2)
 
                     // cout<<angle<<endl;
                     while (angle < 0)
-                        angle += 2 * constants::pi<double>();
-                    while (angle >= 2 * constants::pi<double>())
-                        angle -= 2 * constants::pi<double>();
+                        angle += 2 * std::numbers::pi;
+                    while (angle >= 2 * std::numbers::pi)
+                        angle -= 2 * std::numbers::pi;
 
                     //===============principle angle==============================//
-                    const int index = int(angle * binNum / (2 * constants::pi<double>()) + 0.5);
+                    const int index = int(angle * binNum / (2 * std::numbers::pi) + 0.5);
 
                     double Gweight = exp(-d * d / 4.5 / sigma2) * (m(y, x));
                     if (index < binNum)
@@ -179,7 +179,7 @@ VLD::VLD(const ImageScale& series, T const& P1, T const& P2)
                         statistic[0] += Gweight;
 
                     //==============the descriptor===============================//
-                    const int index2 = int(angle * subdirection / (2 * constants::pi<double>()) + 0.5);
+                    const int index2 = int(angle * subdirection / (2 * std::numbers::pi) + 0.5);
                     assert(index2 >= 0 && index2 <= subdirection);
 
                     if (index2 < subdirection)

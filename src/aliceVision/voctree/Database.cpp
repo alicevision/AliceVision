@@ -11,7 +11,7 @@
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
-#include <boost/format.hpp>
+#include <format>
 
 namespace aliceVision {
 namespace voctree {
@@ -180,7 +180,7 @@ void Database::loadWeights(const std::string& file)
     }
     catch (std::ifstream::failure& e)
     {
-        throw std::runtime_error((boost::format("Failed to load vocabulary weights file '%s'") % file).str());
+        throw std::runtime_error(std::format("Failed to load vocabulary weights file '{}'", file));
     }
 }
 

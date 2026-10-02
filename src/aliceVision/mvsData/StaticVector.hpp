@@ -17,6 +17,7 @@
 #include <zlib.h>
 #include <iostream>
 #include <stdexcept>
+#include <cstring>
 
 namespace aliceVision {
 

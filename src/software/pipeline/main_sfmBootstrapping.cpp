@@ -19,7 +19,6 @@
 #include <aliceVision/utils/Histogram.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 
 #include <aliceVision/sfm/pipeline/relativePoses.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -48,7 +47,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 enum EBOOTSTRAPMETHOD
 {
@@ -506,7 +505,7 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
         
-        for(fs::directory_entry & file : boost::make_iterator_range(fs::directory_iterator(pairsDirectory), {}))
+        for(const fs::directory_entry & file : fs::directory_iterator(pairsDirectory))
         {
             if (!std::regex_search(file.path().string(), regex))
             {

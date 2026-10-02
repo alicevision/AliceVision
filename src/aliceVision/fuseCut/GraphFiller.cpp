@@ -10,7 +10,7 @@
 #include <aliceVision/fuseCut/Intersections.hpp>
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
 
-#include <boost/atomic/atomic_ref.hpp>
+#include <atomic>
 
 
 namespace aliceVision {
@@ -162,8 +162,8 @@ void GraphFiller::rayMarchingGraphEmpty(int vertexIndex,
         {
             GeometryIntersection previousGeometry = marching.getPreviousIntersection();
 
-            boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].emptinessScore} += weight;
-            boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].gEdgeVisWeight[previousGeometry.facet.localVertexIndex]} += weight;
+            std::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].emptinessScore} += weight;
+            std::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].gEdgeVisWeight[previousGeometry.facet.localVertexIndex]} += weight;
 
             
             lastIntersectedFacet = geometry.facet;
@@ -172,7 +172,7 @@ void GraphFiller::rayMarchingGraphEmpty(int vertexIndex,
         {
             if (previousGeometry.type == EGeometryType::Facet)
             {
-                boost::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].emptinessScore} += weight;
+                std::atomic_ref<float>{_cellsAttr[previousGeometry.facet.cellIndex].emptinessScore} += weight;
             }
 
             if (geometry.type == EGeometryType::Vertex)
@@ -187,14 +187,14 @@ void GraphFiller::rayMarchingGraphEmpty(int vertexIndex,
         // Declare the last part of the empty path as connected to EMPTY (S node in the graph cut)
         if (lastIntersectedFacet.cellIndex != GEO::NO_CELL && (_mp.CArr[cam] - intersectPt).size() < 0.2 * pointCamDistance)
         {
-            boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight} = (float)maxint;
+            std::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight} = (float)maxint;
         }
     }
 
     // Vote for the last intersected facet (close to the cam)
     if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
     {
-        boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight} = (float)maxint;
+        std::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellSWeight} = (float)maxint;
     }
 }
 
@@ -253,14 +253,14 @@ void GraphFiller::rayMarchingGraphFull(int vertexIndex,
         if (geometry.type == EGeometryType::Facet)
         {
             lastIntersectedFacet = geometry.facet;
-            boost::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex]} += fullWeight;
+            std::atomic_ref<float>{_cellsAttr[geometry.facet.cellIndex].gEdgeVisWeight[geometry.facet.localVertexIndex]} += fullWeight;
         }
     }
 
     // found facet Vote for the last intersected facet (farthest from the camera)
     if (lastIntersectedFacet.cellIndex != GEO::NO_CELL)
     {
-        boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellTWeight} += fullWeight;
+        std::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].cellTWeight} += fullWeight;
     }
 }
 
@@ -458,7 +458,7 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
                         (maxSilent < maxSilentPartRange))            // g < k_outl                  //// k_outl=100  // 400 in the paper
                                                                      //(maxSilent-minSilent<maxSilentPartRange))
                     {
-                        boost::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].on} += (maxJump - midSilent);
+                        std::atomic_ref<float>{_cellsAttr[lastIntersectedFacet.cellIndex].on} += (maxJump - midSilent);
                     }
                 }
             }

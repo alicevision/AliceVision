@@ -13,7 +13,7 @@
 
 #include "algorithm.h"
 
-#include <boost/math/constants/constants.hpp>
+#include <numbers>
 
 IntegralImages::IntegralImages(const aliceVision::image::Image<float>& I)
 {
@@ -30,7 +30,7 @@ IntegralImages::IntegralImages(const aliceVision::image::Image<float>& I)
 
 float getRange(const aliceVision::image::Image<float>& I, int a, const float p)
 {
-    float range = sqrt(float(3.f * I.height() * I.width()) / (p * a * boost::math::constants::pi<float>()));
+    float range = sqrt(float(3.f * I.height() * I.width()) / (p * a * std::numbers::pi_v<float>));
     return range;
 }
 
@@ -50,37 +50,35 @@ std::ifstream& readDetector(std::ifstream& in, aliceVision::feature::PointFeatur
 
 bool anglefrom(float x, float y, float& angle)
 {
-    using namespace boost::math;
 
     if (x != 0)
         angle = std::atan(y / x);
     else if (y > 0)
-        angle = constants::pi<float>() / 2;
+        angle = std::numbers::pi_v<float> / 2;
     else if (y < 0)
-        angle = -constants::pi<float>() / 2;
+        angle = -std::numbers::pi_v<float> / 2;
     else
         return false;
 
     if (x < 0)
-        angle += constants::pi<float>();
+        angle += std::numbers::pi_v<float>;
     while (angle < 0)
-        angle += 2 * constants::pi<float>();
-    while (angle >= 2 * constants::pi<float>())
-        angle -= 2 * constants::pi<float>();
-    assert(angle >= 0 && angle < 2 * constants::pi<float>());
+        angle += 2 * std::numbers::pi_v<float>;
+    while (angle >= 2 * std::numbers::pi_v<float>)
+        angle -= 2 * std::numbers::pi_v<float>;
+    assert(angle >= 0 && angle < 2 * std::numbers::pi_v<float>);
     return true;
 }
 
 double angle_difference(double angle1, double angle2)
 {
-    using namespace boost::math;
 
     double angle = angle1 - angle2;
     while (angle < 0)
-        angle += 2 * constants::pi<double>();
-    while (angle >= 2 * constants::pi<double>())
-        angle -= 2 * constants::pi<double>();
+        angle += 2 * std::numbers::pi;
+    while (angle >= 2 * std::numbers::pi)
+        angle -= 2 * std::numbers::pi;
 
-    assert(angle <= 2 * constants::pi<double>() && angle >= 0);
-    return std::min(angle, 2 * constants::pi<double>() - angle);
+    assert(angle <= 2 * std::numbers::pi && angle >= 0);
+    return std::min(angle, 2 * std::numbers::pi - angle);
 }

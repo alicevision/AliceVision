@@ -9,7 +9,6 @@ if(AV_BUILD_BOOST)
 
     set(DEP_BOOST_LIBS
       accumulators
-      atomic
       container
       date_time
       exception
@@ -29,7 +28,6 @@ if(AV_BUILD_BOOST)
       system
       test
       thread
-      timer
       stacktrace
     )
 

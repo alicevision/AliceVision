@@ -10,7 +10,7 @@
 #include <aliceVision/fuseCut/PointCloud.hpp>
 #include <aliceVision/fuseCut/GraphFiller.hpp>
 #include <aliceVision/numeric/projection.hpp>
-#include <boost/math/constants/constants.hpp>
+#include <numbers>
 
 #include <string>
 
@@ -27,7 +27,6 @@ using namespace aliceVision::sfmData;
 
 BOOST_AUTO_TEST_CASE(fuseCut_solidAngle)
 {
-    using namespace boost::math;
 
     const Point3d O = {0.0, 0.0, 0.0};
     const Point3d A = {5.0, 0.0, 0.0};
@@ -37,19 +36,19 @@ BOOST_AUTO_TEST_CASE(fuseCut_solidAngle)
     {
         const double s = tetrahedronSolidAngle(A - O, B - O, C - O);
         ALICEVISION_LOG_TRACE("tetrahedronSolidAngle: " << s);
-        BOOST_CHECK_CLOSE(s, 0.5 * constants::pi<double>(), 0.0001);
+        BOOST_CHECK_CLOSE(s, 0.5 * std::numbers::pi, 0.0001);
     }
 
     {
         const double s = tetrahedronSolidAngle(B - O, C - O, A - O);
         ALICEVISION_LOG_TRACE("tetrahedronSolidAngle: " << s);
-        BOOST_CHECK_CLOSE(s, 0.5 * constants::pi<double>(), 0.0001);
+        BOOST_CHECK_CLOSE(s, 0.5 * std::numbers::pi, 0.0001);
     }
 
     {
         const double s = tetrahedronSolidAngle(B - O, A - O, C - O);
         ALICEVISION_LOG_TRACE("tetrahedronSolidAngle: " << s);
-        BOOST_CHECK_CLOSE(s, 0.5 * constants::pi<double>(), 0.0001);
+        BOOST_CHECK_CLOSE(s, 0.5 * std::numbers::pi, 0.0001);
     }
 }
 
