@@ -21,7 +21,7 @@
 #include <aliceVision/panorama/sphericalMapping.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/math/constants/constants.hpp>
+#include <numbers>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -189,7 +189,7 @@ bool splitEquirectangular(sfmData::SfMData& outSfmData,
 
     std::vector<PinholeCameraR> cameras;
 
-    const double twoPi = boost::math::constants::pi<double>() * 2.0;
+    const double twoPi = std::numbers::pi * 2.0;
     const double alpha = twoPi / static_cast<double>(nbSplits);
 
     const double fov = degreeToRadian(fovDegree);
@@ -289,7 +289,7 @@ bool splitEquirectangularPreview(const std::string& imagePath,
 
     std::vector<PinholeCameraR> cameras;
 
-    const double twoPi = boost::math::constants::pi<double>() * 2.0;
+    const double twoPi = std::numbers::pi * 2.0;
     const double alpha = twoPi / static_cast<double>(nbSplits);
 
     const double fov = degreeToRadian(fovDegree);

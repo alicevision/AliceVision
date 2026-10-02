@@ -55,7 +55,6 @@ if (ALICEVISION_BUILD_SFM)
               vlsift
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Image matching
@@ -367,7 +366,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
 endif() # if(ALICEVISION_BUILD_SFM)

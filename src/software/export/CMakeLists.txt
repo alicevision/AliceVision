@@ -16,7 +16,6 @@ if (ALICEVISION_BUILD_SFM)
                   aliceVision_sfmDataIO
                   Boost::program_options
                   Boost::boost
-                  Boost::timer
         )
     endif()
 
@@ -31,7 +30,6 @@ if (ALICEVISION_BUILD_SFM)
                   aliceVision_sfmDataIO
                   Boost::program_options
                   Boost::boost
-                  Boost::timer
         )
     endif()
 
@@ -47,7 +45,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Export view computed matches (putatives, geometrics) per image pair
@@ -62,7 +59,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Export view tracks per image pair
@@ -77,7 +73,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Export a SfM aliceVision scene to PMVS format
@@ -92,7 +87,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Export a SfM aliceVision scene to PMVS format
@@ -107,7 +101,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
 
@@ -137,7 +130,6 @@ if (ALICEVISION_BUILD_SFM)
                   aliceVision_sfmDataIO
                   Boost::program_options
                   Boost::boost
-                  Boost::timer
                   ${OPENIMAGEIO_LIBRARIES}
         )
     endif()
@@ -154,7 +146,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Export a SfM aliceVision scene to meshlab scene with rasters
@@ -169,7 +160,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Export a SfM aliceVision scene to mvs-texturing scene folder
@@ -197,7 +187,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmDataIO
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Export geometry and textures as USD
