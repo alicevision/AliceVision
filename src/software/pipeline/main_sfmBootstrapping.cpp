@@ -335,11 +335,11 @@ bool processDepth(sfmData::SfMData & sfmData,
                 const std::vector<sfm::ReconstructedPair> &reconstructedPairs,
                 double minAngleHard, 
                 double minAngleSoft, 
-                double maxAngle)
+                double maxAngle,
+                std::mt19937 & randomNumberGenerator)
 {
     //Check all pairs
     ALICEVISION_LOG_INFO("Find best pair");
-    std::mt19937 randomNumberGenerator;
     sfm::ReconstructedPair bestPair;
     bestPair = sfm::findBestPairFromTrackDepths(sfmData, 
                                                 reconstructedPairs,
@@ -402,6 +402,7 @@ int aliceVision_main(int argc, char** argv)
     ("minAngleSoftInitialPair", po::value<double>(&minAngleSoft)->default_value(minAngleSoft), "Minimum angle for the initial pair (Score is downgraded heavily if angle is under this value).")
     ("minAngleHardInitialPair", po::value<double>(&minAngleHard)->default_value(minAngleHard), "Minimum angle for the initial pair validation.")
     ("maxAngleInitialPair", po::value<double>(&maxAngle)->default_value(maxAngle), "Maximum angle for the initial pair.")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed), "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ("meshFilename,t", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh object file.")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first), "UID or filepath or filename of the first image.")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second), "UID or filepath or filename of the second image.");
@@ -575,9 +576,12 @@ int aliceVision_main(int argc, char** argv)
         ret = processMeshSingle(sfmData, tracksHandler, firstViewFilters, meshFilename);
         break;
     case DEPTH:
+    {
+        std::mt19937 randomNumberGenerator((randomSeed == -1) ? std::random_device()() : static_cast<unsigned int>(randomSeed));
         ret = processDepth(sfmData, tracksHandler, reconstructedPairs,  
-                        minAngleHard, minAngleSoft, maxAngle);
+                        minAngleHard, minAngleSoft, maxAngle, randomNumberGenerator);
         break;
+    }
     default:
         ret = processClassic(sfmData, tracksHandler, reconstructedPairs,  
                         minAngleHard, minAngleSoft, maxAngle);
