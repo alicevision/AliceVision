@@ -15,6 +15,8 @@
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionConfig.hpp>
 
+#include <random>
+
 namespace aliceVision {
 namespace sfm {
 
@@ -115,6 +117,15 @@ public:
         _ignoreMultiviewOnPrior = flag;
     }
 
+    /**
+     * @brief Set the seed of the random number generators used by resection and triangulation
+     * @param seed the seed value
+    */
+    void setRandomSeed(unsigned int seed)
+    {
+        _randomSeed = seed;
+    }
+
 private:
 
     /**
@@ -153,6 +164,7 @@ private:
     size_t _weakResectionSize = 100;
     bool _enableDepthPrior = true;
     bool _ignoreMultiviewOnPrior = false;
+    unsigned int _randomSeed = std::mt19937::default_seed;
 };
 
 } // namespace sfm

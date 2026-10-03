@@ -208,6 +208,7 @@ int aliceVision_main(int argc, char** argv)
         ("countIterations", po::value<size_t>(&countIterations)->default_value(countIterations), "Maximal number of iterations.")
         ("minInliers", po::value<size_t>(&minInliers)->default_value(minInliers), "Minimal number of inliers for a valid ransac.")
         ("distanceThreshold", po::value<double>(&distanceThreshold)->default_value(distanceThreshold), "Threshold on geometric distance (epipolar distance or reprojection distance for pure rotation)")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed), "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
         ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
          "Path(s) to one or more files which contain the list of image pairs to match.")
         ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Chunk id.")
@@ -229,10 +230,11 @@ int aliceVision_main(int argc, char** argv)
 
     // Generate one number generator per thread to enable repetability
     // Without thread concurrency
+    const unsigned int seed = (randomSeed == -1) ? std::random_device()() : static_cast<unsigned int>(randomSeed);
     std::vector<std::mt19937> randomNumberGenerators;
     for (int i = 0; i < omp_get_max_threads(); i++)
     {
-        randomNumberGenerators.emplace_back(randomSeed);
+        randomNumberGenerators.emplace_back(seed);
     }
 
     // load input SfMData scene
