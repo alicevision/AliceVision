@@ -116,6 +116,31 @@ jobs:
           mkdir ./outputData
           python meshroom_batch -i $PWD/../../dataset_panoramaFisheyeHdr/RAW -p panoramaFisheyeHdr -o $PWD/../outputData
 
+      - name: Functional Tests - SfM Quality Comparison Pipeline
+        working-directory: ./functional_tests
+        run: |
+          # Clone the dataset (Meshroom and psutil come from the PanoramaFisheyeHdr step)
+          git clone --branch master https://github.com/alicevision/dataset_monstree.git
+          cd Meshroom/
+
+          # Set environment variables specific to Meshroom
+          export MESHROOM_INSTALL_DIR=$PWD
+          export MESHROOM_NODES_PATH=${MESHROOM_NODES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+          export MESHROOM_PIPELINE_TEMPLATES_PATH=${MESHROOM_PIPELINE_TEMPLATES_PATH}:${ALICEVISION_ROOT}/share/meshroom
+
+          # Set environment variables to find executables and libraries
+          export PYTHONPATH=$PWD:${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python:${PYTHONPATH}
+          export PATH=$PATH:${ALICEVISION_ROOT}/bin
+          export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
+
+          # Run the sparse reconstruction of mini6 with ten seeds (resection RANSAC capped at 4096 iterations, as for the
+          # reference) and compare the runs with the reference set: SfMComparing stops the pipeline when they are worse
+          cd bin/
+          mkdir -p ../sfmQualityComparison
+          python meshroom_batch -i $PWD/../../dataset_monstree/mini6 -p sfmQualityComparison -s $PWD/../sfmQualityComparison/project.mg \
+            --paramOverrides SfMExpanding:localizerEstimatorMaxIterations=4096 \
+            SfMComparing:reference=${ALICEVISION_ROOT}/share/meshroom/sfmQualityComparison_monstreeMini6.json
+
       - name: Functional Tests - SfM Quality Evaluation
         working-directory: ./functional_tests
         run: |
