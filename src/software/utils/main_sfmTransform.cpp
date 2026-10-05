@@ -26,6 +26,7 @@
 #include <sstream>
 #include <vector>
 #include <fstream>
+#include <boost/algorithm/string.hpp>
 
 
 

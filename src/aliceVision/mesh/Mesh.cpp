@@ -14,7 +14,7 @@
 
 #include <geogram/points/kd_tree.h>
 
-#include <boost/atomic/atomic_ref.hpp>
+#include <atomic>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <assimp/Importer.hpp>
@@ -2795,12 +2795,12 @@ bool Mesh::lockSurfaceBoundaries(int neighbourIterations, StaticVectorBool& out_
 
             if (boundariesVertices[edge.first])
             {
-                boost::atomic_ref<char>{boundariesVerticesCurrent[edge.second]} = true;
+                std::atomic_ref<char>{boundariesVerticesCurrent[edge.second]} = true;
             }
 
             if (boundariesVertices[edge.second])
             {
-                boost::atomic_ref<char>{boundariesVerticesCurrent[edge.first]} = true;
+                std::atomic_ref<char>{boundariesVerticesCurrent[edge.first]} = true;
             }
         }
         std::swap(boundariesVertices, boundariesVerticesCurrent);
@@ -2923,7 +2923,7 @@ bool Mesh::getSurfaceBoundaries(StaticVectorBool& out_trisToConsider, bool inver
 
         if (boundariesEdges[i] == !invert)
         {
-            boost::atomic_ref<char>{out_trisToConsider[edge.triId]} = true;
+            std::atomic_ref<char>{out_trisToConsider[edge.triId]} = true;
         }
     }
 

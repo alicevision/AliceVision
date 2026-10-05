@@ -18,7 +18,6 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -32,6 +31,7 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+#include <boost/algorithm/string.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

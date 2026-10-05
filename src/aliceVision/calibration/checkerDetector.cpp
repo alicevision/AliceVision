@@ -15,7 +15,7 @@
 
 #include <OpenImageIO/imagebufalgo.h>
 
-#include <boost/math/constants/constants.hpp>
+#include <numbers>
 
 #include <atomic>
 #include <limits>
@@ -218,7 +218,7 @@ void CheckerDetector::pruneCorners(std::vector<Vec2>& prunedCorners, const std::
         // Sample grayscale values on a circle around corner position
         for (int sample = 0; sample < samples; ++sample)
         {
-            const double angle = 2.0 * boost::math::constants::pi<double>() * static_cast<double>(sample) / static_cast<double>(samples);
+            const double angle = 2.0 * std::numbers::pi * static_cast<double>(sample) / static_cast<double>(samples);
 
             const double x = corner(0) + cos(angle) * static_cast<double>(radius);
             const double y = corner(1) + sin(angle) * static_cast<double>(radius);
@@ -611,7 +611,7 @@ IndexT CheckerDetector::findClosestCorner(const Vec2& center, const Vec2& dir, c
             continue;
 
         // Check that corner belongs to cone starting at center, directed at dir, with angle PI/8
-        if (std::abs(std::atan2(diff.y(), diff.x()) - std::atan2(dir.y(), dir.x())) > boost::math::constants::pi<double>() * 0.125)
+        if (std::abs(std::atan2(diff.y(), diff.x()) - std::atan2(dir.y(), dir.x())) > std::numbers::pi * 0.125)
         {
             continue;
         }
@@ -1533,7 +1533,7 @@ bool CheckerDetector::removeInvalidCheckerboards()
                 for (const Vec2& cur : dirs)
                 {
                     const double angle = acos(ref.dot(cur));
-                    if (std::abs(angle) > boost::math::constants::pi<double>() * 0.25)
+                    if (std::abs(angle) > std::numbers::pi * 0.25)
                     {
                         isInvalid = true;
                         break;

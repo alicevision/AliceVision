@@ -16,6 +16,7 @@
 
 #include <stdexcept>
 #include <regex>
+#include <boost/lexical_cast.hpp>
 
 namespace fs = std::filesystem;
 

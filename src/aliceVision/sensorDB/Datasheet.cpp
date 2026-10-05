@@ -11,7 +11,6 @@
 #include <algorithm>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 
 namespace aliceVision {
 namespace sensorDB {
@@ -30,7 +29,7 @@ bool Datasheet::operator==(const Datasheet& other) const
     brandA.erase(std::remove_if(brandA.begin(), brandA.end(), ::isspace), brandA.end());  // remove spaces
     brandB.erase(std::remove_if(brandB.begin(), brandB.end(), ::isspace), brandB.end());  // remove spaces
 
-    if ((brandA == brandB) || (boost::algorithm::starts_with(brandA, brandB)) || (boost::algorithm::starts_with(brandB, brandA)))
+    if ((brandA == brandB) || (brandA.starts_with(brandB)) || (brandB.starts_with(brandA)))
     {
         std::string modelA = _model;
         std::string modelB = other._model;
@@ -44,7 +43,7 @@ bool Datasheet::operator==(const Datasheet& other) const
         modelA.erase(std::remove_if(modelA.begin(), modelA.end(), ::isspace), modelA.end());  // remove spaces
         modelB.erase(std::remove_if(modelB.begin(), modelB.end(), ::isspace), modelB.end());  // remove spaces
 
-        if ((modelA == modelB) || (boost::algorithm::ends_with(modelA, modelB)) || (boost::algorithm::ends_with(modelB, modelA)))
+        if ((modelA == modelB) || (modelA.ends_with(modelB)) || (modelB.ends_with(modelA)))
             return true;
     }
 

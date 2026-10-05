@@ -10,7 +10,7 @@
 #include "emorCurve.hpp"
 #include "rgbCurve.hpp"
 
-#include <boost/math/constants/constants.hpp>
+#include <numbers>
 
 namespace aliceVision {
 namespace hdr {
@@ -54,9 +54,8 @@ template<typename T>
 T laguerreFunction(const T& a, const T& x)
 {
     // https://www.desmos.com/calculator/ib1y06t4pe
-    using namespace boost::math::constants;
-    constexpr double c = 2.0 / pi<double>();
-    return x + c * atan((a * sin(pi<double>() * x)) / (1.0 - a * cos(pi<double>() * x)));
+    constexpr double c = 2.0 / std::numbers::pi;
+    return x + c * atan((a * sin(std::numbers::pi * x)) / (1.0 - a * cos(std::numbers::pi * x)));
 }
 
 template<typename T>
