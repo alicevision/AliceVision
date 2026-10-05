@@ -7,6 +7,16 @@
 if(AV_BUILD_OPENCV)
     set(OPENCV_TARGET opencv)
 
+    # OpenCV uses the legacy uppercase selector as well as modern FindPython3.
+    # Preserve automatic discovery for callers that do not select an interpreter.
+    set(OPENCV_PYTHON_CMAKE_FLAGS)
+    if(Python_EXECUTABLE)
+        list(APPEND OPENCV_PYTHON_CMAKE_FLAGS
+            -DPYTHON3_EXECUTABLE:FILEPATH=${Python_EXECUTABLE}
+            -DPython3_EXECUTABLE:FILEPATH=${Python_EXECUTABLE}
+        )
+    endif()
+
     # Contrib modules: download only, no configure/build/install step
     ExternalProject_Add(opencv_contrib
         URL              ${DEP_OPENCV_CONTRIB_URL}
@@ -44,6 +54,7 @@ if(AV_BUILD_OPENCV)
             ${JPEG_CMAKE_FLAGS}
             ${LIBRAW_CMAKE_FLAGS}
             ${OPENMP_CMAKE_FLAGS}
+            ${OPENCV_PYTHON_CMAKE_FLAGS}
             -DWITH_TBB=ON
             -DWITH_FFMPEG=${AV_BUILD_FFMPEG}
             -DBUILD_opencv_python2=OFF

@@ -59,12 +59,14 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release \
         -DALICEVISION_USE_ONNX_GPU:BOOL=OFF \
         -DALICEVISION_BUILD_DOC:BOOL=OFF \
         -DALICEVISION_BUILD_SWIG_BINDING:BOOL=ON \
+        -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
         -DSWIG_DIR:PATH="${AV_INSTALL}/share/swig/4.3.0" -DSWIG_EXECUTABLE:PATH="${AV_INSTALL}/bin-deps/swig" \
         "${AV_DEV}"
 
 RUN make install -j${CPU_CORES}
 
-RUN make bundle
+RUN make bundle && \
+    /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None'
 
 RUN rm -rf "${AV_BUILD}" "${AV_DEV}" && \
     echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
