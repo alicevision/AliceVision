@@ -307,7 +307,7 @@ bool DistortionEstimationGeometry::compute(Statistics& statistics, const bool lo
         lockShared[id] = lockDistortions[id];
 
         // If this value is shared, lock it for non shared vector
-        lockDistortionsNonShared[id] = false;
+        lockDistortionsNonShared[id] = true;
     }
 
     // Check if all distortions are locked
