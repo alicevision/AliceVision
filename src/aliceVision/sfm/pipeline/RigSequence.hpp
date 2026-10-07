@@ -75,7 +75,5 @@ class RigSequence
     RigParams _params;
 };
 
-IndexT getRigPoseId(IndexT rigId, IndexT frameId);
-
 }  // namespace sfm
 }  // namespace aliceVision

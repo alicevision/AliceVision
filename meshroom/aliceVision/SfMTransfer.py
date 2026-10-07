@@ -1,4 +1,4 @@
-__version__ = "2.1"
+__version__ = "2.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -25,24 +25,24 @@ set of images, or for applying externally computed camera parameters.
         desc.File(
             name="input",
             label="Input",
-            description="SfMData file.",
+            description="Path to the destination SfMData file. This is the SfM scene onto which the camera poses, intrinsics, and landmarks will be transferred.",
             value="",
         ),
         desc.File(
             name="reference",
             label="Reference",
-            description="Path to the scene used as the reference to retrieve resolved poses and intrinsics.",
+            description="Path to the reference SfMData file used to retrieve resolved poses, intrinsics and landmarks.",
             value="",
         ),
         desc.ChoiceParam(
             name="method",
             label="Matching Method",
             description="Matching Method:\n"
-                " - from_viewid: Match cameras based on viewId.\n"
-                " - from_filepath: Match cameras with a filepath matching, using 'fileMatchingPattern'.\n"
-                " - from_metadata: Match cameras with matching metadata, using 'metadataMatchingList'.\n"
-                " - from_poseid: Match cameras based on poseId.\n"
-                " - from_intrinsicid: Match cameras based on intrinsicId.\n",
+                " - from_viewid: Match views with same view ID.\n"
+                " - from_filepath: Match views with a filepath matching, using 'fileMatchingPattern'.\n"
+                " - from_metadata: Match views with matching metadata, using 'metadataMatchingList'.\n"
+                " - from_poseid: Match poses with the same pose ID. Only the poses will be updated.\n"
+                " - from_intrinsicid: Match intrinsics with the same intrinsic ID. Only the intrinsics will be updated.\n",
             value="from_viewid",
             values=["from_viewid", "from_filepath", "from_metadata", "from_poseid", "from_intrinsicid"],
         ),
@@ -89,6 +89,12 @@ set of images, or for applying externally computed camera parameters.
             name="transferLandmarks",
             label="Landmarks",
             description="Transfer landmarks.",
+            value=True,
+        ),
+        desc.BoolParam(
+            name="transferSurveyPoints",
+            label="Survey Points",
+            description="Transfer survey points.",
             value=True,
         ),
         desc.ChoiceParam(
