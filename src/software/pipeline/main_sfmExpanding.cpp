@@ -30,7 +30,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 4
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 6
 
 using namespace aliceVision;
 
@@ -60,6 +60,7 @@ int aliceVision_main(int argc, char** argv)
     double minAngleForLandmark = 2.0;
     double maxReprojectionError = 4.0;
     double maxTriangulationError = 8.0;
+    unsigned int maxIterationCount = 50;
     bool lockAllIntrinsics = false;
     bool enableStructureRefinement = true;
     int minNbCamerasToRefinePrincipalPoint = 3;
@@ -68,6 +69,8 @@ int aliceVision_main(int argc, char** argv)
     int weakResectionSize = 100;
     bool enableDepthPrior = true;
     bool ignoreMultiviewOnPrior = false;
+    bool enableObservationsWeighting = false;
+    double lossParameter = 4.0;
 
     int randomSeed = std::mt19937::default_seed;
 
@@ -120,6 +123,7 @@ int aliceVision_main(int argc, char** argv)
     ("minAngleForLandmark", po::value<double>(&minAngleForLandmark)->default_value(minAngleForLandmark), "Minimum angle for landmark.")
     ("maxTriangulationError", po::value<double>(&maxTriangulationError)->default_value(maxTriangulationError), "Maximum reprojection error in the triangulation process.")
     ("maxReprojectionError", po::value<double>(&maxReprojectionError)->default_value(maxReprojectionError), "Maximum reprojection error in the bundle verification step.")
+    ("maxIterationCount", po::value<unsigned int>(&maxIterationCount)->default_value(maxIterationCount), "Maximum number of solver iterations.")
     ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics), "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
     ("enableStructureRefinement", po::value<bool>(&enableStructureRefinement)->default_value(enableStructureRefinement), "Bundle adjustment will try to optimize the landmarks positions.")
     ("minNbCamerasToRefinePrincipalPoint", po::value<int>(&minNbCamerasToRefinePrincipalPoint)->default_value(minNbCamerasToRefinePrincipalPoint),
@@ -129,6 +133,8 @@ int aliceVision_main(int argc, char** argv)
          "If minNbCamerasToRefinePrincipalPoint==1, the principal point is always refined.")
     ("useRigConstraint", po::value<bool>(&useRigConstraint)->default_value(useRigConstraint), "Enable/Disable rig constraint.")
     ("rigMinNbCamerasForCalibration", po::value<int>(&minNbCamerasForRigCalibration)->default_value(minNbCamerasForRigCalibration),"Minimal number of cameras to start the calibration of the rig.")
+    ("enableObservationsWeighting", po::value<bool>(&enableObservationsWeighting)->default_value(enableObservationsWeighting), "Enable observations weighting to reduce impact of regions with high point density.")
+    ("lossParameter", po::value<double>(&lossParameter)->default_value(lossParameter), "Huber loss threshold used in bundle adjustment.")
     ("meshFilename,t", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh file.");
     ;
      // clang-format on
@@ -210,7 +216,10 @@ int aliceVision_main(int argc, char** argv)
     sfmBundle->setMaxReprojectionError(maxReprojectionError);
     sfmBundle->setMinNbCamerasToRefinePrincipalPoint(minNbCamerasToRefinePrincipalPoint);
     sfmBundle->setIsStructureRefinementEnabled(enableStructureRefinement);
+    sfmBundle->setMaxIterationCount(maxIterationCount);
     sfmBundle->setTemporalConstraintParams(tempConstrParams, useTemporalConstraint);
+    sfmBundle->setIsObservationsWeightingEnabled(enableObservationsWeighting);
+    sfmBundle->setLossParameter(lossParameter);
 
     sfmData::PointFetcher::sptr pointFetcherHandler;
     if (!meshFilename.empty())

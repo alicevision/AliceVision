@@ -147,7 +147,7 @@ Eigen::MatrixXd DistortionFisheye1::getDerivativeRemoveDistoWrtDisto(const Vec2&
     double d_part1_d_params = r / (ca * ca);
     double d_part3_d_params = r;
     double d_part2_d_part1 = 1.0 / (part1 * part1 + 1.0);
-    double d_coef_d_part2 = (part2 * part2) / part3;
+    double d_coef_d_part2 = 1.0 / part3;
     double d_coef_d_part3 = -part2 / (part3 * part3);
     double d_coef_d_params = d_coef_d_part3 * d_part3_d_params + d_coef_d_part2 * d_part2_d_part1 * d_part1_d_params;
 

@@ -1,4 +1,4 @@
-__version__ = "4.0"
+__version__ = "4.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import COLORSPACES, EXR_STORAGE_DATA_TYPE, RAW_COLOR_INTERPRETATION, VERBOSE_LEVEL
@@ -8,9 +8,10 @@ from pyalicevision import parallelization as avpar
 
 
 def outputImagesValueFunct(attr):
+    outputDir = attr.node.output.value
     outputExt = ('.' + attr.node.extension.value) if attr.node.extension.value else None
     fileStem = '<FILESTEM>' if attr.node.keepImageFilename.value else '<VIEW_ID>'
-    return "{nodeCacheFolder}/" + fileStem + (outputExt or '.*')
+    return outputDir + "/" + fileStem + (outputExt or '.*')
 
 
 class ImageProcessing(desc.AVCommandLineNode):
@@ -40,7 +41,7 @@ or to export final deliverables.
             value="",
         ),
         desc.ListAttribute(
-            elementDesc=desc.StringParam(
+            elementDesc=desc.File(
                 name="metadataFolder",
                 label="Metadata Folder",
                 description="Specific folder containing images with metadata.",
@@ -57,6 +58,13 @@ or to export final deliverables.
                         "If unset, the output file extension will match the input's if possible.",
             value="",
             values=["", "exr", "jpg", "tiff", "png"],
+        ),
+        desc.File(
+            name="customOutputFolder",
+            label="Custom Output Folder",
+            description="Folder to store images. If empty, use Meshroom cache.",
+            value="",
+            commandLineGroup="",
         ),
         desc.BoolParam(
             name="reconstructedViewsOnly",
@@ -589,7 +597,7 @@ or to export final deliverables.
             name="output",
             label="Folder",
             description="Output images folder.",
-            value="{nodeCacheFolder}",
+            value=lambda node: "{nodeCacheFolder}" if not node.customOutputFolder.value else node.customOutputFolder.value,
         ),
         desc.File(
             name="outputImages",

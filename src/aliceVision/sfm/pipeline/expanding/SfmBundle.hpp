@@ -79,12 +79,39 @@ public:
     }
 
     /**
+     * @brief set the maximum number of solver iterations
+     * @param maxIterationCount the number of iterations
+    */
+    void setMaxIterationCount(unsigned int maxIterationCount)
+    {
+        _maxIterationCount = maxIterationCount;
+    }
+
+    /**
      * @brief Set whether to enable structure refinement in bundle adjustment
      * @param flag true to enable structure refinement, false to disable it
     */
     void setIsStructureRefinementEnabled(bool flag)
     {
         _isStructureRefinementEnabled = flag;
+    }
+
+    /**
+     * @brief Set whether to enable weighting of observations
+     * @param flag true to enable observations weighting, false to disable it
+    */
+    void setIsObservationsWeightingEnabled(bool flag)
+    {
+        _enableObservationsWeighting = flag;
+    }
+
+    /**
+     * @brief Set the Huber loss parameter for bundle adjustment
+     * @param lossParameter the Huber loss threshold value
+    */
+    void setLossParameter(double lossParameter)
+    {
+        _lossParameter = lossParameter;
     }
 
     /**
@@ -134,6 +161,7 @@ private:
     size_t _minPointsPerPose = 30;
     size_t _bundleAdjustmentMaxOutlier = 50;
     size_t _minNbCamerasToRefinePrincipalPoint = 3;
+    unsigned int _maxIterationCount = 50;
     bool _useLBA = true;
     bool _bundleTemporalConstraint = false;
     aliceVision::sfm::TemporalConstraintParams _tempConstrParams;
@@ -141,6 +169,8 @@ private:
     size_t _LBAGraphDistanceLimit = 1;
     size_t _LBAMinNbOfMatches = 50;
     bool _isStructureRefinementEnabled = true;
+    bool _enableObservationsWeighting = false;
+    double _lossParameter = 4.0;
 };
 
 } // namespace sfm

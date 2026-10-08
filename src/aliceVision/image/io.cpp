@@ -542,11 +542,18 @@ oiio::ImageSpec readImageSpec(const std::string& path)
     std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path, &configSpec));
 
     if (!in)
-        throw std::runtime_error("Can't find/open image file '" + path + "'.");
+    {
+        const std::string error = oiio::geterror();
+        throw std::runtime_error("Can't find/open image file '" + path + "': " + (error.empty() ? "unknown OpenImageIO error" : error));
+    }
 
     oiio::ImageSpec spec = in->spec();
 
-    in->close();
+    if (!in->close())
+    {
+        const std::string error = in->geterror();
+        throw std::runtime_error("Failed to close image file '" + path + "': " + (error.empty() ? "unknown OpenImageIO error" : error));
+    }
 
     return spec;
 }
@@ -585,7 +592,9 @@ bool isRawFormat(const std::string& path)
     std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
     if (!in)
     {
-        ALICEVISION_THROW_ERROR("The input image file '" << path << "' cannot be opened or does not exist.");
+        const std::string error = oiio::geterror();
+        ALICEVISION_THROW_ERROR("The input image file '" << path << "' cannot be opened or does not exist: "
+                                << (error.empty() ? "unknown OpenImageIO error" : error));
     }
     std::string imgFormat = in->format_name();
 
@@ -759,11 +768,14 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
-    inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT);  // force image conversion to float (for grayscale and color space conversion)
+    if (!inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT))  // force image conversion to float (for grayscale and color space conversion)
+    {
+        const std::string error = inBuf.geterror();
+        ALICEVISION_THROW_ERROR("Failed to read image file '" << path << "': " << (error.empty() ? "unknown OpenImageIO error" : error));
+    }
 
     if (!inBuf.initialized())
         ALICEVISION_THROW_ERROR("Failed to open the image file: '" << path << "'. The file might not exist.");
-
     // check picture channels number
     if (inBuf.spec().nchannels == 0)
         ALICEVISION_THROW_ERROR("No channel in the input image file: '" + path + "'.");
@@ -771,7 +783,6 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
     oiio::ParamValueList imgMetadata = readImageMetadata(path);
-
     if (isRawImage)
     {
         // Check orientation metadata. If image is mirrored, mirror it back and update orientation metadata
@@ -973,7 +984,12 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         exportROI.chbegin = 0;
         exportROI.chend = nchannels;
 
-        inBuf.get_pixels(exportROI, format, image.data());
+        if (!inBuf.get_pixels(exportROI, format, image.data()))
+        {
+            const std::string error = inBuf.geterror();
+            ALICEVISION_THROW_ERROR("Failed to export pixels from image file '" << path << "': "
+                                    << (error.empty() ? "unknown OpenImageIO error" : error));
+        }
     }
 }
 
@@ -984,7 +1000,11 @@ void readImageNoFloat(const std::string& path, oiio::TypeDesc format, Image<T>& 
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
-    inBuf.read(0, 0, true, format);
+    if (!inBuf.read(0, 0, true, format))
+    {
+        const std::string error = inBuf.geterror();
+        throw std::runtime_error("Failed to read image file '" + path + "': " + (error.empty() ? "unknown OpenImageIO error" : error));
+    }
 
     if (!inBuf.initialized())
     {
@@ -1004,7 +1024,11 @@ void readImageNoFloat(const std::string& path, oiio::TypeDesc format, Image<T>& 
         exportROI.chbegin = 0;
         exportROI.chend = 1;
 
-        inBuf.get_pixels(exportROI, format, image.data());
+        if (!inBuf.get_pixels(exportROI, format, image.data()))
+        {
+            const std::string error = inBuf.geterror();
+            throw std::runtime_error("Failed to export pixels from image file '" + path + "': " + (error.empty() ? "unknown OpenImageIO error" : error));
+        }
     }
 }
 
@@ -1204,7 +1228,11 @@ void writeImage(const std::string& path,
 
     // write image
     if (!outBuf->write(tmpPath))
-        ALICEVISION_THROW_ERROR("Can't write output image file '" + path + "'.");
+    {
+        const std::string error = outBuf->geterror();
+        ALICEVISION_THROW_ERROR("Can't write output image file '" << path << "': "
+                                << (error.empty() ? "unknown OpenImageIO error" : error));
+    }
 
     // rename temporary filename
     fs::rename(tmpPath, path);
@@ -1262,7 +1290,10 @@ void writeImageNoFloat(const std::string& path,
 
     // write image
     if (!outBuf->write(tmpPath))
-        throw std::runtime_error("Can't write output image file '" + path + "'.");
+    {
+        const std::string error = outBuf->geterror();
+        throw std::runtime_error("Can't write output image file '" + path + "': " + (error.empty() ? "unknown OpenImageIO error" : error));
+    }
 
     // rename temporary filename
     fs::rename(tmpPath, path);

@@ -53,6 +53,7 @@ MACRO (CHECK_CXX_COMPILER_FLAG _FLAG _RESULT)
      # Some compilers do not fail with a bad flag
      FAIL_REGEX "error: bad value (.*) for .* switch"       # GNU
      FAIL_REGEX "argument unused during compilation"        # clang
+     FAIL_REGEX "support will be removed in GCC"            # GNU: deprecated ISA, e.g. -mno-avx512er on GCC 14
      FAIL_REGEX "is valid for .* but not for C\\\\+\\\\+"   # GNU
      FAIL_REGEX "unrecognized .*option"                     # GNU
      FAIL_REGEX "ignored for target"                        # GNU

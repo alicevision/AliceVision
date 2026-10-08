@@ -6,6 +6,6 @@ set -euo pipefail
 
 export OS=rocky
 export OS_VERSION="${ROCKY_VERSION:-9}"
-export AV_DEPS_VERSION="${AV_DEPS_VERSION:-2026.03.30}"
+export AV_DEPS_VERSION="${AV_DEPS_VERSION:-2026.09.29}"
 
 exec docker/build-image.sh

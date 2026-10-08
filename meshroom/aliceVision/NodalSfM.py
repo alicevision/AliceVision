@@ -1,4 +1,4 @@
-__version__ = "2.0"
+__version__ = "2.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -17,7 +17,9 @@ calibrated rotations but no translational component, suitable for panorama stitc
 
     commandLine = "aliceVision_nodalSfM {allParams}"
     size = desc.DynamicNodeSize("input")
-
+    cpu = desc.Level.INTENSIVE
+    ram = desc.Level.INTENSIVE
+    
     category = "Sparse Reconstruction"
     inputs = [
         desc.File(
@@ -38,6 +40,41 @@ calibrated rotations but no translational component, suitable for panorama stitc
             description="Information on pairs.",
             value="",
         ),
+        desc.FloatParam(
+            name="maxReprojectionError",
+            label="Max Reprojection Error",
+            description="Maximum reprojection error (pixels) to accept a track as a landmark observation.",
+            value=4.0,
+            range=(0.1, 20.0, 0.1),
+        ),
+        desc.IntParam(
+            name="minInliers",
+            label="Min Inliers",
+            description="Minimum number of AC-RANSAC inliers required to localize a view.",
+            value=35,
+            range=(5, 1000, 1),
+        ),
+        desc.IntParam(
+            name="maxRansacIterations",
+            label="Max RANSAC Iterations",
+            description="Maximum number of AC-RANSAC iterations for rotation estimation.",
+            value=1024,
+            range=(100, 10000, 100),
+        ),
+        desc.FloatParam(
+            name="outlierThreshold",
+            label="Outlier Threshold",
+            description="Pixel residual threshold for outlier removal after bundle adjustment.",
+            value=2.0,
+            range=(0.1, 20.0, 0.1),
+        ),
+        desc.IntParam(
+            name="minObservations",
+            label="Min Observations",
+            description="Minimum number of observations required to keep a landmark after outlier removal.",
+            value=2,
+            range=(1, 10, 1),
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
@@ -54,4 +91,10 @@ calibrated rotations but no translational component, suitable for panorama stitc
             description="Path to the output SfMData file.",
             value="{nodeCacheFolder}/sfm.usda",
         ),
+        desc.File(
+            name="outputViewsAndPoses",
+            label="Views And Poses",
+            description="Path to the output SfMData file with cameras (views and poses).",
+            value="{nodeCacheFolder}/cameras.sfm",
+        )
     ]

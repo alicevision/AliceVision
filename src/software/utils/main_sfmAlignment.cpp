@@ -22,7 +22,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
@@ -41,6 +41,7 @@ enum class EAlignmentMethod : unsigned char
     FROM_CAMERAS_POSEID,
     FROM_CAMERAS_FILEPATH,
     FROM_CAMERAS_METADATA,
+    FROM_SINGLE_CAMERA_VIEWID,
     FROM_MARKERS,
     FROM_LANDMARKS,
     FROM_FEATURE_MATCHES,
@@ -63,6 +64,8 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
             return "from_cameras_filepath";
         case EAlignmentMethod::FROM_CAMERAS_METADATA:
             return "from_cameras_metadata";
+        case EAlignmentMethod::FROM_SINGLE_CAMERA_VIEWID:
+            return "from_single_camera_viewid";
         case EAlignmentMethod::FROM_MARKERS:
             return "from_markers";
         case EAlignmentMethod::FROM_LANDMARKS:
@@ -91,6 +94,8 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
         return EAlignmentMethod::FROM_CAMERAS_FILEPATH;
     if (method == "from_cameras_metadata")
         return EAlignmentMethod::FROM_CAMERAS_METADATA;
+    if (method == "from_single_camera_viewid")
+        return EAlignmentMethod::FROM_SINGLE_CAMERA_VIEWID;
     if (method == "from_markers")
         return EAlignmentMethod::FROM_MARKERS;
     if (method == "from_landmarks")
@@ -145,6 +150,7 @@ int aliceVision_main(int argc, char** argv)
          "\t- from_cameras_poseid: Align cameras with same pose ID.\n"
          "\t- from_cameras_filepath: Align cameras with a filepath matching, using --fileMatchingPattern.\n"
          "\t- from_cameras_metadata: Align cameras with matching metadata, using --metadataMatchingList.\n"
+         "\t- from_single_camera_viewid: Align cameras using a single view. Only work if the reference has exactly one shared reconstructed view.\n"
          "\t- from_landmarks: Align using landmarks sharing features.\n"
          "\t- from_markers: Align from markers with the same ID.\n"
          "\t- from_featureMatches: Align using feature matches to find corresponding landmarks, using --matchesFolders.\n")
@@ -221,6 +227,11 @@ int aliceVision_main(int argc, char** argv)
         {
             hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(
               sfmData, sfmDataInRef, metadataMatchingList, randomNumberGenerator, &S, &R, &t);
+            break;
+        }
+        case EAlignmentMethod::FROM_SINGLE_CAMERA_VIEWID:
+        {
+            hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_singleViewId(sfmData, sfmDataInRef, &S, &R, &t);
             break;
         }
         case EAlignmentMethod::FROM_MARKERS:

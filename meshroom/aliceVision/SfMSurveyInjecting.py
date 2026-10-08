@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -33,6 +33,12 @@ enforce a known metric scale during bundle adjustment.
             label="Survey",
             description="Input JSON file containing the survey.",
             value="",
+        ),
+        desc.IntParam(
+            name="offset",
+            label="Frame number offset",
+            description="Positive offset to use on the reference file frame number to match the input frame number (or -1 to try auto-detection).",
+            value=-1,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

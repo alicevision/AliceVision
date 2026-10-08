@@ -103,6 +103,18 @@ class Observation
     void setScale(double scale) { _scale = scale; }
 
     /**
+    * @brief Get the weight of the feature
+    * @return the weight of the feature
+    */
+    double getWeight() const { return _weight; }
+
+    /**
+    * @brief Set the weight of the feature
+    * @param weight a custom weight depending on the context or choice
+    */
+    void setWeight(double weight) { _weight = weight; }
+
+    /**
     * @brief Get the measured depth (Depth meaning is camera type dependent)
     * @return The optional measured depth, or less than 0 if non used
     */
@@ -119,6 +131,7 @@ class Observation
     Vec2 _coordinates = { 0.0, 0.0 };
     IndexT _idFeature = UndefinedIndexT;
     double _scale = 0.0;
+    double _weight = 1.0;
 
     //Optional measured 'depth'
     double _depth = -1.0;

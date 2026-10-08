@@ -51,11 +51,13 @@ RUN CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
         -DALICEVISION_USE_ONNX_GPU:BOOL=OFF \
         -DALICEVISION_BUILD_DOC:BOOL=OFF \
         -DALICEVISION_BUILD_SWIG_BINDING:BOOL=ON \
+        -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV:-/usr}/bin/python" \
         -DSWIG_DIR:PATH="${AV_INSTALL}/share/swig/4.3.0" -DSWIG_EXECUTABLE:PATH="${AV_INSTALL}/bin-deps/swig" \
-        -DPython3_EXECUTABLE:PATH=/usr/bin/python \
         "${AV_DEV}" && \
     cmake --build . --target install --parallel "${CPU_CORES}" && \
     cmake --build . --target bundle && \
+    { ! test -x /opt/python/bin/python3.11 || \
+      /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None'; } && \
     rm -rf "${AV_BUILD}" "${AV_DEV}" && \
     echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
     echo "export ALICEVISION_ROOT=${AV_BUNDLE}" >> /etc/profile.d/alicevision.sh

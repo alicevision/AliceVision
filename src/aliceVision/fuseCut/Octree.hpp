@@ -136,6 +136,14 @@ class SimpleNode
             return;
         }
 
+        for (auto& item : _nodes)
+        {
+            if (item)
+            {
+                item->regroup(maxPointsPerNode);
+            }
+        }
+
         if (count < maxPointsPerNode)
         {
             _count = count;
@@ -147,14 +155,6 @@ class SimpleNode
             }
 
             return;
-        }
-
-        for (auto& item : _nodes)
-        {
-            if (item)
-            {
-                item->regroup(maxPointsPerNode);
-            }
         }
     }
 

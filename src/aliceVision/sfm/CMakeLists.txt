@@ -42,6 +42,7 @@ set(sfm_files_headers
     pipeline/expanding/ExpansionPostProcessRig.hpp
     pipeline/expanding/ExpansionPolicy.hpp
     pipeline/expanding/ExpansionPolicyLegacy.hpp
+    pipeline/expanding/ExpansionPolicySequence.hpp
     pipeline/expanding/ExpansionProcess.hpp
     pipeline/expanding/ConnexityGraph.hpp
     pipeline/expanding/LbaPolicy.hpp
@@ -81,10 +82,12 @@ set(sfm_files_sources
     pipeline/expanding/SfmTriangulation.cpp
     pipeline/expanding/SfmResection.cpp
     pipeline/expanding/SfmBundle.cpp
+    pipeline/expanding/DistanceWeighting.cpp
     pipeline/expanding/ExpansionHistory.cpp
     pipeline/expanding/ExpansionChunk.cpp
     pipeline/expanding/ExpansionIteration.cpp
     pipeline/expanding/ExpansionPolicyLegacy.cpp
+    pipeline/expanding/ExpansionPolicySequence.cpp
     pipeline/expanding/ExpansionPostProcessRig.cpp
     pipeline/expanding/ExpansionProcess.cpp
     pipeline/expanding/ConnexityGraph.cpp
@@ -112,7 +115,9 @@ alicevision_add_library(aliceVision_sfm_bundle
         aliceVision_geometry
         aliceVision_camera
         aliceVision_sfmData
+        Boost::boost
         ${CERES_LIBRARIES}
+        LEMON::lemon
 )
 
 alicevision_add_library(aliceVision_sfm
@@ -135,7 +140,7 @@ alicevision_add_library(aliceVision_sfm
         aliceVision_dataio
         Boost::boost
     PRIVATE_LINKS
-        ${LEMON_LIBRARY}
+        nanoflann::nanoflann
 )
 
 # Unit tests
@@ -147,7 +152,7 @@ alicevision_add_test(bundle/bundleAdjustment_test.cpp
           aliceVision_multiview_test_data
           aliceVision_feature
           aliceVision_system
-          ${LEMON_LIBRARY}
+          LEMON::lemon 
 )
 
 alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
@@ -157,7 +162,7 @@ alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
           aliceVision_multiview_test_data
           aliceVision_feature
           aliceVision_system
-          ${LEMON_LIBRARY}
+          LEMON::lemon 
 )
 
 alicevision_add_test(bundle/bundleAdjustment_temporalConstraint_test.cpp
@@ -172,7 +177,7 @@ alicevision_add_test(utils/alignment_test.cpp
         aliceVision_sfm
         aliceVision_multiview
         aliceVision_multiview_test_data
-        ${LEMON_LIBRARY}
+        LEMON::lemon 
 )
 
 alicevision_add_test(utils/poseFilter_test.cpp

@@ -326,7 +326,7 @@ def readSfMData(sfmFile):
     return views, intrinsics
 
 
-class CameraInit(desc.AVCommandLineNode, desc.InitNode):
+class CameraInit(desc.AVCommandLineNode, desc.InputNode):
     """
 This node describes your dataset. It lists the Viewpoints candidates, the guess about the type of optic, the initial
 focal length and which images are sharing the same internal camera parameters, as well as potential camera rigs.

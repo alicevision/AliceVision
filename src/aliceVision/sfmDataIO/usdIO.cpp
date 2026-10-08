@@ -446,6 +446,7 @@ void writeIntrinsics(const UsdStageRefPtr& stage, const sfmData::SfMData& sfmDat
         {
             const Vec2 scale = scaleOffset->getScale();
             const Vec2 principalPoint = scaleOffset->getPrincipalPoint();
+            const Vec2 initialScale = scaleOffset->getInitialScale();
             setAttr(intrinsicPrim,
                 "av:focalLengthPix",
                 SdfValueTypeNames->Double2,
@@ -454,6 +455,13 @@ void writeIntrinsics(const UsdStageRefPtr& stage, const sfmData::SfMData& sfmDat
                 "av:principalPoint",
                 SdfValueTypeNames->Double2,
                 GfVec2d(principalPoint.x(), principalPoint.y()));
+            setAttr(intrinsicPrim,
+                "av:initialScale",
+                SdfValueTypeNames->Double2,
+                GfVec2d(initialScale.x(), initialScale.y()));
+            setAttr(intrinsicPrim, "av:ratioLocked", SdfValueTypeNames->Bool, scaleOffset->isRatioLocked());
+            setAttr(intrinsicPrim, "av:offsetLocked", SdfValueTypeNames->Bool, scaleOffset->isOffsetLocked());
+            setAttr(intrinsicPrim, "av:scaleLocked", SdfValueTypeNames->Bool, scaleOffset->isScaleLocked());
         }
 
         const auto equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsicPtr);
@@ -1290,6 +1298,34 @@ void loadIntrinsics(const UsdStageRefPtr& stage, const ExportPaths& paths, sfmDa
         if (getAttr(intrinsicPrim, "av:initializationMode", initializationMode))
         {
             intrinsic->setInitializationMode(static_cast<camera::EInitMode>(initializationMode));
+        }
+
+        const auto scaleOffset = std::dynamic_pointer_cast<camera::IntrinsicScaleOffset>(intrinsic);
+        if (scaleOffset)
+        {
+            GfVec2d initialScale(-1.0, -1.0);
+            if (getAttr(intrinsicPrim, "av:initialScale", initialScale))
+            {
+                scaleOffset->setInitialScale(Vec2(initialScale[0], initialScale[1]));
+            }
+
+            bool ratioLocked = true;
+            if (getAttr(intrinsicPrim, "av:ratioLocked", ratioLocked))
+            {
+                scaleOffset->setRatioLocked(ratioLocked);
+            }
+
+            bool offsetLocked = false;
+            if (getAttr(intrinsicPrim, "av:offsetLocked", offsetLocked))
+            {
+                scaleOffset->setOffsetLocked(offsetLocked);
+            }
+
+            bool scaleLocked = false;
+            if (getAttr(intrinsicPrim, "av:scaleLocked", scaleLocked))
+            {
+                scaleOffset->setScaleLocked(scaleLocked);
+            }
         }
 
         const auto equidistant = std::dynamic_pointer_cast<camera::Equidistant>(intrinsic);

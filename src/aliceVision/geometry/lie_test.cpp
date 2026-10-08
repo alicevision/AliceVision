@@ -12,6 +12,52 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
+#include <array>
+
+BOOST_AUTO_TEST_CASE(SO3_logm_exact_half_turn)
+{
+    using namespace Eigen;
+    using namespace aliceVision::SO3;
+
+    const std::array<Matrix3d, 7> rotations = {
+      (Matrix3d() << -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0).finished(),
+      (Matrix3d() << -1.0, 0.0, 0.0, 0.0, -7.0 / 25.0, -24.0 / 25.0, 0.0, -24.0 / 25.0, 7.0 / 25.0).finished(),
+      (Matrix3d() << -7.0 / 25.0, -24.0 / 25.0, 0.0, -24.0 / 25.0, 7.0 / 25.0, 0.0, 0.0, 0.0, -1.0).finished(),
+      (Matrix3d() << 7.0 / 25.0, 0.0, -24.0 / 25.0, 0.0, -1.0, 0.0, -24.0 / 25.0, 0.0, -7.0 / 25.0).finished(),
+      (Matrix3d() << 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0).finished(),
+      (Matrix3d() << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0).finished(),
+      (Matrix3d() << -1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0).finished()};
+
+    for (const Matrix3d& rotation : rotations)
+    {
+        const Vector3d algebra = logm(rotation);
+        BOOST_CHECK_SMALL(algebra.norm() - M_PI, 1e-12);
+        BOOST_CHECK_SMALL((expm(algebra) - rotation).norm(), 1e-12);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(SO3_logm_near_half_turn)
+{
+    using namespace Eigen;
+    using namespace aliceVision::SO3;
+
+    const std::array<Vector3d, 3> axes = {Vector3d(-4.0, 0.0, 3.0), Vector3d(3.0, -4.0, 0.0), Vector3d(0.0, 3.0, -4.0)};
+
+    for (const Vector3d& axis : axes)
+    {
+        for (double offset : {2e-3, 1e-3, 1e-6, 1e-8})
+        {
+            for (double direction : {-1.0, 1.0})
+            {
+                const Vector3d expected = direction * (M_PI - offset) * axis.normalized();
+                const Matrix3d rotation = AngleAxisd(direction * (M_PI - offset), axis.normalized()).toRotationMatrix();
+                const Vector3d algebra = logm(rotation);
+                BOOST_CHECK_SMALL((algebra - expected).norm(), 1e-7);
+                BOOST_CHECK_SMALL((expm(algebra) - rotation).norm(), 1e-7);
+            }
+        }
+    }
+}
 
 BOOST_AUTO_TEST_CASE(PoseFilter_lie_conversions)
 {

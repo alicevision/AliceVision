@@ -27,6 +27,8 @@
 
 #include <ceres/rotation.h>
 
+#include <boost/format.hpp>
+
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -204,6 +206,7 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
     solverOptions.sparse_linear_algebra_library_type = _ceresOptions.sparseLinearAlgebraLibraryType;
     solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
     solverOptions.logging_type = ceres::SILENT;
+    solverOptions.update_state_every_iteration = true;
     solverOptions.num_threads = _ceresOptions.nbThreads;
     solverOptions.max_num_iterations = _ceresOptions.maxNumIterations;
     solverOptions.max_num_consecutive_invalid_steps = 10;
@@ -625,6 +628,12 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
             }
 
+            ceres::LossFunction* weightedLossFunction = lossFunction;
+            if (observation.getWeight() != 1.0)
+            {
+                weightedLossFunction = new ceres::ScaledLoss(lossFunction, observation.getWeight(), ceres::TAKE_OWNERSHIP);
+            }
+
             if (view.isPartOfRig() && !view.isPoseIndependant())
             {
                 ceres::CostFunction* costFunction = ProjectionErrorFunctor::createCostFunction(intrinsic, observation);
@@ -639,12 +648,18 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(rigBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
                 blockIds.push_back(blockId);
             }
             else if (referencePoseBlockPtr != nullptr)
             {
                 bool samePose = (referencePoseBlockPtr == poseBlockPtr);
+
+                if (_ceresOptions.useParametersOrdering && !samePose)
+                {
+                    _linearSolverOrdering.AddElementToGroup(referencePoseBlockPtr, 1);
+                }
+
                 ceres::CostFunction* costFunction = ProjectionMeshErrorFunctor::createCostFunction(intrinsic, observation, landmark.getPointFetcher(), samePose);
 
                 std::vector<double*> params;
@@ -657,7 +672,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 }
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
                 blockIds.push_back(blockId);
             }
             else
@@ -670,7 +685,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(poseBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, lossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
                 blockIds.push_back(blockId);
             }
 
@@ -1276,6 +1291,13 @@ void BundleAdjustmentCeres::surveyInfos(const sfmData::SfMData & sfmData) const
     }
 }
 
+ceres::CallbackReturnType BundleAdjustmentCeres::IterationInfos::operator()(const ceres::IterationSummary& summary)
+{
+    ALICEVISION_LOG_DEBUG(boost::format("iteration: %3d cost: %8e change: %3.2e")
+                          % summary.iteration % summary.cost % summary.cost_change);
+    return ceres::SOLVER_CONTINUE;
+}
+
 bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions)
 {
     ALICEVISION_LOG_INFO("BundleAdjustmentCeres::adjust start");
@@ -1308,6 +1330,10 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
     // make Ceres automatically detect the bundle structure.
     ceres::Solver::Options options;
     setSolverOptions(options);
+
+    // Add the logging interface
+    IterationInfos iterationInfos;
+    options.callbacks.push_back(&iterationInfos);
 
     // solve BA
     ceres::Solver::Summary summary;

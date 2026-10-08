@@ -154,7 +154,7 @@ int aliceVision_main(int argc, char** argv)
     sfmData::SfMData sfmDataA, sfmDataB;
 
     using namespace sfmDataIO;
-    if (!sfmDataIO::load(sfmDataA, sfmDataFilenameA, ESfMData(ESfMData::VIEWS | ESfMData::EXTRINSICS | ESfMData::INTRINSICS)))
+    if (!sfmDataIO::load(sfmDataA, sfmDataFilenameA, ESfMData(ESfMData::VIEWS | ESfMData::EXTRINSICS | ESfMData::INTRINSICS | ESfMData::SURVEYS)))
     {
         ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameA + "' cannot be read.");
         return EXIT_FAILURE;
@@ -162,7 +162,7 @@ int aliceVision_main(int argc, char** argv)
 
     if (useMultiSfM)
     {
-        if (!sfmDataIO::load(sfmDataB, sfmDataFilenameB, ESfMData(ESfMData::VIEWS | ESfMData::EXTRINSICS | ESfMData::INTRINSICS)))
+        if (!sfmDataIO::load(sfmDataB, sfmDataFilenameB, ESfMData(ESfMData::VIEWS | ESfMData::EXTRINSICS | ESfMData::INTRINSICS | ESfMData::SURVEYS)))
         {
             ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameB + "' cannot be read.");
             return EXIT_FAILURE;

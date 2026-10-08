@@ -30,6 +30,18 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData,
                                const std::set<IndexT>& specificViews = std::set<IndexT>());
 
 /**
+ * @brief Compute histogram of residual values between landmarks and features in all the views specified
+ * @param[in] sfmData : scene containing the features and the landmarks
+ * @param[in] specificViews: Limit stats to specific views. If empty, compute stats for all views.
+ * @param[out] mean : mean of residuals
+ * @param[out] median : median of residuals
+ */
+void computeResidualsMeanMedian(const sfmData::SfMData& sfmData,
+                            double & mean,
+                            double & median,
+                            const std::set<IndexT>& specificViews = std::set<IndexT>());
+
+/**
  * @brief Compute histogram of observations lengths
  * @param[in] sfmData: containing the observations
  * @param[out] out_stats: stats containing the observations lengths

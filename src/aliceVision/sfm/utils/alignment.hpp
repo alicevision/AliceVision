@@ -70,8 +70,7 @@ void matchViewsByMetadataMatching(const sfmData::SfMData& sfmDataA,
  *
  * @param[in] sfmDataA
  * @param[in] sfmDataB
- * @param[in] randomNumberGenerator random number generator
- * @param[out] out_S output scale factor
+ * @param[out] out_S output scale factor (set to 1 as it cannot be estimated from a single view)
  * @param[out] out_R output rotation 3x3 matrix
  * @param[out] out_t output translation vector
  * @return true if it finds a similarity transformation
@@ -79,6 +78,24 @@ void matchViewsByMetadataMatching(const sfmData::SfMData& sfmDataA,
 bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
                                                const sfmData::SfMData& sfmDataB,
                                                std::mt19937& randomNumberGenerator,
+                                               double* out_S,
+                                               Mat3* out_R,
+                                               Vec3* out_t);
+
+/**
+ * @brief Compute a 5DOF rigid transform between the two set of cameras based on common viewIds.
+ * Assume only one common camera is found.
+ *
+ * @param[in] sfmDataA
+ * @param[in] sfmDataB
+ * @param[in] randomNumberGenerator random number generator
+ * @param[out] out_S output scale factor
+ * @param[out] out_R output rotation 3x3 matrix
+ * @param[out] out_t output translation vector
+ * @return true if it finds a similarity transformation
+ */
+bool computeSimilarityFromCommonCameras_singleViewId(const sfmData::SfMData& sfmDataA,
+                                               const sfmData::SfMData& sfmDataB,
                                                double* out_S,
                                                Mat3* out_R,
                                                Vec3* out_t);

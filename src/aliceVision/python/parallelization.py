@@ -179,3 +179,43 @@ class DynamicDirectorySize(object):
             raise RuntimeError(f"Failed to load file : {param.value}")
         
         return max(1, len(imlist))
+
+class DynamicJsonListSize(object):
+    """Compute parallelization size based on a JSON file containing an array of items.
+
+    Reads the JSON file referenced by the given node parameter and returns the
+    number of elements in the root-level array. Returns 1 if the file cannot be
+    read, is not valid JSON, or its root element is not an array.
+
+    Args:
+        param: Name of the node attribute that holds the path to the JSON file.
+    """
+
+    def __init__(self, param):
+        self._param = param
+
+    def __call__(self, node):
+        """Compute the number of chunks from the JSON array size.
+
+        Args:
+            node: The processing node whose attribute *param* points to a JSON file.
+
+        Returns:
+            int: The number of elements in the root JSON array, or 1 if the file
+                cannot be loaded or the root is not an array.
+        """
+
+        import json
+
+        param = node.attribute(self._param)
+
+        try:
+            with open(param.value, 'r') as f:
+                data = json.load(f)
+        except Exception:
+            return 1
+
+        if not isinstance(data, list):
+            return 1
+
+        return max(1, len(data))

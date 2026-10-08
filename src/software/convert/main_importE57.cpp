@@ -192,10 +192,10 @@ int aliceVision_main(int argc, char** argv)
     std::map<int, Eigen::Vector3d> cameras;
     while (reader.getNext(sensorPosition))
     {
-        cameras[reader.getIdMesh()] = sensorPosition;
-
         // Create pose for sfmData
         const int idMesh = reader.getIdMesh();
+
+        cameras[idMesh] = sensorPosition;
 
         Eigen::Vector3d correctedSensorPosition;
         correctedSensorPosition.x() = sensorPosition.x();
@@ -352,7 +352,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<fuseCut::SimpleNode::ptr> list;
     octree.visit(list);
 
-    ALICEVISION_LOG_INFO("Generating " << list.size() << "sub regions");
+    ALICEVISION_LOG_INFO("Generating " << list.size() << " sub regions");
 
     fuseCut::InputSet inputs;
 

@@ -6,6 +6,6 @@ set -euo pipefail
 
 export OS=ubuntu
 export OS_VERSION="${UBUNTU_VERSION:-22.04}"
-export AV_DEPS_VERSION="${AV_DEPS_VERSION:-2025.09.12}"
+export AV_DEPS_VERSION="${AV_DEPS_VERSION:-2026.09.29}"
 
 exec docker/build-image.sh

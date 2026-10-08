@@ -41,8 +41,8 @@ int aliceVision_main(int argc, char* argv[])
          "The base path where the folder structure will be created with the relevant cameras.txt, images.txt "
          "and points3D.txt files.")
         ("copyImages", po::value<bool>(&copyImages)->default_value(copyImages),
-         "Copy original images to Colmap folder. This is required if your images are not all in the same "
-         "folder.");
+         "Copy original images to the Colmap folder.\n"
+         "If disabled, symbolic link(s) will be created for each compatible image, or, if unique, for the image folder.");
     // clang-format on
 
     CmdLine cmdline("Export an AV SfMData to a Colmap scene, creating the folder structure and "

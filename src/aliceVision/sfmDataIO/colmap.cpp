@@ -22,14 +22,24 @@ namespace sfmDataIO {
 ColmapConfig::ColmapConfig(const std::string& basePath)
   : _basePath(basePath)
 {
-    _sparseDirectory = (fs::path(_basePath) / fs::path("sparse/0")).string();
-    _denseDirectory = (fs::path(_basePath) / fs::path("dense/0")).string();
-    _imagesDirectory = (fs::path(_basePath) / fs::path("images/")).string();
+    _sparseDirectory = (fs::path(_basePath) / "sparse/0").string();
+    _denseDirectory = (fs::path(_basePath) / "dense/0").string();
+    _imagesDirectory = (fs::path(_basePath) / "images").string();
     _camerasTxtPath = (fs::path(_sparseDirectory) / fs::path("cameras.txt")).string();
     _imagesTxtPath = (fs::path(_sparseDirectory) / fs::path("images.txt")).string();
     _points3DPath = (fs::path(_sparseDirectory) / fs::path("points3D.txt")).string();
 }
 
+void create_directories(const std::string& directory)
+{
+    fs::remove_all(directory);
+    const bool ok = fs::create_directories(directory);
+    if (!ok)
+    {
+        ALICEVISION_LOG_ERROR("Cannot create directory " << directory);
+        throw std::runtime_error("Cannot create directory " + directory);
+    }
+}
 
 bool isColmapCompatible(camera::EINTRINSIC intrinsicType, camera::EDISTORTION distortionType)
 {
@@ -365,14 +375,64 @@ void generateColmapImagesTxtFile(const sfmData::SfMData& sfmData, const Compatib
     }
 }
 
-void copyImagesFromSfmData(const sfmData::SfMData& sfmData, const std::string& destinationFolder, const CompatibleList selection)
+void generateImagesFromSfmData(const sfmData::SfMData& sfmData, const std::string& destinationFolder, const CompatibleList selection, bool copyImages)
 {
+    // If we don't do copy, check if all the images are in the same directory.
+    // If they are, we can create a symlink to the directory and not to each image individually.
+    if (!copyImages)
+    {
+        bool first = true;
+        bool unique = true;
+        std::string unique_path;
+
+        if (selection.empty())
+        {
+            return;
+        }
+
+        for (const auto viewId : selection)
+        {
+            const auto view = sfmData.getView(viewId);
+            const auto from = fs::path(view.getImage().getImagePath());
+            const std::string folder = from.parent_path().string();
+            
+            if (first) 
+            {
+                unique_path = folder;
+                first = false;
+            }
+
+            if (unique_path != folder)
+            {
+                unique = false;
+                break;
+            }
+        }
+
+        if (unique)
+        {
+            fs::remove_all(destinationFolder);
+            fs::create_directory_symlink(unique_path, destinationFolder);
+            return;
+        }
+    }
+
+    create_directories(destinationFolder);
+
     for (const auto viewId : selection)
     {
         const auto& view = sfmData.getView(viewId);
-        const auto& from = fs::path(view.getImage().getImagePath());
-        const auto& to = fs::path(destinationFolder) / from.filename();
-        fs::copy_file(from, to);
+        const auto from = fs::path(view.getImage().getImagePath());
+        const auto to = fs::path(destinationFolder) / from.filename();
+
+        if (copyImages)
+        {
+            fs::copy_file(from, to);
+        }
+        else 
+        {
+            fs::create_symlink(from, to);
+        }
     }
 }
 
@@ -426,16 +486,6 @@ void generateColmapSceneFiles(const sfmData::SfMData& sfmData, const CompatibleL
     generateColmapPoints3DTxtFile(sfmData, viewsSelection, colmapParams._points3DPath);
 }
 
-void create_directories(const std::string& directory)
-{
-    const bool ok = fs::create_directories(directory);
-    if (!ok)
-    {
-        ALICEVISION_LOG_ERROR("Cannot create directory " << directory);
-        throw std::runtime_error("Cannot create directory " + directory);
-    }
-}
-
 void convertToColmapScene(const sfmData::SfMData& sfmData, const std::string& colmapBaseDir, bool copyImages)
 {
     // retrieve the views that are compatible with Colmap and that can be exported
@@ -455,13 +505,17 @@ void convertToColmapScene(const sfmData::SfMData& sfmData, const std::string& co
     ALICEVISION_LOG_INFO("Creating Colmap subfolders...");
     create_directories(colmapParams._sparseDirectory);
     create_directories(colmapParams._denseDirectory);
-    create_directories(colmapParams._imagesDirectory);
 
     if (copyImages)
     {
         ALICEVISION_LOG_INFO("Copying source images...");
-        copyImagesFromSfmData(sfmData, colmapParams._imagesDirectory, views2export);
     }
+    else 
+    {
+        ALICEVISION_LOG_INFO("Creating symbolic links to source images...");
+    }
+    
+    generateImagesFromSfmData(sfmData, colmapParams._imagesDirectory, views2export, copyImages);
 
     ALICEVISION_LOG_INFO("Generating Colmap files...");
     generateColmapSceneFiles(sfmData, views2export, colmapParams);

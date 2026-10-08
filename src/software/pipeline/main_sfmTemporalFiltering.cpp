@@ -18,7 +18,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -34,8 +34,12 @@ int aliceVision_main(int argc, char** argv)
 
     bool filterPosition = true;
     bool filterRotation = true;
-    int iterationCount = 100;
-    int scaleFactor = 3;
+    int maxIterationCount = 100;
+    int maxScaleFactor = 3;
+    double maxErrorIncreasePos = -1.;
+    double maxErrorIncreaseRot = -1.;
+    int minIterationCount = 50;
+    int minScaleFactor = 3;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -47,9 +51,13 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("filterPosition", po::value<bool>(&filterPosition)->default_value(filterPosition), "Whether to filter camera positions.")
         ("filterRotation", po::value<bool>(&filterRotation)->default_value(filterRotation), "Whether to filter camera orientations.")
-        ("scaleFactor", po::value<int>(&scaleFactor)->default_value(scaleFactor), "Scale factor to increase the filter range.")
-        ("iterationCount", po::value<int>(&iterationCount)->default_value(iterationCount), "Number of filter iterations.")
-        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).");
+        ("iterationCount", po::value<int>(&maxIterationCount)->default_value(maxIterationCount), "Number of filter iterations.")
+        ("scaleFactor", po::value<int>(&maxScaleFactor)->default_value(maxScaleFactor), "Scale factor to increase the filter range.")
+        ("maxErrorIncreasePos", po::value<double>(&maxErrorIncreasePos)->default_value(maxErrorIncreasePos), "The maximum reprojection error increase ratio for the camera positions. (-1 to bypass this reprojection error test)")
+        ("maxErrorIncreaseRot", po::value<double>(&maxErrorIncreaseRot)->default_value(maxErrorIncreaseRot), "The maximum reprojection error increase ratio for the camera orientations. (-1 to bypass this reprojection error test)")
+        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
+        ("minIterationCount", po::value<int>(&minIterationCount)->default_value(minIterationCount), "The minimum number of filter iterations to apply at the smallest scales. (in case the filter is limited by the reprojection error)")
+        ("minScaleFactor", po::value<int>(&minScaleFactor)->default_value(minScaleFactor), "The minimum scale to apply the filter with the minimum iteration count. (in case the filter is limited by the reprojection error)");
     // clang-format on
 
     CmdLine cmdline("AliceVision SfM Temporal Filtering");
@@ -75,7 +83,10 @@ int aliceVision_main(int argc, char** argv)
 
     sfm::poseFilter::uptr poseFilter = std::make_unique<sfm::poseFilter>();
 
-    if (!poseFilter->process(sfmData, filterPosition, filterRotation, scaleFactor, iterationCount))
+    if (!poseFilter->process(sfmData, filterPosition, filterRotation,
+                             maxIterationCount, maxScaleFactor,
+                             maxErrorIncreasePos, maxErrorIncreaseRot,
+                             minIterationCount, minScaleFactor))
     {
         ALICEVISION_LOG_INFO("Error processing sfmData");
         return EXIT_FAILURE;

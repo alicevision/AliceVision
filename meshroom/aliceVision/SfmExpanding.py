@@ -1,4 +1,4 @@
-__version__ = "2.4"
+__version__ = "2.6"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -272,6 +272,14 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
             range=(0.1, 10.0, 0.1),
             advanced=True,
         ),
+        desc.IntParam(
+            name="maxIterationCount",
+            label="Max Iteration Count",
+            description="Maximum number of solver iterations.",
+            value=50,
+            range=(0, 300, 5),
+            advanced=True,
+        ),
         desc.BoolParam(
             name="lockAllIntrinsics",
             label="Lock All Intrinsic Camera Parameters",
@@ -285,6 +293,20 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
             label="Enable Structure Refinement",
             description="Bundle adjustment will try to optimize the landmarks positions.",
             value=True,
+        ),
+        desc.BoolParam(
+            name="enableObservationsWeighting",
+            label="Enable observations weighting",
+            description="Enable observations weighting to reduce impact of regions with high point density.",
+            value=False,
+        ),
+        desc.FloatParam(
+            name="lossParameter",
+            label="Loss Parameter",
+            description="Huber loss threshold used in bundle adjustment.",
+            value=4.0,
+            range=(0.1, 100.0, 0.1),
+            advanced=True,
         ),
         desc.IntParam(
             name="minNbCamerasToRefinePrincipalPoint",

@@ -135,7 +135,7 @@ set(DEP_FLANN_GIT_REPO "https://github.com/alicevision/flann")
 set(DEP_FLANN_GIT_TAG  "46e72429ef60ce9c413fa926ac7729f8dee96395")
 
 set(DEP_NANOFLANN_GIT_REPO "https://github.com/jlblancoc/nanoflann")
-set(DEP_NANOFLANN_GIT_TAG  "419c26c498d12231817ada6488e2fd2442dbc68d")
+set(DEP_NANOFLANN_GIT_TAG  "92911c0bc382e4b287330219bc720ca2b30b2857")
 
 set(DEP_COINUTILS_GIT_REPO "https://github.com/alicevision/CoinUtils")
 set(DEP_COINUTILS_GIT_TAG  "b29532e31471d26dddee99095da3340e80e8c60c")
@@ -147,7 +147,7 @@ set(DEP_CLP_GIT_REPO "https://github.com/alicevision/Clp")
 set(DEP_CLP_GIT_TAG  "4da587acebc65343faafea8a134c9f251efab5b9")
 
 set(DEP_LEMON_GIT_REPO "https://github.com/alicevision/lemon.git")
-set(DEP_LEMON_GIT_TAG  "8885b9a8b7a20cdf5588964fe30da89093ec53cd")
+set(DEP_LEMON_GIT_TAG  "5493d5317605f56076e94b04caa6199d52957d74")
 
 # ── 3D / Geometry ─────────────────────────────────────────────────────────────
 

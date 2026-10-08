@@ -1,3 +1,5 @@
+# [keyframe] KeyframeSelector: Fix docstring alignment
+1004b32c165f89e1a35d5a6aa1b7eb0d55f7dfef
 # [meshroom] `KeyframeSelection`: Apply linting
 a1e75dba0e61670eea9d6a9ae1613d0b5d10f942
 # [aliceVision] Apply clang-format to several modules

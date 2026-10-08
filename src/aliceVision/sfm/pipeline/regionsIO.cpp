@@ -138,7 +138,8 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
 bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature::Regions>>>& featuresPerDescPerView,
                                 const std::vector<IndexT>& viewIds,
                                 const std::vector<std::string>& folders,
-                                const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
+                                const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
+                                bool errorOnMissing)
 {
     if (folders.empty())
     {
@@ -160,7 +161,9 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
     imageDescribers.resize(imageDescriberTypes.size());
 
     for (std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
+    {
         imageDescribers.at(i) = createImageDescriber(imageDescriberTypes.at(i));
+    }
 
     featuresPerDescPerView.resize(imageDescribers.size());
 
@@ -181,13 +184,14 @@ bool loadFeaturesPerDescPerView(std::vector<std::vector<std::unique_ptr<feature:
             catch (const std::exception& e)
             {
                 const feature::EImageDescriberType d = imageDescribers.at(descIdx)->getDescriberType();
+                featuresPerView.at(viewIdx) = nullptr;
 
-#pragma omp critical
+                if (errorOnMissing)
                 {
                     ALICEVISION_LOG_ERROR("Cannot load features for View " << viewIds.at(viewIdx) << " for describer type " << feature::EImageDescriberType_enumToString(d) << ".");
                     ALICEVISION_LOG_ERROR(e.what());
-                }
-                loadingSuccess = false;
+                    loadingSuccess = false;
+                }                
             }
         }
     }

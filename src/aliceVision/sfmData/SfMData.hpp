@@ -595,6 +595,11 @@ class SfMData
             }
         }
 
+        // no view has usable exposure metadata (e.g. video frames without EXIF), so the list is empty; avoid the
+        // out-of-bounds read below and return a default ExposureSetting (its getExposure() yields the -1 missing sentinel)
+        if (cameraExposureList.empty())
+            return ExposureSetting();
+
         std::nth_element(cameraExposureList.begin(), cameraExposureList.begin() + cameraExposureList.size() / 2, cameraExposureList.end());
         const ExposureSetting& ceMedian = cameraExposureList[cameraExposureList.size() / 2];
 
@@ -750,6 +755,11 @@ class SfMData
     * @brief Remove observations pointing to invalid views
     */
     void removeInvalidObservations();
+
+    /**
+    * @brief Remove SurveyPoints pointing to invalid views
+    */
+    void removeUnusedSurveyPoints();
 
     /**
     * @brief Remove landmarks without any observations
