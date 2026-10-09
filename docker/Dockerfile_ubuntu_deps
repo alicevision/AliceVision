@@ -29,10 +29,12 @@ ARG UBUNTU_VERSION
 # System packages + GCC 12 + CMake (Kitware PPA)
 #
 # Single RUN to minimise layers.
-# BuildKit cache mount on /var/cache/apt avoids re-downloading .deb on rebuild.
+# BuildKit cache mount on /var/cache/apt avoids re-downloading .deb on rebuild;
+# docker-clean (shipped by the Ubuntu base image) would delete them after each install.
 # =============================================================================
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked  \
+    rm -f /etc/apt/apt.conf.d/docker-clean                  && \
     apt-get update                                          && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates                                       \
