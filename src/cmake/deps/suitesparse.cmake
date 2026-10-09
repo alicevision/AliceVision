@@ -85,8 +85,13 @@ if(AV_BUILD_SUITESPARSE)
     #    )
     #endif()
 
+    set(_ss_lapack_flags ${LAPACK_CMAKE_FLAGS})
+    if(_ss_lapack_flags)
+        # SuiteSparse requires BLA_VENDOR along with BLAS_LIBRARIES; the reference BLAS is "Generic"
+        list(APPEND _ss_lapack_flags -DBLA_VENDOR=Generic)
+    endif()
     # SuiteSparse's Makefile takes all CMake options in one space-separated variable
-    list(JOIN LAPACK_CMAKE_FLAGS " " _ss_lapack_flags)
+    list(JOIN _ss_lapack_flags " " _ss_lapack_flags)
 
     ExternalProject_Add(${SUITESPARSE_TARGET}
         URL              ${DEP_SUITESPARSE_URL}
