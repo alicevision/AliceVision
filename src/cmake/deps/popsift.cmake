@@ -15,6 +15,7 @@ if(AV_BUILD_POPSIFT)
         EXTRA_CMAKE_FLAGS
             ${BOOST_CMAKE_FLAGS}
             ${CUDA_CMAKE_FLAGS}
+            ${CUDA_ARCH_CMAKE_FLAGS}
             -DPopSift_BUILD_EXAMPLES:BOOL=OFF
         DEPENDS ${BOOST_TARGET} ${CUDA_TARGET}
     )
