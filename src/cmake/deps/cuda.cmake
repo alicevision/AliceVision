@@ -1,7 +1,7 @@
 # =============================================================================
 # deps/cuda.cmake
 # Dependencies: (none)
-# Provides:     CUDA_TARGET, CUDA_CMAKE_FLAGS
+# Provides:     CUDA_TARGET, CUDA_CMAKE_FLAGS, CUDA_ARCH_CMAKE_FLAGS, AV_CUDA_CC_LIST_ESC
 # =============================================================================
 
 if(AV_USE_CUDA AND AV_BUILD_CUDA)
@@ -39,4 +39,37 @@ elseif(AV_USE_CUDA)
     if(CUDA_TOOLKIT_ROOT_DIR)
         set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR})
     endif()
+endif()
+
+if(AV_USE_CUDA)
+    # CUDA CCs compiled into the dependencies: SASS for each CC (it also runs on the
+    # later minors of the same major, e.g. sm_80 on 8.6/8.9) + PTX for the last one
+    # so newer GPUs can JIT. Default: one CC per major supported by the toolkit
+    # (same as CMake's "all-major"). Trim to the GPUs actually deployed to shrink further.
+    if(AV_BUILD_CUDA)
+        set(_cuda_version ${DEP_CUDA_VERSION})
+    else()
+        find_package(CUDAToolkit QUIET)
+        set(_cuda_version ${CUDAToolkit_VERSION})
+    endif()
+    if(_cuda_version VERSION_GREATER_EQUAL 13.0)
+        set(_cuda_default_cc "75;80;90;100;120")
+    elseif(_cuda_version VERSION_GREATER_EQUAL 12.8)
+        set(_cuda_default_cc "50;60;70;80;90;100;120")
+    else()
+        set(_cuda_default_cc "50;60;70;80;90")
+    endif()
+    set(AV_CUDA_CC_LIST "${_cuda_default_cc}" CACHE STRING "CUDA compute capabilities built into dependencies")
+
+    list(TRANSFORM AV_CUDA_CC_LIST APPEND "-real" OUTPUT_VARIABLE _cuda_archs)
+    list(GET AV_CUDA_CC_LIST -1 _cuda_last_cc)
+    list(APPEND _cuda_archs "${_cuda_last_cc}-virtual")
+    # $<SEMICOLON> keeps each list a single argument in the ExternalProject command line
+    list(JOIN _cuda_archs "$<SEMICOLON>" _cuda_archs)
+    list(JOIN AV_CUDA_CC_LIST "$<SEMICOLON>" AV_CUDA_CC_LIST_ESC)
+    set(CUDA_ARCH_CMAKE_FLAGS -DCMAKE_CUDA_ARCHITECTURES=${_cuda_archs})
+    unset(_cuda_version)
+    unset(_cuda_default_cc)
+    unset(_cuda_archs)
+    unset(_cuda_last_cc)
 endif()
