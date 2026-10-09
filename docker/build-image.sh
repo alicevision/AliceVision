@@ -25,7 +25,7 @@ test -e "docker/Dockerfile_${OS}_deps" || {
 # shellcheck source=docker/container-engine.sh
 . docker/container-engine.sh
 
-: "${CUDA_VERSION:=12.1.1}"
+: "${CUDA_VERSION:=12.8.0}"
 : "${AV_DEPS_VERSION:?AV_DEPS_VERSION must be set}"
 : "${REPO_OWNER:=alicevision}"
 
