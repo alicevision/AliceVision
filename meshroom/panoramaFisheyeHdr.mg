@@ -7,7 +7,7 @@
             "CopyFiles": "1.3",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
-            "ImageMatching": "2.0",
+            "ImageMatching": "2.1",
             "LdrToHdrCalibration": "3.2",
             "LdrToHdrMerge": "4.2",
             "LdrToHdrSampling": "4.0",

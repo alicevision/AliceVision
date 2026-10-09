@@ -30,7 +30,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
@@ -83,13 +83,13 @@ int aliceVision_main(int argc, char** argv)
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilenameA)->required(),
          "SfMData file.")
-        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-         "Path to folder(s) containing the extracted features.")
         ("output,o", po::value<std::string>(&outputFile)->required(),
          "Filepath to the output file with the list of selected image pairs.");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+         "Path to folder(s) containing the extracted features (not used by the Exhaustive and Sequential methods).")
         ("method", po::value<EImageMatchingMethod>(&method)->default_value(method),
          "Method used to select the image pairs to match:\n"
          " * VocabularyTree: select images that appear to share content\n"
@@ -186,6 +186,12 @@ int aliceVision_main(int argc, char** argv)
 
     if (method != EImageMatchingMethod::EXHAUSTIVE && method != EImageMatchingMethod::SEQUENTIAL)
     {
+        if (featuresFolders.empty())
+        {
+            ALICEVISION_LOG_ERROR("The selected image matching method requires features folders.");
+            return EXIT_FAILURE;
+        }
+
         // load descriptor filenames
         aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
 
