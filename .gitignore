@@ -33,7 +33,6 @@ install
 lib
 bin
 x64
-dl
 
 # CMake
 CMakeFiles  # intermediate folders

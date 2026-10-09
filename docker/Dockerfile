@@ -1,0 +1,73 @@
+# syntax=docker/dockerfile:1.4
+
+# =============================================================================
+# Dockerfile
+#
+# Builds AliceVision on top of a prebuilt alicevision-deps image (Rocky or
+# Ubuntu). The dependencies image is passed as DEPS_IMAGE; this single file
+# replaces the former Dockerfile_rocky / Dockerfile_ubuntu, which only differed
+# by their base image.
+#
+# Built by docker/build-image.sh (which sets DEPS_IMAGE to the deps tag).
+# =============================================================================
+
+ARG DEPS_IMAGE
+
+# Only what the build needs, so unrelated changes in the context (.git, docs...)
+# do not invalidate the build cache. Bind-mounted below, never in the image.
+FROM scratch AS sources
+COPY CMakeLists.txt *.md /
+COPY src /src
+COPY meshroom /meshroom
+COPY docker /docker
+
+FROM ${DEPS_IMAGE}
+LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
+
+ARG TARGET_ARCHITECTURE=core
+
+ENV AV_DEV=/opt/AliceVision_git         \
+    AV_BUILD=/tmp/AliceVision_build     \
+    AV_INSTALL=/opt/AliceVision_install \
+    AV_BUNDLE=/opt/AliceVision_bundle   \
+    VERBOSE=1
+
+ENV PATH="${AV_BUNDLE}/bin:${PATH}"
+
+WORKDIR "${AV_BUILD}"
+
+# Configure, build, install and bundle in a single RUN so CPU_CORES (computed
+# by check-cpu.sh) stays in scope for the build: a separate `RUN export ...`
+# would be lost, leaving the build parallelism unbounded and exhausting memory.
+# The sources are bind-mounted rather than COPY'd so they never end up in an
+# image layer (rw: build-time writes are discarded). Path hardcoded = ${AV_DEV}.
+RUN --mount=type=bind,from=sources,target=/opt/AliceVision_git,rw \
+    CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) &&                 \
+    echo "Build multithreading number of cores: ${CPU_CORES}" &&  \
+    cmake -DCMAKE_BUILD_TYPE=Release                              \
+        -DCMAKE_GENERATOR=Ninja                                   \
+        -DBUILD_SHARED_LIBS:BOOL=ON                               \
+        -DTARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}              \
+        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=OFF                 \
+        -DCMAKE_PREFIX_PATH:PATH="${AV_INSTALL}"                  \
+        -DCMAKE_INSTALL_PREFIX:PATH="${AV_INSTALL}"               \
+        -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"                \
+        -DALICEVISION_USE_ALEMBIC:BOOL=ON                         \
+        -DMINIGLOG:BOOL=ON                                        \
+        -DALICEVISION_USE_CCTAG:BOOL=ON                           \
+        -DALICEVISION_USE_OPENCV:BOOL=ON                          \
+        -DALICEVISION_USE_POPSIFT:BOOL=ON                         \
+        -DALICEVISION_USE_CUDA:BOOL=ON                            \
+        -DALICEVISION_USE_ONNX_GPU:BOOL=OFF                       \
+        -DALICEVISION_BUILD_DOC:BOOL=OFF                          \
+        -DALICEVISION_BUILD_SWIG_BINDING:BOOL=ON                  \
+        -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV:-/usr}/bin/python" \
+        -DSWIG_DIR:PATH="${AV_INSTALL}/share/swig/4.3.0" -DSWIG_EXECUTABLE:PATH="${AV_INSTALL}/bin-deps/swig" \
+        "${AV_DEV}" &&                                            \
+    cmake --build . --target install --parallel "${CPU_CORES}" && \
+    cmake --build . --target bundle &&                            \
+    { ! test -x /opt/python/bin/python3.11 ||                     \
+      /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None'; } && \
+    rm -rf "${AV_BUILD}" && \
+    echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
+    echo "export ALICEVISION_ROOT=${AV_BUNDLE}" >> /etc/profile.d/alicevision.sh

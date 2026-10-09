@@ -1,3 +1,6 @@
+# syntax=docker/dockerfile:1.4
+# vim: ft=dockerfile
+
 # =============================================================================
 # Dockerfile_ubuntu_deps
 #
@@ -12,26 +15,30 @@
 #     -f docker/Dockerfile_ubuntu_deps .
 # =============================================================================
 
-# syntax=docker/dockerfile:1.4
-
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
+ARG CMAKE_VERSION=3.31.11
 
 FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 # Re-declare ARGs after FROM so they are visible in this build stage
-ARG CUDA_VERSION
 ARG UBUNTU_VERSION
+ARG CMAKE_VERSION
+
+# Fail a RUN on any error in a pipe (wget | gpg, curl | python), not only the last command
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # =============================================================================
 # System packages + GCC 12 + CMake (Kitware PPA)
 #
 # Single RUN to minimise layers.
-# BuildKit cache mount on /var/cache/apt avoids re-downloading .deb on rebuild.
+# BuildKit cache mount on /var/cache/apt avoids re-downloading .deb on rebuild;
+# docker-clean (shipped by the Ubuntu base image) would delete them after each install.
 # =============================================================================
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked  \
+    rm -f /etc/apt/apt.conf.d/docker-clean                  && \
     apt-get update                                          && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates                                       \
@@ -42,18 +49,17 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc \
         | gpg --dearmor \
         | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null  && \
-    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' \
+    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(. /etc/os-release && echo "${VERSION_CODENAME}") main" \
         | tee /etc/apt/sources.list.d/kitware.list >/dev/null              && \
     # ── deadsnakes PPA for Python 3.11 ───────────────────────────────────────
     add-apt-repository ppa:deadsnakes/ppa                               && \
-    apt-get update                                                       && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        automake                                                           \
+        automake                                                          \
         bison                                                             \
         build-essential                                                   \
         clang-format                                                      \
-        cmake=3.31.11-0kitware1ubuntu22.04.1                              \
-        cmake-data=3.31.11-0kitware1ubuntu22.04.1                         \
+        cmake=${CMAKE_VERSION}-0kitware1ubuntu${UBUNTU_VERSION}.1         \
+        cmake-data=${CMAKE_VERSION}-0kitware1ubuntu${UBUNTU_VERSION}.1    \
         cpp-12                                                            \
         curl                                                              \
         file                                                              \
@@ -73,22 +79,21 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         python3.11-distutils                                              \
         texinfo                                                           \
         unzip                                                             \
-        wget                                                              \
         yasm                                                              \
+        ninja-build                                                       \
     && update-alternatives \
         --install /usr/bin/gcc     gcc     /usr/bin/gcc-12     100        \
-        --slave   /usr/bin/g++     g++     /usr/bin/g++-12               \
-        --slave   /usr/bin/gcov    gcov    /usr/bin/gcov-12              \
+        --slave   /usr/bin/g++     g++     /usr/bin/g++-12                \
+        --slave   /usr/bin/gcov    gcov    /usr/bin/gcov-12               \
         --slave   /usr/bin/gfortran gfortran /usr/bin/gfortran-12
 
 # =============================================================================
 # Python packages + convenience symlink
 # BuildKit cache mount on pip avoids re-downloading wheels on rebuild.
 # =============================================================================
-RUN --mount=type=cache,target=/root/.cache/pip             \
-    curl -sS https://bootstrap.pypa.io/get-pip.py          \
-        | python3.11                                        && \
-    python3.11 -m pip install "numpy==1.*"                 && \
+RUN --mount=type=cache,target=/root/.cache/pip                                \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11             && \
+    python3.11 -m pip install "numpy==1.*"       && \
     ln -sf /usr/bin/python3.11 /usr/bin/python
 
 # =============================================================================
@@ -96,18 +101,15 @@ RUN --mount=type=cache,target=/root/.cache/pip             \
 # =============================================================================
 ENV AV_DEV="/opt/AliceVision_git"         \
     AV_BUILD="/tmp/AliceVision_build"     \
-    AV_INSTALL="/opt/AliceVision_install" \
-    PATH="${PATH}:${AV_BUNDLE}"
+    AV_INSTALL="/opt/AliceVision_install"
 
 # =============================================================================
-# Static ML / data assets + environment variables
-# Grouped into one RUN to avoid one layer per echo.
+# Static ML / data asset environment variables
+#
+# The asset files themselves (vocabulary tree, ONNX models, ColorChart model)
+# are runtime-only and large, so they are NOT shipped in the image. Mount them
+# at run time under ${AV_INSTALL}/share/aliceVision (paths defined below).
 # =============================================================================
-COPY dl/vlfeat_K80L3.SIFT.tree                 ${AV_INSTALL}/share/aliceVision/
-COPY dl/sphereDetection_Mask-RCNN.onnx         ${AV_INSTALL}/share/aliceVision/
-COPY dl/fcn_resnet50.onnx                      ${AV_INSTALL}/share/aliceVision/
-COPY dl/ColorChartDetectionModel               ${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel/
-
 RUN { \
     echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree"                                 ; \
     echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx"          ; \
@@ -119,43 +121,35 @@ RUN { \
 # CPU core detection helper
 # =============================================================================
 COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
-RUN CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
-    echo "Build multithreading number of cores: ${CPU_CORES}"
 
 # =============================================================================
-# AliceVision CMake sources + pre-fetched dependency archives
-# COPY instructions ordered from least to most frequently changed to maximise
-# Docker layer cache reuse.
+# AliceVision CMake sources
 # =============================================================================
 COPY CMakeLists.txt                        ${AV_DEV}/
 COPY src/cmake/                            ${AV_DEV}/src/cmake/
-COPY src/cmake/deps/                       ${AV_DEV}/src/cmake/deps/
-COPY src/cmake/OFA/                        ${AV_DEV}/src/cmake/OFA/
-COPY dl/deps                               ${AV_BUILD}/external/download/
-
 
 # =============================================================================
 # Configure + build all dependencies
 #
-# Grouped into one RUN so the large build artefacts (AV_BUILD) are removed
-# in the same layer, keeping the final image size minimal.
+# Dependency archives are downloaded by the ExternalProjects into
+# ${AV_BUILD}/external/download, kept across rebuilds by the BuildKit cache
+# mount. The build tree is removed in the same layer (except that cache mount,
+# which is never part of the image) to keep the final image size minimal.
 # =============================================================================
 WORKDIR "${AV_BUILD}"
 
-RUN cmake "${AV_DEV}"                               \
-        -DCMAKE_BUILD_TYPE=Release                  \
-        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON    \
-        -DAV_BUILD_ALICEVISION:BOOL=OFF             \
-        -DAV_BUILD_ZLIB:BOOL=ON                     \
-        -DAV_BUILD_PYBIND11:BOOL=ON                 \
-        -DPython_EXECUTABLE=/usr/bin/python3.11     \
-        -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
-    && mkdir -p "${AV_INSTALL}/lib"                 \
-    && ln -sf lib "${AV_INSTALL}/lib64"             \
-    && { test -e /usr/local/cuda/lib64/libcublas.so \
-         || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \
-                  /usr/local/cuda/lib64/libcublas.so; }  \
-    && CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh)   \
-    && cmake --build . --parallel "${CPU_CORES}"    \
-    && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
-    && rm -rf "${AV_BUILD}"
+RUN --mount=type=cache,target=${AV_BUILD}/external/download \
+    CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) &&           \
+    cmake "${AV_DEV}"                                       \
+        -DCMAKE_BUILD_TYPE=Release                          \
+        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON            \
+        -DAV_BUILD_ALICEVISION:BOOL=OFF                     \
+        -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"              \
+        -DPython3_EXECUTABLE=/usr/bin/python3.11            \
+        -DAV_BUILD_DEPENDENCIES_PARALLEL=${CPU_CORES}       \
+    && mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib"     \
+    && ln -sf lib "${AV_INSTALL}/lib64"                     \
+    && cmake --build . --parallel 1                         \
+    && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps"      \
+    && find "${AV_BUILD}" -mindepth 1 -maxdepth 1 ! -name external -exec rm -rf {} + \
+    && find "${AV_BUILD}/external" -mindepth 1 -maxdepth 1 ! -name download -exec rm -rf {} +
