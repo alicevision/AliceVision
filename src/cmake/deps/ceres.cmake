@@ -20,6 +20,7 @@ if(AV_BUILD_CERES)
             -DSUITESPARSE:BOOL=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>
             -DLAPACK:BOOL=ON
             -DMINIGLOG=ON
+            -DWITH_CUDA=OFF  # CUDA solvers unused by AliceVision; drags cuBLAS/cuSOLVER/cuSPARSE
             -DBUILD_EXAMPLES:BOOL=OFF
             -DBUILD_TESTING:BOOL=OFF
         DEPENDS ${EIGEN_TARGET} ${SUITESPARSE_TARGET} ${LAPACK_TARGET}
