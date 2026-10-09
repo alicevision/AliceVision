@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.4
+# vim: ft=dockerfile
 
 # =============================================================================
 # Dockerfile_rocky_deps
