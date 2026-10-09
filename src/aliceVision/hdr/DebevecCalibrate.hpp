@@ -10,7 +10,6 @@
 #include "rgbCurve.hpp"
 
 #include <vector>
-#include <string>
 
 namespace aliceVision {
 namespace hdr {

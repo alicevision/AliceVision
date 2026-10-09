@@ -12,10 +12,7 @@
 #include <aliceVision/feature/metric.hpp>
 #include <aliceVision/stl/indexedSort.hpp>
 
-#include <aliceVision/config.hpp>
-
 #include <memory>
-#include <iostream>
 
 namespace aliceVision {
 namespace matching {

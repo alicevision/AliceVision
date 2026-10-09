@@ -10,7 +10,6 @@
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
-#include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <aliceVision/feature/imageStats.hpp>
@@ -20,9 +19,7 @@ extern "C"
 #include "nonFree/sift/vl/sift.h"
 }
 
-#include <iostream>
 #include <numeric>
-#include <stdexcept>
 
 namespace aliceVision {
 namespace feature {

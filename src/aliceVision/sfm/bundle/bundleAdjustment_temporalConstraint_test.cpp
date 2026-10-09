@@ -15,7 +15,6 @@
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 

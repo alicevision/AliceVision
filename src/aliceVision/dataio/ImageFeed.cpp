@@ -17,7 +17,6 @@
 #include <queue>
 #include <iostream>
 #include <fstream>
-#include <exception>
 #include <regex>
 #include <iterator>
 #include <string>

@@ -1,4 +1,3 @@
-#include "aliceVision/image/Image.hpp"
 #include "aliceVision/image/pixelTypes.hpp"
 
 #include <opencv2/core/core.hpp>

@@ -18,7 +18,6 @@
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
-#include <aliceVision/config.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 

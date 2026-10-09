@@ -7,7 +7,6 @@
 
 #include "Fundamental10PSolver.hpp"
 
-#include <iostream>
 #include <cassert>
 
 namespace aliceVision {

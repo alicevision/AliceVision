@@ -11,9 +11,7 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 
-#include <iostream>
 #include <vector>
-#include <set>
 #include <map>
 
 #define ALICEVISION_DEBUG_MATCHING

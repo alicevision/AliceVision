@@ -6,7 +6,6 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <iostream>
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/numeric/Container.hpp>
@@ -14,7 +13,6 @@
 #define BOOST_TEST_MODULE numeric
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;

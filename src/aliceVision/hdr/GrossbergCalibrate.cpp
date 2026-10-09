@@ -8,10 +8,8 @@
 #include "QuadProg++.hpp"
 #include "sampling.hpp"
 #include <Eigen/Dense>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <cassert>
-#include <iostream>
 
 namespace aliceVision {
 namespace hdr {

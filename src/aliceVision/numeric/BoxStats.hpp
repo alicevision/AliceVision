@@ -10,8 +10,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
-#include <string>
 #include <iostream>
 #include <vector>
 

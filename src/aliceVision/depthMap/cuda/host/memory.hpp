@@ -26,7 +26,6 @@
 #include <assert.h>
 #include <sstream>
 #include <iostream>
-#include <vector>
 #include <cstring>
 
 namespace aliceVision {

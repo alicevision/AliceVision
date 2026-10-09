@@ -7,7 +7,6 @@
 #pragma once
 
 #include <aliceVision/image/Image.hpp>
-#include <aliceVision/image/Rgb.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>

@@ -14,8 +14,6 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/boykov_kolmogorov_max_flow.hpp>
 
-#include <iostream>
-
 namespace aliceVision {
 namespace fuseCut {
 

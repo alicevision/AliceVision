@@ -8,8 +8,6 @@
 #include "aliceVision/geometry/HalfPlane.hpp"
 #include "aliceVision/geometry/Frustum.hpp"
 
-#include <iostream>
-
 #define BOOST_TEST_MODULE halfSpaceIntersection
 
 #include <boost/test/unit_test.hpp>

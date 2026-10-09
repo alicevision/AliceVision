@@ -7,7 +7,6 @@
 
 #include <aliceVision/feature/metric.hpp>
 
-#include <iostream>
 #include <string>
 
 #define BOOST_TEST_MODULE matchingMetric

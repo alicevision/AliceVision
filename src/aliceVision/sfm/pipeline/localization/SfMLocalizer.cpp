@@ -7,7 +7,6 @@
 
 #include "SfMLocalizer.hpp"
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>

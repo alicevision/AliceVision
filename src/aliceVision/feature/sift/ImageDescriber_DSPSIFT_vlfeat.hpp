@@ -13,11 +13,7 @@
 
 extern "C"
 {
-#include <nonFree/sift/vl/sift.h>
 }
-
-#include <iostream>
-#include <numeric>
 
 namespace aliceVision {
 namespace feature {

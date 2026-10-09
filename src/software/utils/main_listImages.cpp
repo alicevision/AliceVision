@@ -8,7 +8,6 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/system/Parallelization.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfmData/uid.hpp>

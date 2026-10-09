@@ -7,7 +7,6 @@
 
 #include <aliceVision/sfm/FrustumFilter.hpp>
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>

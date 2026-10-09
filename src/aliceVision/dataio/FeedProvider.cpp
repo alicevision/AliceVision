@@ -13,7 +13,6 @@
 #endif
 
 #include <filesystem>
-#include <exception>
 #include <iostream>
 #include <string>
 #include <limits>

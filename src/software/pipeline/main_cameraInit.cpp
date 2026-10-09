@@ -7,7 +7,6 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/uid.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfmDataIO/jsonIO.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>

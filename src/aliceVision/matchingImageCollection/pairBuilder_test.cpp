@@ -9,10 +9,6 @@
 #include "aliceVision/sfmData/SfMData.hpp"
 #include "aliceVision/sfmData/View.hpp"
 
-#include <iostream>
-#include <algorithm>
-#include <memory>
-
 #define BOOST_TEST_MODULE matchingImageCollectionPairBuilder
 
 #include <boost/test/unit_test.hpp>

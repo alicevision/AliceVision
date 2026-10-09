@@ -10,7 +10,6 @@
 #include "aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp"
 #include "aliceVision/matchingImageCollection/ImageCollectionMatcher_cascadeHashing.hpp"
 
-#include <exception>
 #include <cassert>
 
 namespace aliceVision {

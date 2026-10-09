@@ -8,7 +8,6 @@
 #define BOOST_TEST_MODULE PANORAMA_SFM_RADIAL3_OUTLIERS
 
 #include "panoramaSfM_test_common.hpp"
-#include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
 BOOST_AUTO_TEST_CASE(PANORAMA_SFM_RADIAL3_OUTLIERS)

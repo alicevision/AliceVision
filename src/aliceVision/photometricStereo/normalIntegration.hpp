@@ -12,7 +12,6 @@
 
 #include <string>
 #include <vector>
-#include <array>
 
 namespace aliceVision {
 namespace photometricStereo {

@@ -11,7 +11,6 @@
 #include <aliceVision/image/diffusion.hpp>
 #include <aliceVision/feature/imageStats.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/config.hpp>
 
 namespace aliceVision {
 namespace feature {

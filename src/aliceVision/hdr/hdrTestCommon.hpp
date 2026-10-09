@@ -9,7 +9,6 @@
 
 #include <filesystem>
 #include <random>
-#include <array>
 
 namespace aliceVision {
 namespace hdr {

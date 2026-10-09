@@ -16,7 +16,6 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/types.hpp>
-#include <aliceVision/config.hpp>
 
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/trackIO.hpp>

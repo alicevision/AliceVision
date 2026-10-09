@@ -6,9 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "colorize.hpp"
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/stl/indexedSort.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>

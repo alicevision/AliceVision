@@ -11,7 +11,6 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/translationAveraging/common.hpp"
 #include "aliceVision/linearProgramming/ISolver.hpp"
-#include <fstream>
 #include <utility>
 #include <vector>
 #include <set>

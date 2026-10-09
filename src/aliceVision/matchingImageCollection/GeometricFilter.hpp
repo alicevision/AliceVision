@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/matching/MatchesCollections.hpp>

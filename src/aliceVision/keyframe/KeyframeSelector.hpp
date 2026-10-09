@@ -22,7 +22,6 @@
 #include <mutex>
 #include <vector>
 #include <memory>
-#include <limits>
 
 namespace aliceVision {
 namespace image {

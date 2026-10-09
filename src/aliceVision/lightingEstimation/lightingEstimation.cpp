@@ -11,8 +11,6 @@
 
 #include <Eigen/Dense>
 
-#include <iostream>
-
 namespace aliceVision {
 namespace lightingEstimation {
 
