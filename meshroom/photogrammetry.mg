@@ -10,7 +10,7 @@
             "ExportImages": "1.0",
             "FeatureExtraction": "1.3",
             "FeatureMatching": "2.0",
-            "ImageMatching": "2.0",
+            "ImageMatching": "2.1",
             "IntrinsicsTransforming": "1.0",
             "MeshFiltering": "3.0",
             "Meshing": "7.0",

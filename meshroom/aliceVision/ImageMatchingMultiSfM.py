@@ -1,4 +1,4 @@
-__version__ = "1.1"
+__version__ = "2.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -43,6 +43,7 @@ Thanks to this node, the FeatureMatching node will only compute the matches betw
             label="Features Folders",
             description="Folder(s) containing the extracted features and descriptors.",
             exposed=True,
+            enabled=lambda node: node.method.value not in ("Exhaustive", "Sequential"),
         ),
         desc.ChoiceParam(
             name="method",
