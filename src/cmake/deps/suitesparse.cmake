@@ -1,6 +1,6 @@
 # =============================================================================
 # deps/suitesparse.cmake
-# Dependencies: lapack (BLAS_LIBRARIES, LAPACK_LIBRARIES), cuda (optionnel)
+# Dependencies: lapack (BLAS_LIBRARIES, LAPACK_LIBRARIES)
 # Provides:     SUITESPARSE_TARGET, SUITESPARSE_CMAKE_FLAGS
 #
 # NOTE: Requires gmp and mpfr as prerequisites, built inline here since they
@@ -85,9 +85,13 @@ if(AV_BUILD_SUITESPARSE)
     #    )
     #endif()
 
-    if(AV_USE_CUDA)
-        set(_cuda_cmake_flags "-DENABLE_CUDA=ON\ -DCMAKE_CXX_FLAGS=-I${CUDA_TOOLKIT_ROOT_DIR}/include\ -DCMAKE_C_FLAGS=-I${CUDA_TOOLKIT_ROOT_DIR}/include")
+    set(_ss_lapack_flags ${LAPACK_CMAKE_FLAGS})
+    if(_ss_lapack_flags)
+        # SuiteSparse requires BLA_VENDOR along with BLAS_LIBRARIES; the reference BLAS is "Generic"
+        list(APPEND _ss_lapack_flags -DBLA_VENDOR=Generic)
     endif()
+    # SuiteSparse's Makefile takes all CMake options in one space-separated variable
+    list(JOIN _ss_lapack_flags " " _ss_lapack_flags)
 
     ExternalProject_Add(${SUITESPARSE_TARGET}
         URL              ${DEP_SUITESPARSE_URL}
@@ -104,7 +108,7 @@ if(AV_BUILD_SUITESPARSE)
         CONFIGURE_COMMAND ""
         BUILD_COMMAND
             $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-            CMAKE_OPTIONS=${LAPACK_CMAKE_FLAGS}\ -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\ -DCMAKE_INSTALL_LIBDIR=lib\ ${_cuda_cmake_flags}
+            CMAKE_OPTIONS=${_ss_lapack_flags}\ -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\ -DCMAKE_INSTALL_LIBDIR=lib\ -DSUITESPARSE_USE_CUDA=OFF
         INSTALL_COMMAND
             $(MAKE) install
         DEPENDS ${LAPACK_TARGET} mpfr
@@ -118,7 +122,7 @@ if(AV_BUILD_SUITESPARSE)
 
     av_register_dep(${SUITESPARSE_TARGET})
 
-    unset(_cuda_cmake_flags)
+    unset(_ss_lapack_flags)
     #unset(_ss_env)
     #unset(_ss_blas)
     #unset(_ss_cmake_opts)

@@ -114,7 +114,7 @@ set(DEP_LAPACK_URL     "https://github.com/Reference-LAPACK/lapack/archive/v${DE
 set(DEP_LAPACK_HASH    "MD5=595b064fd448b161cd711fe346f498a7")
 
 set(DEP_GMP_VERSION    "6.2.1")
-set(DEP_GMP_URL        "https://gmplib.org/download/gmp/gmp-${DEP_GMP_VERSION}.tar.xz")
+set(DEP_GMP_URL        "https://ftp.gnu.org/gnu/gmp/gmp-${DEP_GMP_VERSION}.tar.xz")
 set(DEP_GMP_HASH       "MD5=0b82665c4a92fd2ade7440c13fcaa42b")
 
 set(DEP_MPFR_VERSION   "4.2.0")
