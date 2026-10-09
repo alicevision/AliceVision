@@ -54,7 +54,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # ── deadsnakes PPA for Python 3.11 ───────────────────────────────────────
     add-apt-repository ppa:deadsnakes/ppa                               && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        automake                                                           \
+        automake                                                          \
         bison                                                             \
         build-essential                                                   \
         clang-format                                                      \
@@ -79,12 +79,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         python3.11-distutils                                              \
         texinfo                                                           \
         unzip                                                             \
-        wget                                                              \
         yasm                                                              \
+        ninja-build                                                       \
     && update-alternatives \
         --install /usr/bin/gcc     gcc     /usr/bin/gcc-12     100        \
-        --slave   /usr/bin/g++     g++     /usr/bin/g++-12               \
-        --slave   /usr/bin/gcov    gcov    /usr/bin/gcov-12              \
+        --slave   /usr/bin/g++     g++     /usr/bin/g++-12                \
+        --slave   /usr/bin/gcov    gcov    /usr/bin/gcov-12               \
         --slave   /usr/bin/gfortran gfortran /usr/bin/gfortran-12
 
 # =============================================================================
