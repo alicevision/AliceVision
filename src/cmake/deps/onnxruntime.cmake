@@ -11,12 +11,10 @@ if(AV_BUILD_ONNXRUNTIME)
         set(_onnx_prefix "onnxruntime-osx-${AV_ONNX_APPLE_ARCH}")
         if(AV_ONNX_APPLE_ARCH STREQUAL "arm64")
             set(_onnx_hash ${DEP_ONNXRUNTIME_OSX_ARM64_HASH})
-        elseif(AV_ONNX_APPLE_ARCH STREQUAL "x86_64")
-            set(_onnx_hash ${DEP_ONNXRUNTIME_OSX_X86_64_HASH})
         else()
             message(FATAL_ERROR
                 "ONNX Runtime: unsupported Apple arch '${AV_ONNX_APPLE_ARCH}'. "
-                "Expected arm64 or x86_64.")
+                "Expected arm64.")
         endif()
     else()
         string(FIND "${CMAKE_HOST_SYSTEM_PROCESSOR}" "aarch64" _onnx_aarch64_pos)
