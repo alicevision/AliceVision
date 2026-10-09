@@ -186,9 +186,6 @@ RUN --mount=type=cache,target=${AV_BUILD}/external/download \
         -DAV_BUILD_DEPENDENCIES_PARALLEL=${CPU_CORES} \
     && mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib" \
     && ln -sf lib "${AV_INSTALL}/lib64"             \
-    && { test -e /usr/local/cuda/lib64/libcublas.so \
-         || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \
-                  /usr/local/cuda/lib64/libcublas.so; }  \
     && cmake --build . --parallel 1                 \
     && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
     && /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' \
