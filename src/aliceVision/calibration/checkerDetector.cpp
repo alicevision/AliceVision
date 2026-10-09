@@ -12,6 +12,7 @@
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/image/filtering.hpp>
 #include <aliceVision/image/convolution.hpp>
+#include <aliceVision/image/imageAlgo.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
 
@@ -1973,6 +1974,51 @@ double CheckerDetector::getScore() const
     }
 
     return maxScore;
+}
+
+bool CheckerDetector::detectCheckerboard(const image::Image<image::RGBColor>& source,
+                                         double pixelAspectRatio,
+                                         bool doubleSize,
+                                         size_t maxLevels,
+                                         size_t minConsensus,
+                                         bool useNestedGrids,
+                                         bool useAllSeeds,
+                                         bool debug)
+{
+    if (pixelAspectRatio == 1.0 && !doubleSize)
+    {
+        return process(source, maxLevels, minConsensus, useNestedGrids, useAllSeeds, debug);
+    }
+
+    // if pixel are not squared, convert the image for easier lines extraction
+    const double w = source.width();
+    const double h = source.height();
+
+    const double nw = w * ((doubleSize) ? 2.0 : 1.0);
+    const double nh = h * ((doubleSize) ? 2.0 : 1.0) / pixelAspectRatio;
+
+    ALICEVISION_LOG_DEBUG("Resize image with dimensions " << nw << "x" << nh);
+
+    image::Image<image::RGBColor> resizedInput;
+    imageAlgo::resizeImage(nw, nh, source, resizedInput);
+
+    if (!process(resizedInput, maxLevels, minConsensus, useNestedGrids, useAllSeeds, debug))
+    {
+        return false;
+    }
+
+    // Restore aspect ratio for corners coordinates
+    // Use the actual resize ratios as the resized dimensions are rounded to integers
+    const double scaleX = w / resizedInput.width();
+    const double scaleY = h / resizedInput.height();
+
+    for (auto& c : _corners)
+    {
+        c.center(0) *= scaleX;
+        c.center(1) *= scaleY;
+    }
+
+    return true;
 }
 
 }  // namespace calibration

@@ -118,6 +118,32 @@ class CheckerDetector
      */
     bool process(const image::Image<image::RGBColor>& source, size_t maxLevels, size_t minConsensus, bool useNestedGrids, bool useAllSeeds, bool debug);
 
+    /**
+     * @brief Detect checkerboards in an image whose pixels may not be square.
+     *
+     * If pixels are not square (or doubleSize is set), the image is resized before detection
+     * so that the detector works on square pixels, and the detected corners are mapped back
+     * to the source image coordinates.
+     *
+     * @param[in] source Input image containing checkerboards.
+     * @param[in] pixelAspectRatio Pixel aspect ratio of the source image.
+     * @param[in] doubleSize Upscale the image by a factor 2 before detection.
+     * @param[in] maxLevels maximum number of levels used in multiscale point detection
+     * @param[in] minConsensus minimum number of shared corners to merge checkerboards
+     * @param[in] useNestedGrids Indicate if the image contains nested calibration grids.
+     * @param[in] useAllSeeds Indicate if we want to use all detected corners as seeds
+     * @param[in] debug Indicate if debug images should be drawn.
+     * @return False if a problem occurred during detection, otherwise true.
+     */
+    bool detectCheckerboard(const image::Image<image::RGBColor>& source,
+                            double pixelAspectRatio,
+                            bool doubleSize,
+                            size_t maxLevels,
+                            size_t minConsensus,
+                            bool useNestedGrids,
+                            bool useAllSeeds,
+                            bool debug);
+
     /// Return a copy of detected checkerboards.
     std::vector<CheckerBoard> getBoards() const { return _boards; }
 

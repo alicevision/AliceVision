@@ -12,7 +12,6 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
-#include <aliceVision/image/imageAlgo.hpp>
 #include <aliceVision/calibration/checkerDetector.hpp>
 #include <aliceVision/calibration/checkerDetector_io.hpp>
 
@@ -145,48 +144,16 @@ int aliceVision_main(int argc, char* argv[])
             pixelRatio = 1.0;
         }
 
-        if (pixelRatio != 1.0 || doubleSize)
-        {
-            // if pixel are not squared, convert the image for easier lines extraction
-            const double w = source.width();
-            const double h = source.height();
-
-            const double nw = w * ((doubleSize) ? 2.0 : 1.0);
-            const double nh = h * ((doubleSize) ? 2.0 : 1.0) / pixelRatio;
-
-            ALICEVISION_LOG_DEBUG("Resize image with dimensions " << nw << "x" << nh);
-
-            image::Image<image::RGBColor> resizedInput;
-            imageAlgo::resizeImage(nw, nh, source, resizedInput);
-            source.swap(resizedInput);
-        }
-
         // Lookup checkerboard
         calibration::CheckerDetector detect;
         ALICEVISION_LOG_INFO("Launching checkerboard detection");
-        if (!detect.process(source, maxLevels, minConsensus, useNestedGrids, useAllSeeds, exportDebugImages))
+        if (!detect.detectCheckerboard(source, pixelRatio, doubleSize, maxLevels, minConsensus, useNestedGrids, useAllSeeds, exportDebugImages))
         {
             ALICEVISION_LOG_ERROR("Detection failed");
             continue;
         }
 
         ALICEVISION_LOG_INFO("Detected " << detect.getBoards().size() << " boards and " << detect.getCorners().size() << " corners");
-
-        // Restore aspect ratio for corners coordinates
-        if (pixelRatio != 1.0 || doubleSize)
-        {
-            std::vector<calibration::CheckerDetector::CheckerBoardCorner>& cs = detect.getCorners();
-            for (auto& c : cs)
-            {
-                c.center(1) *= pixelRatio;
-
-                if (doubleSize)
-                {
-                    c.center(0) /= 2.0;
-                    c.center(1) /= 2.0;
-                }
-            }
-        }
 
         // write the json file with the tree
         ALICEVISION_LOG_INFO("Writing detection output in "
