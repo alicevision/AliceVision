@@ -17,13 +17,14 @@
 
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
+ARG CMAKE_VERSION=3.31.11
 
 FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 # Re-declare ARGs after FROM so they are visible in this build stage
-ARG CUDA_VERSION
 ARG UBUNTU_VERSION
+ARG CMAKE_VERSION
 
 # Fail a RUN on any error in a pipe (wget | gpg, curl | python), not only the last command
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -48,18 +49,17 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc \
         | gpg --dearmor \
         | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null  && \
-    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' \
+    echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(. /etc/os-release && echo "${VERSION_CODENAME}") main" \
         | tee /etc/apt/sources.list.d/kitware.list >/dev/null              && \
     # ── deadsnakes PPA for Python 3.11 ───────────────────────────────────────
     add-apt-repository ppa:deadsnakes/ppa                               && \
-    apt-get update                                                       && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         automake                                                           \
         bison                                                             \
         build-essential                                                   \
         clang-format                                                      \
-        cmake=3.31.11-0kitware1ubuntu22.04.1                              \
-        cmake-data=3.31.11-0kitware1ubuntu22.04.1                         \
+        cmake=${CMAKE_VERSION}-0kitware1ubuntu${UBUNTU_VERSION}.1         \
+        cmake-data=${CMAKE_VERSION}-0kitware1ubuntu${UBUNTU_VERSION}.1    \
         cpp-12                                                            \
         curl                                                              \
         file                                                              \
