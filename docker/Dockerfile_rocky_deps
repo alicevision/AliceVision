@@ -22,11 +22,6 @@ ARG CMAKE_VERSION=3.31.11
 FROM nvidia/cuda:${CUDA_VERSION}-devel-rockylinux${ROCKY_VERSION} AS python-build-env
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
-# Re-declare ARGs after FROM so they are visible in this build stage
-ARG CMAKE_VERSION
-ARG CUDA_VERSION
-ARG ROCKY_VERSION
-
 # =============================================================================
 # System packages + GCC 12 toolset
 #
@@ -129,19 +124,19 @@ FROM python-build-env AS alicevision-deps
 # =============================================================================
 # CMake — official binary distribution (avoids a full source build)
 # =============================================================================
-RUN wget -q "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh" \
-         -O /tmp/cmake-install.sh                              && \
-    chmod +x /tmp/cmake-install.sh                            && \
-    /tmp/cmake-install.sh --skip-license --prefix=/usr/local  && \
-    rm /tmp/cmake-install.sh
+
+# Re-declare ARGs after FROM so they are visible in this build stage
+ARG CMAKE_VERSION
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN wget -qO- "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" | tar xz --strip-components=1 -C /usr/local
 
 # =============================================================================
 # AliceVision paths
 # =============================================================================
 ENV AV_DEV="/opt/AliceVision_git"         \
     AV_BUILD="/tmp/AliceVision_build"     \
-    AV_INSTALL="/opt/AliceVision_install" \
-    PATH="/usr/local/bin:${PATH}"
+    AV_INSTALL="/opt/AliceVision_install"
 
 # =============================================================================
 # Static ML / data asset environment variables
