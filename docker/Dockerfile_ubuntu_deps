@@ -25,6 +25,9 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 ARG CUDA_VERSION
 ARG UBUNTU_VERSION
 
+# Fail a RUN on any error in a pipe (wget | gpg, curl | python), not only the last command
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # =============================================================================
 # System packages + GCC 12 + CMake (Kitware PPA)
 #
