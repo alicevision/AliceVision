@@ -93,6 +93,7 @@ RUN gcc --version && g++ --version && gfortran --version
 # =============================================================================
 ENV PYTHON_BUILD_VENV="/opt/python-build-venv"
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN test "$(uname -m)" = x86_64 && \
     mkdir -p /tmp/python-standalone /opt/python && \
     wget -q "https://github.com/astral-sh/python-build-standalone/releases/download/20261001/cpython-3.11.17+20261001-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst" \
