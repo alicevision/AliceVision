@@ -126,7 +126,6 @@ alicevision_add_library(aliceVision_depthMap_cuda
         assimp::assimp
         CUDA::cudart
     PRIVATE_LINKS
-        aliceVision_gpu
         aliceVision_sfmData
         aliceVision_sfmDataIO
 )

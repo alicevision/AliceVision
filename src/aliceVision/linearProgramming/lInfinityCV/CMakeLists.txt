@@ -38,7 +38,6 @@ endif()
 alicevision_add_test(lInftyCV_triangulation_test.cpp
     NAME "lInftyCV_triangulation"
     LINKS aliceVision_multiview_test_data
-          aliceVision_multiview
           aliceVision_lInftyComputerVision
 )
 
@@ -46,7 +45,6 @@ alicevision_add_test(lInftyCV_triangulation_test.cpp
 alicevision_add_test(lInftyCV_resection_test.cpp
     NAME "lInftyCV_resection"
     LINKS aliceVision_multiview_test_data
-          aliceVision_multiview
           aliceVision_lInftyComputerVision
 )
 alicevision_add_test(lInftyCV_resection_robust_test.cpp
@@ -76,7 +74,6 @@ alicevision_add_test(lInftyCV_global_translations_fromTij_test.cpp
 alicevision_add_test(lInftyCV_tijsAndXis_test.cpp
     NAME "lInftyCV_tijsAndXis"
     LINKS aliceVision_multiview_test_data
-          aliceVision_multiview
           aliceVision_lInftyComputerVision
 )
 
@@ -84,6 +81,6 @@ alicevision_add_test(lInftyCV_tijsAndXis_test.cpp
 alicevision_add_test(lInftyCV_tijsAndXis_outlier_test.cpp
     NAME "lInftyCV_tijsAndXisOutlier"
     LINKS aliceVision_multiview_test_data
-          aliceVision_multiview
+          aliceVision_system
           aliceVision_lInftyComputerVision
 )

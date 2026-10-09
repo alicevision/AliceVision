@@ -20,5 +20,4 @@ alicevision_add_library(aliceVision_photometricStereo
         aliceVision_image
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        aliceVision_mvsData
 )

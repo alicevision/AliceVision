@@ -29,7 +29,6 @@ alicevision_add_test(Pose3d_test.cpp NAME "geometry_pose3D" LINKS aliceVision_ge
 alicevision_add_test(frustumIntersection_test.cpp
     NAME "geometry_frustumIntersection"
     LINKS aliceVision_geometry
-          aliceVision_multiview
           aliceVision_multiview_test_data
 )
 

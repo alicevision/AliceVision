@@ -24,8 +24,7 @@ alicevision_add_library(aliceVision_calibration
     PRIVATE_LINKS
         aliceVision_image
         aliceVision_system
-        aliceVision_dataio
-        Boost::program_options
+        aliceVision_camera
         Boost::boost
         Boost::json
         ${CERES_LIBRARIES}
