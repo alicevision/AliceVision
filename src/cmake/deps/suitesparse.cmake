@@ -89,6 +89,9 @@ if(AV_BUILD_SUITESPARSE)
         set(_cuda_cmake_flags "-DENABLE_CUDA=ON\ -DCMAKE_CXX_FLAGS=-I${CUDA_TOOLKIT_ROOT_DIR}/include\ -DCMAKE_C_FLAGS=-I${CUDA_TOOLKIT_ROOT_DIR}/include")
     endif()
 
+    # SuiteSparse's Makefile takes all CMake options in one space-separated variable
+    list(JOIN LAPACK_CMAKE_FLAGS " " _ss_lapack_flags)
+
     ExternalProject_Add(${SUITESPARSE_TARGET}
         URL              ${DEP_SUITESPARSE_URL}
         URL_HASH         ${DEP_SUITESPARSE_HASH}
@@ -104,7 +107,7 @@ if(AV_BUILD_SUITESPARSE)
         CONFIGURE_COMMAND ""
         BUILD_COMMAND
             $(MAKE) -j${AV_BUILD_DEPENDENCIES_PARALLEL}
-            CMAKE_OPTIONS=${LAPACK_CMAKE_FLAGS}\ -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\ -DCMAKE_INSTALL_LIBDIR=lib\ ${_cuda_cmake_flags}
+            CMAKE_OPTIONS=${_ss_lapack_flags}\ -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\ -DCMAKE_INSTALL_LIBDIR=lib\ ${_cuda_cmake_flags}
         INSTALL_COMMAND
             $(MAKE) install
         DEPENDS ${LAPACK_TARGET} mpfr
@@ -119,6 +122,7 @@ if(AV_BUILD_SUITESPARSE)
     av_register_dep(${SUITESPARSE_TARGET})
 
     unset(_cuda_cmake_flags)
+    unset(_ss_lapack_flags)
     #unset(_ss_env)
     #unset(_ss_blas)
     #unset(_ss_cmake_opts)
