@@ -15,7 +15,6 @@ set(sensorDB_files_sources
 alicevision_add_library(aliceVision_sensorDB
     SOURCES ${sensorDB_files_headers} ${sensorDB_files_sources}
     PRIVATE_LINKS
-        Boost::system
         Boost::boost
 )
 

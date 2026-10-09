@@ -15,9 +15,7 @@
 #include "kvld.h"
 #include "algorithm.h"
 #include <functional>
-#include <numeric>
 #include <aliceVision/image/Image.hpp>
-#include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 using namespace aliceVision;

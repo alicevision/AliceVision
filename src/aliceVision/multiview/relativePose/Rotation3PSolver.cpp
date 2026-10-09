@@ -10,8 +10,6 @@
 
 #include <Eigen/SVD>
 
-#include <iostream>
-
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {

@@ -12,9 +12,6 @@
 #include <aliceVision/feature/regionsFactory.hpp>
 #include <aliceVision/feature/sift/SIFT.hpp>
 
-#include <iostream>
-#include <numeric>
-
 class PopSift;
 
 namespace aliceVision {

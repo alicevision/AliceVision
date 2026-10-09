@@ -7,15 +7,12 @@
 #include "DebevecCalibrate.hpp"
 #include "sampling.hpp"
 
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
 
-#include <iostream>
-#include <fstream>
 #include <cassert>
 
 namespace aliceVision {

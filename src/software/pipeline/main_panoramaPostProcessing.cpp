@@ -6,7 +6,6 @@
 
 // Image
 #include <aliceVision/image/Image.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/dcp.hpp>
 

@@ -11,7 +11,6 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/filesIO.hpp>
-#include <aliceVision/config.hpp>
 
 #include <software/utils/precisionEvaluationToGt.hpp>
 #include <software/utils/sfmHelper/sfmPlyHelper.hpp>

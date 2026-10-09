@@ -11,7 +11,6 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_CONVERT}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_feature
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
@@ -24,10 +23,8 @@ if (ALICEVISION_BUILD_SFM)
             FOLDER ${FOLDER_SOFTWARE_CONVERT}
             LINKS aliceVision_system
                   aliceVision_cmdline
-                  aliceVision_feature
                   aliceVision_sfmData
                   aliceVision_sfmDataIO
-                  aliceVision_mesh
                   aliceVision_fuseCut
                   Boost::program_options
                   Boost::json
@@ -42,12 +39,10 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_CONVERT}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_feature
               aliceVision_sfmData
               aliceVision_sfmDataIO
               aliceVision_calibration
               Boost::program_options
-              Boost::system
     )
 
 endif() # ALICEVISION_BUILD_SFM
@@ -59,7 +54,6 @@ if (ALICEVISION_BUILD_MVS)
         SOURCE main_convertMesh.cpp
         FOLDER ${FOLDER_SOFTWARE_CONVERT}
         LINKS aliceVision_system
-              aliceVision_numeric
               aliceVision_cmdline
               aliceVision_mesh
               ${Boost_LIBRARIES}

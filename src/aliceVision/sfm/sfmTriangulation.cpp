@@ -7,7 +7,6 @@
 
 #include "sfmTriangulation.hpp"
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>

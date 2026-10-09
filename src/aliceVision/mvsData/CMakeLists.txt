@@ -32,9 +32,6 @@ alicevision_add_library(aliceVision_mvsData
     PUBLIC_LINKS
         aliceVision_system
         aliceVision_numeric
-        aliceVision_image
         ZLIB::ZLIB
         Boost::boost
-        OpenImageIO::OpenImageIO
-        OpenImageIO::OpenImageIO_Util
 )

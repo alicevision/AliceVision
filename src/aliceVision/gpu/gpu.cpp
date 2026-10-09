@@ -4,7 +4,6 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include <sstream>
-#include <memory.h>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
     #include <cuda_runtime.h>

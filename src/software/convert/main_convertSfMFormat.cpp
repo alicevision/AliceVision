@@ -11,7 +11,6 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/stl/regex.hpp>
-#include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
 #include <boost/program_options.hpp>

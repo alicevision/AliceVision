@@ -17,7 +17,6 @@
 #include <opencv2/videoio.hpp>
 
 #include <iostream>
-#include <exception>
 
 namespace aliceVision {
 namespace dataio {

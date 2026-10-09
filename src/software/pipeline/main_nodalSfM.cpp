@@ -6,7 +6,6 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-#include <aliceVision/config.hpp>
 
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -33,7 +32,6 @@
 #include <aliceVision/geometry/lie.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 
-#include <atomic>
 #include <cstdlib>
 #include <filesystem>
 #include <random>

@@ -23,7 +23,6 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         SOURCES Stl.i
         PUBLIC_LINKS
             aliceVision_stl
-            aliceVision_system
             Boost::container
             ${Python3_LIBRARIES}
         PRIVATE_INCLUDE_DIRS

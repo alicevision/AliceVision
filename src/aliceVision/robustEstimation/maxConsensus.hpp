@@ -8,7 +8,6 @@
 #pragma once
 
 #include "aliceVision/robustEstimation/randSampling.hpp"
-#include <limits>
 #include <vector>
 
 namespace aliceVision {

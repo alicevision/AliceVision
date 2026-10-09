@@ -5,13 +5,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/numeric/polynomial.hpp"
 
 #define BOOST_TEST_MODULE polynomial
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 

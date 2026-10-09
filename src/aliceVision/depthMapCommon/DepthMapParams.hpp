@@ -6,10 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMapCommon/CustomPatchPatternParams.hpp>
-#include <aliceVision/depthMapCommon/SgmParams.hpp>
-#include <aliceVision/depthMapCommon/RefineParams.hpp>
 
 namespace aliceVision {
 namespace depthMapCommon {

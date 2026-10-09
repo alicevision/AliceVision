@@ -4,7 +4,7 @@ alicevision_add_test(p4pfSolver_test.cpp
 )
 alicevision_add_test(p5pfrSolver_test.cpp
     NAME "multiview_p5pfrSolver"
-    LINKS aliceVision_multiview aliceVision_multiview_test_data
+    LINKS aliceVision_multiview
 )
 alicevision_add_test(Resection6PSolver_test.cpp
     NAME "multiview_resection6PSolver"
@@ -17,8 +17,6 @@ alicevision_add_test(resectionKernel_test.cpp
 alicevision_add_test(resectionLORansac_test.cpp
     NAME "multiview_resectionLORansac"
     LINKS aliceVision_multiview
-          aliceVision_multiview_test_data
-          aliceVision_feature
           aliceVision_sfm
           ${CERES_LIBRARIES}
 )

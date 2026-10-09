@@ -6,9 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/image/Image.hpp>
-#include <aliceVision/image/pixelTypes.hpp>
-
 #include <Eigen/Core>
 #include <Eigen/Dense>
 

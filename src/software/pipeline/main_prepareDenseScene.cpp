@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
@@ -14,14 +13,12 @@
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/filesIO.hpp>
-#include <aliceVision/config.hpp>
 #include <aliceVision/sfmDataIO/viewIO.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/program_options.hpp>
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <cmath>
 #include <filesystem>
 #include <vector>

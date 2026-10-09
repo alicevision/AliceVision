@@ -8,8 +8,6 @@
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 
-#include <iostream>
-
 #define BOOST_TEST_MODULE rigidTransformation3D
 
 #include <boost/test/unit_test.hpp>

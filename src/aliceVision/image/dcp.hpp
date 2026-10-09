@@ -3,7 +3,6 @@
 #include <map>
 #include <vector>
 #include <array>
-#include <memory>
 #include <string>
 
 #include <OpenImageIO/imagebuf.h>

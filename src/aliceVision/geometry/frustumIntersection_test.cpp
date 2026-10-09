@@ -11,8 +11,6 @@
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/projection.hpp"
 
-#include <iostream>
-
 #define BOOST_TEST_MODULE frustumIntersection
 
 #include <boost/test/unit_test.hpp>

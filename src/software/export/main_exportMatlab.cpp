@@ -17,7 +17,6 @@
 
 #include <filesystem>
 #include <stdlib.h>
-#include <stdio.h>
 #include <cmath>
 #include <iterator>
 #include <iomanip>

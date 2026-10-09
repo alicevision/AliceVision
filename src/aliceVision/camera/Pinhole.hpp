@@ -14,8 +14,6 @@
 #include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 
 #include <memory>
-#include <limits>
-#include <algorithm>
 
 namespace aliceVision {
 namespace camera {

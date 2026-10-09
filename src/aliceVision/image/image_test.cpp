@@ -8,8 +8,6 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/conversion.hpp>
 
-#include <iostream>
-
 #define BOOST_TEST_MODULE Image
 
 #include <boost/test/unit_test.hpp>

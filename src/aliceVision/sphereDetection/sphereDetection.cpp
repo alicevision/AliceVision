@@ -7,7 +7,6 @@
 #include <aliceVision/sphereDetection/sphereDetection.hpp>
 
 // Standard libs
-#include <iostream>
 #include <numeric>
 #include <string>
 

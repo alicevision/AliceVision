@@ -7,7 +7,6 @@
 #include "segmentation.hpp"
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    #include <cuda_runtime.h>
 #endif
 
 #include <aliceVision/system/Logger.hpp>

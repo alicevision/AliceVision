@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <aliceVision/config.hpp>
-#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
@@ -17,8 +15,6 @@
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/camera/Undistortion.hpp>
 #include <aliceVision/image/io.hpp>
-
-#include <memory>
 
 namespace aliceVision {
 namespace camera {

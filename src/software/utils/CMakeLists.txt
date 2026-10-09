@@ -43,8 +43,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_cmdline
               aliceVision_sensorDB
               aliceVision_image
-              aliceVision_feature
-              aliceVision_sfm
               aliceVision_sfmData
               aliceVision_sfmDataIO
               aliceVision_lensCorrectionProfile
@@ -86,8 +84,6 @@ if (ALICEVISION_BUILD_SFM)
         LINKS aliceVision_system
               aliceVision_cmdline
               aliceVision_image
-              aliceVision_sfm
-              aliceVision_sfmData
               aliceVision_sfmDataIO
               ${Boost_LIBRARIES}
     )
@@ -98,8 +94,7 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_feature
-              aliceVision_sfm
+              aliceVision_sfmDataIO
               aliceVision_sfmData
               aliceVision_track
               Boost::program_options
@@ -128,9 +123,7 @@ if (ALICEVISION_BUILD_SFM)
     alicevision_add_software(aliceVision_importMiddlebury
         SOURCE main_importMiddlebury.cpp
         FOLDER ${FOLDER_SOFTWARE_UTILS}
-        LINKS aliceVision_numeric
-              aliceVision_geometry
-              aliceVision_sfmData
+        LINKS aliceVision_sfmData
               aliceVision_sfmDataIO
               aliceVision_system
               aliceVision_cmdline
@@ -162,7 +155,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_cmdline
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Voctree statistics
@@ -184,7 +176,6 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_feature
               aliceVision_matchingImageCollection
               aliceVision_sfm
               aliceVision_sfmData
@@ -198,11 +189,9 @@ if (ALICEVISION_BUILD_SFM)
         alicevision_add_software(aliceVision_importAlembic
             SOURCE main_importAlembic.cpp
             FOLDER ${FOLDER_SOFTWARE_UTILS}
-            LINKS aliceVision_sfmData
-                  aliceVision_sfmDataIO
+            LINKS aliceVision_sfmDataIO
                   aliceVision_system
                   aliceVision_cmdline
-                  aliceVision_image
                   Boost::program_options
                   Alembic::Alembic
         )
@@ -242,7 +231,6 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_feature
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
@@ -254,7 +242,6 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_feature
               aliceVision_sfm
               aliceVision_sfmData
               aliceVision_sfmDataIO
@@ -267,7 +254,6 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_feature
               aliceVision_sfm
               aliceVision_sfmData
               aliceVision_sfmDataIO
@@ -281,7 +267,6 @@ if (ALICEVISION_BUILD_SFM)
             FOLDER ${FOLDER_SOFTWARE_UTILS}
             LINKS aliceVision_system
                 aliceVision_cmdline
-                aliceVision_feature
                 aliceVision_mesh
                 aliceVision_sfm
                 aliceVision_sfmData
@@ -342,9 +327,7 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_sfmData
               aliceVision_sfmDataIO
-              aliceVision_sfm
               Boost::program_options
               Boost::json
               Alembic::Alembic
@@ -356,9 +339,7 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_sfmData
               aliceVision_sfmDataIO
-              aliceVision_sfm
               Boost::program_options
               Boost::json
     )
@@ -371,7 +352,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_cmdline
               aliceVision_sfmData
               aliceVision_sfmDataIO
-              aliceVision_sfm
               Boost::program_options
               Boost::json
     )
@@ -382,7 +362,6 @@ if (ALICEVISION_BUILD_SFM)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_sfmData
               aliceVision_sfmDataIO
               aliceVision_track
               aliceVision_sfm
@@ -420,7 +399,6 @@ if (ALICEVISION_BUILD_SFM)
               Coin::Osi
               Boost::program_options
               Boost::boost
-              Boost::timer
               LEMON::lemon 
     )
 
@@ -526,7 +504,6 @@ if (ALICEVISION_BUILD_MVS)
                 FOLDER ${FOLDER_SOFTWARE_UTILS}
                 LINKS aliceVision_system
                     aliceVision_cmdline
-                    aliceVision_numeric
                     aliceVision_sfmData
                     aliceVision_sfmDataIO
                     aliceVision_mvsUtils
@@ -546,9 +523,7 @@ if (ALICEVISION_BUILD_MVS)
               aliceVision_cmdline
               aliceVision_numeric
               aliceVision_sfm
-              aliceVision_sfmData
               aliceVision_sfmDataIO
-              aliceVision_mvsUtils
               ${Boost_LIBRARIES}
     )
 
@@ -559,9 +534,7 @@ if (ALICEVISION_BUILD_MVS)
         LINKS aliceVision_system
               aliceVision_cmdline
               aliceVision_numeric
-              aliceVision_sfmData
               aliceVision_sfmDataIO
-              aliceVision_mvsUtils
               ${Boost_LIBRARIES}
     )
 
@@ -582,9 +555,7 @@ if (ALICEVISION_BUILD_MVS)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
             aliceVision_cmdline
-            aliceVision_feature
             aliceVision_mesh
-            aliceVision_sfm
             aliceVision_sfmData
             aliceVision_sfmDataIO
     )
@@ -595,9 +566,7 @@ if (ALICEVISION_BUILD_MVS)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
             aliceVision_cmdline
-            aliceVision_feature
             aliceVision_mesh
-            aliceVision_sfm
             aliceVision_sfmData
             aliceVision_sfmDataIO
     )
@@ -621,7 +590,6 @@ if (ALICEVISION_BUILD_MVS)
         FOLDER ${FOLDER_SOFTWARE_UTILS}
         LINKS aliceVision_system
               aliceVision_cmdline
-              aliceVision_mvsData
               aliceVision_mvsUtils
               aliceVision_sfmData
               aliceVision_sfmDataIO

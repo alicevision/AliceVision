@@ -14,7 +14,6 @@
 #include <aliceVision/system/main.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
-#include <aliceVision/config.hpp>
 
 #include <Eigen/Core>
 

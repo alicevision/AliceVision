@@ -6,10 +6,8 @@
 
 #pragma once
 
-#include <aliceVision/types.hpp>
 #include <memory>
 #include <string>
-#include <stdexcept>
 
 namespace aliceVision {
 namespace sfmData {

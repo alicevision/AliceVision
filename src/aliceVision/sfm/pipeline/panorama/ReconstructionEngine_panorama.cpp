@@ -7,7 +7,6 @@
 
 #include "ReconstructionEngine_panorama.hpp"
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/graph/connectedComponent.hpp>
