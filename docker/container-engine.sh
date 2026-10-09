@@ -8,10 +8,10 @@
 # buildah, which supports those mounts natively.
 
 if [[ -z ${CONTAINER_ENGINE:-} ]]; then
-  if command -v docker >/dev/null 2>&1; then
-    CONTAINER_ENGINE=docker
-  elif command -v podman >/dev/null 2>&1; then
+  if command -v podman >/dev/null 2>&1; then
     CONTAINER_ENGINE=podman
+  elif command -v docker >/dev/null 2>&1; then
+    CONTAINER_ENGINE=docker
   else
     echo "No container engine found: install docker or podman, or set CONTAINER_ENGINE." >&2
     return 1 2>/dev/null || exit 1
@@ -25,6 +25,8 @@ command -v "$CONTAINER_ENGINE" >/dev/null 2>&1 || {
 
 if [[ "$CONTAINER_ENGINE" = "docker" ]]; then
   export DOCKER_BUILDKIT=1
+else
+  export BUILDAH_FORMAT=docker
 fi
 
 echo "CONTAINER_ENGINE: $CONTAINER_ENGINE"
