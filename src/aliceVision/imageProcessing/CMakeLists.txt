@@ -17,7 +17,6 @@ endif()
 alicevision_add_library(aliceVision_imageProcessing
     SOURCES ${image_processing_file_headers} ${image_processing_file_sources}
     PUBLIC_LINKS
-        aliceVision_numeric
         aliceVision_image
         aliceVision_sfmData
         aliceVision_camera

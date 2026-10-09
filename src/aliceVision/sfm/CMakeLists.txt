@@ -148,21 +148,15 @@ alicevision_add_library(aliceVision_sfm
 alicevision_add_test(bundle/bundleAdjustment_test.cpp
     NAME "sfm_bundleAdjustment"
     LINKS aliceVision_sfm
-          aliceVision_multiview
           aliceVision_multiview_test_data
-          aliceVision_feature
-          aliceVision_system
           LEMON::lemon 
 )
 
 alicevision_add_test(bundle/bundleAdjustment_Enhanced_test.cpp
     NAME "sfm_bundleAdjustment_Enhanced"
     LINKS aliceVision_sfm
-          aliceVision_multiview
-          aliceVision_multiview_test_data
           aliceVision_feature
-          aliceVision_system
-          LEMON::lemon 
+          LEMON::lemon
 )
 
 alicevision_add_test(bundle/bundleAdjustment_temporalConstraint_test.cpp
@@ -175,15 +169,13 @@ alicevision_add_test(utils/alignment_test.cpp
     NAME "sfm_alignment"
     LINKS
         aliceVision_sfm
-        aliceVision_multiview
         aliceVision_multiview_test_data
-        LEMON::lemon 
 )
 
 alicevision_add_test(utils/poseFilter_test.cpp
     NAME "sfm_poseFilter"
     LINKS
-        aliceVision_sfm
+        aliceVision_sfm_bundle
 )
 
 add_subdirectory(pipeline)

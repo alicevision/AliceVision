@@ -89,7 +89,6 @@ alicevision_add_test(sfmDataIO_test.cpp
     NAME "sfmDataIO"
     LINKS aliceVision_sfmData
           aliceVision_sfmDataIO
-          aliceVision_feature
           aliceVision_system
 )
 
@@ -97,7 +96,6 @@ alicevision_add_test(sfmDataIOCompatibilityJson_test.cpp
     NAME "sfmDataIOCompatibilityJson"
     LINKS aliceVision_sfmData
           aliceVision_sfmDataIO
-          aliceVision_feature
           aliceVision_system
 )
 
@@ -106,29 +104,24 @@ if (ALICEVISION_HAVE_ALEMBIC)
         NAME "sfmDataIOCompatibilityAbc"
         LINKS aliceVision_sfmData
               aliceVision_sfmDataIO
-              aliceVision_feature
               aliceVision_system
     )
     alicevision_add_test(alembicIO_test.cpp
         NAME "sfmDataIO_alembic"
         LINKS aliceVision_sfmDataIO
-              aliceVision_sfm
-              Alembic::Alembic
     )
 endif()
 
 
 alicevision_add_test(middlebury_test.cpp
     NAME "sfmDataIO_middlebury"
-    LINKS aliceVision_sfmData
-          aliceVision_numeric
+    LINKS aliceVision_numeric
           aliceVision_sfmDataIO
 )
 
 alicevision_add_test(colmap_test.cpp
     NAME "sfmDataIO_colmap"
-    LINKS aliceVision_sfmData
-          aliceVision_numeric
+    LINKS aliceVision_numeric
           aliceVision_sfmDataIO
 )
 

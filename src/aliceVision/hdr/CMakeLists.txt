@@ -58,7 +58,6 @@ if (ALICEVISION_BUILD_SWIG_BINDING)
         SOURCES Hdr.i
         PUBLIC_LINKS
             aliceVision_hdr
-            aliceVision_system
             aliceVision_numeric
             aliceVision_image
             aliceVision_sfmData
