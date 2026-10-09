@@ -725,6 +725,9 @@ if (NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
             set(CMAKE_CUDA_RUNTIME_LIBRARY Static)
         endif()
 
+        # Must be set before enable_language(CUDA), which otherwise initializes it
+        # to the nvcc default arch. Override with -DCMAKE_CUDA_ARCHITECTURES=...
+        set(CMAKE_CUDA_ARCHITECTURES "all-major" CACHE STRING "CUDA architectures used to build AliceVision")
         enable_language(CUDA)
         find_package(CUDAToolkit 11.0 QUIET)
 
@@ -742,11 +745,6 @@ if (NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
 endif()
 
 if (ALICEVISION_HAVE_CUDA)
-
-    set(CMAKE_CUDA_ARCHITECTURES
-        "all-major"
-        CACHE STRING "CUDA architectures used to build AliceVision" FORCE
-    )
 
     # default stream legacy implies that the 0 stream synchronizes all streams
     add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:--default-stream=legacy>)
