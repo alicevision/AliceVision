@@ -15,6 +15,8 @@ if(AV_BUILD_JPEG)
         EXTRA_CMAKE_FLAGS
             ${ZLIB_CMAKE_FLAGS}
             -DENABLE_STATIC:BOOL=OFF
+            # 3.x links its bundled (static) zlib/spng into libturbojpeg.so
+            -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
         DEPENDS    ${ZLIB_TARGET}
     )
 
