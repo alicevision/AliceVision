@@ -211,6 +211,13 @@ class SfMData
     std::set<IndexT> getValidViews() const;
 
     /**
+     * @brief List the view indexes which also exist in another SfMData.
+     * @param[in] other the SfMData to compare with
+     * @return common view indexes list
+     */
+    std::vector<IndexT> getCommonViews(const SfMData& other) const;
+
+    /**
      * @brief List the intrinsic indexes that have valid camera intrinsic and pose.
      * @return intrinsic indexes list
      */

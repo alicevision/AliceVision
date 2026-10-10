@@ -282,6 +282,19 @@ std::set<IndexT> SfMData::getValidViews() const
     return valid_idx;
 }
 
+std::vector<IndexT> SfMData::getCommonViews(const SfMData& other) const
+{
+    std::vector<IndexT> commonIds;
+    for (const auto& [viewId, view] : _views)
+    {
+        if (other._views.count(viewId))
+        {
+            commonIds.push_back(viewId);
+        }
+    }
+    return commonIds;
+}
+
 std::set<IndexT> SfMData::getReconstructedIntrinsics() const
 {
     std::set<IndexT> valid_idx;
