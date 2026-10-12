@@ -37,9 +37,12 @@ ENV AV_DEV=/opt/AliceVision_git         \
 
 # ENV rather than /etc/profile.d, which only login shells read: plain
 # `docker run <image> aliceVision_...` must see them too.
+# The bundled libs have no RPATH (fixup_bundle strips it on Linux), so they only
+# find each other through LD_LIBRARY_PATH, as when Meshroom runs the bundle.
 ENV PATH="${AV_BUNDLE}/bin:${PATH}"                                          \
     ALICEVISION_ROOT="${AV_BUNDLE}"                                          \
-    ALICEVISION_SENSOR_DB="${AV_BUNDLE}/share/aliceVision/cameraSensors.db"
+    ALICEVISION_SENSOR_DB="${AV_BUNDLE}/share/aliceVision/cameraSensors.db" \
+    LD_LIBRARY_PATH="${AV_BUNDLE}/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR "${AV_BUILD}"
 
