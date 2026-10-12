@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DistortionBrown.hpp"
-#include <aliceVision/system/Logger.hpp>
 #include <vector>
 
 namespace aliceVision {
@@ -111,16 +110,18 @@ Vec2 DistortionBrown::removeDistortion(const Vec2& p) const
     return undistorted_value;
 }
 
-Eigen::Matrix2d DistortionBrown::getDerivativeRemoveDistoWrtPt([[maybe_unused]] const Vec2& p) const
+Eigen::Matrix2d DistortionBrown::getDerivativeRemoveDistoWrtPt(const Vec2& p) const
 {
-    ALICEVISION_THROW_ERROR("Brown inverse jacobian are not implemented");
-    return Eigen::Matrix2d::Identity();
+    // Inverse of the Jacobian of addDistortion, at the undistorted point.
+    return getDerivativeAddDistoWrtPt(removeDistortion(p)).inverse();
 }
 
-Eigen::MatrixXd DistortionBrown::getDerivativeRemoveDistoWrtDisto([[maybe_unused]] const Vec2& p) const
+Eigen::MatrixXd DistortionBrown::getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
 {
-    ALICEVISION_THROW_ERROR("Brown inverse jacobian are not implemented");
-    return Eigen::Matrix<double, 2, 5>::Zero();
+    // Exact derivative of the inverse of addDistortion: with p = add(q, theta) and p fixed,
+    // dq/dtheta = -(dadd/dq)^-1 * dadd/dtheta, at the undistorted point q.
+    const Vec2 undistorted = removeDistortion(p);
+    return -getDerivativeAddDistoWrtPt(undistorted).inverse() * getDerivativeAddDistoWrtDisto(undistorted);
 }
 
 }  // namespace camera

@@ -69,30 +69,10 @@ Eigen::Matrix2d DistortionRadialK1::getDerivativeRemoveDistoWrtPt(const Vec2& p)
 
 Eigen::MatrixXd DistortionRadialK1::getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
 {
-    double r_dist = sqrt(p(0) * p(0) + p(1) * p(1));
-    const double eps = 1e-8;
-    if (r_dist < eps)
-    {
-        return Eigen::Matrix<double, 2, 1>::Zero();
-    }
-
-    const Vec2 p_undist = removeDistortion(p);
-
-    const double& k1 = _distortionParams[0];
-
-    const double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
-    const double r2 = r * r;
-
-    const double r_coeff = 1.0 + k1 * r2;
-
-    Eigen::Matrix<double, 1, 1> d_rcoeff_d_params;
-    d_rcoeff_d_params(0, 0) = r2;
-
-    Eigen::Matrix<double, 2, 1> ret;
-    ret(0, 0) = -(p(0) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
-    ret(1, 0) = -(p(1) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
-
-    return ret;
+    // Exact derivative of the inverse of addDistortion: with p = add(q, theta) and p fixed,
+    // dq/dtheta = -(dadd/dq)^-1 * dadd/dtheta, at the undistorted point q.
+    const Vec2 undistorted = removeDistortion(p);
+    return -getDerivativeAddDistoWrtPt(undistorted).inverse() * getDerivativeAddDistoWrtDisto(undistorted);
 }
 
 double DistortionRadialK1::getUndistortedRadius(double r) const
@@ -203,40 +183,10 @@ Eigen::Matrix2d DistortionRadialK3::getDerivativeRemoveDistoWrtPt(const Vec2& p)
 
 Eigen::MatrixXd DistortionRadialK3::getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
 {
-    double r_dist = sqrt(p(0) * p(0) + p(1) * p(1));
-    const double eps = 1e-8;
-    if (r_dist < eps)
-    {
-        return Eigen::Matrix<double, 2, 3>::Zero();
-    }
-
-    Vec2 p_undist = removeDistortion(p);
-
-    const double& k1 = _distortionParams[0];
-    const double& k2 = _distortionParams[1];
-    const double& k3 = _distortionParams[2];
-
-    const double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
-    const double r2 = r * r;
-    const double r4 = r2 * r2;
-    const double r6 = r4 * r2;
-
-    const double r_coeff = 1.0 + k1 * r2 + k2 * r4 + k3 * r6;
-
-    Eigen::Matrix<double, 1, 3> d_rcoeff_d_params;
-    d_rcoeff_d_params(0, 0) = r2;
-    d_rcoeff_d_params(0, 1) = r4;
-    d_rcoeff_d_params(0, 2) = r6;
-
-    Eigen::Matrix<double, 2, 3> ret;
-    ret(0, 0) = -(p(0) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
-    ret(0, 1) = -(p(0) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
-    ret(0, 2) = -(p(0) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
-    ret(1, 0) = -(p(1) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
-    ret(1, 1) = -(p(1) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
-    ret(1, 2) = -(p(1) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
-
-    return ret;
+    // Exact derivative of the inverse of addDistortion: with p = add(q, theta) and p fixed,
+    // dq/dtheta = -(dadd/dq)^-1 * dadd/dtheta, at the undistorted point q.
+    const Vec2 undistorted = removeDistortion(p);
+    return -getDerivativeAddDistoWrtPt(undistorted).inverse() * getDerivativeAddDistoWrtDisto(undistorted);
 }
 
 double DistortionRadialK3::getUndistortedRadius(double r) const
@@ -361,50 +311,10 @@ Eigen::Matrix2d DistortionRadialK3PT::getDerivativeRemoveDistoWrtPt(const Vec2& 
 
 Eigen::MatrixXd DistortionRadialK3PT::getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
 {
-    const double& k1 = _distortionParams[0];
-    const double& k2 = _distortionParams[1];
-    const double& k3 = _distortionParams[2];
-
-    const double r_dist = sqrt(p(0) * p(0) + p(1) * p(1));
-    const double eps = 1e-8;
-    if (r_dist < eps)
-    {
-        return Eigen::Matrix<double, 2, 3>::Zero();
-    }
-
-    const Vec2 p_undist = removeDistortion(p);
-    const double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
-
-    const double r2 = r * r;
-    const double r4 = r2 * r2;
-    const double r6 = r4 * r2;
-
-    const double denum = (1.0 + k1 + k2 + k3);
-    const double num = (1.0 + k1 * r2 + k2 * r4 + k3 * r6);
-    const double r_coeff = num / denum;
-
-    double denum2 = denum * denum;
-    Eigen::Matrix<double, 1, 3> d_num_d_params;
-    d_num_d_params(0, 0) = r2;
-    d_num_d_params(0, 1) = r4;
-    d_num_d_params(0, 2) = r6;
-
-    Eigen::Matrix<double, 1, 3> d_denum_d_params;
-    d_denum_d_params(0, 0) = 1;
-    d_denum_d_params(0, 1) = 1;
-    d_denum_d_params(0, 2) = 1;
-
-    Eigen::Matrix<double, 1, 3> d_rcoeff_d_params = (denum * d_num_d_params - num * d_denum_d_params) / denum2;
-
-    Eigen::Matrix<double, 2, 3> ret;
-    ret(0, 0) = -(p(0) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
-    ret(0, 1) = -(p(0) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
-    ret(0, 2) = -(p(0) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
-    ret(1, 0) = -(p(1) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
-    ret(1, 1) = -(p(1) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
-    ret(1, 2) = -(p(1) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
-
-    return ret;
+    // Exact derivative of the inverse of addDistortion: with p = add(q, theta) and p fixed,
+    // dq/dtheta = -(dadd/dq)^-1 * dadd/dtheta, at the undistorted point q.
+    const Vec2 undistorted = removeDistortion(p);
+    return -getDerivativeAddDistoWrtPt(undistorted).inverse() * getDerivativeAddDistoWrtDisto(undistorted);
 }
 
 Vec2 DistortionRadialK3PT::removeDistortion(const Vec2& p) const
