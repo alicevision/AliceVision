@@ -8,7 +8,7 @@ set -euo pipefail
 #   OS          rocky | ubuntu
 #   OS_VERSION  e.g. 9 (rocky) or 22.04 (ubuntu)
 # Optional overrides:
-#   CUDA_VERSION     (default 12.1.1)
+#   CUDA_VERSION     (default 12.8.0)
 #   AV_DEPS_VERSION  (default: set by the wrapper script)
 #   AV_VERSION       (default: <branch>-<short-sha>)
 #   REPO_OWNER       (default alicevision)

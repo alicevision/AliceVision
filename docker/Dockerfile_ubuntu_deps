@@ -9,9 +9,9 @@
 #
 # Build example:
 #   DOCKER_BUILDKIT=1 docker build \
-#     --build-arg CUDA_VERSION=12.1.1 \
+#     --build-arg CUDA_VERSION=12.8.0 \
 #     --build-arg UBUNTU_VERSION=22.04 \
-#     --tag alicevision/alicevision-deps:<version>-ubuntu22.04-cuda12.1.1 \
+#     --tag alicevision/alicevision-deps:<version>-ubuntu22.04-cuda12.8.0 \
 #     -f docker/Dockerfile_ubuntu_deps .
 # =============================================================================
 
