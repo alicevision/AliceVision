@@ -64,7 +64,7 @@ jobs:
            -DAlembic_DIR:PATH="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \
            -DSWIG_DIR:PATH="${DEPS_INSTALL_DIR}/share/swig/4.3.0" \
            -DSWIG_EXECUTABLE:PATH="${DEPS_INSTALL_DIR}/bin-deps/swig" \
-           -DPython3_EXECUTABLE:PATH=/usr/bin/python
+           -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV:-/usr}/bin/python"
 
       - name: Build
         working-directory: ./build
