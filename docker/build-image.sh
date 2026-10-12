@@ -80,6 +80,7 @@ echo "--== BUILD ALICEVISION ==--"
   --rm \
   --progress=plain \
   --build-arg DEPS_IMAGE="${DEPS_DOCKER_TAG}" \
+  --build-arg AV_BUILD_CACHE_ID="${OS}${OS_VERSION}-cuda${CUDA_VERSION}" \
   --tag "${DOCKER_TAG}" \
   -f docker/Dockerfile .
 
