@@ -139,20 +139,6 @@ ENV AV_DEV="/opt/AliceVision_git"         \
     AV_INSTALL="/opt/AliceVision_install"
 
 # =============================================================================
-# Static ML / data asset environment variables
-#
-# The asset files themselves (vocabulary tree, ONNX models, ColorChart model)
-# are runtime-only and large, so they are NOT shipped in the image. Mount them
-# at run time under ${AV_INSTALL}/share/aliceVision (paths defined below).
-# =============================================================================
-RUN { \
-    echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree"                                 ; \
-    echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx"          ; \
-    echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx"                  ; \
-    echo "export ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel"      ; \
-    } >> /etc/profile.d/alicevision.sh
-
-# =============================================================================
 # CPU core detection helper
 # =============================================================================
 COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
