@@ -850,15 +850,17 @@ bool readCamera(const Version& abcVersion,
                 undistortion->setOffset(undistortionOffset);
                 undistortion->setLocked(undistortionLocked);
 
-                if (abcVersion >= Version(1, 2, 7))
-                {
-                    undistortion->setDiagonal(undistortionDiagonal);
-                }
-
                 if (abcVersion >= Version(1, 2, 9))
                 {
                     undistortion->setPixelAspectRatio(undistortionPixelAspectRatio);
                     undistortion->setDesqueezed(undistortionDesqueezed);
+                }
+
+                // Restore the diagonal last: the setters above recompute it from the image size,
+                // which differs from the saved one after a non integer rescale.
+                if (abcVersion >= Version(1, 2, 7))
+                {
+                    undistortion->setDiagonal(undistortionDiagonal);
                 }
 
                 // If undistortion exists, distortion does not

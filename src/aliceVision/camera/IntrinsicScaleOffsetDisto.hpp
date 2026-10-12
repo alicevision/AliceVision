@@ -211,6 +211,15 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
     // Data wrapper for non linear optimization (update from data)
     bool updateFromParams(const std::vector<double>& params) override;
 
+    /**
+     * @brief Rescale the intrinsic, including the undistortion which is expressed in pixels.
+     *        Uniform rescales and desqueezing (when the factors ratio cancels the pixel aspect ratio) are exact
+     *        for every undistortion model. Other non uniform rescales are not exact for the anamorphic model.
+     * @param[in] factorW horizontal scale factor
+     * @param[in] factorH vertical scale factor
+     */
+    void rescale(float factorW, float factorH) override;
+
     float getMaximalDistortion([[maybe_unused]] double minRadius, double maxRadius) const override
     {
         if (_pDistortion == nullptr)
