@@ -317,6 +317,28 @@ bool Equidistant::isVisibleRay(const Vec3& ray) const
 
 EINTRINSIC Equidistant::getType() const { return EINTRINSIC::EQUIDISTANT_CAMERA; }
 
+bool Equidistant::operator==(const IntrinsicBase& otherBase) const
+{
+    if (!IntrinsicScaleOffsetDisto::operator==(otherBase))
+    {
+        return false;
+    }
+
+    // Same type, checked by the parent class.
+    const Equidistant& other = static_cast<const Equidistant&>(otherBase);
+
+    return _circleRadius == other._circleRadius && _circleCenter == other._circleCenter;
+}
+
+void Equidistant::rescale(float factorW, float factorH)
+{
+    IntrinsicScaleOffsetDisto::rescale(factorW, factorH);
+
+    _circleRadius *= factorW;
+    _circleCenter(0) *= factorW;
+    _circleCenter(1) *= factorH;
+}
+
 double Equidistant::getHorizontalFov() const
 {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
