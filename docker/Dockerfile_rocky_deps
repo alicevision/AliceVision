@@ -119,9 +119,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' && \
     "${PYTHON_BUILD_VENV}/bin/python" -c 'import numpy, sys; assert sys.prefix != sys.base_prefix; assert numpy.__version__ == "1.26.4"'
 
-# Allows --target toolchain validation without fetching/building C++ deps.
-FROM toolchain AS deps-base
-
 # =============================================================================
 # CMake — official binary distribution (avoids a full source build)
 # =============================================================================
@@ -129,8 +126,10 @@ FROM toolchain AS deps-base
 # Re-declare ARGs after FROM so they are visible in this build stage
 ARG CMAKE_VERSION
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN wget -qO- "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" | tar xz --strip-components=1 -C /usr/local
+
+# Allows --target toolchain validation without fetching/building C++ deps.
+FROM toolchain AS deps-base
 
 # =============================================================================
 # AliceVision paths
