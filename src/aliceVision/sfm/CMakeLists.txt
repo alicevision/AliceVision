@@ -2,6 +2,8 @@
 set(sfm_bundle_files_headers
     bundle/BundleAdjustment.hpp
     bundle/BundleAdjustmentCeres.hpp
+    bundle/containers/PosesContainer.hpp
+    bundle/containers/IntrinsicsContainer.hpp
     utils/statistics.hpp
     utils/poseFilter.hpp
 )
@@ -9,6 +11,8 @@ set(sfm_bundle_files_headers
 # Sources
 set(sfm_bundle_files_sources
     bundle/BundleAdjustmentCeres.cpp
+    bundle/containers/PosesContainer.cpp
+    bundle/containers/IntrinsicsContainer.cpp
     utils/statistics.cpp
     utils/poseFilter.cpp
 )
