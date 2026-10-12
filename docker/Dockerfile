@@ -67,7 +67,7 @@ RUN --mount=type=bind,from=sources,target=/opt/AliceVision_git,rw \
         -DALICEVISION_BUILD_DOC:BOOL=OFF                          \
         -DALICEVISION_BUILD_SWIG_BINDING:BOOL=ON                  \
         -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV:-/usr}/bin/python" \
-        -DSWIG_DIR:PATH="${AV_INSTALL}/share/swig/4.3.0" -DSWIG_EXECUTABLE:PATH="${AV_INSTALL}/bin-deps/swig" \
+        -DSWIG_EXECUTABLE:PATH="${AV_INSTALL}/bin-deps/swig"      \
         "${AV_DEV}" &&                                            \
     cmake --build . --target install --parallel "${CPU_CORES}" && \
     cmake --build . --target bundle &&                            \
