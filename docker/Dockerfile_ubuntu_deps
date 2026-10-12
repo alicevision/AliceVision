@@ -57,7 +57,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         automake                                                          \
         bison                                                             \
         build-essential                                                   \
-        clang-format                                                      \
         cmake=${CMAKE_VERSION}-0kitware1ubuntu${UBUNTU_VERSION}.1         \
         cmake-data=${CMAKE_VERSION}-0kitware1ubuntu${UBUNTU_VERSION}.1    \
         cpp-12                                                            \
