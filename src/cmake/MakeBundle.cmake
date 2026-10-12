@@ -196,7 +196,8 @@ foreach(_dir
     if(EXISTS "${_dir}")
         file(COPY "${_dir}"
              DESTINATION "${BUNDLE_INSTALL_PREFIX}"
-             USE_SOURCE_PERMISSIONS)
+             USE_SOURCE_PERMISSIONS
+             PATTERN "*.a" EXCLUDE)
     else()
         message(STATUS "  Skipping non-existent directory: ${_dir}")
     endif()
