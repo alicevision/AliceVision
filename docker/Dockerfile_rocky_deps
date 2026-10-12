@@ -19,7 +19,7 @@ ARG CUDA_VERSION
 ARG ROCKY_VERSION
 ARG CMAKE_VERSION=3.31.11
 
-FROM nvidia/cuda:${CUDA_VERSION}-devel-rockylinux${ROCKY_VERSION} AS python-build-env
+FROM nvidia/cuda:${CUDA_VERSION}-devel-rockylinux${ROCKY_VERSION} AS toolchain
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 # =============================================================================
@@ -119,8 +119,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' && \
     "${PYTHON_BUILD_VENV}/bin/python" -c 'import numpy, sys; assert sys.prefix != sys.base_prefix; assert numpy.__version__ == "1.26.4"'
 
-# Allows --target python-build-env validation without fetching/building C++ deps.
-FROM python-build-env AS alicevision-deps
+# Allows --target toolchain validation without fetching/building C++ deps.
+FROM toolchain AS alicevision-deps
 
 # =============================================================================
 # CMake — official binary distribution (avoids a full source build)

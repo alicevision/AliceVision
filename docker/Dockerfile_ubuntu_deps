@@ -19,7 +19,7 @@ ARG CUDA_VERSION
 ARG UBUNTU_VERSION
 ARG CMAKE_VERSION=3.31.11
 
-FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION} AS toolchain
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 # Re-declare ARGs after FROM so they are visible in this build stage
@@ -95,6 +95,9 @@ RUN --mount=type=cache,target=/root/.cache/pip                                \
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11             && \
     python3.11 -m pip install "numpy==1.*"       && \
     ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# Allows --target toolchain validation without fetching/building C++ deps.
+FROM toolchain AS alicevision-deps
 
 # =============================================================================
 # AliceVision paths
