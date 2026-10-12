@@ -89,11 +89,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # =============================================================================
 # Python packages + convenience symlink
+# pip comes from its versioned zipapp, checksum-pinned (get-pip.py is unversioned).
+# numpy is pinned to the same version as in the Rocky image.
 # BuildKit cache mount on pip avoids re-downloading wheels on rebuild.
 # =============================================================================
 RUN --mount=type=cache,target=/root/.cache/pip                                \
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11             && \
-    python3.11 -m pip install "numpy==1.*"       && \
+    curl -sSfL -o /tmp/pip.pyz https://bootstrap.pypa.io/pip/zipapp/pip-25.2.pyz && \
+    echo "769a10214aca718618e7014ec8e70b36288fe9d49a9d7ba3185ea3917e84a4d3  /tmp/pip.pyz" | sha256sum -c - && \
+    python3.11 /tmp/pip.pyz install "pip==25.2" "numpy==1.26.4"            && \
+    rm /tmp/pip.pyz                                                         && \
     ln -sf /usr/bin/python3.11 /usr/bin/python
 
 # Allows --target toolchain validation without fetching/building C++ deps.
