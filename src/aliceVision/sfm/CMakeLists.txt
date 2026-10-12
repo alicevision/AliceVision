@@ -167,6 +167,20 @@ alicevision_add_test(bundle/bundleAdjustment_temporalConstraint_test.cpp
           aliceVision_track
 )
 
+alicevision_add_test(bundle/costIntrinsics_test.cpp
+    NAME "sfm_costIntrinsics"
+    LINKS aliceVision_sfm
+          aliceVision_camera
+)
+
+alicevision_add_test(bundle/bundleAdjustment_undistortion_test.cpp
+    NAME "sfm_bundleAdjustment_undistortion"
+    LINKS aliceVision_sfm
+          aliceVision_camera
+          aliceVision_multiview
+          aliceVision_multiview_test_data
+)
+
 alicevision_add_test(utils/alignment_test.cpp
     NAME "sfm_alignment"
     LINKS
