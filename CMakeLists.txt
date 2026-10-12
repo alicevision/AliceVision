@@ -164,6 +164,7 @@ add_custom_target(bundle
     -DBUNDLE_LIBS_PATHS=${BUNDLE_LIBS_PATHS}
     -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
+    USES_TERMINAL
 )
 
 set_target_properties(bundle PROPERTIES FOLDER Packaging)
