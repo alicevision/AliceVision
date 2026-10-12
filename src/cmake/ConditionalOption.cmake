@@ -25,6 +25,15 @@ function(av_conditional_option)
         return()
     endif()
 
+    # A condition given as a single quoted string (e.g. IF "A AND NOT B") arrives
+    # as one list element, which if() would treat as the name of a variable.
+    # Split it into separate arguments so that it is evaluated as an expression.
+    # Multi-element conditions are left untouched, so quoted values inside them
+    # (e.g. IF X STREQUAL "a b") keep their spaces.
+    list(LENGTH _co_IF _co_IF_LEN)
+    if(_co_IF_LEN EQUAL 1)
+        separate_arguments(_co_IF)
+    endif()
     if(${_co_IF})
         option(${_co_OPT_NAME} ${_opt_DESCRIPTION} ${_co_THEN})
     else()
