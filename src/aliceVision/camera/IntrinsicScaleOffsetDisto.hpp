@@ -59,6 +59,22 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
         }
     }
 
+    // Deep copy of the (un)distortion, as the copy constructor does.
+    IntrinsicScaleOffsetDisto& operator=(const IntrinsicScaleOffsetDisto& other)
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+
+        IntrinsicScaleOffset::operator=(other);
+        _distortionInitializationMode = other._distortionInitializationMode;
+        _pDistortion = other._pDistortion ? std::shared_ptr<Distortion>(other._pDistortion->clone()) : nullptr;
+        _pUndistortion = other._pUndistortion ? std::shared_ptr<Undistortion>(other._pUndistortion->clone()) : nullptr;
+
+        return *this;
+    }
+
     static std::shared_ptr<IntrinsicScaleOffsetDisto> cast(std::shared_ptr<IntrinsicBase> sptr);
 
     void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const IntrinsicScaleOffsetDisto&>(other); }
