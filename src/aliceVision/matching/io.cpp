@@ -7,7 +7,6 @@
 
 #include "io.hpp"
 #include <aliceVision/matching/IndMatch.hpp>
-#include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
 #include <aliceVision/utils/Histogram.hpp>

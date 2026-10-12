@@ -11,7 +11,6 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include <string>
 #include <vector>
 #include <array>
 

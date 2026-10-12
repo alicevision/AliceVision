@@ -11,8 +11,6 @@
 
 #include <boost/math/constants/constants.hpp>
 
-#include <string>
-
 namespace aliceVision {
 
 class Matrix3x3

@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/feature/imageDescriberCommon.hpp>
-#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/stl/FlatMap.hpp>
 #include <aliceVision/types.hpp>

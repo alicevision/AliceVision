@@ -13,8 +13,6 @@
 
 #include <boost/algorithm/string/case_conv.hpp>
 
-#include <exception>
-#include <iterator>
 #include <string>
 
 namespace aliceVision {

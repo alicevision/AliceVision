@@ -9,13 +9,11 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/main.hpp>
-#include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
 
 #include <string>
 #include <sstream>
-#include <vector>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

@@ -9,8 +9,6 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 
-#include <algorithm>
-
 namespace aliceVision {
 
 /**

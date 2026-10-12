@@ -9,11 +9,9 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/config.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
 
-#include <exception>
 #include <iostream>
 #include <fstream>
 

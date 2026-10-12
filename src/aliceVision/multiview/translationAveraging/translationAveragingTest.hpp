@@ -22,7 +22,6 @@
 #include <map>
 #include <utility>
 #include <vector>
-#include <numeric>
 
 using namespace aliceVision;
 using namespace aliceVision::graph;

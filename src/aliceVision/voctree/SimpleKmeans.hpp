@@ -17,7 +17,6 @@
 
 #include <algorithm>
 #include <mutex>
-#include <numeric>
 #include <vector>
 #include <limits>
 #include <stdio.h>

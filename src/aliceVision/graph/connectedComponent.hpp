@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/graph/graph.hpp>

@@ -7,13 +7,11 @@
 
 #include "aliceVision/graph/Triplet.hpp"
 
-#include <iostream>
 #include <vector>
 
 #define BOOST_TEST_MODULE tripletFinder
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision::graph;
 

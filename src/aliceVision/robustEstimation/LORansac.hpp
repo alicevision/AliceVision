@@ -12,9 +12,7 @@
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 #include <limits>
 #include <numeric>
-#include <iostream>
 #include <vector>
-#include <iterator>
 
 namespace aliceVision {
 namespace robustEstimation {

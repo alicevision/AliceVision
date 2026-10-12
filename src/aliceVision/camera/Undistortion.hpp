@@ -11,8 +11,6 @@
 #include <aliceVision/numeric/numeric.hpp>
 
 #include <vector>
-#include <string>
-#include <memory>
 
 namespace aliceVision {
 namespace camera {

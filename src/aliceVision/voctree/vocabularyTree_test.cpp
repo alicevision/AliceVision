@@ -6,14 +6,11 @@
 
 #include <aliceVision/voctree/Database.hpp>
 
-#include <iostream>
-#include <fstream>
 #include <vector>
 
 #define BOOST_TEST_MODULE vocabularyTree
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision::voctree;
 

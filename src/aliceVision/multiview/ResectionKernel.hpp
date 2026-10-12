@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>

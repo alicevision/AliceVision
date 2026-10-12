@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/cmdline/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/main.hpp>
@@ -17,7 +16,6 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 #include <aliceVision/utils/filesIO.hpp>
-#include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/lensCorrectionProfile/lcp.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 #include <aliceVision/camera/IntrinsicScaleOffset.hpp>

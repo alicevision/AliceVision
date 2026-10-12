@@ -11,7 +11,6 @@
 #include <aliceVision/numeric/projection.hpp>
 
 #include <random>
-#include <iostream>
 
 namespace aliceVision {
 namespace sfm {

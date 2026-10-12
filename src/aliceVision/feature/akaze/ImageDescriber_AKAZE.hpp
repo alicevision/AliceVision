@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>

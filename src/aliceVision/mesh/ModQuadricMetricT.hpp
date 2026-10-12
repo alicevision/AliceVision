@@ -60,7 +60,6 @@
     #include <float.h>
     #include <OpenMesh/Tools/Decimater/ModBaseT.hh>
     #include <OpenMesh/Core/Utils/Property.hh>
-    #include <OpenMesh/Core/Utils/vector_cast.hh>
     #include "QuadricMetricT.hpp"
 
 //== NAMESPACE ================================================================

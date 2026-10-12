@@ -9,7 +9,6 @@
 #include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
 #include "aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp"
 #include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
-#include <iostream>
 
 #define BOOST_TEST_MODULE matching
 

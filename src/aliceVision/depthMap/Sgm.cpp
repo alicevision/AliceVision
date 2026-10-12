@@ -10,7 +10,6 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/depthMapUtils.hpp>
 #include <aliceVision/depthMap/volumeIO.hpp>
-#include <aliceVision/depthMap/cuda/host/utils.hpp>
 #include <aliceVision/depthMap/cuda/host/DeviceCache.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceDepthSimilarityMap.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/deviceSimilarityVolume.hpp>

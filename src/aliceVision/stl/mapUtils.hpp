@@ -24,8 +24,6 @@
 // // Retrieve all values
 // transform(m.begin(), m.end(), back_inserter(values), RetrieveValue());
 
-#include <map>
-
 namespace stl {
 
 /// Allow to select the Keys of a map.

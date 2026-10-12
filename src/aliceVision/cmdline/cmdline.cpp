@@ -1,8 +1,5 @@
 #include "cmdline.hpp"
 
-#include <aliceVision/system/cpu.hpp>
-#include <aliceVision/alicevision_omp.hpp>
-
 namespace aliceVision {
 
 bool CmdLine::execute(int argc, char** argv)

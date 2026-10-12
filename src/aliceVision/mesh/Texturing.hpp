@@ -16,7 +16,6 @@
 #include <aliceVision/mesh/Material.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
-#include <aliceVision/stl/bitmask.hpp>
 
 #include <filesystem>
 

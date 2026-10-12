@@ -10,8 +10,6 @@
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
-#include <aliceVision/mvsData/Universe.hpp>
-#include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 
 namespace aliceVision {

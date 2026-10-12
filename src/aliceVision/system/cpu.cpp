@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "cpu.hpp"
-#include "system.hpp"
 
 #ifdef __WINDOWS__
     #include <windows.h>
@@ -131,7 +130,6 @@ int get_total_cpus(void)
 #endif
 
 #if defined linux || defined __linux__ || defined __sun
-    #include <sys/sysinfo.h>
     #include <unistd.h>
 namespace aliceVision {
 namespace system {

@@ -7,8 +7,6 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
 
-#include <vector>
-
 namespace aliceVision {
 namespace sfm {
 

@@ -10,10 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/multiview/NViewDataSet.hpp"
 
-#include <iostream>
-#include <fstream>
 #include <vector>
-#include <iterator>
 #include <utility>
 
 #define BOOST_TEST_MODULE rotationAveraging

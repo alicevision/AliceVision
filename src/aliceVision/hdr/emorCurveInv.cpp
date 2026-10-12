@@ -5,10 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "emorCurve.hpp"
-#include <functional>
-#include <fstream>
-#include <iostream>
-#include <sstream>
 
 namespace aliceVision {
 namespace hdr {

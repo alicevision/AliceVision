@@ -14,7 +14,6 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <exception>
 
 namespace aliceVision {
 namespace feature {
