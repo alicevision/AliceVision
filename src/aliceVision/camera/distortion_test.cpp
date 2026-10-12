@@ -151,12 +151,6 @@ BOOST_AUTO_TEST_CASE(distortion_removeDerivatives)
     auto models = makeDistortionModels();
     for (auto& model : models)
     {
-        // DistortionBrown does not implement the inverse Jacobians (they throw).
-        if (model->getType() == EDISTORTION::DISTORTION_BROWN)
-        {
-            continue;
-        }
-
         for (const Vec2& q : undistortedPoints)
         {
             BOOST_TEST_CONTEXT("model type " << static_cast<int>(model->getType()) << ", undistorted point " << q.transpose())
@@ -167,13 +161,7 @@ BOOST_AUTO_TEST_CASE(distortion_removeDerivatives)
 
                 EXPECT_MATRIX_NEAR(model->getDerivativeRemoveDistoWrtPt(p), dRemoveDp, 1e-5);
 
-                // The radial and fisheye models' getDerivativeRemoveDistoWrtDisto keep the undistorted
-                // radius fixed, which is a first-order approximation of this Jacobian, so it is only
-                // compared for the model that computes it exactly.
-                if (model->getType() == EDISTORTION::DISTORTION_FISHEYE1)
-                {
-                    EXPECT_MATRIX_NEAR(model->getDerivativeRemoveDistoWrtDisto(p), dRemoveDtheta, 1e-5);
-                }
+                EXPECT_MATRIX_NEAR(model->getDerivativeRemoveDistoWrtDisto(p), dRemoveDtheta, 1e-5);
             }
         }
     }
