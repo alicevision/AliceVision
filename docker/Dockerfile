@@ -25,12 +25,13 @@ FROM ${DEPS_IMAGE}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 ARG TARGET_ARCHITECTURE=core
+# Build-time only (an ARG is not kept in the image): full compile command lines.
+ARG VERBOSE=1
 
 ENV AV_DEV=/opt/AliceVision_git         \
     AV_BUILD=/tmp/AliceVision_build     \
     AV_INSTALL=/opt/AliceVision_install \
-    AV_BUNDLE=/opt/AliceVision_bundle   \
-    VERBOSE=1
+    AV_BUNDLE=/opt/AliceVision_bundle
 
 # ENV rather than /etc/profile.d, which only login shells read: plain
 # `docker run <image> aliceVision_...` must see them too.
