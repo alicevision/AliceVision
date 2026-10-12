@@ -43,42 +43,28 @@ Vec2 Equirectangular::project(const Vec4& pt, [[maybe_unused]] bool applyDistort
     return imapt;
 }
 
-Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtPoint3([[maybe_unused]] const Eigen::Matrix4d& T, const Vec4& pt) const
+Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& T, const Vec4& pt) const
 {
-    Vec3 spherical = pt.head(3).normalized();
+    const Vec4 X = T * pt;
+    const Vec3 Xc = X.head(3);
+    const double norm = Xc.norm();
+    const Vec3 spherical = Xc / norm;
 
-    double sx = spherical(0);
-    double sy = spherical(1);
-    double sz = spherical(2);
-    double len = sx * sx + sy * sy;
+    const double sx = spherical(0);
+    const double sy = spherical(1);
+    const double sz = spherical(2);
 
-    double norm = pt.norm();
-    double normsq = norm * norm;
-    double invnormsq = 1.0 / normsq;
+    // spherical = Xc / |Xc|
+    const Eigen::Matrix3d d_spherical_d_Xc = (Eigen::Matrix3d::Identity() - spherical * spherical.transpose()) / norm;
 
-    double d_norm_d_x = pt.x() / norm;
-    double d_norm_d_y = pt.y() / norm;
-    double d_norm_d_z = pt.z() / norm;
-
-    // x / norm; y / norm; z / norm
-    Eigen::Matrix<double, 3, 3> d_spherical_d_pt3;
-    d_spherical_d_pt3(0, 0) = (norm * 1.0 - pt.x() * d_norm_d_x) * invnormsq;
-    d_spherical_d_pt3(0, 1) = (norm * 0.0 - pt.x() * d_norm_d_y) * invnormsq;
-    d_spherical_d_pt3(0, 2) = (norm * 0.0 - pt.x() * d_norm_d_z) * invnormsq;
-    d_spherical_d_pt3(1, 0) = (norm * 0.0 - pt.y() * d_norm_d_x) * invnormsq;
-    d_spherical_d_pt3(1, 1) = (norm * 1.0 - pt.y() * d_norm_d_y) * invnormsq;
-    d_spherical_d_pt3(1, 2) = (norm * 0.0 - pt.y() * d_norm_d_z) * invnormsq;
-    d_spherical_d_pt3(2, 0) = (norm * 0.0 - pt.z() * d_norm_d_x) * invnormsq;
-    d_spherical_d_pt3(2, 1) = (norm * 0.0 - pt.z() * d_norm_d_y) * invnormsq;
-    d_spherical_d_pt3(2, 2) = (norm * 1.0 - pt.z() * d_norm_d_z) * invnormsq;
-
-    // atan2(spherical(0), spherical(2)) ;  asin(spherical(1));
+    // atan2(sx, sz) ;  asin(sy)
+    const double lenxz = sx * sx + sz * sz;
     Eigen::Matrix<double, 2, 3> d_coords_d_spherical = Eigen::Matrix<double, 2, 3>::Zero();
-    d_coords_d_spherical(0, 0) = sz / len;
-    d_coords_d_spherical(0, 2) = -sx / len;
+    d_coords_d_spherical(0, 0) = sz / lenxz;
+    d_coords_d_spherical(0, 2) = -sx / lenxz;
     d_coords_d_spherical(1, 1) = 1.0 / sqrt(1.0 - (sy * sy));
 
-    return getDerivativeCam2ImaWrtPoint() * d_coords_d_spherical * d_spherical_d_pt3;
+    return getDerivativeCam2ImaWrtPoint() * d_coords_d_spherical * d_spherical_d_Xc * T.block<3, 3>(0, 0);
 }
 
 Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtDisto([[maybe_unused]] const Eigen::Matrix4d& pose,
@@ -87,9 +73,10 @@ Eigen::Matrix<double, 2, 3> Equirectangular::getDerivativeTransformProjectWrtDis
     return Eigen::Matrix<double, 2, 3>::Zero();
 }
 
-Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtScale([[maybe_unused]] const Eigen::Matrix4d& pose, const Vec4& pt) const
+Eigen::Matrix<double, 2, 2> Equirectangular::getDerivativeTransformProjectWrtScale(const Eigen::Matrix4d& pose, const Vec4& pt) const
 {
-    Vec3 spherical = pt.head(3).normalized();
+    const Vec4 X = pose * pt;
+    Vec3 spherical = X.head(3).normalized();
 
     Vec2 angles;
     angles.x() = atan2(spherical(0), spherical(2));
@@ -132,18 +119,14 @@ Eigen::Matrix<double, 3, 2> Equirectangular::getDerivativetoUnitSphereWrtPoint(c
     const double latitude = pt(1);
     const double longitude = pt(0);
 
-    Vec3 spherical;
-    spherical.x() = cos(latitude) * sin(longitude);
-    spherical.y() = sin(latitude);
-    spherical.z() = cos(latitude) * cos(longitude);
-
+    // spherical = (cos(lat) sin(lon), sin(lat), cos(lat) cos(lon))
     Eigen::Matrix<double, 3, 2> d_spherical_d_pt;
     d_spherical_d_pt(0, 0) = cos(latitude) * cos(longitude);
+    d_spherical_d_pt(1, 0) = 0.0;
+    d_spherical_d_pt(2, 0) = -cos(latitude) * sin(longitude);
     d_spherical_d_pt(0, 1) = -sin(latitude) * sin(longitude);
-    d_spherical_d_pt(1, 0) = 0;
     d_spherical_d_pt(1, 1) = cos(latitude);
-    d_spherical_d_pt(0, 0) = cos(latitude) * -sin(longitude);
-    d_spherical_d_pt(0, 1) = -sin(latitude) * cos(longitude);
+    d_spherical_d_pt(2, 1) = -sin(latitude) * cos(longitude);
 
     return d_spherical_d_pt;
 }
@@ -165,12 +148,14 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProje
 Eigen::Matrix<double, 2, Eigen::Dynamic> Equirectangular::getDerivativeTransformProjectWrtDistortion([[maybe_unused]] const Eigen::Matrix4d& pose,
                                                                                                      [[maybe_unused]] const Vec4& pt) const
 {
-    return Eigen::Matrix<double, 2, 1>::Zero();
+    // No distortion parameter
+    return Eigen::Matrix<double, 2, Eigen::Dynamic>(2, 0);
 }
 
 Eigen::Matrix<double, 3, Eigen::Dynamic> Equirectangular::getDerivativeBackProjectUnitWrtDistortion([[maybe_unused]] const Vec2& pt2D) const
 {
-    return Eigen::Matrix<double, 3, 1>::Zero();
+    // No distortion parameter
+    return Eigen::Matrix<double, 3, Eigen::Dynamic>(3, 0);
 }
 
 double Equirectangular::imagePlaneToCameraPlaneError([[maybe_unused]] double value) const { return 0.0; }
