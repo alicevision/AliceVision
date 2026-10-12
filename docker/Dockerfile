@@ -32,7 +32,11 @@ ENV AV_DEV=/opt/AliceVision_git         \
     AV_BUNDLE=/opt/AliceVision_bundle   \
     VERBOSE=1
 
-ENV PATH="${AV_BUNDLE}/bin:${PATH}"
+# ENV rather than /etc/profile.d, which only login shells read: plain
+# `docker run <image> aliceVision_...` must see them too.
+ENV PATH="${AV_BUNDLE}/bin:${PATH}"                                          \
+    ALICEVISION_ROOT="${AV_BUNDLE}"                                          \
+    ALICEVISION_SENSOR_DB="${AV_BUNDLE}/share/aliceVision/cameraSensors.db"
 
 WORKDIR "${AV_BUILD}"
 
@@ -68,6 +72,4 @@ RUN --mount=type=bind,from=sources,target=/opt/AliceVision_git,rw \
     cmake --build . --target bundle &&                            \
     { ! test -x /opt/python/bin/python3.11 ||                     \
       /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None'; } && \
-    rm -rf "${AV_BUILD}" && \
-    echo "export ALICEVISION_SENSOR_DB=${AV_BUNDLE}/share/aliceVision/cameraSensors.db" >> /etc/profile.d/alicevision.sh && \
-    echo "export ALICEVISION_ROOT=${AV_BUNDLE}" >> /etc/profile.d/alicevision.sh
+    rm -rf "${AV_BUILD}"
