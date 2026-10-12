@@ -2,7 +2,7 @@
 # Container engine selection — sourced by the build-*.sh scripts.
 #
 # Picks the engine used to build/push the images. Override by exporting
-# CONTAINER_ENGINE=docker|podman; otherwise docker is preferred and podman
+# CONTAINER_ENGINE=docker|podman; otherwise podman is preferred and docker
 # is used as a fallback. BuildKit (needed for the cache mounts in the
 # Dockerfiles) is enabled automatically for docker; podman builds with
 # buildah, which supports those mounts natively.
