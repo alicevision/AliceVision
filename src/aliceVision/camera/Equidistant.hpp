@@ -86,6 +86,8 @@ class Equidistant : public IntrinsicScaleOffsetDisto
 
     Vec2 project(const Vec4& pt, bool applyDistortion = true) const override;
 
+    Vec2 transformProjectDistortionOnly(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
+
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
 
     Eigen::Matrix<double, 2, 2> getDerivativeTransformProjectWrtScale(const Eigen::Matrix4d& pose, const Vec4& pt) const;
@@ -167,6 +169,10 @@ class Equidistant : public IntrinsicScaleOffsetDisto
   protected:
     double _circleRadius{0.0};
     Vec2 _circleCenter{0.0, 0.0};
+
+  private:
+    /// Point of the equidistant camera plane for a point in the camera frame, before distortion.
+    Vec2 cameraPlanePoint(const Vec4& X) const;
 };
 
 }  // namespace camera

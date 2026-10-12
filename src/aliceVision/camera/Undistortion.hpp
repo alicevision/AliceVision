@@ -132,6 +132,13 @@ class Undistortion
 
     Eigen::Matrix<double, 2, 2> getDerivativeUndistortWrtOffset(const Vec2& p);
 
+    /**
+     * @brief Jacobian of undistort(p) with respect to p, in pixels
+     * @param[in] p distorted pixel
+     * @return 2x2 Jacobian
+     */
+    Eigen::Matrix2d getDerivativeUndistortWrtPoint(const Vec2& p) const;
+
     /// add distortion (return p' such that undisto(p') = p)
     Vec2 inverse(const Vec2& p) const;
 

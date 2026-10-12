@@ -58,6 +58,14 @@ Vec2 Pinhole::project(const Vec4& pt, bool applyDistortion) const
     return impt;
 }
 
+Vec2 Pinhole::transformProjectDistortionOnly(const Eigen::Matrix4d& pose, const Vec4& pt) const
+{
+    const Vec4 X = pose * pt;  // apply pose
+    const Vec2 P = X.head<2>() / X(2);
+
+    return this->cam2ima(this->addDistortionOnly(P));
+}
+
 Eigen::Matrix<double, 2, 3> Pinhole::getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& T, const Vec4& pt) const
 {
     const Vec4 X = T * pt;  // apply pose
@@ -114,7 +122,7 @@ Eigen::Matrix<double, 2, 2> Pinhole::getDerivativeTransformProjectWrtScale(const
     const Vec4 X = pose * pt;  // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    const Vec2 distorted = this->addDistortion(P);
+    const Vec2 distorted = this->addDistortionOnly(P);
 
     return getDerivativeCam2ImaWrtScale(distorted);
 }
@@ -156,7 +164,7 @@ Eigen::Matrix<double, 3, 2> Pinhole::getDerivativetoUnitSphereWrtPoint(const Vec
 Eigen::Matrix<double, 3, Eigen::Dynamic> Pinhole::getDerivativeBackProjectUnitWrtParams(const Vec2& pt2D) const
 {
     const Vec2 ptMeters = ima2cam(pt2D);
-    const Vec2 ptUndist = removeDistortion(ptMeters);
+    const Vec2 ptUndist = removeDistortionOnly(ptMeters);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, getParameters().size());
 
@@ -172,7 +180,7 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Pinhole::getDerivativeBackProjectUnitWr
     size_t disto_size = getDistortionParamsSize();
 
     const Vec2 ptMeters = ima2cam(pt2D);
-    const Vec2 ptUndist = removeDistortion(ptMeters);
+    const Vec2 ptUndist = removeDistortionOnly(ptMeters);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, disto_size);
     J = getDerivativetoUnitSphereWrtPoint(ptUndist) * getDerivativeRemoveDistoWrtDisto(ptMeters);

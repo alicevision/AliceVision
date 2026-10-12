@@ -56,6 +56,8 @@ class Equirectangular : public IntrinsicScaleOffsetDisto
 
     Vec2 project(const Vec4& pt, bool applyDistortion = true) const override;
 
+    Vec2 transformProjectDistortionOnly(const Eigen::Matrix4d& pose, const Vec4& pt) const override { return transformProject(pose, pt, false); }
+
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
 
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtDisto(const Eigen::Matrix4d& pose, const Vec4& pt) const;
