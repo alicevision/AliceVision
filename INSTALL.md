@@ -206,7 +206,7 @@ bootstraps pip offline from ensurepip; pip location, isolation, native stdlib
 operations, internal symlinks and license preservation are checked. The helper
 restores the original directory and removes test venvs on exit.
 
-For a Python-only build validation, select Docker target `python-build-env` in
+For a Python-only build validation, select Docker target `toolchain` in
 the Rocky deps Dockerfile with the usual CUDA_VERSION and ROCKY_VERSION build
 arguments; no pre-fetched AliceVision assets or C++ dependency build is needed.
 For release validation, copy only the runtime and this helper into a Python-free
