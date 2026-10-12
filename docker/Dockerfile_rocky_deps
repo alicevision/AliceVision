@@ -120,7 +120,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     "${PYTHON_BUILD_VENV}/bin/python" -c 'import numpy, sys; assert sys.prefix != sys.base_prefix; assert numpy.__version__ == "1.26.4"'
 
 # Allows --target toolchain validation without fetching/building C++ deps.
-FROM toolchain AS alicevision-deps
+FROM toolchain AS deps-base
 
 # =============================================================================
 # CMake — official binary distribution (avoids a full source build)
@@ -159,35 +159,55 @@ RUN { \
 COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
 
 # =============================================================================
-# AliceVision CMake sources
+# CMake sources + dependency build
+#
+# The build tree and the install prefix live in BuildKit cache mounts, which
+# are kept across builds, including failed ones: when a dependency fails, the
+# next build resumes from it (ExternalProject skips the steps already done)
+# instead of rebuilding everything. Changed recipes in src/cmake are picked up
+# as well: ExternalProject reruns the steps whose command changed.
+# Archives are downloaded into ${AV_BUILD}/external/download, in the same cache.
+#
+# Set DEPS_CLEAN=1 (DEPS_NO_CACHE=1 in docker/build-image.sh) to start from
+# scratch, e.g. for release images (no leftovers of older versions in the
+# install prefix): --no-cache does not clear cache mounts.
 # =============================================================================
+FROM deps-base AS deps-build
+
 COPY CMakeLists.txt                        ${AV_DEV}/
 COPY src/cmake/                            ${AV_DEV}/src/cmake/
 
-# =============================================================================
-# Configure + build all dependencies
-#
-# Dependency archives are downloaded by the ExternalProjects into
-# ${AV_BUILD}/external/download, kept across rebuilds by the BuildKit cache
-# mount. The build tree is removed in the same layer (except that cache mount,
-# which is never part of the image) to keep the final image size minimal.
-# =============================================================================
 WORKDIR "${AV_BUILD}"
 
-RUN --mount=type=cache,target=${AV_BUILD}/external/download \
+ARG DEPS_CLEAN=0
+RUN --mount=type=cache,id=alicevision-deps-build-rocky,target=${AV_BUILD},sharing=locked \
+    --mount=type=cache,id=alicevision-deps-install-rocky,target=${AV_INSTALL},sharing=locked \
+    if [ "${DEPS_CLEAN}" = 1 ]; then \
+        find "${AV_INSTALL}" -mindepth 1 -maxdepth 1 -exec rm -rf {} + && \
+        find "${AV_BUILD}" -mindepth 1 -maxdepth 1 ! -name external -exec rm -rf {} + && \
+        { ! test -d "${AV_BUILD}/external" || \
+          find "${AV_BUILD}/external" -mindepth 1 -maxdepth 1 ! -name download -exec rm -rf {} + ; } ; \
+    fi && \
     CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
-    cmake "${AV_DEV}"                               \
-        -DCMAKE_BUILD_TYPE=Release                  \
-        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON    \
-        -DAV_BUILD_ALICEVISION:BOOL=OFF             \
+    cmake "${AV_DEV}" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
+        -DAV_BUILD_ALICEVISION:BOOL=OFF \
         -DPython_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
         -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
-        -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
+        -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" \
         -DAV_BUILD_DEPENDENCIES_PARALLEL=${CPU_CORES} \
     && mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib" \
-    && ln -sf lib "${AV_INSTALL}/lib64"             \
-    && cmake --build . --parallel 1                 \
-    && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
+    && ln -sfn lib "${AV_INSTALL}/lib64" \
+    && cmake --build . --parallel 1 \
     && /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' \
-    && find "${AV_BUILD}" -mindepth 1 -maxdepth 1 ! -name external -exec rm -rf {} + \
-    && find "${AV_BUILD}/external" -mindepth 1 -maxdepth 1 ! -name download -exec rm -rf {} +
+    && rm -rf /export \
+    && cp -a "${AV_INSTALL}" /export \
+    && mv /export/bin /export/bin-deps
+
+# =============================================================================
+# Final image: only the installed dependencies, never the build tree
+# =============================================================================
+FROM deps-base AS alicevision-deps
+
+COPY --from=deps-build /export ${AV_INSTALL}

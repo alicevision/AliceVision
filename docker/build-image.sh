@@ -12,7 +12,9 @@ set -euo pipefail
 #   AV_DEPS_VERSION  (default: set by the wrapper script)
 #   AV_VERSION       (default: <branch>-<short-sha>)
 #   REPO_OWNER       (default alicevision)
-#   DEPS_NO_CACHE    set to a non-empty value to build the deps image with --no-cache
+#   DEPS_NO_CACHE    set to a non-empty value to build the deps image from scratch:
+#                    --no-cache, and DEPS_CLEAN=1 to also clear the cached build tree
+#                    and install prefix (otherwise a build resumes from the last one)
 
 : "${OS:?OS must be set (rocky|ubuntu)}"
 : "${OS_VERSION:?OS_VERSION must be set}"
@@ -59,7 +61,7 @@ print_push() {
 }
 
 deps_no_cache=""
-test -n "${DEPS_NO_CACHE:-}" && deps_no_cache="--no-cache"
+test -n "${DEPS_NO_CACHE:-}" && deps_no_cache="--no-cache --build-arg DEPS_CLEAN=1"
 
 echo "--== BUILD DEPENDENCIES ==--"
 # shellcheck disable=SC2086
