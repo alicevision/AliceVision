@@ -27,6 +27,8 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 ARG TARGET_ARCHITECTURE=core
 # Build-time only (an ARG is not kept in the image): full compile command lines.
 ARG VERBOSE=1
+# One build tree per OS/CUDA flavour; set by docker/build-image.sh.
+ARG AV_BUILD_CACHE_ID=default
 
 ENV AV_DEV=/opt/AliceVision_git         \
     AV_BUILD=/tmp/AliceVision_build     \
@@ -46,7 +48,11 @@ WORKDIR "${AV_BUILD}"
 # would be lost, leaving the build parallelism unbounded and exhausting memory.
 # The sources are bind-mounted rather than COPY'd so they never end up in an
 # image layer (rw: build-time writes are discarded). Path hardcoded = ${AV_DEV}.
+# The build tree lives in a BuildKit cache mount, kept across builds: a source
+# change only recompiles what it affects. The install prefix and the bundle are
+# regular layers, recreated by every build on top of the deps image.
 RUN --mount=type=bind,from=sources,target=/opt/AliceVision_git,rw \
+    --mount=type=cache,id=alicevision-build-${AV_BUILD_CACHE_ID},target=${AV_BUILD},sharing=locked \
     CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) &&                 \
     echo "Build multithreading number of cores: ${CPU_CORES}" &&  \
     cmake -DCMAKE_BUILD_TYPE=Release                              \
@@ -72,5 +78,4 @@ RUN --mount=type=bind,from=sources,target=/opt/AliceVision_git,rw \
     cmake --build . --target install --parallel "${CPU_CORES}" && \
     cmake --build . --target bundle &&                            \
     { ! test -x /opt/python/bin/python3.11 ||                     \
-      /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None'; } && \
-    rm -rf "${AV_BUILD}"
+      /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None'; }
