@@ -235,7 +235,7 @@ void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
         for (int q = 0; q < _options.nbSlicePerOctave; ++q)
         {
             const float sigma_cur = sigma(_options.sigma0, p, q, _options.nbSlicePerOctave);
-            const image::Image<float>& LDetHess = _evolution[_options.nbOctaves * p + q].Lhess;
+            const image::Image<float>& LDetHess = _evolution[_options.nbSlicePerOctave * p + q].Lhess;
 
             // check that the point is under the image limits for the descriptor computation
             const float borderLimit = MathTrait<float>::round(_options.descFactor * sigma_cur * derivativeFactor / ratio) + 1;
@@ -259,7 +259,7 @@ void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
                         point.y = jx * ratio + 0.5 * (ratio - 1);
                         point.angle = 0.0f;
                         point.class_id = p * _options.nbSlicePerOctave + q;
-                        ptsPerSlice[_options.nbOctaves * p + q].emplace_back(point, false);
+                        ptsPerSlice[_options.nbSlicePerOctave * p + q].emplace_back(point, false);
                     }
                 }
             }
