@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.4
+# vim: ft=dockerfile
 
 # =============================================================================
 # Dockerfile_rocky_deps
@@ -8,9 +9,9 @@
 #
 # Build example:
 #   DOCKER_BUILDKIT=1 docker build \
-#     --build-arg CUDA_VERSION=12.1.1 \
+#     --build-arg CUDA_VERSION=12.8.0 \
 #     --build-arg ROCKY_VERSION=9 \
-#     --tag alicevision/alicevision-deps:<version>-rocky9-cuda12.1.1 \
+#     --tag alicevision/alicevision-deps:<version>-rocky9-cuda12.8.0 \
 #     -f docker/Dockerfile_rocky_deps .
 # =============================================================================
 
@@ -18,13 +19,8 @@ ARG CUDA_VERSION
 ARG ROCKY_VERSION
 ARG CMAKE_VERSION=3.31.11
 
-FROM nvidia/cuda:${CUDA_VERSION}-devel-rockylinux${ROCKY_VERSION} AS python-build-env
+FROM nvidia/cuda:${CUDA_VERSION}-devel-rockylinux${ROCKY_VERSION} AS toolchain
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
-
-# Re-declare ARGs after FROM so they are visible in this build stage
-ARG CMAKE_VERSION
-ARG CUDA_VERSION
-ARG ROCKY_VERSION
 
 # =============================================================================
 # System packages + GCC 12 toolset
@@ -37,10 +33,10 @@ ARG ROCKY_VERSION
 # We remove it first: Rocky 9 `alternatives` 1.20 has no --force flag.
 # =============================================================================
 RUN --mount=type=cache,target=/var/cache/dnf \
-    dnf install -y 'dnf-command(config-manager)'                        && \
+    dnf install -y --setopt=keepcache=True 'dnf-command(config-manager)' && \
     dnf config-manager --set-enabled devel                              && \
-    dnf install -y epel-release                                         && \
-    dnf install -y                                                         \
+    dnf install -y --setopt=keepcache=True epel-release                 && \
+    dnf install -y --setopt=keepcache=True                                 \
         gcc-toolset-12-gcc-c++                                            \
         gcc-toolset-12-gcc-gfortran                                     && \
     rm -f /usr/bin/gcc /usr/bin/g++ /usr/bin/cpp                        && \
@@ -50,7 +46,7 @@ RUN --mount=type=cache,target=/var/cache/dnf \
         /opt/rh/gcc-toolset-12/root/usr/bin/g++    60                  && \
     alternatives --install /usr/bin/cpp cpp                               \
         /opt/rh/gcc-toolset-12/root/usr/bin/cpp    60                  && \
-    dnf install -y                                                         \
+    dnf install -y --setopt=keepcache=True                                 \
         automake                                                          \
         bison                                                             \
         ca-certificates                                                   \
@@ -69,6 +65,7 @@ RUN --mount=type=cache,target=/var/cache/dnf \
         xerces-c-devel                                                    \
         yaml-cpp                                                          \
         yasm                                                              \
+        nasm                                                              \
         zstd                                                              \
         ninja-build
 
@@ -92,6 +89,7 @@ RUN gcc --version && g++ --version && gfortran --version
 # =============================================================================
 ENV PYTHON_BUILD_VENV="/opt/python-build-venv"
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN test "$(uname -m)" = x86_64 && \
     mkdir -p /tmp/python-standalone /opt/python && \
     wget -q "https://github.com/astral-sh/python-build-standalone/releases/download/20261001/cpython-3.11.17+20261001-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst" \
@@ -121,86 +119,80 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' && \
     "${PYTHON_BUILD_VENV}/bin/python" -c 'import numpy, sys; assert sys.prefix != sys.base_prefix; assert numpy.__version__ == "1.26.4"'
 
-# Allows --target python-build-env validation without fetching/building C++ deps.
-FROM python-build-env AS alicevision-deps
-
 # =============================================================================
 # CMake — official binary distribution (avoids a full source build)
 # =============================================================================
-RUN wget -q "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh" \
-         -O /tmp/cmake-install.sh                              && \
-    chmod +x /tmp/cmake-install.sh                            && \
-    /tmp/cmake-install.sh --skip-license --prefix=/usr/local  && \
-    rm /tmp/cmake-install.sh
+
+# Re-declare ARGs after FROM so they are visible in this build stage
+ARG CMAKE_VERSION
+
+RUN wget -qO- "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" | tar xz --strip-components=1 -C /usr/local
+
+# Allows --target toolchain validation without fetching/building C++ deps.
+FROM toolchain AS deps-base
 
 # =============================================================================
 # AliceVision paths
 # =============================================================================
 ENV AV_DEV="/opt/AliceVision_git"         \
     AV_BUILD="/tmp/AliceVision_build"     \
-    AV_INSTALL="/opt/AliceVision_install" \
-    PATH="/usr/local/bin:${PATH}"
-
-# =============================================================================
-# Static ML / data assets + environment variables
-# Grouped into one RUN to avoid one layer per echo.
-# =============================================================================
-COPY dl/vlfeat_K80L3.SIFT.tree                 ${AV_INSTALL}/share/aliceVision/
-COPY dl/sphereDetection_Mask-RCNN.onnx         ${AV_INSTALL}/share/aliceVision/
-COPY dl/fcn_resnet50.onnx                      ${AV_INSTALL}/share/aliceVision/
-COPY dl/ColorChartDetectionModel               ${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel/
-
-RUN { \
-    echo "export ALICEVISION_VOCTREE=${AV_INSTALL}/share/aliceVision/vlfeat_K80L3.SIFT.tree"                                 ; \
-    echo "export ALICEVISION_SPHERE_DETECTION_MODEL=${AV_INSTALL}/share/aliceVision/sphereDetection_Mask-RCNN.onnx"          ; \
-    echo "export ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=${AV_INSTALL}/share/aliceVision/fcn_resnet50.onnx"                  ; \
-    echo "export ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=${AV_INSTALL}/share/aliceVision/ColorChartDetectionModel"      ; \
-    } >> /etc/profile.d/alicevision.sh
+    AV_INSTALL="/opt/AliceVision_install"
 
 # =============================================================================
 # CPU core detection helper
 # =============================================================================
 COPY docker/check-cpu.sh ${AV_DEV}/docker/check-cpu.sh
-RUN CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
-    echo "Build multithreading number of cores: ${CPU_CORES}"
 
 # =============================================================================
-# AliceVision CMake sources + pre-fetched dependency archives
-# COPY instructions ordered from least to most frequently changed to maximise
-# Docker layer cache reuse.
+# CMake sources + dependency build
+#
+# The build tree and the install prefix live in BuildKit cache mounts, which
+# are kept across builds, including failed ones: when a dependency fails, the
+# next build resumes from it (ExternalProject skips the steps already done)
+# instead of rebuilding everything. Changed recipes in src/cmake are picked up
+# as well: ExternalProject reruns the steps whose command changed.
+# Archives are downloaded into ${AV_BUILD}/external/download, in the same cache.
+#
+# Set DEPS_CLEAN=1 (DEPS_NO_CACHE=1 in docker/build-image.sh) to start from
+# scratch, e.g. for release images (no leftovers of older versions in the
+# install prefix): --no-cache does not clear cache mounts.
 # =============================================================================
+FROM deps-base AS deps-build
+
 COPY CMakeLists.txt                        ${AV_DEV}/
 COPY src/cmake/                            ${AV_DEV}/src/cmake/
-COPY src/cmake/deps/                       ${AV_DEV}/src/cmake/deps/
-COPY src/cmake/OFA/                        ${AV_DEV}/src/cmake/OFA/
-COPY dl/deps                               ${AV_BUILD}/external/download/
 
-# =============================================================================
-# Configure + build all dependencies
-#
-# Grouped into one RUN so the large build artefacts (AV_BUILD) are removed
-# in the same layer, keeping the final image size minimal.
-# =============================================================================
 WORKDIR "${AV_BUILD}"
 
-RUN mkdir -p "${AV_INSTALL}/bin"                 \
-    && mkdir -p "${AV_INSTALL}/lib"                  \
-    && cmake "${AV_DEV}"                               \
-        -DCMAKE_BUILD_TYPE=Release                  \
-        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON    \
-        -DAV_BUILD_ALICEVISION:BOOL=OFF             \
-        -DAV_BUILD_ZLIB:BOOL=ON                     \
-        -DAV_BUILD_CCTAG:BOOL=ON                    \
+ARG DEPS_CLEAN=0
+RUN --mount=type=cache,id=alicevision-deps-build-rocky,target=${AV_BUILD},sharing=locked \
+    --mount=type=cache,id=alicevision-deps-install-rocky,target=${AV_INSTALL},sharing=locked \
+    if [ "${DEPS_CLEAN}" = 1 ]; then \
+        find "${AV_INSTALL}" -mindepth 1 -maxdepth 1 -exec rm -rf {} + && \
+        find "${AV_BUILD}" -mindepth 1 -maxdepth 1 ! -name external -exec rm -rf {} + && \
+        { ! test -d "${AV_BUILD}/external" || \
+          find "${AV_BUILD}/external" -mindepth 1 -maxdepth 1 ! -name download -exec rm -rf {} + ; } ; \
+    fi && \
+    CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh) && \
+    cmake "${AV_DEV}" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
+        -DAV_BUILD_ALICEVISION:BOOL=OFF \
         -DPython_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
         -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
-        -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}"      \
-        -DAV_BUILD_DEPENDENCIES_PARALLEL=0          \
-    && ln -sf lib "${AV_INSTALL}/lib64"             \
-    && { test -e /usr/local/cuda/lib64/libcublas.so \
-         || ln -s /usr/lib/x86_64-linux-gnu/libcublas.so \
-                  /usr/local/cuda/lib64/libcublas.so; }  \
-    && CPU_CORES=$(${AV_DEV}/docker/check-cpu.sh)   \
-    && cmake --build . --parallel 1    \
-    && mv "${AV_INSTALL}/bin" "${AV_INSTALL}/bin-deps" \
+        -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" \
+        -DAV_BUILD_DEPENDENCIES_PARALLEL=${CPU_CORES} \
+    && mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib" \
+    && ln -sfn lib "${AV_INSTALL}/lib64" \
+    && cmake --build . --parallel 1 \
     && /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' \
-    && rm -rf "${AV_BUILD}"
+    && rm -rf /export \
+    && cp -a "${AV_INSTALL}" /export \
+    && mv /export/bin /export/bin-deps
+
+# =============================================================================
+# Final image: only the installed dependencies, never the build tree
+# =============================================================================
+FROM deps-base AS alicevision-deps
+
+COPY --from=deps-build /export ${AV_INSTALL}
