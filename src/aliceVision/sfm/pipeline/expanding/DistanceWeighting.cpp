@@ -86,6 +86,9 @@ bool weightObservationsFromDistance(sfmData::SfMData & sfmData, size_t neighboor
 
         std::vector<double> knnSquaredDistance(N);
 
+        // Clang cannot capture the structured binding pointCloud in an OpenMP region
+        const auto & pts = pointCloud.pts;
+
         // Find the distance to the Kth nearest neighbor
         #pragma omp parallel
         {
@@ -95,7 +98,7 @@ bool weightObservationsFromDistance(sfmData::SfMData & sfmData, size_t neighboor
             #pragma omp for schedule(static)
             for (size_t i = 0; i < N; ++i)
             {
-                const double query[2] = { pointCloud.pts[i]->getX(), pointCloud.pts[i]->getY() };
+                const double query[2] = { pts[i]->getX(), pts[i]->getY() };
                 index.knnSearch(query, K, indices.data(), sq_dists.data());
                 knnSquaredDistance[i] = std::clamp(sq_dists[K - 1], minSqDist, maxSqDist);
             }
