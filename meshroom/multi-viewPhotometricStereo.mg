@@ -16,7 +16,7 @@
             "PhotometricStereo": "1.0",
             "PrepareDenseScene": "3.1",
             "SfMFilter": "2.0",
-            "SfMTransfer": "2.1",
+            "SfMTransfer": "2.2",
             "SphereDetection": "2.0",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"

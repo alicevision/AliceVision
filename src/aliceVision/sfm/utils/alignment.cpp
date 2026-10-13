@@ -343,6 +343,11 @@ std::map<std::string, IndexT> retrieveMatchingFilepath(const sfmData::SfMData& s
             }
         }
         ALICEVISION_LOG_TRACE("retrieveMatchingFilepath: " << imagePath << " -> " << cumulatedValues);
+        // An empty key identifies nothing: never match on it
+        if (cumulatedValues.empty())
+        {
+            continue;
+        }
         auto it = uniqueFileparts.find(cumulatedValues);
         if (it != uniqueFileparts.end())
         {
@@ -419,6 +424,11 @@ std::map<std::string, IndexT> retrieveUniqueMetadataValues(const sfmData::SfMDat
                 cumulatedValues += mIt->second;
         }
         ALICEVISION_LOG_TRACE("retrieveUniqueMetadataValues: " << viewIt.second->getImage().getImagePath() << " -> " << cumulatedValues);
+        // An empty key identifies nothing: never match on it
+        if (cumulatedValues.empty())
+        {
+            continue;
+        }
         auto it = uniqueMetadataValues.find(cumulatedValues);
         if (it != uniqueMetadataValues.end())
         {

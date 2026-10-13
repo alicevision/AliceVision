@@ -24,7 +24,7 @@
             "Meshing": "7.0",
             "PrepareDenseScene": "3.1",
             "ScenePreview": "2.0",
-            "SfMTransfer": "2.1",
+            "SfMTransfer": "2.2",
             "SfMTriangulation": "1.0",
             "StructureFromMotion": "3.3",
             "Texturing": "6.0"
