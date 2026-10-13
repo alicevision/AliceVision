@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/sfm/pipeline/RigSequence.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -262,7 +261,7 @@ int aliceVision_main(int argc, char** argv)
                         {
                             if (viewA.isPoseIndependant())
                             {
-                                IndexT rigPoseId = sfm::getRigPoseId(viewA.getRigId(), viewA.getFrameId());
+                                IndexT rigPoseId = sfmData::getRigPoseId(viewA.getRigId(), viewA.getFrameId());
                                 viewA.setPoseId(rigPoseId);
                                 viewA.setIndependantPose(false);
                             }

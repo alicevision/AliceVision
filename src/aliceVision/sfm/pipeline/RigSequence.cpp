@@ -9,21 +9,12 @@
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/functional/hash.hpp>
 #include <algorithm>
 
 namespace aliceVision {
 namespace sfm {
 
 using namespace sfmData;
-
-IndexT getRigPoseId(IndexT rigId, IndexT frameId)
-{
-    std::size_t rigPoseId = static_cast<std::size_t>(rigId);
-    boost::hash_combine(rigPoseId, static_cast<std::size_t>(frameId));
-
-    return static_cast<IndexT>(rigPoseId);
-}
 
 double computeCameraScore(const SfMData& sfmData, const track::TracksPerView& tracksPerView, IndexT viewId)
 {
