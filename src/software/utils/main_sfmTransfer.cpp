@@ -310,6 +310,25 @@ void transferMatchingLandmarks(sfmData::SfMData& sfmData,
 
 }
 
+void transferMatchingSurveyPoints(sfmData::SfMData& sfmData,
+                                  const sfmData::SfMData& sfmDataRef,
+                                  const std::vector<std::pair<IndexT, IndexT>>& commonViewIds)
+{
+    ALICEVISION_LOG_INFO("Transfer Survey Points");
+
+    const auto& refSurveyPoints = sfmDataRef.getSurveyPoints();
+
+    // Survey points are stored per view: copy them from each reference view onto its matching destination view
+    for (const auto& [destinationViewId, sourceViewId] : commonViewIds)
+    {
+        const auto it = refSurveyPoints.find(sourceViewId);
+        if (it != refSurveyPoints.end())
+        {
+            sfmData.getSurveyPoints()[destinationViewId] = it->second;
+        }
+    }
+}
+
 int aliceVision_main(int argc, char** argv)
 {
     // command-line parameters
@@ -319,6 +338,7 @@ int aliceVision_main(int argc, char** argv)
     bool transferPoses = true;
     bool transferIntrinsics = true;
     bool transferLandmarks = true;
+    bool transferSurveyPoints = true;
     EMatchingMethod matchingMethod = EMatchingMethod::FROM_VIEWID;
     std::string fileMatchingPattern;
     std::vector<std::string> metadataMatchingList = {"Make", "Model", "Exif:BodySerialNumber", "Exif:LensSerialNumber"};
@@ -353,6 +373,8 @@ int aliceVision_main(int argc, char** argv)
          "Transfer intrinsics.")
         ("transferLandmarks", po::value<bool>(&transferLandmarks)->default_value(transferLandmarks),
          "Transfer landmarks.")
+        ("transferSurveyPoints", po::value<bool>(&transferSurveyPoints)->default_value(transferSurveyPoints),
+         "Transfer survey points.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
          "Path to the output SfMData file with cameras (views and poses).");
     // clang-format on
@@ -365,7 +387,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if (!transferPoses && !transferIntrinsics && !transferLandmarks)
+    if (!transferPoses && !transferIntrinsics && !transferLandmarks && !transferSurveyPoints)
     {
         ALICEVISION_LOG_ERROR("Nothing to do: all transfer options are disabled.");
         return EXIT_FAILURE;
@@ -444,6 +466,11 @@ int aliceVision_main(int argc, char** argv)
         if (transferLandmarks)
         {
             transferMatchingLandmarks(sfmData, sfmDataRef, commonViewIds);
+        }
+
+        if (transferSurveyPoints)
+        {
+            transferMatchingSurveyPoints(sfmData, sfmDataRef, commonViewIds);
         }
     }
 

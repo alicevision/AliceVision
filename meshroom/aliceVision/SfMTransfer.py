@@ -91,6 +91,12 @@ set of images, or for applying externally computed camera parameters.
             description="Transfer landmarks.",
             value=True,
         ),
+        desc.BoolParam(
+            name="transferSurveyPoints",
+            label="Survey Points",
+            description="Transfer survey points.",
+            value=True,
+        ),
         desc.ChoiceParam(
             name="verboseLevel",
             label="Verbose Level",
