@@ -370,13 +370,6 @@ else()
 endif()
 
 # ==============================================================================
-# Nanoflann
-# ==============================================================================
-if (ALICEVISION_BUILD_MVS OR ALICEVISION_BUILD_LIDAR)
-    find_package(nanoflann REQUIRED)
-endif()
-
-# ==============================================================================
 # OpenImageIO
 # ==============================================================================
 find_package(OpenImageIO 3.0 REQUIRED)
@@ -494,11 +487,13 @@ if (ALICEVISION_BUILD_SFM)
 endif()
 
 # ==============================================================================
-# Flann
+# Flann, Nanoflann
 # ==============================================================================
 if (ALICEVISION_BUILD_SFM)
     find_package(lz4 REQUIRED)
     find_package(flann REQUIRED)
+    # Also used by MVS and LIDAR, which both require SFM
+    find_package(nanoflann REQUIRED)
 
     if (TARGET lz4::lz4)
         set(FLANN_LIBRARIES flann::flann_cpp lz4::lz4)
