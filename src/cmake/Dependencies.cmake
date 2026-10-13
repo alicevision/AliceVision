@@ -229,6 +229,7 @@ if(AV_BUILD_ALICEVISION)
         BUILD_ALWAYS      1
         CMAKE_ARGS
             ${CMAKE_CORE_BUILD_FLAGS}
+            ${CUDA_ARCH_CMAKE_FLAGS}
             ${ZLIB_CMAKE_FLAGS}
             ${TBB_CMAKE_FLAGS}
             ${EIGEN_CMAKE_FLAGS}

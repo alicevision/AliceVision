@@ -16,10 +16,11 @@ if(AV_BUILD_CERES)
             ${SUITESPARSE_CMAKE_FLAGS}
             ${EIGEN_CMAKE_FLAGS}
             ${LAPACK_CMAKE_FLAGS}
-            -DACCELERATESPARSE:BOOL=$<IF:$<PLATFORM_ID:Darwin>,ON,OFF>
-            -DSUITESPARSE:BOOL=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>
-            -DLAPACK:BOOL=ON
-            -DMINIGLOG=ON
+            # Since Ceres 2.3 the options are prefixed with WITH_, and SuiteSparse is opt-in
+            -DWITH_ACCELERATESPARSE:BOOL=$<IF:$<PLATFORM_ID:Darwin>,ON,OFF>
+            -DWITH_SUITESPARSE:BOOL=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>
+            -DWITH_LAPACK:BOOL=ON
+            -DWITH_CUDA=OFF  # CUDA solvers unused by AliceVision; drags cuBLAS/cuSOLVER/cuSPARSE
             -DBUILD_EXAMPLES:BOOL=OFF
             -DBUILD_TESTING:BOOL=OFF
         DEPENDS ${EIGEN_TARGET} ${SUITESPARSE_TARGET} ${LAPACK_TARGET}
