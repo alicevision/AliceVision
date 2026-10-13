@@ -6,7 +6,6 @@
 
 #include "panoramaMap.hpp"
 
-#include <iostream>
 #include <list>
 
 namespace aliceVision {

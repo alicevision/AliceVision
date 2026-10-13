@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/feature/Regions.hpp>
 
 namespace aliceVision {

@@ -23,7 +23,6 @@
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/multiview/triangulation/NViewsTriangulationLORansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
-#include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/system/Timer.hpp>

@@ -6,7 +6,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <algorithm>
-#include <iostream>
 #include <vector>
 
 #include <aliceVision/config.hpp>

@@ -8,6 +8,8 @@
 #include <aliceVision/sfmData/ImageSet.hpp>
 #include <aliceVision/sfmData/ImageSequence.hpp>
 
+#include <stdexcept>
+
 namespace aliceVision {
 namespace sfmData {
 

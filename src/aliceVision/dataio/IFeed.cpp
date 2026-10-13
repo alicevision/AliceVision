@@ -11,7 +11,6 @@
 #include <aliceVision/camera/Pinhole.hpp>
 
 #include <fstream>
-#include <exception>
 
 namespace aliceVision {
 namespace dataio {

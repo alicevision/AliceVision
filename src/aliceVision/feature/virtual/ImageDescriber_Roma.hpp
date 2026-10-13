@@ -11,8 +11,6 @@
 #include <aliceVision/feature/regionsFactory.hpp>
 #include <aliceVision/types.hpp>
 
-#include <iostream>
-
 namespace aliceVision {
 namespace feature {
 

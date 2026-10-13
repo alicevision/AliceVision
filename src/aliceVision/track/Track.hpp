@@ -7,18 +7,15 @@
 
 #pragma once
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/stl/FlatMap.hpp>
 
-#include <algorithm>
 #include <iostream>
 #include <functional>
 #include <vector>
 #include <set>
 #include <map>
-#include <memory>
 #include <unordered_map>
 #include <aliceVision/numeric/numeric.hpp>
 

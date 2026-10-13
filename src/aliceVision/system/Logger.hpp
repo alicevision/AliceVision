@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/prettyprint.hpp>
 
 #include <boost/log/trivial.hpp>

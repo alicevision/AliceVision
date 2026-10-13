@@ -24,7 +24,6 @@ alicevision_add_library(aliceVision_mvsUtils
         aliceVision_camera
         aliceVision_image
         aliceVision_numeric
-        aliceVision_multiview
         aliceVision_mvsData
         OpenImageIO::OpenImageIO_Util
     PRIVATE_LINKS

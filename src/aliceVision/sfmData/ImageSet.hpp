@@ -7,9 +7,7 @@
 #pragma once
 
 #include <aliceVision/sfmData/ImageGroup.hpp>
-#include <aliceVision/types.hpp>
 #include <memory>
-#include <set>
 
 namespace aliceVision {
 namespace sfmData {

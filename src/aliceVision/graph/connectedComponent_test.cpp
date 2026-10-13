@@ -7,7 +7,6 @@
 
 #include "aliceVision/graph/graph.hpp"
 
-#include <iostream>
 #include <vector>
 
 #define BOOST_TEST_MODULE connectedComponent

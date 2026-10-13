@@ -6,7 +6,6 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-#include <aliceVision/config.hpp>
 
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>

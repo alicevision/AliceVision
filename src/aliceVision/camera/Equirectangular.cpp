@@ -6,7 +6,6 @@
 
 #include "Equirectangular.hpp"
 
-#include <algorithm>
 #include <cmath>
 
 namespace aliceVision {

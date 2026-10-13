@@ -9,7 +9,6 @@
 #include "aliceVision/multiview/translationAveraging/solver.hpp"
 #include "aliceVision/multiview/translationAveraging/translationAveragingTest.hpp"
 
-#include <fstream>
 #include <map>
 #include <utility>
 #include <vector>

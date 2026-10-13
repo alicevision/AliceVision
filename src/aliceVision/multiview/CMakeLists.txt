@@ -89,8 +89,6 @@ alicevision_add_library(aliceVision_multiview_test_data
     SOURCES ${multiview_files_test_data}
     PUBLIC_LINKS
         aliceVision_numeric
-    PRIVATE_LINKS
-        aliceVision_multiview
 )
 
 # Unit tests

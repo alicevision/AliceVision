@@ -16,7 +16,6 @@
 
 #include <aliceVision/types.hpp>
 
-#include <iosfwd>
 #include <string>
 
 namespace aliceVision {

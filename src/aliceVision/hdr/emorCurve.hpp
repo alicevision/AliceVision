@@ -6,13 +6,9 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cstddef>
 #include <cassert>
 #include <cmath>
-#include <vector>
-#include <array>
-#include <iostream>
 
 namespace aliceVision {
 namespace hdr {

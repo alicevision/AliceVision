@@ -10,7 +10,6 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/dcp.hpp>
-#include <aliceVision/sensorDB/Datasheet.hpp>
 #include <aliceVision/camera/IntrinsicInitMode.hpp>
 #include <aliceVision/lensCorrectionProfile/lcp.hpp>
 
@@ -20,7 +19,6 @@
 
 #include <regex>
 #include <string>
-#include <utility>
 
 namespace aliceVision {
 namespace sfmData {

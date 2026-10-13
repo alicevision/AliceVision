@@ -9,7 +9,6 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <type_traits>
 
 namespace aliceVision {
 namespace image {

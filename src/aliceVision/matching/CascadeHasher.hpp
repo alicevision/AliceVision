@@ -12,7 +12,6 @@
 #include <aliceVision/matching/MatchesCollections.hpp>
 #include <aliceVision/stl/DynamicBitset.hpp>
 
-#include <iostream>
 #include <random>
 #include <cmath>
 

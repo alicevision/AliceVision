@@ -12,7 +12,6 @@
 #include <boost/algorithm/string.hpp>
 
 #include <array>
-#include <exception>
 
 BOOST_AUTO_TEST_CASE(Logger_Enums)
 {

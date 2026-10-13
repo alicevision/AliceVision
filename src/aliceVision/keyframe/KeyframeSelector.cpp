@@ -12,7 +12,6 @@
 #include <aliceVision/camera/Pinhole.hpp>
 
 #include <random>
-#include <tuple>
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>

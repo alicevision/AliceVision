@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/matching/MatchesCollections.hpp>

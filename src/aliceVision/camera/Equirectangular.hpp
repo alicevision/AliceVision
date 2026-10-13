@@ -15,7 +15,6 @@
 #include "DistortionFisheye1.hpp"
 
 #include <memory>
-#include <algorithm>
 
 namespace aliceVision {
 namespace camera {

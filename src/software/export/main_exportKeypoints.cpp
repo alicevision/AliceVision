@@ -25,8 +25,6 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <map>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

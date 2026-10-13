@@ -11,7 +11,6 @@
 #include <aliceVision/numeric/Accumulator.hpp>
 #include <aliceVision/image/convolutionBase.hpp>
 #include <aliceVision/image/Image.hpp>
-#include <aliceVision/config.hpp>
 
 #include <vector>
 #include <cassert>

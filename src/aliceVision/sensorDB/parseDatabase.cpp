@@ -17,7 +17,6 @@
 #include <filesystem>
 #include <algorithm>
 #include <fstream>
-#include <iterator>
 
 namespace fs = std::filesystem;
 

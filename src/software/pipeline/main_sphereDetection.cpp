@@ -20,7 +20,6 @@
 
 #include <filesystem>
 #include <iostream>
-#include <numeric>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>

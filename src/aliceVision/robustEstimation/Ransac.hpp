@@ -10,11 +10,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/robustEstimation/randSampling.hpp"
 #include "aliceVision/robustEstimation/ransacTools.hpp"
-#include <limits>
 #include <numeric>
 #include <vector>
-#include <iostream>
-#include <iterator>
 
 namespace aliceVision {
 namespace robustEstimation {

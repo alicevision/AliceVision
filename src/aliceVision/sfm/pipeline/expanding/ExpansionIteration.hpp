@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/types.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/track/TracksHandler.hpp>
 #include <aliceVision/sfm/pipeline/expanding/ExpansionChunk.hpp>

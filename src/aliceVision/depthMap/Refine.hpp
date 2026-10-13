@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/ROI.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/TileParams.hpp>
 #include <aliceVision/depthMap/Tile.hpp>
@@ -14,7 +13,6 @@
 #include <aliceVision/depthMap/cuda/host/memory.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/similarity.hpp>
 
-#include <vector>
 #include <string>
 
 namespace aliceVision {

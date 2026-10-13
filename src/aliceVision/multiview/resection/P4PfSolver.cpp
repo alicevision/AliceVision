@@ -11,7 +11,6 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
-#include <iostream>
 
 namespace aliceVision {
 namespace multiview {

@@ -11,7 +11,6 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 
-#include <memory>
 #include <random>
 
 namespace aliceVision {

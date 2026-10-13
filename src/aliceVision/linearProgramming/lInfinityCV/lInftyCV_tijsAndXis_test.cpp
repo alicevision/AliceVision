@@ -18,7 +18,6 @@
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri.hpp"
 
-#include <iostream>
 #include <vector>
 
 #define BOOST_TEST_MODULE TranslationStructureLInfinity

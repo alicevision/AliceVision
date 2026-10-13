@@ -7,17 +7,6 @@
 
 #include "View.hpp"
 
-#include <boost/algorithm/string.hpp>
-
-#include <string>
-#include <utility>
-#include <regex>
-
-#include <iostream>
-#include <aliceVision/numeric/gps.hpp>
-#include <aliceVision/sensorDB/parseDatabase.hpp>
-#include <aliceVision/sfmDataIO/viewIO.hpp>
-
 namespace aliceVision {
 namespace sfmData {}  // namespace sfmData
 }  // namespace aliceVision

@@ -10,8 +10,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/linearProgramming/ISolver.hpp>
 
-#include <iostream>
-#include <iterator>
 #include <vector>
 
 namespace aliceVision {
