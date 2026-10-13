@@ -169,9 +169,7 @@ int aliceVision_main(int argc, char** argv)
     {
         case EMatchingMethod::FROM_VIEWID:
         {
-            std::vector<IndexT> commonViewIdsTmp;
-            getCommonViews(sfmData, sfmDataRef, commonViewIdsTmp);
-            for (IndexT id : commonViewIdsTmp)
+            for (IndexT id : sfmData.getCommonViews(sfmDataRef))
             {
                 commonViewIds.push_back(std::make_pair(id, id));
             }

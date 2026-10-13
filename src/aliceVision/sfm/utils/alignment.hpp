@@ -14,17 +14,6 @@
 namespace aliceVision {
 namespace sfm {
 
-inline void getCommonViews(const sfmData::SfMData& sfmDataA, const sfmData::SfMData& sfmDataB, std::vector<IndexT>& outIndexes)
-{
-    for (const auto& viewA : sfmDataA.getViews())
-    {
-        if (sfmDataB.getViews().find(viewA.first) != sfmDataB.getViews().end())
-        {
-            outIndexes.push_back(viewA.first);
-        }
-    }
-}
-
 inline void getCommonViewsWithPoses(const sfmData::SfMData& sfmDataA, const sfmData::SfMData& sfmDataB, std::vector<IndexT>& outIndexes)
 {
     for (const auto& viewA : sfmDataA.getViews())
