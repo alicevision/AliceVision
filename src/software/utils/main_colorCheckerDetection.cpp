@@ -19,7 +19,6 @@
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -34,6 +33,7 @@
 #include <fstream>
 #include <vector>
 #include <limits>
+#include <boost/algorithm/string.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -561,7 +561,7 @@ int aliceVision_main(int argc, char** argv)
         {
             const sfmData::View& view = *(viewIt.second);
 
-            boost::filesystem::path p(view.getImage().getImagePath());
+            fs::path p(view.getImage().getImagePath());
             const std::regex regex = utils::filterToRegex(filter);
             if (processAllImages || std::regex_match(p.generic_string(), regex))
             {
@@ -615,7 +615,7 @@ int aliceVision_main(int argc, char** argv)
         int counter = 0;
         for (const std::string& imgSrcPath : filesStrPaths)
         {
-            boost::filesystem::path p(imgSrcPath);
+            fs::path p(imgSrcPath);
             const std::regex regex = utils::filterToRegex(filter);
             if (processAllImages || std::regex_match(p.generic_string(), regex))
             {

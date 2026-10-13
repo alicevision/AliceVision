@@ -5,7 +5,6 @@
 #include <aliceVision/stl/mapUtils.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/foreach.hpp>
 
 #include <iostream>
 #include <cstdio>
@@ -2385,8 +2384,7 @@ int DCPDatabase::load(const std::string& databaseDirPath, bool force)
     }
 
     fs::path targetDir(databaseDirPath);
-    fs::directory_iterator it(targetDir), eod;
-    BOOST_FOREACH (fs::path const& p, std::make_pair(it, eod))
+    for (fs::path const& p : fs::directory_iterator(targetDir))
     {
         if (fs::is_regular_file(p))
         {

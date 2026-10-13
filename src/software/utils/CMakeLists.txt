@@ -162,7 +162,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_cmdline
               Boost::program_options
               Boost::boost
-              Boost::timer
     )
 
     # Voctree statistics
@@ -420,7 +419,6 @@ if (ALICEVISION_BUILD_SFM)
               Coin::Osi
               Boost::program_options
               Boost::boost
-              Boost::timer
               LEMON::lemon 
     )
 

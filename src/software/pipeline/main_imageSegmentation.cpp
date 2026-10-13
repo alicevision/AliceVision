@@ -30,6 +30,7 @@
 #include <string>
 
 #include <aliceVision/segmentation/segmentation.hpp>
+#include <boost/algorithm/string.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.

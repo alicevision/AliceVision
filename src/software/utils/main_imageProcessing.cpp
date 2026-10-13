@@ -25,7 +25,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/foreach.hpp>
 
 #include <aliceVision/imageProcessing/imageProcessing.hpp>
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)

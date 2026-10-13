@@ -21,11 +21,10 @@
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/sfmData/ImageGroup.hpp>
 
-#include <boost/atomic/atomic_ref.hpp>
+#include <atomic>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
-#include <boost/foreach.hpp>
 
 #include <iostream>
 #include <filesystem>
@@ -438,7 +437,7 @@ int aliceVision_main(int argc, char** argv)
 
         // try to detect rig structure in the input folder
         const fs::path parentPath = fs::path(view.getImage().getImagePath()).parent_path();
-        if (boost::starts_with(parentPath.parent_path().stem().string(), "rig"))
+        if (parentPath.parent_path().stem().string().starts_with("rig"))
         {
             try
             {
@@ -478,7 +477,7 @@ int aliceVision_main(int argc, char** argv)
         std::string toCompare = parentPath.stem().string();
         transform(toCompare.begin(), toCompare.end(), toCompare.begin(), ::tolower);
 
-        if (boost::algorithm::starts_with(toCompare, "ps_") || boost::algorithm::starts_with(parentPath.stem().string(), "hdr_"))
+        if (toCompare.starts_with("ps_") || parentPath.stem().string().starts_with("hdr_"))
         {
             std::hash<std::string> hash;
             IndexT tmpPoseID = hash(parentPath.string());  // use a temporary pose Id to group the images
@@ -518,7 +517,7 @@ int aliceVision_main(int argc, char** argv)
             {
                 ALICEVISION_LOG_ERROR("The specified DCP database for color profiles does not exist or is empty.");
                 // No color profile available
-                boost::atomic_ref<char>{allColorProfilesFound} = 0;
+                std::atomic_ref<char>{allColorProfilesFound} = 0;
             }
             else
             {
@@ -537,7 +536,7 @@ int aliceVision_main(int argc, char** argv)
                     else if (allColorProfilesFound)
                     {
                         // there is a missing color profile for at least one image
-                        boost::atomic_ref<char>{allColorProfilesFound} = 0;
+                        std::atomic_ref<char>{allColorProfilesFound} = 0;
                     }
                 }
             }
@@ -572,7 +571,7 @@ int aliceVision_main(int argc, char** argv)
                 if (intrinsic->getFocalLengthPixX() > 0)
                 {
                     // the view intrinsic is initialized
-                    boost::atomic_ref<std::size_t>(completeViewCount)++;
+                    std::atomic_ref<std::size_t>(completeViewCount)++;
 
                     // don't need to build a new intrinsic
                     continue;
@@ -679,7 +678,7 @@ int aliceVision_main(int argc, char** argv)
         if (intrinsic && intrinsic->isValid())
         {
             // the view intrinsic is initialized
-            boost::atomic_ref<std::size_t>(completeViewCount)++;
+            std::atomic_ref<std::size_t>(completeViewCount)++;
         }
 
         // Create serial number if not already filled

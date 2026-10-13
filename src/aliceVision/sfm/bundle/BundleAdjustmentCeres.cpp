@@ -27,7 +27,7 @@
 
 #include <ceres/rotation.h>
 
-#include <boost/format.hpp>
+#include <format>
 
 #include <filesystem>
 #include <fstream>
@@ -1293,8 +1293,7 @@ void BundleAdjustmentCeres::surveyInfos(const sfmData::SfMData & sfmData) const
 
 ceres::CallbackReturnType BundleAdjustmentCeres::IterationInfos::operator()(const ceres::IterationSummary& summary)
 {
-    ALICEVISION_LOG_DEBUG(boost::format("iteration: %3d cost: %8e change: %3.2e")
-                          % summary.iteration % summary.cost % summary.cost_change);
+    ALICEVISION_LOG_DEBUG(std::format("iteration: {:3d} cost: {:8e} change: {:3.2e}", summary.iteration, summary.cost, summary.cost_change));
     return ceres::SOLVER_CONTINUE;
 }
 

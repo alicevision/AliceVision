@@ -8,13 +8,13 @@
 #pragma once
 
 #include <boost/detail/bitmask.hpp>
-#include <boost/algorithm/string.hpp>
 
 #include <string>
 #include <stdexcept>
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <iterator>
 
 namespace aliceVision {
 namespace camera {

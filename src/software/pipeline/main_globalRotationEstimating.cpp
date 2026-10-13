@@ -104,7 +104,7 @@ int aliceVision_main(int argc, char** argv)
     // Result of pair estimations are stored in multiple files
     std::vector<sfm::ReconstructedPair> reconstructedPairs;
     const std::regex regex("pairs\\_[0-9]+\\.json");
-    for(const fs::directory_entry & file : boost::make_iterator_range(fs::directory_iterator(pairsDirectory), {}))
+    for(const fs::directory_entry & file : fs::directory_iterator(pairsDirectory))
     {
         if (!std::regex_search(file.path().string(), regex))
         {

@@ -27,7 +27,7 @@ class ProgressDisplayImpl
  * This is a generic API to display progress bars. Depending on implementation different
  * destinations for display data may be used. Currently only console output is supported.
  *
- * The API is essentially the same as boost::timer::progress_display
+ * The API is modeled after boost::timer::progress_display
  *
  * For ease of use value semantics are exposed.
  */

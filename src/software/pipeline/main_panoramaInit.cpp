@@ -20,10 +20,12 @@
 #include <random>
 #include <algorithm>
 #include <filesystem>
+#include <numbers>
 
 #include <boost/program_options.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/algorithm/string.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -1041,7 +1043,7 @@ int main(int argc, char* argv[])
         }
         else if (boost::algorithm::contains(initializeCameras, "horizontal"))
         {
-            constexpr double zenithPitch = 0.5 * boost::math::constants::pi<double>();
+            constexpr double zenithPitch = 0.5 * std::numbers::pi;
             const Eigen::AngleAxis<double> zenithMpitch(zenithPitch, Eigen::Vector3d::UnitX());
             const Eigen::AngleAxis<double> zenithMroll(additionalAngle, Eigen::Vector3d::UnitZ());
             const Eigen::Matrix3d oRzenith = zenithMpitch.toRotationMatrix() * zenithMroll.toRotationMatrix();
@@ -1060,7 +1062,7 @@ int main(int argc, char* argv[])
                 if (nbHorizontalViews > 1)
                 {
                     // Vary horizontally between -180 and +180 deg
-                    yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() / double(nbHorizontalViews);
+                    yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * std::numbers::pi / double(nbHorizontalViews);
                 }
 
                 const Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
@@ -1145,7 +1147,7 @@ int main(int argc, char* argv[])
                 if (nbViewsPerLine.size() > 1)
                 {
                     // Vary vertically between -90 and +90 deg
-                    pitch = (-0.5 * boost::math::constants::pi<double>()) + y * boost::math::constants::pi<double>() / double(nbViewsPerLine.size());
+                    pitch = (-0.5 * std::numbers::pi) + y * std::numbers::pi / double(nbViewsPerLine.size());
                 }
 
                 const int nbViews = nbViewsPerLine[y];
@@ -1155,7 +1157,7 @@ int main(int argc, char* argv[])
                     if (nbViews > 1)
                     {
                         // Vary horizontally between -180 and +180 deg
-                        yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * boost::math::constants::pi<double>() / double(nbViews);
+                        yaw = (yawCW ? 1.0 : -1.0) * x * 2.0 * std::numbers::pi / double(nbViews);
                     }
                     const double roll = 0;
 
@@ -1236,13 +1238,13 @@ int main(int argc, char* argv[])
                 switch (orientation)
                 {
                     case sfmData::EEXIFOrientation::UPSIDEDOWN:
-                        orientationAngle = boost::math::constants::pi<double>();
+                        orientationAngle = std::numbers::pi;
                         break;
                     case sfmData::EEXIFOrientation::LEFT:
-                        orientationAngle = boost::math::constants::pi<double>() * .5;
+                        orientationAngle = std::numbers::pi * .5;
                         break;
                     case sfmData::EEXIFOrientation::RIGHT:
-                        orientationAngle = boost::math::constants::pi<double>() * -.5;
+                        orientationAngle = std::numbers::pi * -.5;
                         break;
                     default:
                         break;

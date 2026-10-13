@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ProgressDisplay.hpp"
-#include <boost/timer/progress_display.hpp>
 #include <iostream>
 #include <mutex>
 
@@ -27,38 +26,76 @@ ProgressDisplay::ProgressDisplay()
   : _impl{std::make_shared<ProgressDisplayImplEmpty>()}
 {}
 
-class ProgressDisplayImplBoostProgress : public ProgressDisplayImpl
+// Console progress bar, same output as the former boost::timer::progress_display
+class ProgressDisplayImplConsole : public ProgressDisplayImpl
 {
   public:
-    ProgressDisplayImplBoostProgress(unsigned long expectedCount,
-                                     std::ostream& os,
-                                     const std::string& s1,
-                                     const std::string& s2,
-                                     const std::string& s3)
-      : _display{expectedCount, os, s1, s2, s3}
-    {}
+    ProgressDisplayImplConsole(unsigned long expectedCount,
+                               std::ostream& os,
+                               const std::string& s1,
+                               const std::string& s2,
+                               const std::string& s3)
+      : _os{os},
+        _s1{s1},
+        _s2{s2},
+        _s3{s3}
+    {
+        restart(expectedCount);
+    }
 
-    ~ProgressDisplayImplBoostProgress() override = default;
+    ~ProgressDisplayImplConsole() override = default;
 
-    void restart(unsigned long expectedCount) override { _display.restart(expectedCount); }
+    void restart(unsigned long expectedCount) override
+    {
+        _count = _nextTicCount = _tic = 0;
+        _expectedCount = expectedCount ? expectedCount : 1;  // prevent divide by zero
+
+        _os << _s1 << "0%   10   20   30   40   50   60   70   80   90   100%\n"
+            << _s2 << "|----|----|----|----|----|----|----|----|----|----|" << std::endl
+            << _s3;
+    }
 
     void increment(unsigned long count) override
     {
         std::lock_guard<std::mutex> lock{_mutex};
-        _display += count;
+        if ((_count += count) >= _nextTicCount)
+            displayTic();
     }
 
     unsigned long count() override
     {
         std::lock_guard<std::mutex> lock{_mutex};
-        return _display.count();
+        return _count;
     }
 
-    unsigned long expectedCount() override { return _display.expected_count(); }
+    unsigned long expectedCount() override { return _expectedCount; }
 
   private:
+    void displayTic()
+    {
+        const unsigned int ticsNeeded = static_cast<unsigned int>(static_cast<double>(_count) / static_cast<double>(_expectedCount) * 50.0);
+        do
+        {
+            _os << '*' << std::flush;
+        } while (++_tic < ticsNeeded);
+        _nextTicCount = static_cast<unsigned long>((_tic / 50.0) * static_cast<double>(_expectedCount));
+        if (_count == _expectedCount)
+        {
+            if (_tic < 51)
+                _os << '*';
+            _os << std::endl;
+        }
+    }
+
     std::mutex _mutex;
-    boost::timer::progress_display _display;
+    std::ostream& _os;
+    const std::string _s1;
+    const std::string _s2;
+    const std::string _s3;
+    unsigned long _count = 0;
+    unsigned long _expectedCount = 1;
+    unsigned long _nextTicCount = 0;
+    unsigned int _tic = 0;
 };
 
 ProgressDisplay createConsoleProgressDisplay(unsigned long expectedCount,
@@ -67,7 +104,7 @@ ProgressDisplay createConsoleProgressDisplay(unsigned long expectedCount,
                                              const std::string& s2,
                                              const std::string& s3)
 {
-    auto impl = std::make_shared<ProgressDisplayImplBoostProgress>(expectedCount, os, s1, s2, s3);
+    auto impl = std::make_shared<ProgressDisplayImplConsole>(expectedCount, os, s1, s2, s3);
     return ProgressDisplay(impl);
 }
 

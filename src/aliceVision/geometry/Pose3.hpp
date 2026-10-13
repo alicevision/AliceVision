@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <boost/math/constants/constants.hpp>
+#include <numbers>
 #include <aliceVision/geometry/lie.hpp>
 
 namespace aliceVision {
@@ -92,7 +92,7 @@ inline Pose3 poseFromRT(const Mat3& R, const Vec3& t) { return Pose3(R, -R.trans
 
 inline Pose3 randomPose()
 {
-    Vec3 vecR = Vec3::Random().normalized() * boost::math::constants::pi<double>();
+    Vec3 vecR = Vec3::Random().normalized() * std::numbers::pi;
 
     return geometry::Pose3(SO3::expm(vecR), Vec3::Random());
 }

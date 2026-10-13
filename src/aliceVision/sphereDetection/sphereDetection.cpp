@@ -40,6 +40,7 @@
 // SFMData
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace aliceVision {
 namespace sphereDetection {

@@ -12,8 +12,7 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/function.hpp>
-#include <boost/foreach.hpp>
+#include <functional>
 
 #include <algorithm>
 #include <mutex>
@@ -291,7 +290,7 @@ class SimpleKmeans
 {
   public:
     typedef typename Distance::result_type squared_distance_type;
-    typedef boost::function<void(const std::vector<Feature*>&, std::size_t, std::vector<Feature>&, Distance, const int verbose)> Initializer;
+    typedef std::function<void(const std::vector<Feature*>&, std::size_t, std::vector<Feature>&, Distance, const int verbose)> Initializer;
 
     /**
      * @brief Constructor
@@ -379,7 +378,7 @@ typename SimpleKmeans<Feature, Distance>::squared_distance_type SimpleKmeans<Fea
 {
     std::vector<Feature*> feature_ptrs;
     feature_ptrs.reserve(features.size());
-    BOOST_FOREACH (const Feature& f, features)
+    for (const Feature& f : features)
         feature_ptrs.push_back(const_cast<Feature*>(&f));
     return clusterPointers(feature_ptrs, k, centers, membership);
 }

@@ -38,11 +38,11 @@
 #include <Eigen/SparseCore>
 #include <Eigen/SVD>
 #include <Eigen/StdVector>
-#include <boost/math/constants/constants.hpp>
 
 #include <algorithm>
 #include <cmath>
 #include <numeric>
+#include <numbers>
 #include <string>
 #include <iostream>
 #include <vector>
@@ -184,7 +184,7 @@ template<typename T>
 inline T degreeToRadian(T degree)
 {
     static_assert(std::is_floating_point<T>::value, "degreeToRadian: must be floating point.");
-    return degree * boost::math::constants::pi<T>() / 180.0;
+    return degree * std::numbers::pi_v<T> / 180.0;
 }
 
 // Radian to degree
@@ -192,7 +192,7 @@ template<typename T>
 inline T radianToDegree(T radian)
 {
     static_assert(std::is_floating_point<T>::value, "radianToDegree: must be floating point.");
-    return radian / boost::math::constants::pi<T>() * 180.0;
+    return radian / std::numbers::pi_v<T> * 180.0;
 }
 
 /// Return in radian the mean rotation amplitude of the given rotation matrix

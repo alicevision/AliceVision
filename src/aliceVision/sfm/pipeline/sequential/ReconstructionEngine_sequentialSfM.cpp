@@ -35,7 +35,7 @@
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
-#include <boost/format.hpp>
+#include <format>
 #include <boost/functional/hash.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
@@ -1430,15 +1430,15 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     const std::size_t nBestScores = std::min(std::size_t(50), bestImagePairs.size());
     std::sort(bestImagePairs.begin(), bestImagePairs.end(), std::greater<ImagePairScore>());
     ALICEVISION_LOG_DEBUG(bestImagePairs.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
-    ALICEVISION_LOG_DEBUG(boost::format("%=25s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
+    ALICEVISION_LOG_DEBUG(std::format("{:^25} | {:^15} | {:^15} | {:^15} | {:^15}", "Pair", "Score", "ImagePairScore", "Angle", "NbMatches"));
     ALICEVISION_LOG_DEBUG(std::string(25 + 15 * 4 + 3 * 4, '-'));
     for (std::size_t i = 0; i < nBestScores; ++i)
     {
         const ImagePairScore& s = bestImagePairs[i];
         const Pair& currPair = std::get<4>(s);
         const std::string pairIdx = std::to_string(currPair.first) + ", " + std::to_string(currPair.second);
-        ALICEVISION_LOG_DEBUG(boost::format("%=25s | %+15.1f | %+15.1f | %+15.1f | %+15f") % pairIdx % std::get<0>(s) % std::get<1>(s) %
-                              std::get<2>(s) % std::get<3>(s));
+        ALICEVISION_LOG_DEBUG(std::format("{:^25} | {:+15.1f} | {:+15.1f} | {:+15.1f} | {:+15}", pairIdx, std::get<0>(s), std::get<1>(s),
+                              std::get<2>(s), std::get<3>(s)));
     }
     if (bestImagePairs.empty())
     {

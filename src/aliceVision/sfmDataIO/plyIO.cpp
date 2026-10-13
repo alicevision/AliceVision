@@ -12,6 +12,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <list>
 
 namespace aliceVision {
 namespace sfmDataIO {

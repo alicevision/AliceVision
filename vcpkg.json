@@ -2,7 +2,6 @@
   "dependencies": [
     "boost-algorithm",
     "boost-accumulators",
-    "boost-atomic",
     "boost-container",
     "boost-date-time",
     "boost-exception",
@@ -18,7 +17,6 @@
     "boost-system",
     "boost-test",
     "boost-thread",
-    "boost-timer",
     "boost-format",
     "libe57format",
     "assimp",
