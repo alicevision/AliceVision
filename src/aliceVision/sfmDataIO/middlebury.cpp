@@ -118,7 +118,11 @@ sfmData::SfMData middleburySceneToSfmData(const std::string& filename,
         {
             ALICEVISION_LOG_DEBUG("matK " << matK);
             // add the intrinsics
-            scene.getIntrinsics().insert({intrinsicsId, std::make_shared<camera::Pinhole>(imageWidth, imageHeight, matK)});
+            auto intrinsic = std::make_shared<camera::Pinhole>();
+            intrinsic->setWidth(imageWidth);
+            intrinsic->setHeight(imageHeight);
+            intrinsic->setK(matK);
+            scene.getIntrinsics().insert({intrinsicsId, intrinsic});
             if (lockIntrinsics)
             {
                 scene.getIntrinsics().at(intrinsicsId)->lock();

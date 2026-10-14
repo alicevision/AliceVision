@@ -437,15 +437,12 @@ BOOST_AUTO_TEST_CASE(intrinsicState_pinholeK)
     Mat3 K;
     K << 1500.0, 0.0, 970.0, 0.0, 1520.0, 532.0, 0.0, 0.0, 1.0;
 
-    // The offset is relative to the image center.
-    const Pinhole fromK(1920, 1080, K);
-    EXPECT_MATRIX_NEAR(fromK.K(), K, 1e-12);
-    EXPECT_MATRIX_NEAR(fromK.getOffset(), Vec2(10.0, -8.0), 1e-12);
-    EXPECT_MATRIX_NEAR(fromK.getPrincipalPoint(), Vec2(970.0, 532.0), 1e-12);
-
     Pinhole intrinsic(1920, 1080, 1.0, 1.0, 0.0, 0.0);
     intrinsic.setK(K);
     EXPECT_MATRIX_NEAR(intrinsic.K(), K, 1e-12);
+    // The offset is relative to the image center.
+    EXPECT_MATRIX_NEAR(intrinsic.getOffset(), Vec2(10.0, -8.0), 1e-12);
+    EXPECT_MATRIX_NEAR(intrinsic.getPrincipalPoint(), Vec2(970.0, 532.0), 1e-12);
 
     intrinsic.setK(1000.0, 1100.0, 900.0, 500.0);
     Mat3 expected;
