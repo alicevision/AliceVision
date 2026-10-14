@@ -211,7 +211,12 @@ void detectDuplicates(std::vector<std::pair<AKAZEKeypoint, bool>>& previous, std
 
             // check spatial distance
             const float dist = Square(p1->first.x - p2->first.x) + Square(p1->first.y - p2->first.y);
-            if (dist <= Square(p1->first.size) && dist != 0.f)
+
+            // same position on the same slice: this is the keypoint itself
+            if (dist == 0.f && p1->first.class_id == p2->first.class_id)
+                continue;
+
+            if (dist <= Square(p1->first.size))
             {
                 if (p1->first.response < p2->first.response)
                     p1->second = true;  // mark as duplicate key point

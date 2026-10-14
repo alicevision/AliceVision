@@ -96,3 +96,37 @@ BOOST_AUTO_TEST_CASE(AKAZE_featureDetection_sliceIndex)
     // the test is only meaningful if keypoints are found beyond the first octave
     BOOST_CHECK_GT(nbKeypointsUpperOctaves, 0);
 }
+
+// A structure detected at the same pixel on two adjacent slices of an octave must be kept only once.
+BOOST_AUTO_TEST_CASE(AKAZE_featureDetection_noExactDuplicates)
+{
+    AKAZEOptions options;
+    options.threshold = 0.0001f;
+    options.maxTotalKeypoints = 0;
+
+    const image::Image<float> img = makeBlobImage(256);
+
+    AKAZE akaze(img, options);
+    akaze.computeScaleSpace();
+
+    std::vector<AKAZEKeypoint> keypoints;
+    akaze.featureDetection(keypoints);
+
+    BOOST_REQUIRE(!keypoints.empty());
+
+    std::size_t nbExactDuplicates = 0;
+    for (std::size_t i = 0; i < keypoints.size(); ++i)
+    {
+        for (std::size_t j = i + 1; j < keypoints.size(); ++j)
+        {
+            const AKAZEKeypoint& a = keypoints[i];
+            const AKAZEKeypoint& b = keypoints[j];
+            const bool adjacentSlices = a.octave == b.octave && std::abs(static_cast<int>(a.class_id) - static_cast<int>(b.class_id)) == 1;
+
+            if (adjacentSlices && a.x == b.x && a.y == b.y)
+                ++nbExactDuplicates;
+        }
+    }
+
+    BOOST_CHECK_EQUAL(nbExactDuplicates, 0);
+}
