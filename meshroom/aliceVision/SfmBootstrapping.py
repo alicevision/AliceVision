@@ -4,7 +4,9 @@ from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
 
 
-class SfMBootStrapping(desc.AVCommandLineNode):
+class SfMBootStrapping(desc.AVCommandLineNode,
+                       desc.interface.FeatureProviderInterface,
+                       desc.interface.TrackProviderInterface):
     """
 Initialize the incremental Structure-from-Motion reconstruction by selecting the best initial image pair.
 
@@ -116,3 +118,20 @@ The output is a partially initialized SfMData with the first two cameras localiz
             value="{nodeCacheFolder}/cameras.sfm",
         )
     ]
+
+    
+
+    def getFeaturesFolders(self, node) -> list:
+        folders = []
+        for provider in self.upstreamNodesWithInterface(node, node.tracksFilename, "FeatureProviderInterface"):
+            folders.extend(provider.nodeDesc.getFeaturesFolders(provider))
+        return folders
+    
+    def getDescriberTypes(self, node) -> list:
+        describerTypes = []
+        for provider in self.upstreamNodesWithInterface(node, node.tracksFilename, "FeatureProviderInterface"):
+            describerTypes.extend(provider.nodeDesc.getDescriberTypes(provider))
+        return describerTypes
+
+    def getTracksFile(self, node) -> str:
+        return node.tracksFilename.value
