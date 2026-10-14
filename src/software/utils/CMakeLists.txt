@@ -50,6 +50,19 @@ if (ALICEVISION_BUILD_SFM)
               ${Boost_LIBRARIES}
     )
 
+    alicevision_add_software(aliceVision_meshResection 
+        SOURCE main_meshResection.cpp
+        FOLDER ${FOLDER_SOFTWARE_UTILS}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              aliceVision_sfm
+              Boost::program_options
+              Boost::json
+              ${Boost_LIBRARIES}
+    )
+
     alicevision_add_software(aliceVision_maskProcessing 
         SOURCE main_maskProcessing.cpp
         FOLDER ${FOLDER_SOFTWARE_UTILS}
