@@ -27,6 +27,26 @@ using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
 
+/*
+ * sfmTransfer copies data from a reference SfMData onto a destination SfMData.
+ *
+ * The views of the destination are never added nor removed, and rigs are never created.
+ *
+ * With the from_viewid, from_filepath and from_metadata methods, destination views are first matched
+ * one-to-one with reference views (see findMatchingViews), then each enabled component is transferred:
+ *  - poses (transferMatchingPoses): rig-aware copy, existing poses are overwritten;
+ *  - intrinsics (transferMatchingIntrinsics): destination intrinsics are overwritten, or split if
+ *    their views match several reference intrinsics, and never merged;
+ *  - landmarks (transferMatchingLandmarks): destination landmarks are replaced by the reference ones;
+ *  - survey points (transferMatchingSurveyPoints): replaced per matched view.
+ * Destination views which are not matched keep their data, except that they share any overwritten intrinsic.
+ *
+ * With the from_poseid and from_intrinsicid methods, no view matching is done and the transfer options
+ * are ignored: only the poses (resp. intrinsics) with the same ID in both scenes are overwritten.
+ *
+ * In all cases, unused poses, intrinsics and landmarks without observations are removed before saving.
+ */
+
 /**
  * @brief Matching Views method enum
  */
@@ -95,6 +115,23 @@ inline std::istream& operator>>(std::istream& in, EMatchingMethod& alignment)
 
 inline std::ostream& operator<<(std::ostream& os, EMatchingMethod e) { return os << EMatchingMethod_enumToString(e); }
 
+/**
+ * @brief Build the (destination view ID, reference view ID) pairs of matching views.
+ *        - FROM_VIEWID: views with the same view ID in both scenes.
+ *        - FROM_FILEPATH: views whose image paths give the same key, the key being the concatenation of the
+ *          groups captured by fileMatchingPattern (or the full path if the pattern is empty).
+ *        - FROM_METADATA: views whose concatenated values of the metadataMatchingList entries are equal.
+ *        For FROM_FILEPATH and FROM_METADATA, a key shared by several views of one scene is ambiguous and
+ *        all these views are discarded, so the matching is always one-to-one. Views with an empty key
+ *        (path not matching the pattern, or none of the metadata) are never matched.
+ * @param[in] sfmData The destination SfMData
+ * @param[in] sfmDataRef The reference SfMData
+ * @param[in] matchingMethod The matching method (FROM_POSEID and FROM_INTRINSICID are not supported here)
+ * @param[in] fileMatchingPattern Regex used by FROM_FILEPATH
+ * @param[in] metadataMatchingList Metadata keys used by FROM_METADATA
+ * @param[out] commonViewIds Matching (destination view ID, reference view ID) pairs
+ * @return false if the matching method is not supported
+ */
 bool findMatchingViews(const sfmData::SfMData& sfmData,
                        const sfmData::SfMData& sfmDataRef,
                        EMatchingMethod matchingMethod,
@@ -136,6 +173,22 @@ bool findMatchingViews(const sfmData::SfMData& sfmData,
  *        If both views are rig-dependent, the rig structure is kept: the rig (frame) pose and the
  *        sub-pose of the source view are copied into the destination rig.
  *        Otherwise, the absolute pose of the source view is copied as an independent pose.
+ *
+ *        Pairs whose reference view has no valid pose and intrinsic are skipped.
+ *        The resection ID of the reference view is copied onto the destination view.
+ *
+ *        Rig case (reference view rig-dependent and destination rig existing):
+ *        - the destination view is attached to the rig pose getRigPoseId(rigId, frameId), and made rig-dependent;
+ *        - this rig pose is overwritten with the reference rig (frame) pose. If several reference frames
+ *          target the same destination frame, a warning is emitted and the last one is kept;
+ *        - only the sub-pose of this destination view is overwritten (sub-poses are resized if needed),
+ *          the other sub-poses of the destination rig are kept.
+ *
+ *        Independent case: the reference absolute pose (rig pose composed with sub-pose if rig-dependent)
+ *        is written. A rig-dependent destination view is detached from its rig: its pose ID becomes its
+ *        view ID. Any existing pose with this ID is overwritten.
+ *
+ *        Destination poses no longer used are removed by the final cleanup.
  * @param[in,out] sfmData The destination SfMData
  * @param[in] sfmDataRef The reference SfMData
  * @param[in] commonViewIds Matching (destination view ID, reference view ID) pairs
@@ -212,6 +265,13 @@ void transferMatchingPoses(sfmData::SfMData& sfmData,
  *        onto a new destination intrinsic holding a copy of it.
  *        Destination intrinsics are never merged, even if they match the same reference intrinsic.
  *
+ *        Pairs whose reference view has no valid pose and intrinsic are skipped.
+ *        As the first copy overwrites the destination intrinsic in place, unmatched destination views
+ *        using this intrinsic also get the reference values.
+ *        A destination view whose intrinsic ID does not exist gets a new intrinsic.
+ *        New intrinsic IDs are allocated after the highest existing ID.
+ *        Intrinsics are cloned, so the camera model of the destination may change.
+ *
  * @param[in,out] sfmData The destination SfMData
  * @param[in] sfmDataRef The reference SfMData
  * @param[in] commonViewIds Matching (destination view ID, reference view ID) pairs
@@ -262,6 +322,17 @@ void transferMatchingIntrinsics(sfmData::SfMData& sfmData,
     }
 }
 
+/**
+ * @brief Replace the destination landmarks by the reference landmarks seen by matching views.
+ *        If the reference SfMData has no landmarks, the destination landmarks are kept untouched.
+ *        Otherwise, all destination landmarks are discarded. Each reference landmark is copied with its ID,
+ *        its observations being re-indexed onto the destination view IDs. Observations in unmatched reference
+ *        views are dropped, as well as landmarks without any remaining observation.
+ *        The reference views are not required to be reconstructed.
+ * @param[in,out] sfmData The destination SfMData
+ * @param[in] sfmDataRef The reference SfMData
+ * @param[in] commonViewIds Matching (destination view ID, reference view ID) pairs
+ */
 void transferMatchingLandmarks(sfmData::SfMData& sfmData,
                                const sfmData::SfMData& sfmDataRef,
                                const std::vector<std::pair<IndexT, IndexT>>& commonViewIds)
@@ -310,6 +381,14 @@ void transferMatchingLandmarks(sfmData::SfMData& sfmData,
 
 }
 
+/**
+ * @brief Transfer the survey points of the reference views onto their matching destination views.
+ *        Survey points are stored per view: for each matching pair where the reference view has survey points,
+ *        they replace the survey points of the destination view. Other destination views keep their survey points.
+ * @param[in,out] sfmData The destination SfMData
+ * @param[in] sfmDataRef The reference SfMData
+ * @param[in] commonViewIds Matching (destination view ID, reference view ID) pairs
+ */
 void transferMatchingSurveyPoints(sfmData::SfMData& sfmData,
                                   const sfmData::SfMData& sfmDataRef,
                                   const std::vector<std::pair<IndexT, IndexT>>& commonViewIds)
@@ -362,19 +441,25 @@ int aliceVision_main(int argc, char** argv)
          "\t- from_filepath: Match views with a filepath matching, using --fileMatchingPattern.\n"
          "\t- from_metadata: Match views with matching metadata, using --metadataMatchingList.\n"
          "\t- from_poseid: Update poses with the same pose ID. Only the poses will be updated.\n"
-         "\t- from_intrinsicid: Update intrinsics with the same intrinsic ID. Only the intrinsics will be updated.\n")
+         "\t- from_intrinsicid: Update intrinsics with the same intrinsic ID. Only the intrinsics will be updated.\n"
+         "The from_poseid and from_intrinsicid methods ignore the transfer options.\n")
         ("fileMatchingPattern", po::value<std::string>(&fileMatchingPattern)->default_value(fileMatchingPattern),
-         "Matching pattern for the from_filepath method.\n")
+         "Matching regex for the from_filepath method. The captured groups are concatenated to build the matching key.\n"
+         "If empty, the full image path is used. Keys shared by several views of a scene are ignored.\n")
         ("metadataMatchingList", po::value<std::vector<std::string>>(&metadataMatchingList)->multitoken()->default_value(metadataMatchingList),
-         "List of metadata that should match to create the correspondences.\n")
+         "List of metadata that should match to create the correspondences (from_metadata method).\n"
+         "Values shared by several views of a scene are ignored.\n")
         ("transferPoses", po::value<bool>(&transferPoses)->default_value(transferPoses),
-         "Transfer poses.")
+         "Transfer poses of the reconstructed reference views onto the matched views. "
+         "The rig structure is kept if both views are rig-dependent, otherwise the view gets an independent pose.")
         ("transferIntrinsics", po::value<bool>(&transferIntrinsics)->default_value(transferIntrinsics),
-         "Transfer intrinsics.")
+         "Transfer intrinsics of the reconstructed reference views onto the matched views. "
+         "A destination intrinsic is overwritten, or split if its views match different reference intrinsics.")
         ("transferLandmarks", po::value<bool>(&transferLandmarks)->default_value(transferLandmarks),
-         "Transfer landmarks.")
+         "Replace the destination landmarks by the reference landmarks observed in matched views. "
+         "Nothing is done if the reference scene has no landmarks.")
         ("transferSurveyPoints", po::value<bool>(&transferSurveyPoints)->default_value(transferSurveyPoints),
-         "Transfer survey points.")
+         "Replace the survey points of each matched view by the ones of its reference view, if any.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
          "Path to the output SfMData file with cameras (views and poses).");
     // clang-format on
@@ -411,7 +496,8 @@ int aliceVision_main(int argc, char** argv)
 
     if (matchingMethod == EMatchingMethod::FROM_INTRINSICID)
     {
-        // Copy matching intrinsics from the reference SfMData to the input SfMData
+        // Copy matching intrinsics from the reference SfMData to the input SfMData.
+        // Intrinsics are matched by ID only, views and other components are left untouched.
         for (auto& [idIntrinsic, intrinsic] : sfmData.getIntrinsics())
         {
             const auto intrinsicRef = sfmDataRef.getIntrinsics().find(idIntrinsic);
@@ -423,7 +509,8 @@ int aliceVision_main(int argc, char** argv)
     }
     else if (matchingMethod == EMatchingMethod::FROM_POSEID)
     {
-        // Copy matching poses from the reference SfMData to the input SfMData
+        // Copy matching poses from the reference SfMData to the input SfMData.
+        // Poses are matched by ID only, without any rig handling. Other components are left untouched.
         for (auto& view : sfmData.getViews())
         {
             auto pose = sfmDataRef.getPoses().find(view.second->getPoseId());
