@@ -157,13 +157,17 @@ if(CMAKE_PREFIX_PATH)
     endforeach()
 endif()
 
+# BUNDLE_LIBS_PATHS is a list: quote it to pass it as a single argument,
+# and use VERBATIM so its ';' separators are escaped for the shell
 add_custom_target(bundle
-    ${CMAKE_COMMAND}
+    COMMAND ${CMAKE_COMMAND}
     -DBUNDLE_INSTALL_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-    -DBUNDLE_LIBS_PATHS=${BUNDLE_LIBS_PATHS}
+    "-DBUNDLE_LIBS_PATHS=${BUNDLE_LIBS_PATHS}"
     -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
+    VERBATIM
+    USES_TERMINAL
 )
 
 set_target_properties(bundle PROPERTIES FOLDER Packaging)
