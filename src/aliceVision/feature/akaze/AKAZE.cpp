@@ -12,6 +12,8 @@
 #include <aliceVision/feature/imageStats.hpp>
 #include <aliceVision/system/Logger.hpp>
 
+#include <cassert>
+
 namespace aliceVision {
 namespace feature {
 
@@ -169,6 +171,10 @@ void AKAZE::computeScaleSpace()
     float contrastFactor = computeAutomaticContrastFactor(_input, 0.7f);
     image::Image<float> input = _input;
 
+    // start from an empty scale space so that calling this method twice does not append slices
+    _evolution.clear();
+    _evolution.reserve(_options.nbOctaves * _options.nbSlicePerOctave);
+
     // octave computation
     for (int p = 0; p < _options.nbOctaves; ++p)
     {
@@ -230,6 +236,9 @@ void detectDuplicates(std::vector<std::pair<AKAZEKeypoint, bool>>& previous, std
 
 void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
 {
+    // the scale space must have been computed
+    assert(_evolution.size() == static_cast<std::size_t>(_options.nbOctaves * _options.nbSlicePerOctave));
+
     std::vector<std::vector<std::pair<AKAZEKeypoint, bool>>> ptsPerSlice(_options.nbOctaves * _options.nbSlicePerOctave);
 
 #pragma omp parallel for schedule(dynamic)
@@ -239,8 +248,9 @@ void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
 
         for (int q = 0; q < _options.nbSlicePerOctave; ++q)
         {
+            const int sliceIdx = p * _options.nbSlicePerOctave + q;
             const float sigma_cur = sigma(_options.sigma0, p, q, _options.nbSlicePerOctave);
-            const image::Image<float>& LDetHess = _evolution[_options.nbSlicePerOctave * p + q].Lhess;
+            const image::Image<float>& LDetHess = _evolution[sliceIdx].Lhess;
 
             // check that the point is under the image limits for the descriptor computation
             const float borderLimit = MathTrait<float>::round(_options.descFactor * sigma_cur * derivativeFactor / ratio) + 1;
@@ -263,8 +273,8 @@ void AKAZE::featureDetection(std::vector<AKAZEKeypoint>& keypoints) const
                         point.x = ix * ratio + 0.5 * (ratio - 1);
                         point.y = jx * ratio + 0.5 * (ratio - 1);
                         point.angle = 0.0f;
-                        point.class_id = p * _options.nbSlicePerOctave + q;
-                        ptsPerSlice[_options.nbSlicePerOctave * p + q].emplace_back(point, false);
+                        point.class_id = sliceIdx;
+                        ptsPerSlice[sliceIdx].emplace_back(point, false);
                     }
                 }
             }
