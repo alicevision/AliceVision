@@ -53,6 +53,7 @@ set(sfm_files_headers
     utils/poseNoise.hpp
     utils/preprocess.hpp
     utils/syntheticScene.hpp
+    utils/gauge.hpp
     LocalBundleAdjustmentGraph.hpp
     FrustumFilter.hpp
     filters.hpp
@@ -99,6 +100,7 @@ set(sfm_files_sources
     utils/poseNoise.cpp
     utils/preprocess.cpp
     utils/syntheticScene.cpp
+    utils/gauge.cpp
     LocalBundleAdjustmentGraph.cpp
     FrustumFilter.cpp
     generateReport.cpp

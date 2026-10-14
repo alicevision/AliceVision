@@ -55,6 +55,24 @@ public:
     void addFrame(const std::string & cameraName, const sfmData::CameraPose & pose, const camera::Pinhole & camera, IndexT frameId);
 
     /**
+     * @brief Add a frame of camera data with uncertainty ellipsoid.
+     *
+     * Like addFrame(), but also animates a UsdGeomSphere ellipsoid (sibling of the camera,
+     * in world space) representing the 1-sigma position uncertainty from the 6x6 covariance.
+     *
+     * @param cameraName   The name of the camera to add the frame to
+     * @param pose         The camera pose for this frame
+     * @param intrinsic    The pinhole camera model containing intrinsic parameters
+     * @param uncertainty  The 6x6 pose covariance matrix (DOF: [angleAxis, center])
+     * @param frameId      The frame index/time code for this keyframe
+     */
+    void addFrameWithUncertainty(const std::string & cameraName,
+                                 const sfmData::CameraPose & pose,
+                                 const camera::Pinhole & intrinsic,
+                                 const sfmData::PoseUncertainty & uncertainty,
+                                 IndexT frameId);
+
+    /**
      * @brief Finalize and save the USD file.
      * 
      * Completes the USD export process and writes the data to disk.
