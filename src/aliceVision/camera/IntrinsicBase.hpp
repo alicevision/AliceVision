@@ -441,6 +441,15 @@ class IntrinsicBase
     virtual double getVerticalFov() const = 0;
 
     /**
+     * @brief Convert a pixel distance into an angle, measured at the image center.
+     * Focal scales may differ per axis: the largest angle is kept so that no
+     * pixel displacement within the given distance exceeds it, whatever its direction.
+     * @param[in] pixels The pixel distance
+     * @return The angle in radians
+     */
+    double pixelToAngle(double pixels) const;
+
+    /**
      * @brief Initialize state with default values
      * The estimator state is used in the bundle adjustment to decide if we update it.
      * It is set to constant if the intrinsic is locked
