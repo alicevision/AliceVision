@@ -162,13 +162,41 @@ int aliceVision_main(int argc, char** argv)
                                                 << imageMatch.second.getNbAllMatches() << " putative matches.");
     }
 
+    // Load filters from all chunks of the filters folder,
+    // as the filters chunks may not be aligned with the current chunks.
+    // Only keep filters for the pairs processed in this chunk.
     matchingImageCollection::PairwiseGeometricInfo geometricInfos;
-    std::stringstream ss;
-    ss << filtersFolder << "/matches_" << std::to_string(rangeIteration) << ".json";
-    ALICEVISION_LOG_INFO("Loading from " << ss.str());
-    if (!matchingImageCollection::loadGeometricInfos(ss.str(), geometricInfos))
+    int countFiltersFiles = 0;
+    for (const auto& entry : fs::directory_iterator(filtersFolder))
     {
-        ALICEVISION_LOG_ERROR("Impossible to save geometricInfos");
+        const std::string filename = entry.path().filename().string();
+        if (!entry.is_regular_file() || filename.rfind("matches_", 0) != 0 || entry.path().extension() != ".json")
+        {
+            continue;
+        }
+
+        ALICEVISION_LOG_INFO("Loading from " << entry.path().string());
+        matchingImageCollection::PairwiseGeometricInfo chunkInfos;
+        if (!matchingImageCollection::loadGeometricInfos(entry.path().string(), chunkInfos))
+        {
+            ALICEVISION_LOG_ERROR("Impossible to load geometricInfos from " << entry.path().string());
+            return EXIT_FAILURE;
+        }
+
+        for (const auto& [pair, info] : chunkInfos)
+        {
+            if (filteredMatches.count(pair))
+            {
+                geometricInfos[pair] = info;
+            }
+        }
+
+        countFiltersFiles++;
+    }
+
+    if (countFiltersFiles == 0)
+    {
+        ALICEVISION_LOG_ERROR("No filters found in " << filtersFolder);
         return EXIT_FAILURE;
     }
 
