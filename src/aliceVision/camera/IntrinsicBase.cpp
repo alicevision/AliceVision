@@ -36,6 +36,17 @@ Vec3 IntrinsicBase::backProjectUnit(const Vec2& pt2D) const
     return ptSphere;
 }
 
+double IntrinsicBase::pixelToAngle(double pixels) const
+{
+    const Vec2 center(w() * 0.5, h() * 0.5);
+    const Vec3 b0 = backProjectUnit(center).normalized();
+    const Vec3 bx = backProjectUnit(center + Vec2(pixels, 0.0)).normalized();
+    const Vec3 by = backProjectUnit(center + Vec2(0.0, pixels)).normalized();
+    const double angleX = std::atan2(b0.cross(bx).norm(), b0.dot(bx));
+    const double angleY = std::atan2(b0.cross(by).norm(), b0.dot(by));
+    return std::max(angleX, angleY);
+}
+
 Vec4 IntrinsicBase::getCartesianfromSphericalCoordinates(const Vec3& pt)
 {
     Vec4 rpt;

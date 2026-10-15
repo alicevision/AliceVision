@@ -21,7 +21,8 @@ enum class EGeometricFilterType
     FUNDAMENTAL_WITH_DISTORTION,
     ESSENTIAL_MATRIX,
     HOMOGRAPHY_MATRIX,
-    HOMOGRAPHY_GROWING
+    HOMOGRAPHY_GROWING,
+    ROTATION_MATRIX
 };
 
 /**
@@ -36,7 +37,8 @@ inline std::string EGeometricFilterType_informations()
            "* fundamental_with_distortion: fundamental matrix with F10 solver [Z.Kukelova, 2015]\n"
            "* essential_matrix:            essential matrix\n"
            "* homography_matrix:           homography matrix\n"
-           "* homography_growing:          multiple homography matrices [F.Srajer, 2016]\n";
+           "* homography_growing:          multiple homography matrices [F.Srajer, 2016]\n"
+           "* rotation_matrix:             rotation matrix\n";
 }
 
 /**
@@ -60,6 +62,8 @@ inline std::string EGeometricFilterType_enumToString(EGeometricFilterType geomet
             return "homography_matrix";
         case EGeometricFilterType::HOMOGRAPHY_GROWING:
             return "homography_growing";
+        case EGeometricFilterType::ROTATION_MATRIX:
+            return "rotation_matrix";
     }
     throw std::out_of_range("Invalid geometricFilterType enum");
 }
@@ -86,6 +90,8 @@ inline EGeometricFilterType EGeometricFilterType_stringToEnum(const std::string&
         return EGeometricFilterType::HOMOGRAPHY_MATRIX;
     if (model == "homography_growing")
         return EGeometricFilterType::HOMOGRAPHY_GROWING;
+    if (model == "rotation_matrix")
+        return EGeometricFilterType::ROTATION_MATRIX;
 
     throw std::out_of_range("Invalid geometricFilterType: " + geometricFilterType);
 }
