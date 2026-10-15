@@ -84,9 +84,7 @@ bool robustEssential(Mat3& E,
     if (distanceThreshold > 0.0)
     {
         //From pixel distance to angular error
-        double angularError1 = cam1.getHorizontalFov() * distanceThreshold / cam1.w();
-        double angularError2 = cam2.getHorizontalFov() * distanceThreshold / cam2.w();
-        threshold = std::max(angularError1, angularError2);
+        threshold = std::max(cam1.pixelToAngle(distanceThreshold), cam2.pixelToAngle(distanceThreshold));
     }
 
     robustEstimation::Mat3Model model;
@@ -146,9 +144,7 @@ bool robustRotation(Mat3& R,
     if (distanceThreshold > 0.0)
     {
         //From pixel distance to angular error
-        double angularError1 = cam1.getHorizontalFov() * distanceThreshold / cam1.w();
-        double angularError2 = cam2.getHorizontalFov() * distanceThreshold / cam2.w();
-        threshold = std::max(angularError1, angularError2);
+        threshold = std::max(cam1.pixelToAngle(distanceThreshold), cam2.pixelToAngle(distanceThreshold));
     }
 
     robustEstimation::Mat3Model model;
