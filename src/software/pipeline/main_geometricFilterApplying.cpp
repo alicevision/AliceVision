@@ -20,13 +20,17 @@
 #include <aliceVision/matchingImageCollection/GeometricFilter.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
+#include <aliceVision/camera/camera.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <boost/program_options.hpp>
+#include <functional>
 #include <sstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 namespace po = boost::program_options;
@@ -200,7 +204,12 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    int count = 0;
+    // Lift an image point to a bearing vector (camera space, unit sphere)
+    const auto lift = [](const camera::IntrinsicBase& cam, const Vec2& pt) -> Vec3 {
+        return cam.toUnitSphere(cam.removeDistortion(cam.ima2cam(pt))).normalized();
+    };
+
+    int countSkipped = 0;
     matching::PairwiseMatches finalMatches;
 
     ALICEVISION_LOG_INFO("Processing all pairs");
@@ -215,9 +224,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
         const auto geometricInfo = it->second;
-
-        robustEstimation::Mat3Model model(geometricInfo.model);
-        multiview::relativePose::FundamentalEpipolarDistanceError errorFunc;
+        const Mat3 model = geometricInfo.model;
 
         const IndexT idViewI = pair.first;
         const IndexT idViewJ = pair.second;
@@ -225,6 +232,104 @@ int aliceVision_main(int argc, char** argv)
         const auto& viewJ = sfmData.getView(idViewJ);
         const auto& camI = sfmData.getIntrinsicSharedPtr(viewI.getIntrinsicId());
         const auto& camJ = sfmData.getIntrinsicSharedPtr(viewJ.getIntrinsicId());
+
+        if (!camI || !camI->isValid() || !camJ || !camJ->isValid())
+        {
+            countSkipped++;
+            progressDisplay += 1;
+            continue;
+        }
+
+        // Pinhole cameras are filtered with a pixel error on undistorted pixels,
+        // other camera models with an angular error on bearing vectors
+        const bool bothPinhole = camera::isPinhole(camI->getType()) && camera::isPinhole(camJ->getType());
+        const double angularThreshold = std::max(camI->pixelToAngle(geometricInfo.threshold), camJ->pixelToAngle(geometricInfo.threshold));
+
+        // Fundamental epipolar distance (in undistorted pixels) with the given fundamental matrix
+        const auto fundamentalInlier = [&](const Mat3& F) {
+            return [&, F](const Vec2& ptI, const Vec2& ptJ) {
+                const Vec2 undistortedI = camI->getUndistortedPixel(ptI);
+                const Vec2 undistortedJ = camJ->getUndistortedPixel(ptJ);
+                multiview::relativePose::FundamentalEpipolarDistanceError errorFunc;
+                return std::sqrt(errorFunc.error(robustEstimation::Mat3Model(F), undistortedI, undistortedJ)) < geometricInfo.threshold;
+            };
+        };
+
+        // Match error function, returns false if the match is an outlier
+        std::function<bool(const Vec2&, const Vec2&)> isInlier;
+
+        switch (geometricInfo.type)
+        {
+            case matchingImageCollection::EGeometricFilterType::FUNDAMENTAL_MATRIX:
+            {
+                // Fundamental matrices are defined on undistorted pixels, which only makes sense for pinhole cameras
+                if (!bothPinhole)
+                {
+                    break;
+                }
+
+                isInlier = fundamentalInlier(model);
+            }
+            break;
+
+            case matchingImageCollection::EGeometricFilterType::ESSENTIAL_MATRIX:
+            {
+                if (bothPinhole)
+                {
+                    // F = KJ^-T E KI^-1
+                    const Mat3 KI = dynamic_cast<const camera::Pinhole&>(*camI).K();
+                    const Mat3 KJ = dynamic_cast<const camera::Pinhole&>(*camJ).K();
+                    isInlier = fundamentalInlier(KJ.inverse().transpose() * model * KI.inverse());
+                    break;
+                }
+
+                // Epipolar angular error on bearing vectors: bJ^T E bI = 0
+                isInlier = [&, angularThreshold](const Vec2& ptI, const Vec2& ptJ) {
+                    const Vec3 bI = lift(*camI, ptI);
+                    const Vec3 bJ = lift(*camJ, ptJ);
+                    return std::abs(std::asin(bJ.dot((model * bI).normalized()))) < angularThreshold;
+                };
+            }
+            break;
+
+            case matchingImageCollection::EGeometricFilterType::ROTATION_MATRIX:
+            {
+                if (bothPinhole)
+                {
+                    // Infinite homography H = KJ R KI^-1, transfer error in undistorted pixels of J
+                    const auto& pinholeI = dynamic_cast<const camera::Pinhole&>(*camI);
+                    const auto& pinholeJ = dynamic_cast<const camera::Pinhole&>(*camJ);
+                    const Mat3 H = pinholeJ.K() * model * pinholeI.K().inverse();
+                    isInlier = [&, H](const Vec2& ptI, const Vec2& ptJ) {
+                        const Vec3 transferred = H * camI->getUndistortedPixel(ptI).homogeneous();
+                        if (transferred.z() <= 0.0)
+                        {
+                            return false;
+                        }
+                        return (transferred.hnormalized() - camJ->getUndistortedPixel(ptJ)).norm() < geometricInfo.threshold;
+                    };
+                    break;
+                }
+
+                // Angle between bearing vectors: bJ = R bI
+                isInlier = [&, angularThreshold](const Vec2& ptI, const Vec2& ptJ) {
+                    const Vec3 rotatedI = model * lift(*camI, ptI);
+                    const Vec3 bJ = lift(*camJ, ptJ);
+                    return std::atan2(bJ.cross(rotatedI).norm(), bJ.dot(rotatedI)) < angularThreshold;
+                };
+            }
+            break;
+
+            default:
+                break;
+        }
+
+        if (!isInlier)
+        {
+            countSkipped++;
+            progressDisplay += 1;
+            continue;
+        }
 
         for (const auto& [desc, matches] : perDesc)
         {
@@ -234,10 +339,10 @@ int aliceVision_main(int argc, char** argv)
             matching::IndMatches copied;
             for (const auto& match : matches)
             {
-                const auto& ptI = featuresI[match._i].coords().cast<double>();
-                const auto& ptJ = featuresJ[match._j].coords().cast<double>();
+                const Vec2 ptI = featuresI[match._i].coords().cast<double>();
+                const Vec2 ptJ = featuresJ[match._j].coords().cast<double>();
 
-                if (sqrt(errorFunc.error(model, ptI, ptJ)) < geometricInfo.threshold)
+                if (isInlier(ptI, ptJ))
                 {
                     copied.push_back(match);
                 }
@@ -252,6 +357,12 @@ int aliceVision_main(int argc, char** argv)
         }
 
         progressDisplay += 1;
+    }
+
+    if (countSkipped > 0)
+    {
+        ALICEVISION_LOG_WARNING(countSkipped << " pairs were skipped: invalid cameras, unsupported filter type, "
+                                             << "or fundamental matrix on non pinhole cameras.");
     }
 
     for (const auto& imageMatch : finalMatches)
