@@ -505,6 +505,12 @@ int aliceVision_main(int argc, char** argv)
                                                            guidedMatching);
         }
         break;
+
+        case EGeometricFilterType::ROTATION_MATRIX:
+        {
+            ALICEVISION_LOG_ERROR("The rotation_matrix geometric filter cannot be estimated from matches, it requires known poses.");
+            return EXIT_FAILURE;
+        }
     }
 
     ALICEVISION_LOG_INFO(std::to_string(geometricMatches.size()) + " geometric image pair matches:");
