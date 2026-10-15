@@ -110,6 +110,21 @@ if (ALICEVISION_BUILD_SFM)
               Boost::program_options
     )
 
+    # Geometric filtering from known poses
+    alicevision_add_software(aliceVision_geometricFilterFromPoses
+        SOURCE main_geometricFilterFromPoses.cpp
+        FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+        LINKS aliceVision_system
+              aliceVision_cmdline
+              aliceVision_camera
+              aliceVision_numeric
+              aliceVision_multiview
+              aliceVision_matchingImageCollection
+              aliceVision_sfmData
+              aliceVision_sfmDataIO
+              Boost::program_options
+    )
+
     # Track builder
     alicevision_add_software(aliceVision_tracksBuilding
         SOURCE main_tracksBuilding.cpp
