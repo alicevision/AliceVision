@@ -1,4 +1,4 @@
-__version__ = "2.6"
+__version__ = "2.7"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -59,6 +59,15 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
                         "(if ACRansac, it will analyze the input data to select the optimal value).",
             value=0.0,
             range=(0.0, 100.0, 0.1),
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="Seed of the random number generators used by the robust estimations.\n"
+                        "The default, 5489, is the generators' own default seed. Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
             advanced=True,
         ),
         desc.BoolParam(

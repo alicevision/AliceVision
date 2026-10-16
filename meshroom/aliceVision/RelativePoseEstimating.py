@@ -1,4 +1,4 @@
-__version__ = "3.1"
+__version__ = "3.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -63,6 +63,15 @@ Pure rotation pairs (with no translation baseline) can be explicitly handled as 
             description="Threshold on geometric distance (epipolar distance or reprojection distance for pure rotation)",
             value=4.0,
             range=(0.0, 50.0, 1.0),
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="Seed of the random number generators used by the robust estimations.\n"
+                        "The default, 5489, is the generators' own default seed. Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
             advanced=True,
         ),
         desc.File(
