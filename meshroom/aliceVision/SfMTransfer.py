@@ -125,6 +125,9 @@ removed from the destination scene before saving. The full scene is written to '
 views, poses and intrinsics only are written to 'Poses'.
 """
 
+    # The transfer options only apply to the methods matching views
+    matchesViews = lambda node: node.method.value not in ["from_poseid", "from_intrinsicid"]
+
     commandLine = "aliceVision_sfmTransfer {allParams}"
     size = desc.DynamicNodeSize("input")
 
@@ -189,6 +192,7 @@ views, poses and intrinsics only are written to 'Poses'.
             description="Transfer poses of the reconstructed reference views onto the matched views.\n"
                         "The rig structure is kept if both views are rig-dependent, otherwise the view gets an independent pose.",
             value=True,
+            enabled=matchesViews,
         ),
         desc.BoolParam(
             name="transferIntrinsics",
@@ -196,6 +200,7 @@ views, poses and intrinsics only are written to 'Poses'.
             description="Transfer cameras intrinsics of the reconstructed reference views onto the matched views.\n"
                         "A destination intrinsic is overwritten, or split if its views match different reference intrinsics.",
             value=True,
+            enabled=matchesViews,
         ),
         desc.BoolParam(
             name="transferLandmarks",
@@ -203,12 +208,14 @@ views, poses and intrinsics only are written to 'Poses'.
             description="Replace the destination landmarks by the reference landmarks observed in matched views.\n"
                         "Nothing is done if the reference scene has no landmarks.",
             value=True,
+            enabled=matchesViews,
         ),
         desc.BoolParam(
             name="transferSurveyPoints",
             label="Survey Points",
             description="Replace the survey points of each matched view by the ones of its reference view, if any.",
             value=True,
+            enabled=matchesViews,
         ),
         desc.ChoiceParam(
             name="verboseLevel",
