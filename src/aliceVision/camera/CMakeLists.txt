@@ -52,13 +52,13 @@ alicevision_add_library(aliceVision_camera
 )
 
 # Unit tests
-alicevision_add_test(distortion_test.cpp        NAME "camera_distortionRadial"    LINKS aliceVision_camera)
-alicevision_add_test(pinholeBrown_test.cpp      NAME "camera_pinholeBrown"        LINKS aliceVision_camera)
-alicevision_add_test(pinholeFisheye_test.cpp    NAME "camera_pinholeFisheye"      LINKS aliceVision_camera)
-alicevision_add_test(pinholeFisheye1_test.cpp   NAME "camera_pinholeFisheye1"     LINKS aliceVision_camera)
-alicevision_add_test(pinholeRadial_test.cpp     NAME "camera_pinholeRadial"       LINKS aliceVision_camera)
-alicevision_add_test(equidistant_test.cpp       NAME "camera_equidistant"         LINKS aliceVision_camera)
-alicevision_add_test(undistortion_test.cpp      NAME "camera_undistortion"        LINKS aliceVision_camera)
+alicevision_add_test(distortion_test.cpp           NAME "camera_distortionRadial"     LINKS aliceVision_camera)
+alicevision_add_test(undistortion_test.cpp         NAME "camera_undistortion"         LINKS aliceVision_camera)
+alicevision_add_test(intrinsicProjection_test.cpp  NAME "camera_intrinsicProjection"  LINKS aliceVision_camera)
+alicevision_add_test(intrinsicDerivatives_test.cpp NAME "camera_intrinsicDerivatives" LINKS aliceVision_camera)
+alicevision_add_test(intrinsicState_test.cpp       NAME "camera_intrinsicState"       LINKS aliceVision_camera)
+alicevision_add_test(cameraCommon_test.cpp         NAME "camera_cameraCommon"         LINKS aliceVision_camera)
+alicevision_add_test(cameraUndistortImage_test.cpp NAME "camera_undistortImage"       LINKS aliceVision_camera aliceVision_image)
 
 
 # SWIG Binding

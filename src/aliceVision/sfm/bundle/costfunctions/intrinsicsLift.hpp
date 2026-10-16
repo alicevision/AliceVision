@@ -5,6 +5,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/geometry/lie.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 #include <Eigen/Core>
 #include <ceres/ceres.h>
 #pragma once
@@ -12,39 +13,45 @@
 namespace aliceVision {
 namespace sfm {
 
+/**
+ * @brief Back-projection of an observation to a unit ray in the camera frame.
+ *        Cameras with an Undistortion lift the undistorted pixel, computed once, in undistorted space.
+ */
 class CostIntrinsicsLift : public ceres::CostFunction
 {
   public:
-    CostIntrinsicsLift(const Vec2 & pt2d, const std::shared_ptr<camera::IntrinsicBase>& intrinsics)
-      : _pt2d(pt2d),
-        _intrinsics(intrinsics)
+    CostIntrinsicsLift(const Vec2& pt2d, const std::shared_ptr<camera::IntrinsicBase>& intrinsics)
+      : _intrinsics(intrinsics),
+        _pt2d(pt2d)
     {
         set_num_residuals(3);
 
         size_t size_disto = 1;
-        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsics);
-        if (isod)
+        _isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsics);
+        if (_isod)
         {
-            _distortion = isod->getDistortion();
+            _distortion = _isod->getDistortion();
             if (_distortion)
             {
                 size_disto = _distortion->getParameters().size();
             }
+
+            // The undistortion is constant: the undistorted pixel is computed once.
+            const auto undistortion = _isod->getUndistortion();
+            if (undistortion)
+            {
+                _pt2d = undistortion->undistort(pt2d);
+            }
         }
-        
+
         mutable_parameter_block_sizes()->push_back(intrinsics->getParametersSize());
         mutable_parameter_block_sizes()->push_back(size_disto);
     }
 
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
     {
-        const double* parameter_intrinsics = parameters[0];
-        const double* parameter_distortion = parameters[1];
-
-        const Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
-
-        //Here we assume the intrinsics object has been externally updated
-        Vec3 pt_est = _intrinsics->backProjectUnit(_pt2d);
+        // Here we assume the intrinsics object has been externally updated
+        const Vec3 pt_est = _isod ? _isod->backProjectUnitDistortionOnly(_pt2d) : _intrinsics->backProjectUnit(_pt2d);
 
         residuals[0] = pt_est(0);
         residuals[1] = pt_est(1);
@@ -64,10 +71,9 @@ class CostIntrinsicsLift : public ceres::CostFunction
 
         if (jacobians[1] != nullptr && _distortion)
         {
-            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 3,  _distortion->getParameters().size());
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 3, _distortion->getParameters().size());
 
-            auto isod = camera::IntrinsicScaleOffsetDisto::cast(_intrinsics);
-            J = isod->getDerivativeBackProjectUnitWrtDistortion(_pt2d);
+            J = _isod->getDerivativeBackProjectUnitWrtDistortion(_pt2d);
         }
 
         return true;
@@ -75,8 +81,10 @@ class CostIntrinsicsLift : public ceres::CostFunction
 
   private:
     const std::shared_ptr<camera::IntrinsicBase> _intrinsics;
+    std::shared_ptr<camera::IntrinsicScaleOffsetDisto> _isod;
     std::shared_ptr<camera::Distortion> _distortion;
-    const Vec2 _pt2d;
+    /// Pixel lifted: undistorted for cameras with an Undistortion.
+    Vec2 _pt2d;
 };
 
 }  // namespace sfm

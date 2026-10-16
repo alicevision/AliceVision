@@ -14,14 +14,12 @@ namespace camera {
 
 std::shared_ptr<Equidistant> Equidistant::cast(std::shared_ptr<IntrinsicBase> sptr) { return std::dynamic_pointer_cast<Equidistant>(sptr); }
 
-Vec2 Equidistant::transformProject(const Eigen::Matrix4d& pose, const Vec4& pt, bool applyDistortion) const
+Vec2 Equidistant::cameraPlanePoint(const Vec4& X) const
 {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
     const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
-
-    const Vec4 X = pose * pt;
 
     // Compute angle with optical center
     const double angle_Z = std::atan2(sqrt(X(0) * X(0) + X(1) * X(1)), X(2));
@@ -32,36 +30,24 @@ Vec2 Equidistant::transformProject(const Eigen::Matrix4d& pose, const Vec4& pt, 
     const double radius = angle_Z / (0.5 * fov);
 
     // radius = focal * angle_Z
-    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
+    return Vec2(cos(angle_radial) * radius, sin(angle_radial) * radius);
+}
 
-    const Vec2 pt_disto = applyDistortion ? this->addDistortion(P) : P;
-    const Vec2 pt_ima = this->cam2ima(pt_disto);
-
-    return pt_ima;
+Vec2 Equidistant::transformProject(const Eigen::Matrix4d& pose, const Vec4& pt, bool applyDistortion) const
+{
+    return project(pose * pt, applyDistortion);
 }
 
 Vec2 Equidistant::project(const Vec4& pt, bool applyDistortion) const
 {
-    const double rsensor = std::min(sensorWidth(), sensorHeight());
-    const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale(0) * rscale;
-    const double fov = rsensor / fmm;
-
-    // Compute angle with optical center
-    const double angle_Z = std::atan2(sqrt(pt(0) * pt(0) + pt(1) * pt(1)), pt(2));
-
-    // Ignore depth component and compute radial angle
-    const double angle_radial = std::atan2(pt(1), pt(0));
-
-    const double radius = angle_Z / (0.5 * fov);
-
-    // radius = focal * angle_Z
-    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
-
+    const Vec2 P = cameraPlanePoint(pt);
     const Vec2 pt_disto = applyDistortion ? this->addDistortion(P) : P;
-    const Vec2 pt_ima = this->cam2ima(pt_disto);
+    return this->cam2ima(pt_disto);
+}
 
-    return pt_ima;
+Vec2 Equidistant::transformProjectDistortionOnly(const Eigen::Matrix4d& pose, const Vec4& pt) const
+{
+    return this->cam2ima(this->addDistortionOnly(cameraPlanePoint(pose * pt)));
 }
 
 Eigen::Matrix<double, 2, 3> Equidistant::getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& T, const Vec4& pt) const
@@ -263,7 +249,7 @@ Eigen::Matrix<double, 3, 2> Equidistant::getDerivativetoUnitSphereWrtScale(const
 Eigen::Matrix<double, 3, Eigen::Dynamic> Equidistant::getDerivativeBackProjectUnitWrtParams(const Vec2& pt2D) const
 {
     const Vec2 ptMeters = ima2cam(pt2D);
-    const Vec2 ptUndist = removeDistortion(ptMeters);
+    const Vec2 ptUndist = removeDistortionOnly(ptMeters);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, getParameters().size());
 
@@ -279,7 +265,7 @@ Eigen::Matrix<double, 3, Eigen::Dynamic> Equidistant::getDerivativeBackProjectUn
     size_t disto_size = getDistortionParamsSize();
 
     const Vec2 ptMeters = ima2cam(pt2D);
-    const Vec2 ptUndist = removeDistortion(ptMeters);
+    const Vec2 ptUndist = removeDistortionOnly(ptMeters);
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> J(3, disto_size);
     J = getDerivativetoUnitSphereWrtPoint(ptUndist) * getDerivativeRemoveDistoWrtDisto(ptMeters);
@@ -316,6 +302,28 @@ bool Equidistant::isVisibleRay(const Vec3& ray) const
 }
 
 EINTRINSIC Equidistant::getType() const { return EINTRINSIC::EQUIDISTANT_CAMERA; }
+
+bool Equidistant::operator==(const IntrinsicBase& otherBase) const
+{
+    if (!IntrinsicScaleOffsetDisto::operator==(otherBase))
+    {
+        return false;
+    }
+
+    // Same type, checked by the parent class.
+    const Equidistant& other = static_cast<const Equidistant&>(otherBase);
+
+    return _circleRadius == other._circleRadius && _circleCenter == other._circleCenter;
+}
+
+void Equidistant::rescale(float factorW, float factorH)
+{
+    IntrinsicScaleOffsetDisto::rescale(factorW, factorH);
+
+    _circleRadius *= factorW;
+    _circleCenter(0) *= factorW;
+    _circleCenter(1) *= factorH;
+}
 
 double Equidistant::getHorizontalFov() const
 {

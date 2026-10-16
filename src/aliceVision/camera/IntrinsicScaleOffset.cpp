@@ -226,7 +226,7 @@ void IntrinsicScaleOffset::setFocalLength(double focalInMillimeters, double pixe
     if (useCompatibility)
     {
         const double focalInMillimetersY = focalInMillimeters * pixelAspectRatio;
-        const double millimetersToPixels = double(w()) / sensorWidth();
+        const double millimetersToPixels = static_cast<double>(std::max(w(), h())) / sensorWidth();
         _scale(0) = focalInMillimeters * millimetersToPixels;
         _scale(1) = focalInMillimetersY * millimetersToPixels;
     }
@@ -234,7 +234,7 @@ void IntrinsicScaleOffset::setFocalLength(double focalInMillimeters, double pixe
     {
         // We assume focalInMillimeters ignore the pixelAspectRatio in X
         const double focalInMillimetersX = focalInMillimeters / pixelAspectRatio;
-        const double millimetersToPixels = double(w()) / sensorWidth();
+        const double millimetersToPixels = static_cast<double>(std::max(w(), h())) / sensorWidth();
         _scale(0) = focalInMillimetersX * millimetersToPixels;
         _scale(1) = focalInMillimeters * millimetersToPixels;
     }
@@ -249,7 +249,7 @@ void IntrinsicScaleOffset::setInitialFocalLength(double initialFocalInMillimeter
         return;
     }
 
-    const double millimetersToPixels = double(w()) / sensorWidth();
+    const double millimetersToPixels = static_cast<double>(std::max(w(), h())) / sensorWidth();
 
     if (useCompatibility)
     {

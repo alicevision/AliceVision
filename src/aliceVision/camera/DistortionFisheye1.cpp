@@ -127,36 +127,10 @@ Eigen::Matrix2d DistortionFisheye1::getDerivativeRemoveDistoWrtPt(const Vec2& p)
 
 Eigen::MatrixXd DistortionFisheye1::getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
 {
-    const double& k1 = _distortionParams.at(0);
-    double r_dist = sqrt(p(0) * p(0) + p(1) * p(1));
-    const double eps = 1e-8;
-    if (k1 * r_dist < eps)
-    {
-        return Eigen::Matrix<double, 2, 1>::Zero();
-    }
-
-    const Vec2 p_undist = removeDistortion(p);
-    const double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
-
-    const double part1 = 2.0 * r * std::tan(0.5 * k1);
-    const double part2 = std::atan(part1);
-    const double part3 = k1 * r;
-    const double coef = part2 / part3;
-
-    double ca = cos(0.5 * k1);
-    double d_part1_d_params = r / (ca * ca);
-    double d_part3_d_params = r;
-    double d_part2_d_part1 = 1.0 / (part1 * part1 + 1.0);
-    double d_coef_d_part2 = 1.0 / part3;
-    double d_coef_d_part3 = -part2 / (part3 * part3);
-    double d_coef_d_params = d_coef_d_part3 * d_part3_d_params + d_coef_d_part2 * d_part2_d_part1 * d_part1_d_params;
-
-    // p'/coef
-    Eigen::Matrix<double, 2, 1> ret;
-    ret(0, 0) = -p(0) * d_coef_d_params / (coef * coef);
-    ret(1, 0) = -p(1) * d_coef_d_params / (coef * coef);
-
-    return ret;
+    // Exact derivative of the inverse of addDistortion: with p = add(q, theta) and p fixed,
+    // dq/dtheta = -(dadd/dq)^-1 * dadd/dtheta, at the undistorted point q.
+    const Vec2 undistorted = removeDistortion(p);
+    return -getDerivativeAddDistoWrtPt(undistorted).inverse() * getDerivativeAddDistoWrtDisto(undistorted);
 }
 
 }  // namespace camera

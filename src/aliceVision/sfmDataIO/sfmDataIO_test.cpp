@@ -12,6 +12,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/camera.hpp>
 
 #include <filesystem>
 #include <sstream>
@@ -180,6 +181,71 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD)
             BOOST_CHECK_EQUAL(sfmDataLoad.getPoses().size(), sfmData.getPoses().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getIntrinsics().size(), sfmData.getIntrinsics().size());
             BOOST_CHECK_EQUAL(sfmDataLoad.getLandmarks().size(), 0);
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_RescaledUndistortion)
+{
+    std::vector<std::string> ext_Type = {"sfm", "json"};
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
+    ext_Type.push_back("abc");
+#endif
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_USD)
+    ext_Type.push_back("usda");
+#endif
+
+    // Non integer rescales: the rescaled diagonal differs from the one of the rounded image size.
+    // The non uniform one also changes the pixel aspect ratio of the undistortion.
+    const std::vector<std::pair<float, float>> factors = {{0.33f, 0.33f}, {0.33f, 0.5f}};
+
+    for (const auto& [factorW, factorH] : factors)
+    {
+        std::shared_ptr<Pinhole> intrinsic =
+          createPinhole(EDISTORTION::DISTORTION_NONE, EUNDISTORTION::UNDISTORTION_3DERADIAL4, 1920, 1080, 1500, 1500, 10, -20);
+        std::shared_ptr<Undistortion> undistortion = intrinsic->getUndistortion();
+        BOOST_REQUIRE(undistortion);
+        std::vector<double> params = undistortion->getParameters();
+        for (std::size_t i = 0; i < params.size(); ++i)
+        {
+            params[i] = 0.01 * (i + 1);
+        }
+        undistortion->setParameters(params);
+        undistortion->setOffset(Vec2(3.5, -2.25));
+
+        intrinsic->rescale(factorW, factorH);
+
+        sfmData::SfMData sfmData = createTestScene(1, 2, true);
+        sfmData.getIntrinsics().erase(0);
+        sfmData.getIntrinsics().emplace(0, intrinsic);
+
+        for (const std::string& ext : ext_Type)
+        {
+            BOOST_TEST_CONTEXT("factors: " << factorW << "x" << factorH << ", file format: " << ext)
+            {
+                const std::string filename = "SAVE_LOAD_RESCALED_UNDISTORTION." + ext;
+                BOOST_CHECK(save(sfmData, filename, ALL));
+
+                sfmData::SfMData sfmDataLoad;
+                BOOST_REQUIRE(load(sfmDataLoad, filename, ALL));
+
+                auto intrinsicLoad = std::dynamic_pointer_cast<Pinhole>(sfmDataLoad.getIntrinsics().at(0));
+                BOOST_REQUIRE(intrinsicLoad);
+                std::shared_ptr<Undistortion> undistortionLoad = intrinsicLoad->getUndistortion();
+                BOOST_REQUIRE(undistortionLoad);
+
+                BOOST_CHECK_CLOSE(undistortionLoad->getDiagonal(), undistortion->getDiagonal(), 1e-9);
+                BOOST_CHECK_CLOSE(undistortionLoad->getPixelAspectRatio(), undistortion->getPixelAspectRatio(), 1e-9);
+                BOOST_CHECK_EQUAL(undistortionLoad->isDesqueezed(), undistortion->isDesqueezed());
+                BOOST_CHECK_SMALL((undistortionLoad->getCenter() - undistortion->getCenter()).norm(), 1e-9);
+
+                for (const Vec2& pt : {Vec2(0.0, 0.0), Vec2(100.25, 50.5), Vec2(633.0, 356.0)})
+                {
+                    BOOST_CHECK_SMALL((undistortionLoad->undistort(pt) - undistortion->undistort(pt)).norm(), 1e-6);
+                }
+            }
         }
     }
 }

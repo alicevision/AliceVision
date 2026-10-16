@@ -72,7 +72,7 @@ bool read_aliceVision_Camera(const std::string& camName, camera::Pinhole& cam, g
     Mat3 K, R;
     Vec3 t;
     KRt_from_P(P, K, R, t);
-    cam = camera::Pinhole(0, 0, K);
+    cam.setK(K);
     // K.transpose() is applied to give [R t] to the constructor instead of P = K [R t]
     Mat4 T = Mat4::Identity();
     T.block<3, 4>(0, 0) = K.transpose() * P;
@@ -109,9 +109,9 @@ bool read_Strecha_Camera(const std::string& camName, camera::Pinhole& cam, geome
 
     Vec3 C(val[21], val[22], val[23]);
     // R need to be transposed
-    cam = camera::Pinhole(0, 0, K);
     cam.setWidth(val[24]);
     cam.setHeight(val[25]);
+    cam.setK(K);
     pose = geometry::Pose3(R.transpose(), C);
     return true;
 }

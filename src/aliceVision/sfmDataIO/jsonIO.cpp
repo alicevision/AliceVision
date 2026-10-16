@@ -429,15 +429,17 @@ void loadIntrinsic(const Version& version, IndexT& intrinsicId, std::shared_ptr<
                 undistortionObject->setOffset(offset);
                 undistortionObject->setLocked(intrinsicTree.get<bool>("isLocked", true));
 
-                if (version >= Version(1, 2, 7))
-                {
-                    undistortionObject->setDiagonal(intrinsicTree.get<double>("undistortionDiagonal"));
-                }
-
                 if (version >= Version(1, 2, 9))
                 {
                     undistortionObject->setPixelAspectRatio(intrinsicTree.get<double>("pixelAspectRatio"));
                     undistortionObject->setDesqueezed(intrinsicTree.get<bool>("isDesqueezed"));
+                }
+
+                // Restore the diagonal last: the setters above recompute it from the image size,
+                // which differs from the saved one after a non integer rescale.
+                if (version >= Version(1, 2, 7))
+                {
+                    undistortionObject->setDiagonal(intrinsicTree.get<double>("undistortionDiagonal"));
                 }
             }
         }

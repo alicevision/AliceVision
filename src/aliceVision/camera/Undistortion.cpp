@@ -106,6 +106,29 @@ Eigen::Matrix<double, 2, 2> Undistortion::getDerivativeUndistortWrtOffset(const 
            d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtPoint(normalized) * d_normalized_d_centered * -1.0;
 }
 
+Eigen::Matrix2d Undistortion::getDerivativeUndistortWrtPoint(const Vec2& p) const
+{
+    double pa = _pixelAspectRatio;
+    if (_isDesqueezed)
+    {
+        pa = 1.0;
+    }
+
+    Vec2 normalized;
+    normalized(0) = (p(0) - _center(0) - _offset(0)) / _diagonal;
+    normalized(1) = (p(1) - _center(1) - _offset(1)) / (pa * _diagonal);
+
+    Eigen::Matrix2d d_unnormalized_d_undistorted = Eigen::Matrix2d::Zero();
+    d_unnormalized_d_undistorted(0, 0) = _diagonal;
+    d_unnormalized_d_undistorted(1, 1) = _diagonal * pa;
+
+    Eigen::Matrix2d d_normalized_d_p = Eigen::Matrix2d::Zero();
+    d_normalized_d_p(0, 0) = 1.0 / _diagonal;
+    d_normalized_d_p(1, 1) = 1.0 / (_diagonal * pa);
+
+    return d_unnormalized_d_undistorted * getDerivativeUndistortNormalizedwrtPoint(normalized) * d_normalized_d_p;
+}
+
 Vec2 Undistortion::inverse(const Vec2& p) const
 {
     Vec2 centered;

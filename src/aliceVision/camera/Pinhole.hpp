@@ -26,10 +26,6 @@ class Pinhole : public IntrinsicScaleOffsetDisto
       : Pinhole(1, 1, 1.0, 1.0, 0.0, 0.0)
     {}
 
-    Pinhole(unsigned int w, unsigned int h, const Mat3& K)
-      : IntrinsicScaleOffsetDisto(w, h, K(0, 0), K(1, 1), K(0, 2), K(1, 2))
-    {}
-
     Pinhole(unsigned int w,
             unsigned int h,
             double focalLengthPixX,
@@ -71,6 +67,8 @@ class Pinhole : public IntrinsicScaleOffsetDisto
     Vec2 transformProject(const Eigen::Matrix4d& pose, const Vec4& pt, bool applyDistortion = true) const override;
 
     Vec2 project(const Vec4& pt, bool applyDistortion = true) const override;
+
+    Vec2 transformProjectDistortionOnly(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
 
     Eigen::Matrix<double, 2, 3> getDerivativeTransformProjectWrtPoint3(const Eigen::Matrix4d& pose, const Vec4& pt) const override;
 

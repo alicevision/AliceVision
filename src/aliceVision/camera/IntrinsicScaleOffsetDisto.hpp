@@ -59,6 +59,22 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
         }
     }
 
+    // Deep copy of the (un)distortion, as the copy constructor does.
+    IntrinsicScaleOffsetDisto& operator=(const IntrinsicScaleOffsetDisto& other)
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+
+        IntrinsicScaleOffset::operator=(other);
+        _distortionInitializationMode = other._distortionInitializationMode;
+        _pDistortion = other._pDistortion ? std::shared_ptr<Distortion>(other._pDistortion->clone()) : nullptr;
+        _pUndistortion = other._pUndistortion ? std::shared_ptr<Undistortion>(other._pUndistortion->clone()) : nullptr;
+
+        return *this;
+    }
+
     static std::shared_ptr<IntrinsicScaleOffsetDisto> cast(std::shared_ptr<IntrinsicBase> sptr);
 
     void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const IntrinsicScaleOffsetDisto&>(other); }
@@ -84,39 +100,65 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
 
     /**
      * @brief Create a new point from a given point by adding distortion.
+     *        The distortion object is applied first, in the camera plane, then the inverse of the
+     *        undistortion object, in pixels.
      * @param[in] p Point in the camera plane.
      * @return Distorted point in the camera plane.
      */
     Vec2 addDistortion(const Vec2& p) const override
     {
+        Vec2 distorted = p;
         if (_pDistortion)
         {
-            return _pDistortion->addDistortion(p);
+            distorted = _pDistortion->addDistortion(distorted);
         }
-        else if (_pUndistortion)
+        if (_pUndistortion)
         {
-            return ima2cam(_pUndistortion->inverse(cam2ima(p)));
+            distorted = ima2cam(_pUndistortion->inverse(cam2ima(distorted)));
         }
-        return p;
+        return distorted;
     }
 
     /**
      * @brief Create a new point from a given point by removing distortion.
+     *        The undistortion object is applied first, in pixels, then the inverse of the
+     *        distortion object, in the camera plane.
      * @param[in] p Point in the camera plane.
      * @return Undistorted point in the camera plane.
      */
     Vec2 removeDistortion(const Vec2& p) const override
     {
+        Vec2 undistorted = p;
         if (_pUndistortion)
         {
-            return ima2cam(_pUndistortion->undistort(cam2ima(p)));
+            undistorted = ima2cam(_pUndistortion->undistort(cam2ima(undistorted)));
         }
-        else if (_pDistortion)
+        if (_pDistortion)
         {
-            return _pDistortion->removeDistortion(p);
+            undistorted = _pDistortion->removeDistortion(undistorted);
         }
-        return p;
+        return undistorted;
     }
+
+    /**
+     * @brief Projection of a 3D point applying the Distortion object only (the Undistortion object is
+     *        ignored), so the result lies in undistorted space. Equal to transformProject(pose, pt, true)
+     *        when there is no Undistortion.
+     *        This is the function differentiated by getDerivativeTransformProjectWrt*.
+     * @param[in] pose camera pose
+     * @param[in] pt homogeneous 3D point
+     * @return undistorted pixel
+     */
+    virtual Vec2 transformProjectDistortionOnly(const Eigen::Matrix4d& pose, const Vec4& pt) const = 0;
+
+    /**
+     * @brief Back-projection of an undistorted pixel removing the Distortion object only (the Undistortion
+     *        object is ignored). Equal to backProjectUnit(pt2D) when there is no Undistortion.
+     *        This is the function differentiated by getDerivativeBackProjectUnitWrt*.
+     * @param[in] pt2D undistorted pixel
+     * @return unit ray in the camera frame
+     */
+    Vec3 backProjectUnitDistortionOnly(const Vec2& pt2D) const { return toUnitSphere(removeDistortionOnly(ima2cam(pt2D))); }
 
     /// Return the un-distorted pixel (with removed distortion)
     Vec2 getUndistortedPixel(const Vec2& p) const override;
@@ -211,6 +253,15 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
     // Data wrapper for non linear optimization (update from data)
     bool updateFromParams(const std::vector<double>& params) override;
 
+    /**
+     * @brief Rescale the intrinsic, including the undistortion which is expressed in pixels.
+     *        Uniform rescales and desqueezing (when the factors ratio cancels the pixel aspect ratio) are exact
+     *        for every undistortion model. Other non uniform rescales are not exact for the anamorphic model.
+     * @param[in] factorW horizontal scale factor
+     * @param[in] factorH vertical scale factor
+     */
+    void rescale(float factorW, float factorH) override;
+
     float getMaximalDistortion([[maybe_unused]] double minRadius, double maxRadius) const override
     {
         if (_pDistortion == nullptr)
@@ -289,6 +340,12 @@ class IntrinsicScaleOffsetDisto : public IntrinsicScaleOffset
     std::shared_ptr<Undistortion> getUndistortion() const { return _pUndistortion; }
 
   protected:
+    /// Apply the Distortion object only (identity if there is none).
+    Vec2 addDistortionOnly(const Vec2& p) const { return _pDistortion ? _pDistortion->addDistortion(p) : p; }
+
+    /// Remove the Distortion object only (identity if there is none).
+    Vec2 removeDistortionOnly(const Vec2& p) const { return _pDistortion ? _pDistortion->removeDistortion(p) : p; }
+
     void throwSetDistortionParamsCountError(std::size_t expected, std::size_t received)
     {
         std::stringstream s;
