@@ -107,6 +107,7 @@ endif()
 # Unit tests
 alicevision_add_test(features_test.cpp NAME "features" LINKS aliceVision_feature)
 alicevision_add_test(metric_test.cpp   NAME "descriptor_metric"   LINKS aliceVision_feature)
+alicevision_add_test(akaze/akaze_test.cpp NAME "features_akaze" LINKS aliceVision_feature)
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)

@@ -74,8 +74,8 @@ struct AKAZEKeypoint
     float response = 0.f;
     /// octave (pyramid layer) from which the keypoint has been extracted
     unsigned char octave = 0;
-    /// object class (if the keypoints need to be clustered by an object they belong to)
-    unsigned char class_id = 0;
+    /// index of the scale space slice the keypoint was detected on (octave * nbSlicePerOctave + slice)
+    unsigned int class_id = 0;
 };
 
 /**
