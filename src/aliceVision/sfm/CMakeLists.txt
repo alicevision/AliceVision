@@ -174,6 +174,12 @@ alicevision_add_test(utils/alignment_test.cpp
         aliceVision_multiview_test_data
 )
 
+alicevision_add_test(utils/sfmTransfer_test.cpp
+    NAME "sfm_sfmTransfer"
+    LINKS
+        aliceVision_sfm
+)
+
 alicevision_add_test(utils/poseFilter_test.cpp
     NAME "sfm_poseFilter"
     LINKS
