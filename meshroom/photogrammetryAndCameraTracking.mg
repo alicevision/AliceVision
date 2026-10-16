@@ -29,7 +29,7 @@
             "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
             "SfMExpanding": "2.5",
-            "SfMTransfer": "2.1",
+            "SfMTransfer": "2.2",
             "SfMTransform": "3.2",
             "Texturing": "6.0",
             "TracksBuilding": "1.0",

@@ -52,6 +52,7 @@ set(sfm_files_headers
     utils/alignment.hpp
     utils/poseNoise.hpp
     utils/preprocess.hpp
+    utils/sfmTransfer.hpp
     utils/syntheticScene.hpp
     LocalBundleAdjustmentGraph.hpp
     FrustumFilter.hpp
@@ -98,6 +99,7 @@ set(sfm_files_sources
     utils/alignment.cpp
     utils/poseNoise.cpp
     utils/preprocess.cpp
+    utils/sfmTransfer.cpp
     utils/syntheticScene.cpp
     LocalBundleAdjustmentGraph.cpp
     FrustumFilter.cpp
@@ -170,6 +172,12 @@ alicevision_add_test(utils/alignment_test.cpp
     LINKS
         aliceVision_sfm
         aliceVision_multiview_test_data
+)
+
+alicevision_add_test(utils/sfmTransfer_test.cpp
+    NAME "sfm_sfmTransfer"
+    LINKS
+        aliceVision_sfm
 )
 
 alicevision_add_test(utils/poseFilter_test.cpp

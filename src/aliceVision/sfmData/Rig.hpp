@@ -9,6 +9,8 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
+#include <boost/functional/hash.hpp>
+
 #include <vector>
 #include <cassert>
 #include <algorithm>
@@ -189,6 +191,20 @@ class Rig
     /// rig sub-poses
     std::vector<RigSubPose> _subPoses;
 };
+
+/**
+ * @brief Compute the pose ID shared by all the views of a rig for a given frame
+ * @param[in] rigId The rig ID
+ * @param[in] frameId The frame ID
+ * @return The rig pose ID
+ */
+inline IndexT getRigPoseId(IndexT rigId, IndexT frameId)
+{
+    std::size_t rigPoseId = static_cast<std::size_t>(rigId);
+    boost::hash_combine(rigPoseId, static_cast<std::size_t>(frameId));
+
+    return static_cast<IndexT>(rigPoseId);
+}
 
 }  // namespace sfmData
 }  // namespace aliceVision

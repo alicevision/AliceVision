@@ -29,7 +29,7 @@
             "SfMPoseInjecting": "1.0",
             "SfMSplitReconstructed": "1.0",
             "SfMSurveyInjecting": "1.1",
-            "SfMTransfer": "2.1",
+            "SfMTransfer": "2.2",
             "TracksBuilding": "1.0",
             "TracksMerging": "3.0",
             "VideoSegmentationSam3": "2.0"
