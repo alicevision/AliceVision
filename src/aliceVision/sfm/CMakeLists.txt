@@ -52,6 +52,7 @@ set(sfm_files_headers
     utils/alignment.hpp
     utils/poseNoise.hpp
     utils/preprocess.hpp
+    utils/sfmTransfer.hpp
     utils/syntheticScene.hpp
     LocalBundleAdjustmentGraph.hpp
     FrustumFilter.hpp
@@ -98,6 +99,7 @@ set(sfm_files_sources
     utils/alignment.cpp
     utils/poseNoise.cpp
     utils/preprocess.cpp
+    utils/sfmTransfer.cpp
     utils/syntheticScene.cpp
     LocalBundleAdjustmentGraph.cpp
     FrustumFilter.cpp
