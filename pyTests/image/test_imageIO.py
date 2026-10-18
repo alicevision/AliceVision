@@ -80,3 +80,19 @@ def test_default_constructor():
     image.fromNumpyArray(np.float32(src))
     loop(image, orientation=6)
 
+
+def test_read_image_size():
+    src = np.random.randint(0, 255, size=(120, 200, 3), dtype='uint8')
+    image = img.Image_RGBColor()
+    image.fromNumpyArray(src)
+
+    path = os.path.abspath(os.path.dirname(__file__)) + "/size.exr"
+    optWrite = img.ImageWriteOptions()
+    optWrite.toColorSpace(img.EImageColorSpace_NO_CONVERSION)
+    oiio_params = img.oiioParams()
+    img.writeImage(path, image, optWrite, oiio_params.get())
+
+    width, height = img.readImageSize(path)
+    os.remove(path)
+
+    assert (width, height) == (200, 120)

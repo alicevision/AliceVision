@@ -14,6 +14,10 @@
 
 %include <aliceVision/numeric/numpy.i>
 %include <std_string.i>
+%include "typemaps.i"
+
+%apply int& OUTPUT { int& width };
+%apply int& OUTPUT { int& height };
 
 
 %init
@@ -178,7 +182,7 @@ class oiioParams
     }
     ~oiioParams() {}
 
-    const oiio::ParamValueList & get()
+    oiio::ParamValueList get() const
     {
         return _myParamList;
     }
@@ -213,6 +217,16 @@ std::map<std::string, std::string> readImageMetadataAsMap(const std::string& pat
 
 PyObject* listImages(const std::string& path);
 
+// Declare the destructor so that ParamValueList copies returned to Python are freed
+namespace OIIO {
+class ParamValueList
+{
+    public:
+
+    ~ParamValueList();
+};
+}
+
 class oiioParams
 {
     public:
@@ -221,7 +235,7 @@ class oiioParams
     oiioParams(int orientation, float pixelAspectRatio, std::string compression = "");
     ~oiioParams();
 
-    const oiio::ParamValueList & get();
+    oiio::ParamValueList get() const;
     void add(std::string name, std::string value);
 
     private:
