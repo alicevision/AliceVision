@@ -147,7 +147,7 @@ if (ALICEVISION_USE_RPATH)
             "@executable_path/../Frameworks"
         )
     elseif (UNIX)
-        set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR};\\$ORIGIN")
+        set(CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR};\$ORIGIN")
     endif()
 endif()
 
