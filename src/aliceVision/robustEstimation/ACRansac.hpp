@@ -118,9 +118,10 @@ inline ErrorIndex bestNFA(int startIndex,  // number of point required for estim
  * The NFA at a given rank increases with the error, so the minimum over all ranks cannot exceed
  * the best NFA found on the sorted errors.
  *
+ * @tparam squared true if the errors are squared, as in bestNFA(); false if they are used as is, as in bestNFA2()
  * @param[in] startIndex number of samples required to estimate a model
  * @param[in] logalpha0 log10 of the probability of a random point to fall within unit error, from the kernel
- * @param[in] errors unsorted square errors of every data point, as computed by the kernel
+ * @param[in] errors unsorted errors of every data point, as computed by the kernel (squared or not, see @p squared)
  * @param[in] loge0 log10 of the number of tests (models per sample times the number of candidate ranks)
  * @param[in] maxThreshold maximum error; ranks with a larger error are not evaluated, as in bestNFA()
  * @param[in] logc_n tabulated log10 of the binomial coefficients C(n, k), from makelogcombi()
@@ -132,6 +133,7 @@ inline ErrorIndex bestNFA(int startIndex,  // number of point required for estim
  *         +infinity if there are no errors,
  *         -infinity if an error is negative or NaN (no bound can be given)
  */
+template<bool squared = true>
 inline double bestNFALowerBound(int startIndex,
                                 double logalpha0,
                                 const std::vector<double>& errors,
@@ -204,8 +206,11 @@ inline double bestNFALowerBound(int startIndex,
         if (binMin[bin] > maxThreshold)
             break;
 
-        // same expression as bestNFA(), with the smallest error of the bin
-        const double residual = sqrt(binMin[bin]) + std::numeric_limits<float>::epsilon();
+        // same expression as bestNFA() / bestNFA2(), with the smallest error of the bin
+        double residual = binMin[bin];
+        if constexpr (squared)
+            residual = sqrt(residual);
+        residual += std::numeric_limits<float>::epsilon();
         const double logalpha = logalpha0 + errorVectorDimension * log10(residual);
         for (std::size_t k = std::max<std::size_t>(rankBegin, startIndex + 1); k <= rankEnd; ++k)
         {

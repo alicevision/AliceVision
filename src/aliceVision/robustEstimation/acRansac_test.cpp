@@ -8,6 +8,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robustEstimation/LineKernel.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/NACRansac.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>
 #include <aliceVision/robustEstimation/lineTestGenerator.hpp>
 
@@ -307,18 +308,25 @@ BOOST_AUTO_TEST_CASE(BestNFALowerBound_IsLowerBound)
 
         const double lowerBound =
           bestNFALowerBound(sizeSample, logalpha0, errors, loge0, maxThreshold, logc_n, logc_k, errorVectorDimension, binCount, binMin);
+        // NACRANSAC variant: errors are not squared
+        const double lowerBound2 =
+          bestNFALowerBound<false>(sizeSample, logalpha0, errors, loge0, maxThreshold, logc_n, logc_k, errorVectorDimension, binCount, binMin);
 
         std::vector<ErrorIndex> sorted(nData);
         for (std::size_t i = 0; i < nData; ++i)
             sorted[i] = ErrorIndex(errors[i], i);
         std::sort(sorted.begin(), sorted.end());
         const double best = bestNFA(sizeSample, logalpha0, sorted, loge0, maxThreshold, logc_n, logc_k, errorVectorDimension).first;
+        const double best2 = bestNFA2(sizeSample, logalpha0, sorted, loge0, maxThreshold, logc_n, logc_k, errorVectorDimension).first;
 
         BOOST_CHECK_LE(lowerBound, best);
+        BOOST_CHECK_LE(lowerBound2, best2);
 
         // the bound must be usable: a finite NFA gets a finite bound, otherwise no model would ever be skipped
         if (std::isfinite(best))
             BOOST_CHECK(std::isfinite(lowerBound));
+        if (std::isfinite(best2))
+            BOOST_CHECK(std::isfinite(lowerBound2));
     }
 }
 
