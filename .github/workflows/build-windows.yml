@@ -12,7 +12,6 @@ jobs:
       CUDA_VERSION: '13.2.1'
       CUDA_MAJOR_MINOR: '13.2'
       VCPKG_VERSION: '2026.09.01'
-      SCCACHE_GHA_ENABLED: "true"
 
       buildDir: '${{ github.workspace }}\build\'
       dependenciesDir: '${{ github.workspace }}\dependencies'
@@ -74,9 +73,19 @@ jobs:
             ${{ env.CUDA_ENV_FILE }}
           key: cuda-${{ runner.os }}-${{ env.CUDA_VERSION }}
 
-      # Start the sccache daemon and connect it to the GHA cache backend for compiler caching.
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.9
+      # Install sccache with a local cache dir, saved as a single GHA cache entry per run
+      # (the sccache GHA backend creates one cache entry per object file).
+      - name: Setup sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          # Isolate writes per ref (branch/PR) to reduce cross-PR cache contamination.
+          key: sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-${{ github.ref_name }}-${{ hashFiles('CMakeLists.txt', 'src/CMakeLists.txt', '.github/workflows/build-windows.yml') }}
+          restore-keys: |
+            sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-${{ github.ref_name }}-
+            sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-develop-
+            sccache-${{ runner.os }}-
+          max-size: "1000M"
       
       # ---- REQUIREMENTS -----
 
