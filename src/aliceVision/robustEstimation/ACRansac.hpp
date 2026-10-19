@@ -110,6 +110,118 @@ inline ErrorIndex bestNFA(int startIndex,  // number of point required for estim
 }
 
 /**
+ * @brief Compute a lower bound of bestNFA(...).first in linear time, without sorting the errors.
+ *
+ * The errors are grouped into ordered bins, 16 bins per power of two (from std::frexp).
+ * Neighbouring bins are merged when the errors span a wide range, so that there are at most max(n, 64) bins.
+ * Each rank k that falls into a bin is evaluated with the smallest error of that bin.
+ * The NFA at a given rank increases with the error, so the minimum over all ranks cannot exceed
+ * the best NFA found on the sorted errors.
+ *
+ * @tparam squared true if the errors are squared, as in bestNFA(); false if they are used as is, as in bestNFA2()
+ * @param[in] startIndex number of samples required to estimate a model
+ * @param[in] logalpha0 log10 of the probability of a random point to fall within unit error, from the kernel
+ * @param[in] errors unsorted errors of every data point, as computed by the kernel (squared or not, see @p squared)
+ * @param[in] loge0 log10 of the number of tests (models per sample times the number of candidate ranks)
+ * @param[in] maxThreshold maximum error; ranks with a larger error are not evaluated, as in bestNFA()
+ * @param[in] logc_n tabulated log10 of the binomial coefficients C(n, k), from makelogcombi()
+ * @param[in] logc_k tabulated log10 of the binomial coefficients C(k, startIndex), from makelogcombi()
+ * @param[in] errorVectorDimension dimension of the error vector, from the kernel
+ * @param[in,out] binCount buffer for the number of errors per bin, reused between calls to avoid allocations
+ * @param[in,out] binMin buffer for the smallest error per bin, reused between calls to avoid allocations
+ * @return a value that never exceeds the best NFA,
+ *         +infinity if there are no errors,
+ *         -infinity if an error is negative or NaN (no bound can be given)
+ */
+template<bool squared = true>
+inline double bestNFALowerBound(int startIndex,
+                                double logalpha0,
+                                const std::vector<double>& errors,
+                                double loge0,
+                                double maxThreshold,
+                                const std::vector<float>& logc_n,
+                                const std::vector<float>& logc_k,
+                                double errorVectorDimension,
+                                std::vector<std::size_t>& binCount,
+                                std::vector<double>& binMin)
+{
+    const std::size_t n = errors.size();
+    const double infinity = std::numeric_limits<double>::infinity();
+
+    // bin of a positive finite error: its power of two and the first 4 bits of its mantissa, in increasing order
+    const auto keyOf = [](double value) {
+        int exponent;
+        const double mantissa = std::frexp(value, &exponent);  // value = mantissa * 2^exponent, mantissa in [0.5, 1)
+        return exponent * 16 + static_cast<int>((mantissa - 0.5) * 32.0);
+    };
+
+    int minKey = std::numeric_limits<int>::max();
+    int maxKey = std::numeric_limits<int>::min();
+    for (const double e : errors)
+    {
+        if (!(e >= 0.0))
+            return -infinity;
+        if (e > 0.0 && e < infinity)
+        {
+            const int key = keyOf(e);
+            minKey = std::min(minKey, key);
+            maxKey = std::max(maxKey, key);
+        }
+    }
+    if (n == 0)
+        return infinity;
+    if (minKey > maxKey)  // only zeros and infinities
+        minKey = maxKey = 0;
+
+    // zeros go in a bin below every positive error, infinities in a bin above
+    const int firstKey = minKey - 1;
+    const auto binKeyOf = [&](double e) { return e == 0.0 ? firstKey : (e == infinity ? maxKey + 1 : keyOf(e)); };
+
+    // merge neighbouring bins when the errors span a wide range, so the histogram stays smaller than the data
+    const std::size_t keyRange = static_cast<std::size_t>(maxKey + 1 - firstKey);
+    int mergeShift = 0;
+    while ((keyRange >> mergeShift) + 1 > std::max<std::size_t>(n, 64))
+        ++mergeShift;
+    const std::size_t nbBins = (keyRange >> mergeShift) + 1;
+
+    binCount.assign(nbBins, 0);
+    binMin.assign(nbBins, infinity);
+    for (const double e : errors)
+    {
+        const std::size_t bin = static_cast<std::size_t>(binKeyOf(e) - firstKey) >> mergeShift;
+        ++binCount[bin];
+        binMin[bin] = std::min(binMin[bin], e);
+    }
+
+    double lowerBound = std::numeric_limits<double>::infinity();
+    std::size_t rankEnd = 0;  // 1-based rank of the last error in the bins seen so far
+    for (std::size_t bin = 0; bin < nbBins; ++bin)
+    {
+        if (binCount[bin] == 0)
+            continue;
+        const std::size_t rankBegin = rankEnd + 1;
+        rankEnd += binCount[bin];
+
+        // bestNFA() stops at the first error above maxThreshold
+        if (binMin[bin] > maxThreshold)
+            break;
+
+        // same expression as bestNFA() / bestNFA2(), with the smallest error of the bin
+        double residual = binMin[bin];
+        if constexpr (squared)
+            residual = sqrt(residual);
+        residual += std::numeric_limits<float>::epsilon();
+        const double logalpha = logalpha0 + errorVectorDimension * log10(residual);
+        for (std::size_t k = std::max<std::size_t>(rankBegin, startIndex + 1); k <= rankEnd; ++k)
+        {
+            const double nfa = loge0 + logalpha * (double)(k - startIndex) + logc_n[k] + logc_k[k];
+            lowerBound = std::min(lowerBound, nfa);
+        }
+    }
+    return lowerBound;
+}
+
+/**
  * @brief An implementation of the "Random Sample Consensus" algorithm based on a-contrario estimator
  * to automatically estimate the error threshold.
  *
@@ -181,6 +293,12 @@ std::pair<double, double> ACRANSAC(const Kernel& kernel,
 
     bool bACRansacMode = (precision == std::numeric_limits<double>::infinity());
 
+    // Buffers for bestNFALowerBound()
+    std::vector<std::size_t> binCount;
+    std::vector<double> binMin;
+    // Margin on the lower bound, in log10 units, so that rounding in log10() can never reject a better model
+    const double lowerBoundMargin = 1e-6;
+
     // Main estimation loop.
     for (std::size_t iter = 0; iter < nIter; ++iter)
     {
@@ -213,6 +331,15 @@ std::pair<double, double> ACRANSAC(const Kernel& kernel,
             }
             if (bACRansacMode)
             {
+                // Skip the sort when this model cannot beat the best NFA found so far
+                if (minNFA != std::numeric_limits<double>::infinity())
+                {
+                    const double lowerBound = bestNFALowerBound(sizeSample, kernel.logalpha0(), vec_residuals_, loge0, maxThreshold, vec_logc_n,
+                                                                vec_logc_k, kernel.errorVectorDimension(), binCount, binMin);
+                    if (lowerBound - lowerBoundMargin >= minNFA)
+                        continue;
+                }
+
                 for (size_t i = 0; i < nData; ++i)
                 {
                     const double error = vec_residuals_[i];

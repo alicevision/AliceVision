@@ -120,6 +120,12 @@ std::pair<double, double> NACRANSAC(const Kernel& kernel, std::mt19937& randomNu
 
     bool bACRansacMode = (precision == std::numeric_limits<double>::infinity());
 
+    // Buffers for bestNFALowerBound()
+    std::vector<std::size_t> binCount;
+    std::vector<double> binMin;
+    // Margin on the lower bound, in log10 units, so that rounding in log10() can never reject a better model
+    const double lowerBoundMargin = 1e-6;
+
     // Main estimation loop.
     for(std::size_t iter = 0; iter < nIter; ++iter)
     {
@@ -152,6 +158,15 @@ std::pair<double, double> NACRANSAC(const Kernel& kernel, std::mt19937& randomNu
             }
             if(bACRansacMode)
             {
+                // Skip the sort when this model cannot beat the best NFA found so far
+                if(minNFA != std::numeric_limits<double>::infinity())
+                {
+                    const double lowerBound = bestNFALowerBound<false>(sizeSample, kernel.logalpha0(), vec_residuals_, loge0, maxThreshold, vec_logc_n,
+                                                                       vec_logc_k, kernel.errorVectorDimension(), binCount, binMin);
+                    if(lowerBound - lowerBoundMargin >= minNFA)
+                        continue;
+                }
+
                 for(size_t i = 0; i < nData; ++i)
                 {
                     const double error = vec_residuals_[i];

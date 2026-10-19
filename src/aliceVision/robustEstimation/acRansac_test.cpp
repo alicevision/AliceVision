@@ -8,6 +8,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robustEstimation/LineKernel.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/NACRansac.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>
 #include <aliceVision/robustEstimation/lineTestGenerator.hpp>
 
@@ -266,4 +267,81 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_ACRANSACSimu)
         // find more inliers than expected.
         BOOST_CHECK(vec_inliers.size() <= expectedInliers);
     }
+}
+
+// bestNFALowerBound must never exceed the NFA that bestNFA finds on the sorted errors
+BOOST_AUTO_TEST_CASE(BestNFALowerBound_IsLowerBound)
+{
+    std::mt19937 gen(42);
+    std::vector<std::size_t> binCount;
+    std::vector<double> binMin;
+
+    for (int trial = 0; trial < 2000; ++trial)
+    {
+        const std::size_t sizeSample = 2 + trial % 6;
+        const std::size_t nData = sizeSample + 1 + gen() % 400;
+        const double errorVectorDimension = 1.0 + trial % 2;
+        const double logalpha0 = -std::uniform_real_distribution<double>(0.5, 6.0)(gen);
+        const double maxThreshold = (trial % 3 == 0) ? std::uniform_real_distribution<double>(1e-3, 10.0)(gen) : std::numeric_limits<double>::infinity();
+
+        // inliers with small errors, outliers spread over many orders of magnitude, plus ties, zeros and infinities
+        std::vector<double> errors(nData);
+        const double inlierRatio = std::uniform_real_distribution<double>(0.0, 1.0)(gen);
+        for (double& e : errors)
+        {
+            const double u = std::uniform_real_distribution<double>(0.0, 1.0)(gen);
+            if (u < 0.02)
+                e = 0.0;
+            else if (u < 0.05)
+                e = 1.0;
+            else if (u < 0.06)
+                e = std::numeric_limits<double>::infinity();
+            else if (u < inlierRatio)
+                e = std::pow(10.0, std::uniform_real_distribution<double>(-8.0, -1.0)(gen));
+            else
+                e = std::pow(10.0, std::uniform_real_distribution<double>(-2.0, 12.0)(gen));
+        }
+
+        const double loge0 = log10(3.0 * (nData - sizeSample));
+        std::vector<float> logc_n, logc_k;
+        makelogcombi(sizeSample, nData, logc_k, logc_n);
+
+        const double lowerBound =
+          bestNFALowerBound(sizeSample, logalpha0, errors, loge0, maxThreshold, logc_n, logc_k, errorVectorDimension, binCount, binMin);
+        // NACRANSAC variant: errors are not squared
+        const double lowerBound2 =
+          bestNFALowerBound<false>(sizeSample, logalpha0, errors, loge0, maxThreshold, logc_n, logc_k, errorVectorDimension, binCount, binMin);
+
+        std::vector<ErrorIndex> sorted(nData);
+        for (std::size_t i = 0; i < nData; ++i)
+            sorted[i] = ErrorIndex(errors[i], i);
+        std::sort(sorted.begin(), sorted.end());
+        const double best = bestNFA(sizeSample, logalpha0, sorted, loge0, maxThreshold, logc_n, logc_k, errorVectorDimension).first;
+        const double best2 = bestNFA2(sizeSample, logalpha0, sorted, loge0, maxThreshold, logc_n, logc_k, errorVectorDimension).first;
+
+        BOOST_CHECK_LE(lowerBound, best);
+        BOOST_CHECK_LE(lowerBound2, best2);
+
+        // the bound must be usable: a finite NFA gets a finite bound, otherwise no model would ever be skipped
+        if (std::isfinite(best))
+            BOOST_CHECK(std::isfinite(lowerBound));
+        if (std::isfinite(best2))
+            BOOST_CHECK(std::isfinite(lowerBound2));
+    }
+}
+
+// a NaN or negative error gives no bound, so the model is always evaluated
+BOOST_AUTO_TEST_CASE(BestNFALowerBound_InvalidErrors)
+{
+    std::vector<std::size_t> binCount;
+    std::vector<double> binMin;
+    std::vector<float> logc_n, logc_k;
+    makelogcombi(2, 4, logc_k, logc_n);
+    const double inf = std::numeric_limits<double>::infinity();
+
+    const std::vector<double> withNaN = {0.1, std::numeric_limits<double>::quiet_NaN(), 0.2, 0.3};
+    BOOST_CHECK_EQUAL(bestNFALowerBound(2, -1.0, withNaN, 0.5, inf, logc_n, logc_k, 1.0, binCount, binMin), -inf);
+
+    const std::vector<double> withNegative = {0.1, -0.5, 0.2, 0.3};
+    BOOST_CHECK_EQUAL(bestNFALowerBound(2, -1.0, withNegative, 0.5, inf, logc_n, logc_k, 1.0, binCount, binMin), -inf);
 }
