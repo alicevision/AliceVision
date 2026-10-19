@@ -135,7 +135,7 @@ int aliceVision_main(int argc, char** argv)
     ("rigMinNbCamerasForCalibration", po::value<int>(&minNbCamerasForRigCalibration)->default_value(minNbCamerasForRigCalibration),"Minimal number of cameras to start the calibration of the rig.")
     ("enableObservationsWeighting", po::value<bool>(&enableObservationsWeighting)->default_value(enableObservationsWeighting), "Enable observations weighting to reduce impact of regions with high point density.")
     ("lossParameter", po::value<double>(&lossParameter)->default_value(lossParameter), "Huber loss threshold used in bundle adjustment.")
-    ("meshFilename,t", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh file.");
+    ("meshFilename,m", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh file.");
     ;
      // clang-format on
 

@@ -401,7 +401,7 @@ int aliceVision_main(int argc, char** argv)
     ("minAngleSoftInitialPair", po::value<double>(&minAngleSoft)->default_value(minAngleSoft), "Minimum angle for the initial pair (Score is downgraded heavily if angle is under this value).")
     ("minAngleHardInitialPair", po::value<double>(&minAngleHard)->default_value(minAngleHard), "Minimum angle for the initial pair validation.")
     ("maxAngleInitialPair", po::value<double>(&maxAngle)->default_value(maxAngle), "Maximum angle for the initial pair.")
-    ("meshFilename,t", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh object file.")
+    ("meshFilename,m", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh object file.")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first), "UID or filepath or filename of the first image.")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second), "UID or filepath or filename of the second image.");
 
