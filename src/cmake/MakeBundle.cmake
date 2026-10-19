@@ -9,6 +9,7 @@ cmake_minimum_required(VERSION 3.30)
 #   - BUNDLE_LIBS_PATHS         : additional paths (semicolon-separated) to look for runtime dependencies
 #   - CMAKE_INSTALL_BINDIR      : relative bin dir  (default: bin)
 #   - CMAKE_INSTALL_LIBDIR      : relative lib dir  (default: lib)
+#   - CMAKE_INSTALL_INCLUDEDIR  : relative include dir (default: include)
 #   - CMAKE_INSTALL_DATADIR     : relative data dir (default: share)
 
 # ─── Validate required parameters ────────────────────────────────────────────
@@ -41,6 +42,10 @@ if(NOT CMAKE_INSTALL_LIBDIR)
     endif()
 endif()
 
+if(NOT CMAKE_INSTALL_INCLUDEDIR)
+    set(CMAKE_INSTALL_INCLUDEDIR "include")
+endif()
+
 if(NOT CMAKE_INSTALL_DATADIR)
     set(CMAKE_INSTALL_DATADIR "share")
 endif()
@@ -51,6 +56,9 @@ if(NOT CMAKE_INSTALL_FULL_BINDIR)
 endif()
 if(NOT CMAKE_INSTALL_FULL_LIBDIR)
     set(CMAKE_INSTALL_FULL_LIBDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+if(NOT CMAKE_INSTALL_FULL_INCLUDEDIR)
+    set(CMAKE_INSTALL_FULL_INCLUDEDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 endif()
 if(NOT CMAKE_INSTALL_FULL_DATADIR)
     set(CMAKE_INSTALL_FULL_DATADIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}")
@@ -156,9 +164,11 @@ message(STATUS "  CMAKE_INSTALL_PREFIX    : ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "  BUNDLE_INSTALL_PREFIX   : ${BUNDLE_INSTALL_PREFIX}")
 message(STATUS "  CMAKE_INSTALL_BINDIR    : ${CMAKE_INSTALL_BINDIR}")
 message(STATUS "  CMAKE_INSTALL_LIBDIR    : ${CMAKE_INSTALL_LIBDIR}")
+message(STATUS "  CMAKE_INSTALL_INCLUDEDIR: ${CMAKE_INSTALL_INCLUDEDIR}")
 message(STATUS "  CMAKE_INSTALL_DATADIR   : ${CMAKE_INSTALL_DATADIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_BINDIR  : ${CMAKE_INSTALL_FULL_BINDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_LIBDIR  : ${CMAKE_INSTALL_FULL_LIBDIR}")
+message(STATUS "  CMAKE_INSTALL_FULL_INCLUDEDIR : ${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_DATADIR : ${CMAKE_INSTALL_FULL_DATADIR}")
 message(STATUS "  BUNDLE_LIBS_PATHS       : ${BUNDLE_LIBS_PATHS}")
 
@@ -192,6 +202,7 @@ foreach(_dir
         "${CMAKE_INSTALL_FULL_BINDIR}"
         "${CMAKE_INSTALL_PREFIX}/lib"
         "${CMAKE_INSTALL_PREFIX}/lib64"
+        "${CMAKE_INSTALL_FULL_INCLUDEDIR}"
         "${CMAKE_INSTALL_FULL_DATADIR}")
     if(EXISTS "${_dir}")
         file(COPY "${_dir}"
