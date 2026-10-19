@@ -47,6 +47,8 @@ set(CMAKE_CXX_STANDARD 20 CACHE STRING "The C++ standard used by the project")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "The C++ standard used to compile cuda code in the project")
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+# No C++20 modules are used: disable the scan, whose flags (-fmodules-ts...) prevent ccache/sccache from caching
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 # ==============================================================================
 # AliceVision build options
