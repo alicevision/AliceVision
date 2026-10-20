@@ -92,9 +92,7 @@ Vec2 DistortionRadialK3::addDistortion(const Vec2& p) const
     const double& k2 = _distortionParams[1];
     const double& k3 = _distortionParams[2];
 
-    const double r = sqrt(p(0) * p(0) + p(1) * p(1));
-
-    const double r2 = r * r;
+    const double r2 = p(0) * p(0) + p(1) * p(1);
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
     const double r_coeff = (1. + k1 * r2 + k2 * r4 + k3 * r6);
