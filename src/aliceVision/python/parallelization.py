@@ -219,3 +219,40 @@ class DynamicJsonListSize(object):
             return 1
 
         return max(1, len(data))
+
+class DynamicImagePairsSize(object):
+    """Compute parallelization size based on the number of image pairs.
+
+    Returns the number of unique image pairs found in the image pairs list
+    file referenced by the given node parameter, with a minimum of 1.
+
+    Args:
+        param: Name of the node attribute that holds the path to the image pairs file.
+    """
+
+    def __init__(self, param):
+        self._param = param
+
+    def __call__(self, node):
+        """Compute the number of chunks from the image pairs count.
+
+        Args:
+            node: The processing node whose attribute *param* points to an image pairs file.
+
+        Returns:
+            int: The number of image pairs (at least 1).
+
+        Raises:
+            RuntimeError: If the image pairs file cannot be loaded.
+        """
+
+        from pyalicevision import matchingImageCollection
+
+        param = node.attribute(self._param)
+
+        pairs = matchingImageCollection.PairSet()
+        ret = matchingImageCollection.loadPairsFromFile(param.value, pairs)
+        if not ret:
+            raise RuntimeError(f"Failed to load file : {param.value}")
+
+        return max(1, len(pairs))
