@@ -82,9 +82,9 @@ jobs:
           # Isolate writes per ref (branch/PR) to reduce cross-PR cache contamination.
           key: sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-${{ github.ref_name }}-${{ hashFiles('CMakeLists.txt', 'src/CMakeLists.txt', '.github/workflows/build-windows.yml') }}
           restore-keys: |
-            sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-${{ github.ref_name }}-
-            sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-develop-
-            sccache-${{ runner.os }}-
+            sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-${{ github.ref_name }}
+            sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-develop
+            sccache-${{ runner.os }}
           max-size: "1000M"
       
       # ---- REQUIREMENTS -----
