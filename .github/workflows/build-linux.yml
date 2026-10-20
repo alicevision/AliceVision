@@ -26,9 +26,9 @@ jobs:
           # Isolate writes per ref (branch/PR) to reduce cross-PR cache contamination.
           key: ccache-${{ runner.os }}-rocky9-cuda12.8.0-${{ github.ref_name }}-${{ hashFiles('CMakeLists.txt', 'src/CMakeLists.txt', 'vcpkg.json', 'vcpkg-configuration.json', '.github/workflows/build-linux.yml') }}
           restore-keys: |
-            ccache-${{ runner.os }}-rocky9-cuda12.8.0-${{ github.ref_name }}-
-            ccache-${{ runner.os }}-rocky9-cuda12.8.0-develop-
-            ccache-${{ runner.os }}-
+            ccache-${{ runner.os }}-rocky9-cuda12.8.0-${{ github.ref_name }}
+            ccache-${{ runner.os }}-rocky9-cuda12.8.0-develop
+            ccache-${{ runner.os }}
           max-size: "1000M"
 
       - name: Prepare File Tree
