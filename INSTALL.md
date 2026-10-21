@@ -333,7 +333,7 @@ At the end of the cmake process, a report shows for each library which version (
 
 * `ALICEVISION_BUILD_SFM` (default `ON`)  
   Build the SfM part of AliceVision. If set to `OFF`, all the following options will be disabled: 
-  `ALICEVISION_BUILD_MVS`, `ALICEVISION_BUILD_HDR`, `ALICEVISION_BUILD_SEGMENTATION`, `ALICEVISION_BUILD_PHOTOMETRICSTEREO`, 
+  `ALICEVISION_BUILD_MVS`, `ALICEVISION_BUILD_HDR`, `ALICEVISION_BUILD_PHOTOMETRICSTEREO`, 
   `ALICEVISION_BUILD_PANORAMA`, `ALICEVISION_BUILD_LIDAR`.
 
 * `ALICEVISION_BUILD_MVS` (default `ON`)  
@@ -341,9 +341,6 @@ At the end of the cmake process, a report shows for each library which version (
 
 * `ALICEVISION_BUILD_HDR` (default `ON`)  
   Build the HDR part of AliceVision.
-
-* `ALICEVISION_BUILD_SEGMENTATION` (default `ON`)  
-  Build the ONNX-based segmentation part of AliceVision.
 
 * `ALICEVISION_BUILD_PHOTOMETRICSTEREO` (default `ON`)  
   Build the Photometric Stereo part of AliceVision.
@@ -496,7 +493,6 @@ point to `/opt/AliceVision_install/share/aliceVision`:
 | --- | --- | --- |
 | Vocabulary tree | `ALICEVISION_VOCTREE` | https://gitlab.com/alicevision/trainedVocabularyTreeData |
 | Sphere detection model | `ALICEVISION_SPHERE_DETECTION_MODEL` | https://gitlab.com/alicevision/SphereDetectionModel |
-| Semantic segmentation model | `ALICEVISION_SEMANTIC_SEGMENTATION_MODEL` | https://gitlab.com/alicevision/semanticSegmentationModel |
 | Color chart detection model | `ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER` | https://gitlab.com/alicevision/ColorchartDetectionModel |
 
 Download the assets you need into a local directory (keeping the file/folder
@@ -507,7 +503,6 @@ directory when running the container. For example:
 mkdir -p assets && cd assets
 wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree
 wget https://gitlab.com/alicevision/SphereDetectionModel/-/raw/main/sphereDetection_Mask-RCNN.onnx
-wget https://gitlab.com/alicevision/semanticSegmentationModel/-/raw/main/fcn_resnet50.onnx
 git clone https://gitlab.com/alicevision/ColorchartDetectionModel.git ColorChartDetectionModel
 cd ..
 
@@ -561,8 +556,6 @@ Provided in AliceVision source tree: {ALICEVISION_REPOSITORY}/src/aliceVision/se
 It can be downloaded [here](https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree).
 * Sphere detection model (optional): for the automated sphere detection in stereo photometry.
 It can be downloaded [here](https://gitlab.com/alicevision/SphereDetectionModel/-/raw/main/sphereDetection_Mask-RCNN.onnx).
-* Semantic segmentation model (optional): for the semantic segmentation of objects.
-It can be downloaded [here](https://gitlab.com/alicevision/semanticSegmentationModel/-/raw/main/fcn_resnet50.onnx).
 * Color chart detection models (optional): for the detection of color charts.
 It can be downloaded [here](https://gitlab.com/alicevision/ColorchartDetectionModel).
 
@@ -571,7 +564,6 @@ Environment variables need to be set for Meshroom to find those files:
 ALICEVISION_SENSOR_DB=/path/to/database
 ALICEVISION_VOCTREE=/path/to/voctree
 ALICEVISION_SPHERE_DETECTION_MODEL=/path/to/detection/model
-ALICEVISION_SEMANTIC_SEGMENTATION_MODEL=/path/to/segmentation/model
 ALICEVISION_COLORCHARTDETECTION_MODEL_FOLDER=/path/to/ColorChartDetectionModel
 ```
 
