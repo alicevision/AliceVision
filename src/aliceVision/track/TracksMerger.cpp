@@ -41,7 +41,9 @@ bool TracksMerger::addTrackMap(const track::TracksMap & inputTracks)
             }
         }
 
-        // Select the largest track solution
+        // Select the best candidate: its score is the size of the existing track
+        // plus the number of shared features beyond the first one.
+        // On equal scores, the smallest track id is kept.
         size_t bestSize = 0;
         IndexT foundTrack = UndefinedIndexT;
         for (const auto [trackId, size] : candidates)
