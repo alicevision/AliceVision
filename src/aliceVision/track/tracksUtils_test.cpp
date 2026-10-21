@@ -473,3 +473,16 @@ BOOST_AUTO_TEST_CASE(TracksUtils_simulateTracksOutliers)
         BOOST_CHECK_GT(errorView1, 1.0);
     }
 }
+
+/**
+ * @brief Check that computeCovisibility() counts the number of tracks shared by each pair of views.
+ */
+BOOST_AUTO_TEST_CASE(TracksUtils_computeCovisibilityCounts)
+{
+    std::map<Pair, unsigned int> covisibility;
+    computeCovisibility(covisibility, makeTracks());
+
+    // number of tracks shared by each pair of views
+    const std::map<Pair, unsigned int> expected{{{0, 1}, 2}, {{0, 2}, 1}, {{0, 3}, 1}, {{1, 2}, 2}, {{1, 3}, 1}, {{2, 3}, 1}};
+    BOOST_CHECK(covisibility == expected);
+}
