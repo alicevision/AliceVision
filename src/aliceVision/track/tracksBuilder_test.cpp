@@ -533,7 +533,7 @@ BOOST_AUTO_TEST_CASE(TracksBuilder_filterNoop)
 }
 
 /**
- * @brief Check that filter() can be called several times.
+ * @brief Check that filter() can be called several times, and that the filtered count only covers the last call.
  */
 BOOST_AUTO_TEST_CASE(TracksBuilder_filterTwice)
 {
@@ -546,10 +546,13 @@ BOOST_AUTO_TEST_CASE(TracksBuilder_filterTwice)
     builder.filter(false, 3);
     const std::vector<Component> first = referenceFilter(all, false, 3);
     checkBuilder(builder, first, "first filter");
+    BOOST_CHECK_EQUAL(builder.getFilteredCount(), all.size() - first.size());
 
     builder.filter(true, 4);
     const std::vector<Component> second = referenceFilter(first, true, 4);
     checkBuilder(builder, second, "second filter");
+    // the counter is not cumulative: it only counts the tracks removed by the last call
+    BOOST_CHECK_EQUAL(builder.getFilteredCount(), first.size() - second.size());
 }
 
 /**
@@ -583,6 +586,7 @@ BOOST_AUTO_TEST_CASE(TracksBuilder_randomDifferential)
                     const std::vector<Component> expected = referenceFilter(all, clearForks, minLength);
                     const std::string context = "seed " + std::to_string(seed) + " " + filterContext(clearForks, minLength, multithreaded);
                     checkBuilder(builder, expected, context);
+                    BOOST_TEST_CONTEXT(context) { BOOST_CHECK_EQUAL(builder.getFilteredCount(), all.size() - expected.size()); }
                 }
             }
         }
@@ -604,6 +608,7 @@ BOOST_AUTO_TEST_CASE(TracksBuilder_largeMultithreadedFilter)
     builder.filter(true, 3, true);
     const std::vector<Component> expected = referenceFilter(all, true, 3);
     checkBuilder(builder, expected, "large");
+    BOOST_CHECK_EQUAL(builder.getFilteredCount(), all.size() - expected.size());
 }
 
 /**
@@ -645,4 +650,38 @@ BOOST_AUTO_TEST_CASE(TracksBuilder_exportWithFeatures)
     BOOST_CHECK_EQUAL(track.featPerView.at(0).featureId, 1);
     BOOST_CHECK_EQUAL(track.featPerView.at(1).featureId, 2);
     BOOST_CHECK_EQUAL(track.featPerView.at(2).featureId, 0);
+}
+
+/**
+ * @brief Check getFilteredCount() before filtering, after an early return, and after a real filter.
+ */
+BOOST_AUTO_TEST_CASE(TracksBuilder_filteredCount)
+{
+    std::mt19937 rng(3);
+    const PairwiseMatches matches = randomMatches(rng, 100, 6, 0.5);
+    const std::vector<Component> all = referenceTracks(matches);
+
+    TracksBuilder builder;
+    BOOST_CHECK_EQUAL(builder.getFilteredCount(), 0);
+
+    builder.build(matches);
+    BOOST_CHECK_EQUAL(builder.getFilteredCount(), 0);
+
+    // nothing to filter: early return
+    builder.filter(false, 0);
+    BOOST_CHECK_EQUAL(builder.getFilteredCount(), 0);
+
+    // nothing matches the criteria
+    builder.filter(false, 2);
+    BOOST_CHECK_EQUAL(builder.getFilteredCount(), 0);
+
+    builder.filter(true, 3);
+    const std::size_t expectedRemoved = all.size() - referenceFilter(all, true, 3).size();
+    BOOST_REQUIRE_GT(expectedRemoved, 0);
+    BOOST_CHECK_EQUAL(builder.getFilteredCount(), expectedRemoved);
+
+    // displayStats only logs: make sure it runs on the filtered tracks
+    TracksMap tracks;
+    builder.exportToSTL(tracks);
+    builder.displayStats(tracks);
 }
