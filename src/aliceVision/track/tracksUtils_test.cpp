@@ -204,6 +204,18 @@ BOOST_AUTO_TEST_CASE(TracksUtils_getTracksInImages)
 }
 
 /**
+ * @brief Check that getTracksInImageFast() clears its output for an unknown view.
+ */
+BOOST_AUTO_TEST_CASE(TracksUtils_getTracksInImageFastClearsOutput)
+{
+    // like the other getters, the output is cleared even when the view is unknown
+    const TracksPerView tracksPerView = makeTracksPerView(makeTracks());
+    std::set<std::size_t> tracksIds{999};
+    getTracksInImageFast(9, tracksPerView, tracksIds);
+    BOOST_CHECK(tracksIds.empty());
+}
+
+/**
  * @brief Check computeTracksPerView(): content, sorted ids, and existing empty views kept.
  */
 BOOST_AUTO_TEST_CASE(TracksUtils_computeTracksPerView)
