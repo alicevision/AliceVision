@@ -278,14 +278,7 @@ void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track
             {
                 p.second = next->first;
 
-                if (covisibility.find(p) == covisibility.end())
-                {
-                    covisibility[p] = 0;
-                }
-                else
-                {
-                    covisibility[p]++;
-                }
+                covisibility[p]++;
             }
         }
     }
