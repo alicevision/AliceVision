@@ -24,7 +24,7 @@
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.4",
+            "SfMExpanding": "2.7",
             "SfMTransform": "3.2",
             "StarListing": "1.0",
             "TracksBuilding": "1.0"

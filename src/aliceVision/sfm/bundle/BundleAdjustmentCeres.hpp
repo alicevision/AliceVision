@@ -35,7 +35,7 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
      */
     struct CeresOptions
     {
-        CeresOptions(bool verbose = true, bool multithreaded = true, unsigned int maxIterations = 50, double huberLoss = 4.0)
+        CeresOptions(bool verbose = true, bool multithreaded = true, unsigned int maxIterations = 50, double huberLoss = 16.0)
           : verbose(verbose),
             nbThreads(multithreaded ? omp_get_max_threads() : 1),  // set number of threads, 1 if OpenMP is not enabled
             maxNumIterations(maxIterations)

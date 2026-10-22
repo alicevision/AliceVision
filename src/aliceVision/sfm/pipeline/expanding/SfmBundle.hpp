@@ -170,7 +170,7 @@ private:
     size_t _LBAMinNbOfMatches = 50;
     bool _isStructureRefinementEnabled = true;
     bool _enableObservationsWeighting = false;
-    double _lossParameter = 4.0;
+    double _lossParameter = 16.0;
 };
 
 } // namespace sfm

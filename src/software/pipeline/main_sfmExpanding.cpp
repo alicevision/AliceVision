@@ -30,7 +30,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 6
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 7
 
 using namespace aliceVision;
 
@@ -70,7 +70,7 @@ int aliceVision_main(int argc, char** argv)
     bool enableDepthPrior = true;
     bool ignoreMultiviewOnPrior = false;
     bool enableObservationsWeighting = false;
-    double lossParameter = 4.0;
+    double lossParameter = 16.0;
 
     int randomSeed = std::mt19937::default_seed;
 

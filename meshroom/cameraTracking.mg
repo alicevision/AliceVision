@@ -28,7 +28,7 @@
             "ScenePreview": "2.0",
             "SfMBootStrapping": "4.2",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.4",
+            "SfMExpanding": "2.7",
             "SfMTransfer": "2.2",
             "SfMTransform": "3.2",
             "SfMTriangulation": "1.0",
