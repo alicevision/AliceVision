@@ -17,7 +17,7 @@
             "RelativePoseEstimating": "3.0",
             "SfMBootStrapping": "4.1",
             "SfMColorizing": "1.0",
-            "SfMExpanding": "2.1",
+            "SfMExpanding": "2.7",
             "SfMTransform": "3.1",
             "Texturing": "6.0",
             "TracksBuilding": "1.0"

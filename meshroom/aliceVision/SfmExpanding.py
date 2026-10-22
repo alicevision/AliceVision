@@ -1,4 +1,4 @@
-__version__ = "2.6"
+__version__ = "2.7"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -304,7 +304,7 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
             name="lossParameter",
             label="Loss Parameter",
             description="Huber loss threshold used in bundle adjustment.",
-            value=4.0,
+            value=16.0,
             range=(0.1, 100.0, 0.1),
             advanced=True,
         ),
