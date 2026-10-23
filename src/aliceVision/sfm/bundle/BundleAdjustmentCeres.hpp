@@ -10,6 +10,10 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/containers/PosesContainer.hpp>
+#include <aliceVision/sfm/bundle/containers/RigsContainer.hpp>
+#include <aliceVision/sfm/bundle/containers/IntrinsicsContainer.hpp>
+#include <aliceVision/sfm/bundle/containers/LandmarksContainer.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/CameraPose.hpp>
@@ -273,21 +277,14 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     /// all parameters blocks pointers
     std::vector<double*> _allParametersBlocks;
     /// poses blocks wrapper
-    /// block: ceres angleAxis(3) + center(3)
-    std::map<IndexT, std::array<double, 6>> _posesBlocks;  // TODO : maybe we can use boost::flat_map instead of std::map ?
+    PosesContainer _posesBlocks;
     /// intrinsics blocks wrapper
-    /// block: intrinsics params
-    std::map<IndexT, std::vector<double>> _intrinsicsBlocks;
-    std::map<IndexT, std::vector<double>> _distortionsBlocks;
-    std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
+    IntrinsicsContainer _intrinsicsBlocks;
 
-    double _fakeDistortionBlock;
     /// landmarks blocks wrapper
-    /// block: 3d position(3)
-    std::map<IndexT, std::array<double, 3>> _landmarksBlocks;
+    LandmarksContainer _landmarksBlocks;
     /// rig sub-poses blocks wrapper
-    /// block: ceres angleAxis(3) + translation(3)
-    std::map<IndexT, std::map<IndexT, std::array<double, 6>>> _rigBlocks;
+    RigsContainer _rigBlocks;
 
     /// hinted order for ceres to eliminate blocks when solving.
     /// note: this ceres parameter is built internally and must be reset on each call to the solver.

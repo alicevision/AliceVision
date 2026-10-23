@@ -15,12 +15,10 @@
 #include <aliceVision/sfm/bundle/costfunctions/temporalConstraint.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/depth.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/survey.hpp>
-#include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
 #include <aliceVision/sfm/utils/poseFilter.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/camera/camera.hpp>
-#include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 
 
 #include <ceres/rotation.h>
@@ -230,292 +228,39 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
     const bool refineCenter = refineOptions & BundleAdjustment::REFINE_CENTER;
     const bool refineRotation = refineOptions & BundleAdjustment::REFINE_ROTATION;
 
-    const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isConstant, std::array<double, 6>& poseBlock) {
-        const Mat3& R = cameraPose.getTransform().rotation();
-        const Vec3& c = cameraPose.getTransform().center();
-
-        double angleAxis[3];
-        ceres::RotationMatrixToAngleAxis(static_cast<const double*>(R.data()), angleAxis);
-        poseBlock.at(0) = angleAxis[0];
-        poseBlock.at(1) = angleAxis[1];
-        poseBlock.at(2) = angleAxis[2];
-        poseBlock.at(3) = c(0);
-        poseBlock.at(4) = c(1);
-        poseBlock.at(5) = c(2);
-
-        double* poseBlockPtr = poseBlock.data();
-        problem.AddParameterBlock(poseBlockPtr, 6);
-
-        // add pose parameter to the all parameters blocks pointers list
-        _allParametersBlocks.push_back(poseBlockPtr);
-
-        // keep the camera extrinsics constants
-        if (cameraPose.isLocked() || isConstant || (!refineCenter && !refineRotation))
-        {
-            // set the whole parameter block as constant.
-            _statistics.addState(EParameter::POSE, EEstimatorParameterState::CONSTANT);
-            problem.SetParameterBlockConstant(poseBlockPtr);
-            return;
-        }
-
-        // constant parameters
-        std::vector<int> constantExtrinsic;
-
-        // don't refine rotations
-        if (!refineRotation)
-        {
-            constantExtrinsic.push_back(0);
-            constantExtrinsic.push_back(1);
-            constantExtrinsic.push_back(2);
-        }
-
-        // don't refine translations
-        if (!refineCenter)
-        {
-            constantExtrinsic.push_back(3);
-            constantExtrinsic.push_back(4);
-            constantExtrinsic.push_back(5);
-        }
-
-        // subset parametrization
-        if (!constantExtrinsic.empty())
-        {
-            auto* subsetManifold = new ceres::SubsetManifold(6, constantExtrinsic);
-            problem.SetManifold(poseBlockPtr, subsetManifold);
-        }
-
-        _statistics.addState(EParameter::POSE, EEstimatorParameterState::REFINED);
-    };
-
     // setup poses data
-    for (const auto& [poseId, pose] : sfmData.getPoses().valueRange())
-    {
-        // skip camera pose set as Ignored in the Local strategy
-        if (pose.getState() == EEstimatorParameterState::IGNORED)
-        {
-            _statistics.addState(EParameter::POSE, EEstimatorParameterState::IGNORED);
-            continue;
-        }
-
-        const bool isConstant = (pose.getState() == EEstimatorParameterState::CONSTANT);
-
-        addPose(pose, isConstant, _posesBlocks[poseId]);
-    }
+    _posesBlocks.fill(sfmData, refineRotation, refineCenter);
+    _posesBlocks.addToProblem(problem);
 
     // setup sub-poses data
-    for (const auto& rigPair : sfmData.getRigs())
-    {
-        const IndexT rigId = rigPair.first;
-        const sfmData::Rig& rig = rigPair.second;
-        const std::size_t nbSubPoses = rig.getNbSubPoses();
+    _rigBlocks.fill(sfmData, refineRotation, refineCenter);
+    _rigBlocks.addToProblem(problem);
 
-        for (std::size_t subPoseId = 0; subPoseId < nbSubPoses; ++subPoseId)
-        {
-            const sfmData::RigSubPose& rigSubPose = rig.getSubPose(subPoseId);
+    // add poses and sub-poses parameters to the all parameters blocks pointers list
+    const std::vector<double*> posesParameterBlocks = _posesBlocks.getParameterBlocks();
+    _allParametersBlocks.insert(_allParametersBlocks.end(), posesParameterBlocks.begin(), posesParameterBlocks.end());
 
-            if (rigSubPose.status == sfmData::ERigSubPoseStatus::UNINITIALIZED)
-                continue;
-
-            const bool isConstant = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
-
-            addPose(sfmData::CameraPose(rigSubPose.pose), isConstant, _rigBlocks[rigId][subPoseId]);
-        }
-    }
+    const std::vector<double*> rigsParameterBlocks = _rigBlocks.getParameterBlocks();
+    _allParametersBlocks.insert(_allParametersBlocks.end(), rigsParameterBlocks.begin(), rigsParameterBlocks.end());
 }
 
 void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmData,
                                                    BundleAdjustment::ERefineOptions refineOptions,
                                                    ceres::Problem& problem)
 {
-    const bool refineIntrinsicsOpticalCenter =
-      (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS)
-      || (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA);
-    const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
-    const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
-    const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
+    IntrinsicsContainer::Options options;
+    options.refineFocal = refineOptions & REFINE_INTRINSICS_FOCAL;
+    options.refineDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
+    options.refineOpticalCenterAlways = refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS;
+    options.refineOpticalCenterIfEnoughData = refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA;
+    options.minNbImagesToRefineOpticalCenter = _minNbImagesToRefineOpticalCenter;
 
-    std::map<IndexT, std::size_t> intrinsicsUsage;
+    _intrinsicsBlocks.fill(sfmData, options);
+    _intrinsicsBlocks.addToProblem(problem, _ceresOptions.useFocalPrior);
 
-
-    //Create a fake distortion block which is always constant
-    //This is to trick ceres limitations
-    _fakeDistortionBlock = 0.0;
-    problem.AddParameterBlock(&_fakeDistortionBlock, 1);
-    problem.SetParameterBlockConstant(&_fakeDistortionBlock);
-
-    // count the number of reconstructed views per intrinsic
-    for (const auto& viewPair : sfmData.getViews())
-    {
-        const sfmData::View& view = *(viewPair.second);
-
-        if (intrinsicsUsage.find(view.getIntrinsicId()) == intrinsicsUsage.end())
-        {
-            intrinsicsUsage[view.getIntrinsicId()] = 0;
-        }
-
-        if (sfmData.isPoseAndIntrinsicDefined(view))
-        {
-            ++intrinsicsUsage.at(view.getIntrinsicId());
-        }
-    }
-
-    for (const auto& [intrinsicId, intrinsicPtr] : sfmData.getIntrinsics())
-    {
-        const auto usageIt = intrinsicsUsage.find(intrinsicId);
-        if (usageIt == intrinsicsUsage.end())
-        {
-            // if the intrinsic is never referenced by any view, skip it
-            continue;
-        }
-
-        const std::size_t usageCount = usageIt->second;
-
-        // do not refine an intrinsic does not used by any reconstructed view
-        if (usageCount <= 0 || intrinsicPtr->getState() == EEstimatorParameterState::IGNORED)
-        {
-            _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::IGNORED);
-            continue;
-        }
-
-        //Ignore camera which are not scale offset derived
-        auto intrinsicScaleOffset = camera::IntrinsicScaleOffset::cast(intrinsicPtr);
-        if (!intrinsicScaleOffset)
-        {
-            continue;
-        }
-
-        //Create a copy of the intrinsics to enable rollback
-        _intrinsicObjects[intrinsicId].reset(intrinsicPtr->clone());
-
-        //Create data block for intrinsics inside ceres
-        std::vector<double>& intrinsicBlock = _intrinsicsBlocks[intrinsicId];
-        intrinsicBlock = intrinsicPtr->getParameters();
-        double* intrinsicBlockPtr = intrinsicBlock.data();
-        problem.AddParameterBlock(intrinsicBlockPtr, intrinsicBlock.size());
-
-        // add intrinsic parameter to the all parameters blocks pointers list
-        _allParametersBlocks.push_back(intrinsicBlockPtr);
-
-        // keep the camera intrinsic constant
-        if (intrinsicPtr->isLocked() || !refineIntrinsics || intrinsicPtr->getState() == EEstimatorParameterState::CONSTANT)
-        {
-            // set the whole parameter block as constant.
-            _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::CONSTANT);
-            problem.SetParameterBlockConstant(intrinsicBlockPtr);
-        }
-        else
-        {
-            // constant parameters
-            bool lockCenter = false;
-            bool lockFocal = false;
-            bool lockRatio = true;
-            double focalRatio = 1.0;
-
-            lockFocal = (!refineIntrinsicsFocalLength) || intrinsicScaleOffset->isScaleLocked();
-
-            // refine the focal length
-            if (!lockFocal)
-            {
-                if (intrinsicScaleOffset->getInitialScale().x() > 0
-                    && intrinsicScaleOffset->getInitialScale().y() > 0
-                    && _ceresOptions.useFocalPrior)
-                {
-                    const double maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h());
-
-                    const double fx = intrinsicScaleOffset->getInitialScale().x();
-                    const double fy = intrinsicScaleOffset->getInitialScale().y();
-
-                    const double lboundY = std::max(0.0, fy - maxFocalError);
-                    const double uboundY = std::max(0.0, fy + maxFocalError);
-                    const double lboundX = std::max(0.0, lboundY * fx/fy);
-                    const double uboundX = std::max(0.0, uboundY * fx/fy);
-
-                    problem.SetParameterLowerBound(intrinsicBlockPtr, 0, lboundX);
-                    problem.SetParameterUpperBound(intrinsicBlockPtr, 0, uboundX);
-                    problem.SetParameterLowerBound(intrinsicBlockPtr, 1, lboundY);
-                    problem.SetParameterUpperBound(intrinsicBlockPtr, 1, uboundY);
-                }
-                else
-                {
-                    // we don't have an initial guess, but we assume that we use
-                    // a converging lens, so the focal length should be positive.
-                    problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
-                    problem.SetParameterLowerBound(intrinsicBlockPtr, 1, 0.0);
-                }
-
-                focalRatio = intrinsicBlockPtr[0] / intrinsicBlockPtr[1];
-                lockRatio = intrinsicScaleOffset->isRatioLocked();
-            }
-
-            // optical center
-            lockCenter = intrinsicScaleOffset->isOffsetLocked();
-
-            bool validRefineCenter = (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_ALWAYS)
-                            || (
-                                (refineOptions & REFINE_INTRINSICS_OPTICALOFFSET_IF_ENOUGH_DATA)
-                                && _minNbImagesToRefineOpticalCenter > 0
-                                && usageCount >= _minNbImagesToRefineOpticalCenter
-                            );
-
-            if (!validRefineCenter)
-            {
-                lockCenter = true;
-            }
-
-            if (!lockCenter)
-            {
-                // refine optical center within 10% of the image size.
-                assert(intrinsicBlock.size() >= 3);
-
-                const double opticalCenterMinPercent = -0.05;
-                const double opticalCenterMaxPercent = 0.05;
-
-                // add bounds to the principal point
-                problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->w());
-                problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->w());
-                problem.SetParameterLowerBound(intrinsicBlockPtr, 3, opticalCenterMinPercent * intrinsicPtr->h());
-                problem.SetParameterUpperBound(intrinsicBlockPtr, 3, opticalCenterMaxPercent * intrinsicPtr->h());
-            }
-
-            auto * subsetManifold = new IntrinsicsManifold(
-                                        intrinsicBlock.size(),
-                                        focalRatio,
-                                        lockFocal,
-                                        lockRatio,
-                                        lockCenter
-                                    );
-
-            problem.SetManifold(intrinsicBlockPtr, subsetManifold);
-        }
-
-
-        //Check if this particular distortion is locked
-        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsicPtr);
-        if (isod)
-        {
-            auto distortion = isod->getDistortion();
-            if (distortion)
-            {
-                //Create data block for intrinsics inside ceres
-                std::vector<double>& distortionBlock = _distortionsBlocks[intrinsicId];
-                distortionBlock = distortion->getParameters();
-                double* distortionBlockPtr = distortionBlock.data();
-                problem.AddParameterBlock(distortionBlockPtr, distortionBlock.size());
-
-                if (!refineIntrinsicsDistortion
-                    || isod->getDistortionInitializationMode() == camera::EInitMode::CALIBRATED
-                    || distortion->isLocked()
-                    || !refineIntrinsics
-                    || intrinsicPtr->getState() == EEstimatorParameterState::CONSTANT
-                    )
-                {
-                    problem.SetParameterBlockConstant(distortionBlockPtr);
-                }
-            }
-        }
-
-        _statistics.addState(EParameter::INTRINSIC, EEstimatorParameterState::REFINED);
-    }
+    // add intrinsics parameters to the all parameters blocks pointers list
+    const std::vector<double*> intrinsicsParameterBlocks = _intrinsicsBlocks.getParameterBlocks();
+    _allParametersBlocks.insert(_allParametersBlocks.end(), intrinsicsParameterBlocks.begin(), intrinsicsParameterBlocks.end());
 }
 
 void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem, std::vector<ceres::ResidualBlockId>& blockIds)
@@ -526,63 +271,28 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
     // note: set it to NULL if you don't want use a lossFunction.
     ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
 
-    // build the residual blocks corresponding to the track observations
-    for (const auto& landmarkPair : sfmData.getLandmarks())
-    {
-        const IndexT landmarkId = landmarkPair.first;
-        const sfmData::Landmark& landmark = landmarkPair.second;
+    // setup landmarks data
+    _landmarksBlocks.fill(sfmData, refineStructure);
+    _landmarksBlocks.addToProblem(problem);
 
-        // do not create a residual block if the landmark
-        // have been set as Ignored by the Local BA strategy
-        if (landmark.getState() == EEstimatorParameterState::IGNORED)
+    // add landmarks parameters to the all parameters blocks pointers list
+    const std::vector<double*> landmarksParameterBlocks = _landmarksBlocks.getParameterBlocks();
+    _allParametersBlocks.insert(_allParametersBlocks.end(), landmarksParameterBlocks.begin(), landmarksParameterBlocks.end());
+
+    // build the residual blocks corresponding to the track observations
+    for (const auto& [landmarkId, landmark] : sfmData.getLandmarks())
+    {
+        // landmark set as Ignored by the Local BA strategy
+        if (!_landmarksBlocks.contains(landmarkId))
         {
-            _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::IGNORED);
             continue;
         }
 
-        std::array<double, 3> & landmarkBlock = _landmarksBlocks[landmarkId];
-        for (std::size_t i = 0; i < 3; ++i)
-        {
-            landmarkBlock.at(i) = landmark.getX()(Eigen::Index(i));
-        }
+        double* landmarkBlockPtr = _landmarksBlocks.getBlock(landmarkId);
 
-        //If the landmark has a referenceViewIndex set, then retrieve the reference pose
-        int sizeLandmark = 3;
-        double * referencePoseBlockPtr = nullptr;
-
-
-        if (landmark.getReferenceViewIndex() != UndefinedIndexT)
-        {
-            // Store landmark in reference view geometric frame
-            const sfmData::View& refview = sfmData.getView(landmark.getReferenceViewIndex());
-            const geometry::Pose3 refPose = sfmData.getPose(refview).getTransform();
-            Vec3 refX = refPose(landmark.getX());
-
-            // If there is a point fetcher, the landmark is only a bearing vector
-            if (landmark.getPointFetcher())
-            {
-                refX.x() /= refX.z();
-                refX.y() /= refX.z();
-                sizeLandmark = 2;
-            }
-
-            // Note: landmarkBlock[2] is only used when sizeLandmark == 3 (full 3D point).
-            // When sizeLandmark == 2 (bearing vector with point fetcher), this value is ignored
-            // but is set here for completeness and potential diagnostics.
-            landmarkBlock[0] = refX.x();
-            landmarkBlock[1] = refX.y();
-            landmarkBlock[2] = refX.z();
-
-            referencePoseBlockPtr = _posesBlocks.at(refview.getPoseId()).data();
-        }
-
-        double* landmarkBlockPtr = landmarkBlock.data();
-        problem.AddParameterBlock(landmarkBlockPtr, sizeLandmark);
-
-        double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
-
-        // add landmark parameter to the all parameters blocks pointers list
-        _allParametersBlocks.push_back(landmarkBlockPtr);
+        // if the landmark is expressed in a reference view frame, retrieve the reference pose
+        const IndexT referencePoseId = _landmarksBlocks.at(landmarkId).referencePoseId;
+        double* referencePoseBlockPtr = (referencePoseId != UndefinedIndexT) ? _posesBlocks.get(referencePoseId) : nullptr;
 
         // iterate over 2D observation associated to the 3D landmark
         for (const auto& [viewId, observation] : landmark.getObservations())
@@ -607,24 +317,11 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             }
 
             // needed parameters to create a residual block (K, pose)
-            double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
-            double* intrinsicBlockPtr = _intrinsicsBlocks.at(intrinsicId).data();
-            const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[intrinsicId];
+            double* poseBlockPtr = _posesBlocks.get(view.getPoseId());
+            double* intrinsicBlockPtr = _intrinsicsBlocks.getIntrinsicBlock(intrinsicId);
+            const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicsBlocks.getObject(intrinsicId);
 
-            double * distortionBlockPtr = fakeDistortionBlockPtr;
-            if (_distortionsBlocks.find(intrinsicId) != _distortionsBlocks.end())
-            {
-                distortionBlockPtr = _distortionsBlocks.at(intrinsicId).data();
-            }
-
-            // apply a specific parameter ordering:
-            if (_ceresOptions.useParametersOrdering)
-            {
-                _linearSolverOrdering.AddElementToGroup(landmarkBlockPtr, 0);
-                _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
-                _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
-                _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
-            }
+            double* distortionBlockPtr = _intrinsicsBlocks.getDistortionBlock(intrinsicId);
 
             ceres::LossFunction* weightedLossFunction = lossFunction;
             if (observation.getWeight() != 1.0)
@@ -636,8 +333,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             {
                 ceres::CostFunction* costFunction = ProjectionErrorFunctor::createCostFunction(intrinsic, observation);
 
-                double* rigBlockPtr = _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data();
-                _linearSolverOrdering.AddElementToGroup(rigBlockPtr, 1);
+                double* rigBlockPtr = _rigBlocks.get(view.getRigId(), view.getSubPoseId());
 
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
@@ -652,11 +348,6 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             else if (referencePoseBlockPtr != nullptr)
             {
                 bool samePose = (referencePoseBlockPtr == poseBlockPtr);
-
-                if (_ceresOptions.useParametersOrdering && !samePose)
-                {
-                    _linearSolverOrdering.AddElementToGroup(referencePoseBlockPtr, 1);
-                }
 
                 ceres::CostFunction* costFunction = ProjectionMeshErrorFunctor::createCostFunction(intrinsic, observation, landmark.getPointFetcher(), samePose);
 
@@ -699,17 +390,6 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, nullptr, params);
                 blockIds.push_back(blockId);
             }
-
-            if (!refineStructure || landmark.getState() == EEstimatorParameterState::CONSTANT || landmark.isLocked())
-            {
-                // set the whole landmark parameter block as constant.
-                _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::CONSTANT);
-                problem.SetParameterBlockConstant(landmarkBlockPtr);
-            }
-            else
-            {
-                _statistics.addState(EParameter::LANDMARK, EEstimatorParameterState::REFINED);
-            }
         }
     }
 }
@@ -720,7 +400,6 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
     // build the residual blocks corresponding to the track observations
     for (const auto& [idView, vspoints] : sfmData.getSurveyPoints())
     {
-        double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
 
         const sfmData::View& view = sfmData.getView(idView);
         if (!sfmData.isPoseAndIntrinsicDefined(view))
@@ -732,13 +411,13 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
         const IndexT poseId = view.getPoseId();
 
         // Do not add surveys if the pose is not to be estimated
-        if (_posesBlocks.find(poseId) == _posesBlocks.end())
+        if (!_posesBlocks.contains(poseId))
         {
             continue;
         }
 
         // Do not add surveys if the intrinsic is not to be estimated
-        if (_intrinsicsBlocks.find(intrinsicId) == _intrinsicsBlocks.end())
+        if (!_intrinsicsBlocks.contains(intrinsicId))
         {
             continue;
         }
@@ -750,23 +429,11 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
 
         // needed parameters to create a residual block (K, pose)
 
-        double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
-        double* intrinsicBlockPtr = _intrinsicsBlocks.at(intrinsicId).data();
-        const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicObjects[intrinsicId];
+        double* poseBlockPtr = _posesBlocks.get(view.getPoseId());
+        double* intrinsicBlockPtr = _intrinsicsBlocks.getIntrinsicBlock(intrinsicId);
+        const std::shared_ptr<IntrinsicBase> intrinsic = _intrinsicsBlocks.getObject(intrinsicId);
 
-        double * distortionBlockPtr = fakeDistortionBlockPtr;
-        if (_distortionsBlocks.find(intrinsicId) != _distortionsBlocks.end())
-        {
-            distortionBlockPtr = _distortionsBlocks.at(intrinsicId).data();
-        }
-
-        // apply a specific parameter ordering:
-        if (_ceresOptions.useParametersOrdering)
-        {
-            _linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
-            _linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
-            _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
-        }
+        double* distortionBlockPtr = _intrinsicsBlocks.getDistortionBlock(intrinsicId);
 
 
         for (const auto & spoint: vspoints)
@@ -790,7 +457,6 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
     // set a LossFunction to be less penalized by false measurements.
     // note: set it to NULL if you don't want use a lossFunction.
     ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
-    double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
 
     for (const auto& constraint : sfmData.getConstraints2D())
     {
@@ -802,30 +468,20 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
         const auto& intrinsic_1 = sfmData.getIntrinsicSharedPtr(view_1);
         const auto& intrinsic_2 = sfmData.getIntrinsicSharedPtr(view_2);
 
-        double* poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
-        double* poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
+        double* poseBlockPtr_1 = _posesBlocks.get(view_1.getPoseId());
+        double* poseBlockPtr_2 = _posesBlocks.get(view_2.getPoseId());
 
         IndexT intrinsicId_1 = view_1.getIntrinsicId();
         IndexT intrinsicId_2 = view_2.getIntrinsicId();
 
-        double* intrinsicBlockPtr_1 = _intrinsicsBlocks.at(intrinsicId_1).data();
-        double* intrinsicBlockPtr_2 = _intrinsicsBlocks.at(intrinsicId_2).data();
+        double* intrinsicBlockPtr_1 = _intrinsicsBlocks.getIntrinsicBlock(intrinsicId_1);
+        double* intrinsicBlockPtr_2 = _intrinsicsBlocks.getIntrinsicBlock(intrinsicId_2);
 
-        const std::shared_ptr<IntrinsicBase> intrinsicObject1 = _intrinsicObjects[intrinsicId_1];
-        const std::shared_ptr<IntrinsicBase> intrinsicObject2 = _intrinsicObjects[intrinsicId_2];
+        const std::shared_ptr<IntrinsicBase> intrinsicObject1 = _intrinsicsBlocks.getObject(intrinsicId_1);
+        const std::shared_ptr<IntrinsicBase> intrinsicObject2 = _intrinsicsBlocks.getObject(intrinsicId_2);
 
-
-        double * distortionBlockPtr_1 = fakeDistortionBlockPtr;
-        if (_distortionsBlocks.find(intrinsicId_1) != _distortionsBlocks.end())
-        {
-            distortionBlockPtr_1 = _distortionsBlocks.at(intrinsicId_1).data();
-        }
-
-        double * distortionBlockPtr_2 = fakeDistortionBlockPtr;
-        if (_distortionsBlocks.find(intrinsicId_2) != _distortionsBlocks.end())
-        {
-            distortionBlockPtr_2 = _distortionsBlocks.at(intrinsicId_2).data();
-        }
+        double* distortionBlockPtr_1 = _intrinsicsBlocks.getDistortionBlock(intrinsicId_1);
+        double* distortionBlockPtr_2 = _intrinsicsBlocks.getDistortionBlock(intrinsicId_2);
 
         bool view_1_rig = false;
         double * rigBlockPtr_1 = nullptr;
@@ -834,7 +490,12 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
             view_1_rig = true;
             IndexT rigId = view_1.getRigId();
             IndexT subPoseId = view_1.getSubPoseId();
-            rigBlockPtr_1 = _rigBlocks[rigId][subPoseId].data();
+            if (!_rigBlocks.contains(rigId, subPoseId))
+            {
+                ALICEVISION_THROW_ERROR("2D constraint on view " << view_1.getViewId() << ": rig " << rigId << " sub-pose " << subPoseId
+                                                                  << " is not initialized.");
+            }
+            rigBlockPtr_1 = _rigBlocks.get(rigId, subPoseId);
         }
 
         bool view_2_rig = false;
@@ -844,7 +505,12 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
             view_2_rig = true;
             IndexT rigId = view_2.getRigId();
             IndexT subPoseId = view_2.getSubPoseId();
-            rigBlockPtr_2 = _rigBlocks[rigId][subPoseId].data();
+            if (!_rigBlocks.contains(rigId, subPoseId))
+            {
+                ALICEVISION_THROW_ERROR("2D constraint on view " << view_2.getViewId() << ": rig " << rigId << " sub-pose " << subPoseId
+                                                                  << " is not initialized.");
+            }
+            rigBlockPtr_2 = _rigBlocks.get(rigId, subPoseId);
         }
 
         ceres::CostFunction* costFunction = Constraint2dErrorFunctor::createCostFunction(intrinsicObject1,
@@ -898,13 +564,13 @@ void BundleAdjustmentCeres::addConstraintsPointToProblem(const sfmData::SfMData&
             continue;
         }
 
-        if (_landmarksBlocks.find(landmarkId) == _landmarksBlocks.end())
+        if (!_landmarksBlocks.contains(landmarkId))
         {
             continue;
         }
 
         const sfmData::Landmark & l = sfmData.getLandmarks().at(landmarkId);
-        double * ldata = _landmarksBlocks.at(landmarkId).data();
+        double * ldata = _landmarksBlocks.getBlock(landmarkId);
 
         ceres::CostFunction* costFunction = ConstraintPointErrorFunctor::createCostFunction(l, constraint.normal);
 
@@ -926,8 +592,8 @@ void BundleAdjustmentCeres::addRotationPriorsToProblem(const sfmData::SfMData& s
         const auto& pose_1 = sfmData.getPose(view_1);
         const auto& pose_2 = sfmData.getPose(view_2);
 
-        double* poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
-        double* poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
+        double* poseBlockPtr_1 = _posesBlocks.get(view_1.getPoseId());
+        double* poseBlockPtr_2 = _posesBlocks.get(view_2.getPoseId());
 
         ceres::CostFunction* costFunction =
           new ceres::AutoDiffCostFunction<RotationPriorErrorFunctor, 3, 6, 6>(new RotationPriorErrorFunctor(prior._second_R_first));
@@ -991,8 +657,7 @@ void BundleAdjustmentCeres::addTemporalSmoothnessToProblem(const sfmData::SfMDat
 
         for (IndexT frameIdx = firstViewWithPose; frameIdx <= lastViewWithPose; frameIdx++)
         {
-            poseBlockPtrs.push_back(_posesBlocks.at(poseIdsVec.at(frameIdx)).data());
-            _linearSolverOrdering.AddElementToGroup(poseBlockPtrs[frameIdx-firstViewWithPose], 1);
+            poseBlockPtrs.push_back(_posesBlocks.get(poseIdsVec.at(frameIdx)));
         }
 
         double trajectoryLength = cameraTrajectoryLength(poseBlockPtrs);
@@ -1031,10 +696,7 @@ void BundleAdjustmentCeres::addTemporalSmoothnessToProblem(const sfmData::SfMDat
 
         if (land2ViewsRegWeight != 0.)
         {
-            std::vector<double*> landmarks;
-
-            for (auto& [landmarkID, landmarkPtr] : _landmarksBlocks)
-                landmarks.push_back(landmarkPtr.data());
+            std::vector<double*> landmarks = _landmarksBlocks.getParameterBlocks();
 
             std::vector<double> meanLandmarks2viewsVector(3);
 
@@ -1090,6 +752,15 @@ void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData, ERefi
 
     // add temporal smoothness constraint to the Ceres problem
     addTemporalSmoothnessToProblem(sfmData, refineOptions, problem, temporalConstraintBlockIds);
+
+    // apply a specific parameter ordering: landmarks are eliminated first, then poses, then intrinsics
+    if (_ceresOptions.useParametersOrdering)
+    {
+        _landmarksBlocks.addToOrdering(_linearSolverOrdering, 0);
+        _posesBlocks.addToOrdering(_linearSolverOrdering, 1);
+        _rigBlocks.addToOrdering(_linearSolverOrdering, 1);
+        _intrinsicsBlocks.addToOrdering(_linearSolverOrdering, 2);
+    }
 }
 
 void BundleAdjustmentCeres::resetProblem()
@@ -1101,8 +772,6 @@ void BundleAdjustmentCeres::resetProblem()
     _intrinsicsBlocks.clear();
     _landmarksBlocks.clear();
     _rigBlocks.clear();
-    _intrinsicObjects.clear();
-    _distortionsBlocks.clear();
     _linearSolverOrdering.Clear();
 }
 
@@ -1119,118 +788,22 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
     if (refinePoses)
     {
         // absolute poses
-        for (auto & [poseId, pose] : sfmData.getPoses().valueRange())
-        {
-            // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (pose.getState() != EEstimatorParameterState::REFINED)
-            {
-                continue;
-            }
-
-            const std::array<double, 6> & poseBlock = _posesBlocks.at(poseId);
-            pose.updateFromEstimator(poseBlock);
-        }
+        _posesBlocks.updateSfmData(sfmData);
 
         // rig sub-poses
-        for (const auto& rigIt : _rigBlocks)
-        {
-            sfmData::Rig& rig = sfmData.getRigs().at(rigIt.first);
-
-            for (const auto& subPoseit : rigIt.second)
-            {
-                sfmData::RigSubPose& subPose = rig.getSubPose(subPoseit.first);
-                const std::array<double, 6>& subPoseBlock = subPoseit.second;
-
-                Mat3 R_refined;
-                ceres::AngleAxisToRotationMatrix(subPoseBlock.data(), R_refined.data());
-                const Vec3 c_refined(subPoseBlock.at(3), subPoseBlock.at(4), subPoseBlock.at(5));
-
-                // update the sub-pose
-                subPose.pose.setRotation(R_refined);
-                subPose.pose.setCenter(c_refined);
-            }
-        }
+        _rigBlocks.updateSfmData(sfmData);
     }
 
     // update camera intrinsics with refined data
     if (refineIntrinsics)
     {
-        for (const auto& [idIntrinsic, block] : _intrinsicsBlocks)
-        {
-            const auto& intrinsic = sfmData.getIntrinsicSharedPtr(idIntrinsic);
-
-            // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (intrinsic->getState() != EEstimatorParameterState::REFINED)
-            {
-                continue;
-            }
-
-            sfmData.getIntrinsics().at(idIntrinsic)->updateFromParams(block);
-        }
-
-        for (const auto& [idIntrinsic, distortionBlock]: _distortionsBlocks)
-        {
-            auto intrinsic = sfmData.getIntrinsicSharedPtr(idIntrinsic);
-
-            // do not update a camera pose set as Ignored or Constant in the Local strategy
-            if (intrinsic->getState() != EEstimatorParameterState::REFINED)
-            {
-                continue;
-            }
-
-            auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-            if (isod)
-            {
-                auto distortion = isod->getDistortion();
-                if (distortion)
-                {
-                    distortion->setParameters(distortionBlock);
-                }
-            }
-        }
+        _intrinsicsBlocks.updateSfmData(sfmData);
     }
 
     // update landmarks
     if (refineStructure)
     {
-        for (const auto& [idLandmark, block] : _landmarksBlocks)
-        {
-            sfmData::Landmark& landmark = sfmData.getLandmarks().at(idLandmark);
-
-            std::array<double, 3> lblock = block;
-
-            if (landmark.getReferenceViewIndex() != UndefinedIndexT)
-            {
-                if (landmark.getPointFetcher())
-                {
-                    const sfmData::View& refview = sfmData.getView(landmark.getReferenceViewIndex());
-                    const geometry::Pose3 refPose = sfmData.getPose(refview).getTransform();
-
-                    const Vec3 origin = refPose.center();
-
-                    Vec3 rdir;
-                    rdir.x() = block[0];
-                    rdir.y() = block[1];
-                    rdir.z() = 1.0;
-
-                    rdir = rdir / rdir.norm();
-                    const Vec3 wdir = refPose.rotation().transpose() * rdir;
-
-                    Vec3 point, normal;
-                    if (!landmark.getPointFetcher()->getPointAndNormal(point, normal, origin, wdir))
-                    {
-                        ALICEVISION_LOG_DEBUG("A mesh-based landmark has no intersection with the mesh.");
-                        continue;
-                    }
-
-                    lblock[0] = point.x();
-                    lblock[1] = point.y();
-                    lblock[2] = point.z();
-                }
-            }
-
-            landmark.updateFromEstimator(lblock);
-        }
+        _landmarksBlocks.updateSfmData(sfmData);
     }
 }
 
@@ -1385,25 +958,7 @@ void BundleAdjustmentCeres::PrepareForEvaluation(bool evaluate_jacobians, bool n
 {
     if (new_evaluation_point)
     {
-        for (const auto& [idIntrinsic, intrinsicBlock] : _intrinsicsBlocks)
-        {
-            _intrinsicObjects[idIntrinsic]->updateFromParams(intrinsicBlock);
-        }
-
-        for (const auto& [idIntrinsic, distortionBlock] : _distortionsBlocks)
-        {
-            auto intrinsic = _intrinsicObjects[idIntrinsic];
-
-            auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-            if (isod)
-            {
-                auto distortion = isod->getDistortion();
-                if (distortion)
-                {
-                    distortion->setParameters(distortionBlock);
-                }
-            }
-        }
+        _intrinsicsBlocks.updateObjects();
     }
 }
 
