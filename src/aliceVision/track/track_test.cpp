@@ -10,6 +10,7 @@
 #include "aliceVision/track/tracksUtils.hpp"
 #include "aliceVision/matching/MatchesCollections.hpp"
 
+#include <set>
 #include <vector>
 #include <utility>
 
@@ -22,6 +23,39 @@ using namespace aliceVision::feature;
 using namespace aliceVision::track;
 using namespace aliceVision::matching;
 
+namespace {
+
+using TrackContent = std::set<std::pair<std::size_t, std::size_t>>;
+
+/**
+ * @brief Convert tracks to a set of {(viewId, featureId)}, independent from the track ids order.
+ * Also checks that the track ids are contiguous.
+ * @param[in] tracks the tracks to convert
+ * @return the content of each track
+ */
+std::set<TrackContent> tracksContent(const TracksMap& tracks)
+{
+    std::set<TrackContent> content;
+    std::size_t expectedId = 0;
+    for (const auto& [trackId, track] : tracks)
+    {
+        // track ids are contiguous
+        BOOST_CHECK_EQUAL(trackId, expectedId++);
+        TrackContent trackContent;
+        for (const auto& [viewId, item] : track.featPerView)
+            trackContent.emplace(viewId, item.featureId);
+        content.insert(trackContent);
+    }
+    return content;
+}
+
+}  // namespace
+
+/**
+ * @brief Build tracks from 3 views and check their content.
+ *
+ * Track ids order is not checked: only the content of each track.
+ */
 BOOST_AUTO_TEST_CASE(Track_Simple)
 {
     // Create some tracks for image (A,B,C)
@@ -59,32 +93,18 @@ BOOST_AUTO_TEST_CASE(Track_Simple)
     // Unit Test check
     //-------------------
 
-    // 0, {(0,0) (1,0) (2,0)}
-    // 1, {(0,1) (1,1) (2,6)}
-    // 2, {(0,2) (1,3)}
-    const std::pair<std::size_t, std::size_t> GT_Tracks[] = {std::make_pair(0, 0),
-                                                             std::make_pair(1, 0),
-                                                             std::make_pair(2, 0),
-                                                             std::make_pair(0, 1),
-                                                             std::make_pair(1, 1),
-                                                             std::make_pair(2, 6),
-                                                             std::make_pair(0, 2),
-                                                             std::make_pair(1, 3)};
+    // {(0,0) (1,0) (2,0)}
+    // {(0,1) (1,1) (2,6)}
+    // {(0,2) (1,3)}
+    const std::set<TrackContent> GT_Tracks{{{0, 0}, {1, 0}, {2, 0}}, {{0, 1}, {1, 1}, {2, 6}}, {{0, 2}, {1, 3}}};
 
     BOOST_CHECK_EQUAL(3, map_tracks.size());
-    std::size_t cpt = 0, i = 0;
-    for (TracksMap::const_iterator iterT = map_tracks.begin(); iterT != map_tracks.end(); ++iterT, ++i)
-    {
-        BOOST_CHECK_EQUAL(i, iterT->first);
-        for (auto iter = iterT->second.featPerView.begin(); iter != iterT->second.featPerView.end(); ++iter)
-        {
-            BOOST_CHECK(GT_Tracks[cpt].first == iter->first);
-            BOOST_CHECK(GT_Tracks[cpt].second == iter->second.featureId);
-            ++cpt;
-        }
-    }
+    BOOST_CHECK(tracksContent(map_tracks) == GT_Tracks);
 }
 
+/**
+ * @brief Check that filter() removes the tracks seen by less than 3 views.
+ */
 BOOST_AUTO_TEST_CASE(Track_filter_3viewAtLeast)
 {
     //
@@ -116,6 +136,9 @@ BOOST_AUTO_TEST_CASE(Track_filter_3viewAtLeast)
     BOOST_CHECK_EQUAL(2, trackBuilder.nbTracks());
 }
 
+/**
+ * @brief Check that filter() removes the track which has 2 observations in the same view.
+ */
 BOOST_AUTO_TEST_CASE(Track_Conflict)
 {
     //
@@ -155,25 +178,17 @@ BOOST_AUTO_TEST_CASE(Track_Conflict)
     // Unit Test check
     //-------------------
 
-    // 0, {(0,0) (1,0) (2,0)}
-    // 1, {(0,1) (1,1) (2,6)}
-    const std::pair<std::size_t, std::size_t> GT_Tracks[] = {
-      std::make_pair(0, 0), std::make_pair(1, 0), std::make_pair(2, 0), std::make_pair(0, 1), std::make_pair(1, 1), std::make_pair(2, 6)};
+    // {(0,0) (1,0) (2,0)}
+    // {(0,1) (1,1) (2,6)}
+    const std::set<TrackContent> GT_Tracks{{{0, 0}, {1, 0}, {2, 0}}, {{0, 1}, {1, 1}, {2, 6}}};
 
     BOOST_CHECK_EQUAL(2, map_tracks.size());
-    std::size_t cpt = 0, i = 0;
-    for (TracksMap::const_iterator iterT = map_tracks.begin(); iterT != map_tracks.end(); ++iterT, ++i)
-    {
-        BOOST_CHECK_EQUAL(i, iterT->first);
-        for (auto iter = iterT->second.featPerView.begin(); iter != iterT->second.featPerView.end(); ++iter)
-        {
-            BOOST_CHECK(GT_Tracks[cpt].first == iter->first);
-            BOOST_CHECK(GT_Tracks[cpt].second == iter->second.featureId);
-            ++cpt;
-        }
-    }
+    BOOST_CHECK(tracksContent(map_tracks) == GT_Tracks);
 }
 
+/**
+ * @brief Check getCommonTracksInImages() on TracksPerView, including an unknown view.
+ */
 BOOST_AUTO_TEST_CASE(Track_GetCommonTracksInImages)
 {
     {
@@ -223,6 +238,9 @@ BOOST_AUTO_TEST_CASE(Track_GetCommonTracksInImages)
     }
 }
 
+/**
+ * @brief Check that TracksMerger merges tracks sharing a feature and keeps the others separated.
+ */
 BOOST_AUTO_TEST_CASE(Track_Merger)
 {
     TracksMerger merger;
