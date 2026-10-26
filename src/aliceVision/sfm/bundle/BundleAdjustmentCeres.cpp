@@ -522,10 +522,6 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 {
     const bool refineStructure = refineOptions & REFINE_STRUCTURE;
 
-    // set a LossFunction to be less penalized by false measurements.
-    // note: set it to NULL if you don't want use a lossFunction.
-    ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
-
     // build the residual blocks corresponding to the track observations
     for (const auto& landmarkPair : sfmData.getLandmarks())
     {
@@ -626,12 +622,6 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 _linearSolverOrdering.AddElementToGroup(distortionBlockPtr, 2);
             }
 
-            ceres::LossFunction* weightedLossFunction = lossFunction;
-            if (observation.getWeight() != 1.0)
-            {
-                weightedLossFunction = new ceres::ScaledLoss(lossFunction, observation.getWeight(), ceres::TAKE_OWNERSHIP);
-            }
-
             if (view.isPartOfRig() && !view.isPoseIndependant())
             {
                 ceres::CostFunction* costFunction = ProjectionErrorFunctor::createCostFunction(intrinsic, observation);
@@ -646,7 +636,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(rigBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, getLossFunction(observation.getWeight()), params);
                 blockIds.push_back(blockId);
             }
             else if (referencePoseBlockPtr != nullptr)
@@ -670,7 +660,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 }
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, getLossFunction(observation.getWeight()), params);
                 blockIds.push_back(blockId);
             }
             else
@@ -683,7 +673,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                 params.push_back(poseBlockPtr);
                 params.push_back(landmarkBlockPtr);
 
-                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, weightedLossFunction, params);
+                ceres::ResidualBlockId blockId = problem.AddResidualBlock(costFunction, getLossFunction(observation.getWeight()), params);
                 blockIds.push_back(blockId);
             }
 
@@ -787,9 +777,6 @@ void BundleAdjustmentCeres::addSurveyPointsToProblem(const sfmData::SfMData& sfm
 
 void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
 {
-    // set a LossFunction to be less penalized by false measurements.
-    // note: set it to NULL if you don't want use a lossFunction.
-    ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
     double* fakeDistortionBlockPtr = &_fakeDistortionBlock;
 
     for (const auto& constraint : sfmData.getConstraints2D())
@@ -881,16 +868,12 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
             params.push_back(rigBlockPtr_2);
         }
 
-        problem.AddResidualBlock(costFunction, lossFunction, params);
+        problem.AddResidualBlock(costFunction, getLossFunction(), params);
     }
 }
 
 void BundleAdjustmentCeres::addConstraintsPointToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
 {
-    // set a LossFunction to be less penalized by false measurements.
-    // note: set it to NULL if you don't want use a lossFunction.
-    ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
-
     for (const auto& [landmarkId, constraint] : sfmData.getConstraintsPoint())
     {
         if (sfmData.getLandmarks().find(landmarkId) == sfmData.getLandmarks().end())
@@ -908,7 +891,7 @@ void BundleAdjustmentCeres::addConstraintsPointToProblem(const sfmData::SfMData&
 
         ceres::CostFunction* costFunction = ConstraintPointErrorFunctor::createCostFunction(l, constraint.normal);
 
-        problem.AddResidualBlock(costFunction, lossFunction, ldata);
+        problem.AddResidualBlock(costFunction, getLossFunction(), ldata);
     }
 }
 
@@ -1104,6 +1087,27 @@ void BundleAdjustmentCeres::resetProblem()
     _intrinsicObjects.clear();
     _distortionsBlocks.clear();
     _linearSolverOrdering.Clear();
+
+    // the previous loss function (if any) was owned and released by the previous problem
+    _lossFunction = nullptr;
+}
+
+ceres::LossFunction* BundleAdjustmentCeres::getLossFunction(double weight)
+{
+    // set a LossFunction to be less penalized by false measurements.
+    if (weight != 1.0)
+    {
+        // the problem owns the ScaledLoss, which owns its own HuberLoss
+        return new ceres::ScaledLoss(new ceres::HuberLoss(_ceresOptions.lossParameter), weight, ceres::TAKE_OWNERSHIP);
+    }
+
+    // created lazily so that it is always used (and therefore owned) by the problem
+    if (_lossFunction == nullptr)
+    {
+        _lossFunction = new ceres::HuberLoss(_ceresOptions.lossParameter);
+    }
+
+    return _lossFunction;
 }
 
 void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const
@@ -1241,7 +1245,6 @@ void BundleAdjustmentCeres::createJacobian(const sfmData::SfMData& sfmData, ERef
 
     // create problem
     ceres::Problem::Options problemOptions;
-    problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     ceres::Problem problem(problemOptions);
     createProblem(sfmData, refineOptions, problem, landmarksBlockIds, temporalConstraintBlockIds);
 
@@ -1305,7 +1308,6 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
 
     // create problem
     ceres::Problem::Options problemOptions;
-    problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     problemOptions.evaluation_callback = this;
     ceres::Problem problem(problemOptions);
     createProblem(sfmData, refineOptions, problem, landmarksBlockIds, temporalConstraintBlockIds);
