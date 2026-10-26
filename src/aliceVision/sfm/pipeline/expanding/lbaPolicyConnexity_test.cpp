@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/pipeline/expanding/ConnexityGraph.hpp>
+#include <aliceVision/sfm/pipeline/expanding/LbaPolicyConnexity.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 
 #include <limits>
@@ -103,4 +104,31 @@ BOOST_AUTO_TEST_CASE(ConnexityGraph_incrementalUpdate)
 
     // Nothing changed
     checkDistances({0, 1, 1, 2});
+}
+
+// A landmark parameterized in a reference view frame needs the reference pose in the bundle,
+// even when the reference view does not observe it
+BOOST_AUTO_TEST_CASE(LbaPolicyConnexity_ignoredReferencePose)
+{
+    // Chain 0-1-2-3 seen from view 0, with a distance limit of 1:
+    // poses 0 and 1 are refined, pose 2 is constant, pose 3 is ignored
+    SfMData scene = makeScene(4);
+    setLandmark(scene, 10, {0, 1});
+    setLandmark(scene, 11, {1, 2});
+    setLandmark(scene, 12, {2, 3});
+
+    // Same observations, only the reference view differs
+    setLandmark(scene, 20, {0, 1});
+    scene.getLandmarks().at(20).setReferenceView(scene.getViews().at(0));
+    setLandmark(scene, 21, {0, 1});
+    scene.getLandmarks().at(21).setReferenceView(scene.getViews().at(3));
+
+    sfm::LbaPolicyConnexity policy;
+    policy.setDistanceLimit(1);
+    track::TracksHandler tracksHandler;
+    BOOST_REQUIRE(policy.build(scene, tracksHandler, {0}));
+
+    BOOST_CHECK(scene.getAbsolutePose(3).getState() == EEstimatorParameterState::IGNORED);
+    BOOST_CHECK(scene.getLandmarks().at(20).getState() == EEstimatorParameterState::REFINED);
+    BOOST_CHECK(scene.getLandmarks().at(21).getState() == EEstimatorParameterState::IGNORED);
 }
