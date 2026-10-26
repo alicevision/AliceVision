@@ -13,7 +13,7 @@ namespace aliceVision {
 namespace sfm {
 
 
-bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewsChunk, EExpansionMode expansionMode)
+EChunkResult ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewsChunk, EExpansionMode expansionMode)
 {   
     _ignoredViews.clear();
     ALICEVISION_LOG_INFO("ExpansionChunk::process start");
@@ -30,21 +30,21 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
     if (!_bundleHandler)
     {
         ALICEVISION_LOG_ERROR("Bundle handler is not set");
-        return false;
+        return EChunkResult::CHUNK_ERROR;
     }
 
     //Check if historyHandler exists
     if (!_historyHandler)
     {
         ALICEVISION_LOG_ERROR("History handler is not set");
-        return false;
+        return EChunkResult::CHUNK_ERROR;
     }
 
     //Check if resectionHandler exists
     if (!_resectionHandler)
     {
         ALICEVISION_LOG_ERROR("Resection handler is not set");
-        return false;
+        return EChunkResult::CHUNK_ERROR;
     }
 
     //How many views to resect ?
@@ -105,7 +105,7 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
         if (countToProcess > 0)
         {
             ALICEVISION_LOG_INFO("ExpansionChunk::process early end");
-            return false;
+            return EChunkResult::CHUNK_SKIPPED;
         }
     }
 
@@ -152,7 +152,8 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
     //Now that all views of the chunks
     if (!triangulate(sfmData, tracksHandler, validViewIds))
     {
-        return false;
+        ALICEVISION_LOG_ERROR("ExpansionChunk::process triangulation failed");
+        return EChunkResult::CHUNK_ERROR;
     }
 
     // When not in try hard mode, increase the default min points per pose
@@ -169,14 +170,15 @@ bool ExpansionChunk::process(sfmData::SfMData & sfmData, const track::TracksHand
 
     if (!sfmCheck)
     {
-        return false;
+        ALICEVISION_LOG_ERROR("ExpansionChunk::process bundle adjustment failed");
+        return EChunkResult::CHUNK_ERROR;
     }
     
     _historyHandler->saveState(sfmData);
 
     ALICEVISION_LOG_INFO("ExpansionChunk::process end");
 
-    return true;
+    return EChunkResult::CHUNK_SUCCESS;
 }
 
 bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)

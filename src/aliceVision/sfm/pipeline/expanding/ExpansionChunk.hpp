@@ -18,6 +18,13 @@
 namespace aliceVision {
 namespace sfm {
 
+enum class EChunkResult
+{
+    CHUNK_SUCCESS,  // Views processed and bundled
+    CHUNK_SKIPPED,  // Nothing could be done with these views, sfmData is unchanged
+    CHUNK_ERROR     // Failure, sfmData may have been partially modified
+};
+
 class ExpansionChunk
 {
 public:
@@ -32,8 +39,9 @@ public:
      * @param tracksHandler the scene tracks handler
      * @param viewsChunks a list of view ids to process in this chunk
      * @param expansionMode select a configuration set among an enum
+     * @return the chunk processing status
     */
-    bool process(sfmData::SfMData & sfmData, 
+    EChunkResult process(sfmData::SfMData & sfmData, 
                 const track::TracksHandler & tracksHandler, 
                 const std::set<IndexT> & viewsChunk,
                 EExpansionMode expansionMode);

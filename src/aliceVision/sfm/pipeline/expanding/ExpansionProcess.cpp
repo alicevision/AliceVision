@@ -60,7 +60,7 @@ bool ExpansionProcess::process(sfmData::SfMData & sfmData, track::TracksHandler 
                 }
 
                 // Perform a new estimation step on modified views
-                if (!_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, _postProcessHandler->getUpdatedViews(), expansionMode))
+                if (_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, _postProcessHandler->getUpdatedViews(), expansionMode) != EChunkResult::CHUNK_SUCCESS)
                 {
                     return false;
                 }
@@ -127,7 +127,7 @@ bool ExpansionProcess::prepareExisting(sfmData::SfMData & sfmData, const track::
         }
 
         // Process everything in existing sfmData
-        if (!_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, sfmData.getValidViews(), EExpansionMode::EXPANSION_STRICT))
+        if (_iterationHandler->getChunkHandler()->process(sfmData, tracksHandler, sfmData.getValidViews(), EExpansionMode::EXPANSION_STRICT) != EChunkResult::CHUNK_SUCCESS)
         {
             return false;
         }
