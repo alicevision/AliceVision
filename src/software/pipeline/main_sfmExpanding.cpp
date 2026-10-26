@@ -188,6 +188,15 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    // lock all intrinsics, so that they are constant for the bundle and the local strategy
+    if (lockAllIntrinsics)
+    {
+        for (auto& [_, intrinsic] : sfmData.getIntrinsics())
+        {
+            intrinsic->lock();
+        }
+    }
+
     // Load tracks
     ALICEVISION_LOG_INFO("Load tracks");
     track::TracksHandler tracksHandler;
