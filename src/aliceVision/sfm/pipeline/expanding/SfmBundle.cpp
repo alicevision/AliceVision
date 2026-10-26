@@ -113,21 +113,10 @@ bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
 
 bool SfmBundle::initializeIteration(sfmData::SfMData & sfmData, const track::TracksHandler & tracksHandler, const std::set<IndexT> & viewIds)
 {
-    bool enableLocalStrategy = _useLBA;
+    const bool enableLocalStrategy = _lbaPolicy && (sfmData.getPoses().size() >= _minNbCamerasLBA);
 
-    if (sfmData.getPoses().size() < _minNbCamerasLBA)
-    {
-        enableLocalStrategy = false;
-    }
-
-    if (enableLocalStrategy)
-    {
-        if (_lbaPolicy)
-        {
-            _lbaPolicy->build(sfmData, tracksHandler, viewIds);
-        }
-    }
-    else
+    // Fall back to a full bundle if the local strategy cannot be set up
+    if (!enableLocalStrategy || !_lbaPolicy->build(sfmData, tracksHandler, viewIds))
     {
         sfmData.resetParameterStates();
     }
