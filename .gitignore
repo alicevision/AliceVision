@@ -1,4 +1,4 @@
-# temporary files
+# Temporary files
 *~
 .nfs*
 .*.swp # vim
@@ -15,7 +15,7 @@ Thumbs.db # Windows
 *.dot
 *.log
 
-# python
+# Python
 *.pyc
 
 # Binary files
@@ -27,25 +27,28 @@ Thumbs.db # Windows
 *.exe
 *.db
 
-# folder receiving the compilation products
+# Folder receiving the compilation products
 /build*
 install
 lib
 bin
 x64
 
-# CMake
-CMakeFiles  # intermediate folders
+# Dependencies/download folders
+dl
 
-# user files
+# CMake
+CMakeFiles  # Intermediate folders
+
+# User files
 *.user*
 
-# netbeans projects
+# Netbeans projects
 /nbproject
 nbproject
 .idea
 
-# visual projects
+# Visual projects
 #*.sln
 #*.vcxproj*
 *.suo
@@ -62,7 +65,7 @@ nbproject
 *.cbp*
 *.layout*
 
-# visual projects create log files into directories
+# Visual projects create log files into directories
 Debug
 Release
 Production
