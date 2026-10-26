@@ -1,0 +1,824 @@
+{
+    "header": {
+        "releaseVersion": "2026.1.0+develop",
+        "fileVersion": "2.2",
+        "template": true
+    },
+    "nodeDescriptions": {
+        "CameraInit": {
+            "12.1": {
+                "inputs": {
+                    "viewpoints": {
+                        "type": "ListAttribute",
+                        "elementDesc": {
+                            "type": "GroupAttribute",
+                            "name": "viewpoint",
+                            "items": {
+                                "viewId": {
+                                    "type": "IntParam",
+                                    "value": -1
+                                },
+                                "poseId": {
+                                    "type": "IntParam",
+                                    "value": -1
+                                },
+                                "path": {
+                                    "type": "File",
+                                    "value": ""
+                                },
+                                "intrinsicId": {
+                                    "type": "IntParam",
+                                    "value": -1
+                                },
+                                "rigId": {
+                                    "type": "IntParam",
+                                    "value": -1
+                                },
+                                "subPoseId": {
+                                    "type": "IntParam",
+                                    "value": -1
+                                },
+                                "metadata": {
+                                    "type": "StringParam",
+                                    "value": ""
+                                }
+                            }
+                        }
+                    },
+                    "intrinsics": {
+                        "type": "ListAttribute",
+                        "elementDesc": {
+                            "type": "GroupAttribute",
+                            "name": "intrinsic",
+                            "items": {
+                                "intrinsicId": {
+                                    "type": "IntParam",
+                                    "value": -1
+                                },
+                                "initialFocalLength": {
+                                    "type": "FloatParam",
+                                    "value": -1.0
+                                },
+                                "focalLength": {
+                                    "type": "FloatParam",
+                                    "value": 1000.0
+                                },
+                                "pixelRatio": {
+                                    "type": "FloatParam",
+                                    "value": 1.0
+                                },
+                                "pixelRatioLocked": {
+                                    "type": "BoolParam",
+                                    "value": true
+                                },
+                                "scaleLocked": {
+                                    "type": "BoolParam",
+                                    "value": false
+                                },
+                                "offsetLocked": {
+                                    "type": "BoolParam",
+                                    "value": false
+                                },
+                                "distortionLocked": {
+                                    "type": "BoolParam",
+                                    "value": false
+                                },
+                                "type": {
+                                    "type": "ChoiceParam",
+                                    "value": "pinhole",
+                                    "values": [
+                                        "pinhole",
+                                        "equidistant",
+                                        "equirectangular"
+                                    ]
+                                },
+                                "distortionType": {
+                                    "type": "ChoiceParam",
+                                    "value": "radialk3",
+                                    "values": [
+                                        "none",
+                                        "radialk1",
+                                        "radialk3",
+                                        "radialk3pt",
+                                        "brown",
+                                        "fisheye4",
+                                        "fisheye1"
+                                    ]
+                                },
+                                "width": {
+                                    "type": "IntParam",
+                                    "value": 0
+                                },
+                                "height": {
+                                    "type": "IntParam",
+                                    "value": 0
+                                },
+                                "sensorWidth": {
+                                    "type": "FloatParam",
+                                    "value": 36.0
+                                },
+                                "sensorHeight": {
+                                    "type": "FloatParam",
+                                    "value": 24.0
+                                },
+                                "serialNumber": {
+                                    "type": "StringParam",
+                                    "value": ""
+                                },
+                                "principalPoint": {
+                                    "type": "GroupAttribute",
+                                    "name": "principalPoint",
+                                    "items": {
+                                        "x": {
+                                            "type": "FloatParam",
+                                            "value": 0.0
+                                        },
+                                        "y": {
+                                            "type": "FloatParam",
+                                            "value": 0.0
+                                        }
+                                    }
+                                },
+                                "initializationMode": {
+                                    "type": "ChoiceParam",
+                                    "value": "none",
+                                    "values": [
+                                        "calibrated",
+                                        "estimated",
+                                        "unknown",
+                                        "none"
+                                    ]
+                                },
+                                "distortionInitializationMode": {
+                                    "type": "ChoiceParam",
+                                    "value": "none",
+                                    "values": [
+                                        "calibrated",
+                                        "estimated",
+                                        "unknown",
+                                        "none"
+                                    ]
+                                },
+                                "distortionParams": {
+                                    "type": "ListAttribute",
+                                    "elementDesc": {
+                                        "type": "FloatParam",
+                                        "value": 0.0
+                                    }
+                                },
+                                "undistortionOffset": {
+                                    "type": "GroupAttribute",
+                                    "name": "undistortionOffset",
+                                    "items": {
+                                        "x": {
+                                            "type": "FloatParam",
+                                            "value": 0.0
+                                        },
+                                        "y": {
+                                            "type": "FloatParam",
+                                            "value": 0.0
+                                        }
+                                    }
+                                },
+                                "undistortionParams": {
+                                    "type": "ListAttribute",
+                                    "elementDesc": {
+                                        "type": "FloatParam",
+                                        "value": 0.0
+                                    }
+                                },
+                                "locked": {
+                                    "type": "BoolParam",
+                                    "value": false
+                                }
+                            }
+                        }
+                    },
+                    "sensorDatabase": {
+                        "type": "File",
+                        "value": "${ALICEVISION_SENSOR_DB}"
+                    },
+                    "lensCorrectionProfileInfo": {
+                        "type": "File",
+                        "value": "${ALICEVISION_LENS_PROFILE_INFO}"
+                    },
+                    "lensCorrectionProfileSearchIgnoreCameraModel": {
+                        "type": "BoolParam",
+                        "value": true
+                    },
+                    "defaultFieldOfView": {
+                        "type": "FloatParam",
+                        "value": 45.0
+                    },
+                    "groupCameraFallback": {
+                        "type": "ChoiceParam",
+                        "value": "folder",
+                        "values": [
+                            "global",
+                            "folder",
+                            "image"
+                        ]
+                    },
+                    "rawColorInterpretation": {
+                        "type": "ChoiceParam",
+                        "value": "DCPLinearProcessing",
+                        "values": [
+                            "None",
+                            "LibRawNoWhiteBalancing",
+                            "LibRawWhiteBalancing",
+                            "DCPLinearProcessing",
+                            "DCPMetadata",
+                            "Auto"
+                        ]
+                    },
+                    "colorProfileDatabase": {
+                        "type": "File",
+                        "value": "${ALICEVISION_COLOR_PROFILE_DB}"
+                    },
+                    "errorOnMissingColorProfile": {
+                        "type": "BoolParam",
+                        "value": true
+                    },
+                    "viewIdMethod": {
+                        "type": "ChoiceParam",
+                        "value": "metadata",
+                        "values": [
+                            "metadata",
+                            "filename"
+                        ]
+                    },
+                    "viewIdRegex": {
+                        "type": "StringParam",
+                        "value": ".*?(\\d+)"
+                    },
+                    "isSequence": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "verboseLevel": {
+                        "type": "ChoiceParam",
+                        "value": "info",
+                        "values": [
+                            "fatal",
+                            "error",
+                            "warning",
+                            "info",
+                            "debug",
+                            "trace"
+                        ]
+                    }
+                },
+                "outputs": {
+                    "output": {
+                        "type": "File",
+                        "value": "{nodeCacheFolder}/cameraInit.sfm"
+                    }
+                }
+            }
+        },
+        "CopyFiles": {
+            "1.3": {
+                "inputs": {
+                    "inputFiles": {
+                        "type": "ListAttribute",
+                        "elementDesc": {
+                            "type": "File",
+                            "value": ""
+                        }
+                    },
+                    "output": {
+                        "type": "File",
+                        "value": ""
+                    },
+                    "verboseLevel": {
+                        "type": "ChoiceParam",
+                        "value": "info",
+                        "values": [
+                            "fatal",
+                            "error",
+                            "warning",
+                            "info",
+                            "debug",
+                            "trace"
+                        ]
+                    }
+                },
+                "outputs": {}
+            }
+        },
+        "ImageProcessing": {
+            "4.1": {
+                "inputs": {
+                    "input": {
+                        "type": "File",
+                        "value": ""
+                    },
+                    "metadataFolders": {
+                        "type": "ListAttribute",
+                        "elementDesc": {
+                            "type": "File",
+                            "value": ""
+                        }
+                    },
+                    "extension": {
+                        "type": "ChoiceParam",
+                        "value": "",
+                        "values": [
+                            "",
+                            "exr",
+                            "jpg",
+                            "tiff",
+                            "png"
+                        ]
+                    },
+                    "customOutputFolder": {
+                        "type": "File",
+                        "value": ""
+                    },
+                    "reconstructedViewsOnly": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "keepImageFilename": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "reorient": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "fixNonFinite": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "exposureCompensation": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "rawAutoBright": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "rawExposureAdjust": {
+                        "type": "FloatParam",
+                        "value": 0.0
+                    },
+                    "lensCorrection": {
+                        "type": "GroupAttribute",
+                        "name": "lensCorrection",
+                        "items": {
+                            "lensCorrectionEnabled": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "geometry": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "vignetting": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "chromaticAberration": {
+                                "type": "BoolParam",
+                                "value": false
+                            }
+                        }
+                    },
+                    "scaleFactor": {
+                        "type": "FloatParam",
+                        "value": 1.0
+                    },
+                    "maxWidth": {
+                        "type": "IntParam",
+                        "value": 0
+                    },
+                    "maxHeight": {
+                        "type": "IntParam",
+                        "value": 0
+                    },
+                    "contrast": {
+                        "type": "FloatParam",
+                        "value": 1.0
+                    },
+                    "medianFilter": {
+                        "type": "IntParam",
+                        "value": 0
+                    },
+                    "fillHoles": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "sharpenFilter": {
+                        "type": "GroupAttribute",
+                        "name": "sharpenFilter",
+                        "items": {
+                            "sharpenFilterEnabled": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "width": {
+                                "type": "IntParam",
+                                "value": 3
+                            },
+                            "contrast": {
+                                "type": "FloatParam",
+                                "value": 1.0
+                            },
+                            "threshold": {
+                                "type": "FloatParam",
+                                "value": 0.0
+                            }
+                        }
+                    },
+                    "bilateralFilter": {
+                        "type": "GroupAttribute",
+                        "name": "bilateralFilter",
+                        "items": {
+                            "bilateralFilterEnabled": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "bilateralFilterDistance": {
+                                "type": "IntParam",
+                                "value": 0
+                            },
+                            "bilateralFilterSigmaSpace": {
+                                "type": "FloatParam",
+                                "value": 0.0
+                            },
+                            "bilateralFilterSigmaColor": {
+                                "type": "FloatParam",
+                                "value": 0.0
+                            }
+                        }
+                    },
+                    "claheFilter": {
+                        "type": "GroupAttribute",
+                        "name": "claheFilter",
+                        "items": {
+                            "claheEnabled": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "claheClipLimit": {
+                                "type": "FloatParam",
+                                "value": 4.0
+                            },
+                            "claheTileGridSize": {
+                                "type": "IntParam",
+                                "value": 8
+                            }
+                        }
+                    },
+                    "noiseFilter": {
+                        "type": "GroupAttribute",
+                        "name": "noiseFilter",
+                        "items": {
+                            "noiseEnabled": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "noiseMethod": {
+                                "type": "ChoiceParam",
+                                "value": "uniform",
+                                "values": [
+                                    "uniform",
+                                    "gaussian",
+                                    "salt"
+                                ]
+                            },
+                            "noiseA": {
+                                "type": "FloatParam",
+                                "value": 0.0
+                            },
+                            "noiseB": {
+                                "type": "FloatParam",
+                                "value": 1.0
+                            },
+                            "noiseMono": {
+                                "type": "BoolParam",
+                                "value": true
+                            }
+                        }
+                    },
+                    "nlmFilter": {
+                        "type": "GroupAttribute",
+                        "name": "nlmFilter",
+                        "items": {
+                            "nlmFilterEnabled": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "nlmFilterH": {
+                                "type": "FloatParam",
+                                "value": 5.0
+                            },
+                            "nlmFilterHColor": {
+                                "type": "FloatParam",
+                                "value": 10.0
+                            },
+                            "nlmFilterTemplateWindowSize": {
+                                "type": "IntParam",
+                                "value": 7
+                            },
+                            "nlmFilterSearchWindowSize": {
+                                "type": "IntParam",
+                                "value": 21
+                            }
+                        }
+                    },
+                    "parFilter": {
+                        "type": "GroupAttribute",
+                        "name": "parFilter",
+                        "items": {
+                            "parEnabled": {
+                                "type": "BoolParam",
+                                "value": false
+                            },
+                            "parRowDecimation": {
+                                "type": "BoolParam",
+                                "value": false
+                            }
+                        }
+                    },
+                    "outputFormat": {
+                        "type": "ChoiceParam",
+                        "value": "rgba",
+                        "values": [
+                            "rgba",
+                            "rgb",
+                            "grayscale"
+                        ]
+                    },
+                    "inputColorSpace": {
+                        "type": "ChoiceParam",
+                        "value": "AUTO",
+                        "values": [
+                            "AUTO",
+                            "sRGB",
+                            "rec709",
+                            "Linear",
+                            "ACES2065-1",
+                            "ACEScg",
+                            "Linear ARRI Wide Gamut 3",
+                            "ARRI LogC3 (EI800)",
+                            "Linear ARRI Wide Gamut 4",
+                            "ARRI LogC4",
+                            "Linear BMD WideGamut Gen5",
+                            "BMDFilm WideGamut Gen5",
+                            "CanonLog2 CinemaGamut D55",
+                            "CanonLog3 CinemaGamut D55",
+                            "Linear CinemaGamut D55",
+                            "Linear V-Gamut",
+                            "V-Log V-Gamut",
+                            "Linear REDWideGamutRGB",
+                            "Log3G10 REDWideGamutRGB",
+                            "Linear Venice S-Gamut3.Cine",
+                            "S-Log3 Venice S-Gamut3.Cine",
+                            "no_conversion"
+                        ]
+                    },
+                    "outputColorSpace": {
+                        "type": "ChoiceParam",
+                        "value": "AUTO",
+                        "values": [
+                            "AUTO",
+                            "sRGB",
+                            "rec709",
+                            "Linear",
+                            "ACES2065-1",
+                            "ACEScg",
+                            "Linear ARRI Wide Gamut 3",
+                            "ARRI LogC3 (EI800)",
+                            "Linear ARRI Wide Gamut 4",
+                            "ARRI LogC4",
+                            "Linear BMD WideGamut Gen5",
+                            "BMDFilm WideGamut Gen5",
+                            "CanonLog2 CinemaGamut D55",
+                            "CanonLog3 CinemaGamut D55",
+                            "Linear CinemaGamut D55",
+                            "Linear V-Gamut",
+                            "V-Log V-Gamut",
+                            "Linear REDWideGamutRGB",
+                            "Log3G10 REDWideGamutRGB",
+                            "Linear Venice S-Gamut3.Cine",
+                            "S-Log3 Venice S-Gamut3.Cine",
+                            "no_conversion"
+                        ]
+                    },
+                    "workingColorSpace": {
+                        "type": "ChoiceParam",
+                        "value": "Linear",
+                        "values": [
+                            "AUTO",
+                            "sRGB",
+                            "rec709",
+                            "Linear",
+                            "ACES2065-1",
+                            "ACEScg",
+                            "Linear ARRI Wide Gamut 3",
+                            "ARRI LogC3 (EI800)",
+                            "Linear ARRI Wide Gamut 4",
+                            "ARRI LogC4",
+                            "Linear BMD WideGamut Gen5",
+                            "BMDFilm WideGamut Gen5",
+                            "CanonLog2 CinemaGamut D55",
+                            "CanonLog3 CinemaGamut D55",
+                            "Linear CinemaGamut D55",
+                            "Linear V-Gamut",
+                            "V-Log V-Gamut",
+                            "Linear REDWideGamutRGB",
+                            "Log3G10 REDWideGamutRGB",
+                            "Linear Venice S-Gamut3.Cine",
+                            "S-Log3 Venice S-Gamut3.Cine",
+                            "no_conversion"
+                        ]
+                    },
+                    "rawColorInterpretation": {
+                        "type": "ChoiceParam",
+                        "value": "DCPLinearProcessing",
+                        "values": [
+                            "None",
+                            "LibRawNoWhiteBalancing",
+                            "LibRawWhiteBalancing",
+                            "DCPLinearProcessing",
+                            "DCPMetadata",
+                            "Auto"
+                        ]
+                    },
+                    "applyDcpMetadata": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "colorProfileDatabase": {
+                        "type": "File",
+                        "value": "${ALICEVISION_COLOR_PROFILE_DB}"
+                    },
+                    "errorOnMissingColorProfile": {
+                        "type": "BoolParam",
+                        "value": true
+                    },
+                    "useDCPColorMatrixOnly": {
+                        "type": "BoolParam",
+                        "value": true
+                    },
+                    "doWBAfterDemosaicing": {
+                        "type": "BoolParam",
+                        "value": false
+                    },
+                    "demosaicingAlgo": {
+                        "type": "ChoiceParam",
+                        "value": "AHD",
+                        "values": [
+                            "linear",
+                            "VNG",
+                            "PPG",
+                            "AHD",
+                            "DCB",
+                            "AHD-Mod",
+                            "AFD",
+                            "VCD",
+                            "Mixed",
+                            "LMMSE",
+                            "AMaZE",
+                            "DHT",
+                            "AAHD",
+                            "none"
+                        ]
+                    },
+                    "highlightMode": {
+                        "type": "ChoiceParam",
+                        "value": 0,
+                        "values": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6,
+                            7,
+                            8,
+                            9
+                        ]
+                    },
+                    "correlatedColorTemperature": {
+                        "type": "FloatParam",
+                        "value": -1.0
+                    },
+                    "lensCorrectionProfileInfo": {
+                        "type": "File",
+                        "value": "${ALICEVISION_LENS_PROFILE_INFO}"
+                    },
+                    "lensCorrectionProfileSearchIgnoreCameraModel": {
+                        "type": "BoolParam",
+                        "value": true
+                    },
+                    "storageDataType": {
+                        "type": "ChoiceParam",
+                        "value": "float",
+                        "values": [
+                            "float",
+                            "half",
+                            "halfFinite",
+                            "auto"
+                        ]
+                    },
+                    "exrCompressionMethod": {
+                        "type": "ChoiceParam",
+                        "value": "auto",
+                        "values": [
+                            "none",
+                            "auto",
+                            "rle",
+                            "zip",
+                            "zips",
+                            "piz",
+                            "pxr24",
+                            "b44",
+                            "b44a",
+                            "dwaa",
+                            "dwab"
+                        ]
+                    },
+                    "exrCompressionLevel": {
+                        "type": "IntParam",
+                        "value": 0
+                    },
+                    "jpegCompress": {
+                        "type": "BoolParam",
+                        "value": true
+                    },
+                    "jpegQuality": {
+                        "type": "IntParam",
+                        "value": 90
+                    },
+                    "verboseLevel": {
+                        "type": "ChoiceParam",
+                        "value": "info",
+                        "values": [
+                            "fatal",
+                            "error",
+                            "warning",
+                            "info",
+                            "debug",
+                            "trace"
+                        ]
+                    }
+                },
+                "outputs": {
+                    "outSfMData": {
+                        "type": "File",
+                        "value": "{nodeCacheFolder}/cameraInit.sfm"
+                    },
+                    "output": {
+                        "type": "File",
+                        "value": "{nodeCacheFolder}"
+                    },
+                    "outputImages": {
+                        "type": "File",
+                        "value": "/ImageProcessing/9b7fe2733b31c320b1ca40b9c9acea14de3fbbef/<FILESTEM>.exr"
+                    }
+                }
+            }
+        }
+    },
+    "graph": {
+        "CameraInit_1": {
+            "nodeType": "CameraInit",
+            "version": "12.1",
+            "position": [
+                0,
+                0
+            ],
+            "inputs": {}
+        },
+        "CopyFiles_1": {
+            "nodeType": "CopyFiles",
+            "version": "1.3",
+            "position": [
+                400,
+                0
+            ],
+            "inputs": {
+                "inputFiles": [
+                    "{ImageProcessing_1.output}"
+                ]
+            }
+        },
+        "ImageProcessing_1": {
+            "nodeType": "ImageProcessing",
+            "version": "4.1",
+            "position": [
+                200,
+                0
+            ],
+            "inputs": {
+                "input": "{CameraInit_1.output}",
+                "extension": "exr",
+                "keepImageFilename": true
+            }
+        }
+    }
+}
