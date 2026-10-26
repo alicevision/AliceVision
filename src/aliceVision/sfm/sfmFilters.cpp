@@ -295,29 +295,26 @@ bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
                                        const IndexT minPointsPerLandmark,
                                        std::set<IndexT>* outRemovedViewsId)
 {
-    IndexT removeIteration = 0;
-    bool removedContent = false;
+    // Observations are only removed as a consequence of removed poses
     bool removedPoses = false;
-    bool removedObservations = false;
+    bool removedContent = false;
     do
     {
         removedContent = false;
         if (eraseUnstablePoses(sfmData, minPointsPerPose, outRemovedViewsId))
         {
             removedPoses = true;
-            removedContent = eraseObservationsWithMissingPoses(sfmData, minPointsPerLandmark);
-            if (removedContent)
-            {
-                removedObservations = true;
-            }
 
-            removedContent = eraseLandmarksWithMissingReferenceView(sfmData);
+            // Both must run: keep them as separate statements (no short-circuit)
+            const bool removedObservations = eraseObservationsWithMissingPoses(sfmData, minPointsPerLandmark);
+            const bool removedLandmarks = eraseLandmarksWithMissingReferenceView(sfmData);
+
             // Erase some observations can make some Poses index disappear so perform the process in a loop
+            removedContent = removedObservations || removedLandmarks;
         }
-        removeIteration += removedContent ? 1 : 0;
     } while (removedContent);
 
-    return removedPoses || removedObservations;
+    return removedPoses;
 }
 
 IndexT removeConstraints(sfmData::SfMData& sfmData, double maxDist)
