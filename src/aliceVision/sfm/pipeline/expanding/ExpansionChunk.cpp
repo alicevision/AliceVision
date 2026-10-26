@@ -201,6 +201,15 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
         auto & landmarks = sfmData.getLandmarks();
         ALICEVISION_LOG_INFO("Existing landmarks before multiview : " << landmarks.size());
 
+        // A track which was re-evaluated without success does not keep its previous landmark
+        for (const IndexT trackId : evaluatedTracks)
+        {
+            if (outputLandmarks.find(trackId) == outputLandmarks.end())
+            {
+                landmarks.erase(trackId);
+            }
+        }
+
         for (const auto & pl : outputLandmarks)
         {
             const auto & landmark = pl.second;
