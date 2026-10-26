@@ -194,6 +194,17 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
         }
     }
 
+    // Pose ids in use, so that detached rig views do not get a pose id already used elsewhere
+    std::set<IndexT> usedPoseIds;
+    for (auto it = sfmData.getPoses().begin(); it != sfmData.getPoses().end(); ++it)
+    {
+        usedPoseIds.insert(it->first);
+    }
+    for (const auto& [viewId, view] : sfmData.getViews())
+    {
+        usedPoseIds.insert(view->getPoseId());
+    }
+
     // If usage count is smaller than the threshold, remove the Pose
     for (const auto & [idPose, count] : posesCount)
     {
@@ -208,7 +219,18 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
                     if (view->isPartOfRig())
                     {
                         // the pose is now independant, give each view its own pose id
-                        view->setPoseId(viewId);
+                        // (the view id, unless it is already used by another pose)
+                        IndexT newPoseId = viewId;
+                        if (newPoseId != idPose)
+                        {
+                            while (usedPoseIds.count(newPoseId) > 0)
+                            {
+                                ++newPoseId;
+                            }
+                        }
+                        usedPoseIds.insert(newPoseId);
+
+                        view->setPoseId(newPoseId);
                         view->setIndependantPose(true);
                     }
 

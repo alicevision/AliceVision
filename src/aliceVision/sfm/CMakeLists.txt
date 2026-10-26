@@ -194,6 +194,12 @@ alicevision_add_test(utils/sfmTransfer_test.cpp
         aliceVision_sfm
 )
 
+alicevision_add_test(sfmFilters_test.cpp
+    NAME "sfm_sfmFilters"
+    LINKS
+        aliceVision_sfm
+)
+
 alicevision_add_test(pipeline/expanding/lbaPolicyConnexity_test.cpp
     NAME "sfm_lbaPolicyConnexity"
     LINKS
