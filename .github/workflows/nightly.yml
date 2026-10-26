@@ -120,8 +120,8 @@ jobs:
 
           | File | Platform |
           |------|----------|
-          | \`AliceVision-nightly-${BUILD_LABEL}-linux.tar.gz\` | Linux (Rocky 9, CUDA 12.1.1) |
-          | \`AliceVision-nightly-${BUILD_LABEL}-windows.zip\`  | Windows |
+          | \`AliceVision-nightly-${BUILD_LABEL}-linux.tar.gz\` | Linux (Rocky 9, CUDA 12.8.0) |
+          | \`AliceVision-nightly-${BUILD_LABEL}-windows.zip\`  | Windows (CUDA 13.2.1) |
           EOF
 
       # ── Update release from file ──────────────────
