@@ -289,18 +289,14 @@ bool ConnexityGraph::build(const sfmData::SfMData & sfmData,
 
         if (bfs.reached(node))
         {
-            int d = bfs.dist(node);
+            const int d = bfs.dist(node);
 
-            auto lookupIt = _distancesPerPoseId.find(poseId);
-            if (lookupIt == _distancesPerPoseId.end())
+            //A pose shared by multiple views (rig) keeps the smallest distance
+            auto [it, inserted] = _distancesPerPoseId.emplace(poseId, d);
+            if (!inserted)
             {
-                _distancesPerPoseId[x.first] = d;
+                it->second = std::min(it->second, d);
             }
-            else
-            {
-                _distancesPerPoseId[x.first] = std::min(lookupIt->second, d);
-            }
-            
         }
     }
 
