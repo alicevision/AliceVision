@@ -32,7 +32,7 @@ jobs:
 
       # Clone the repository together with all submodules (vendored third-party code).
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             submodules: recursive
       
@@ -53,7 +53,7 @@ jobs:
       # Restore the prebuilt vcpkg binary tree; skips the multi-GB download when the key matches.
       - name: Cache vcpkg prebuilt binaries
         id: cache-vcpkg
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.dependenciesDir }}\x64-windows-release
           key: vcpkg-${{ runner.os }}-${{ env.VCPKG_VERSION }}
@@ -61,7 +61,7 @@ jobs:
       # Restore the full CUDA Toolkit installation to avoid re-installing it on every run.
       - name: Cache CUDA Toolkit
         id: cache-cuda
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2
@@ -72,7 +72,7 @@ jobs:
       # Install sccache with a local cache dir, saved as a single GHA cache entry per run
       # (the sccache GHA backend creates one cache entry per object file).
       - name: Setup sccache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1.2.24
         with:
           variant: sccache
           # Isolate writes per ref (branch/PR) to reduce cross-PR cache contamination.
@@ -249,7 +249,7 @@ jobs:
       # Upload the zip so nightly.yml can attach it to the GitHub release.
       - name: Upload archive artifact
         if: github.workflow == 'Nightly'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-package
           path: ${{ steps.archive.outputs.filename }}
