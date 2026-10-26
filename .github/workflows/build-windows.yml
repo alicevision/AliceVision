@@ -173,39 +173,36 @@ jobs:
 
       # ------ BUILD ----- 
 
-      # CMake configure + compile the full AliceVision project and install it to ALICEVISION_ROOT.
+      # CMake configure the full AliceVision project.
+      - name: Configure
+        run: |
+          cmake -S . -B "${{ env.buildDir }}" -G "Ninja Multi-Config" `
+            -DCMAKE_TOOLCHAIN_FILE=${{ env.dependenciesDir }}\x64-windows-release\scripts\buildsystems\vcpkg.cmake `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-release `
+            -DBUILD_SHARED_LIBS=ON `
+            -DTARGET_ARCHITECTURE=core `
+            -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }} `
+            -DALICEVISION_BUNDLE_PREFIX:PATH=${{ env.ALICEVISION_BUNDLE }} `
+            -DALICEVISION_BUILD_TESTS=ON `
+            -DALICEVISION_USE_OPENCV=ON `
+            -DALICEVISION_USE_CUDA=ON `
+            -DALICEVISION_USE_CCTAG=ON `
+            -DALICEVISION_USE_POPSIFT=ON `
+            -DALICEVISION_USE_ALEMBIC=ON `
+            -DALICEVISION_USE_USD=ON `
+            -DALICEVISION_BUILD_SWIG_BINDING=ON `
+            -DBOOST_NO_CXX11=ON `
+            -DVCPKG_MANIFEST_MODE=OFF `
+            -DPython3_EXECUTABLE=${{ env.PYTHON_BUILD_VENV }}\Scripts\python.exe `
+            -DALICEVISION_BUNDLE_PYTHON_ROOT=${{ env.VCPKG_PYTHON_ROOT }} `
+            -DCMAKE_CUDA_COMPILER="${{ env.CUDACXX }}" `
+            -DCUDAToolkit_ROOT="${{ env.CUDA_PATH }}" `
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+
+      # Compile the full AliceVision project and install it to ALICEVISION_ROOT.
       - name: Build
-        uses: lukka/run-cmake@v3
-        with:
-          cmakeBuildType: Release
-          buildWithCMake: true
-          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release --target install --parallel'
-          cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.dependenciesDir }}\x64-windows-release\scripts\buildsystems\vcpkg.cmake
-                            -DVCPKG_TARGET_TRIPLET=x64-windows-release
-                            -G "Ninja Multi-Config"
-                            -DBUILD_SHARED_LIBS=ON
-                            -DTARGET_ARCHITECTURE=core
-                            -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }}
-                            -DALICEVISION_BUNDLE_PREFIX:PATH=${{ env.ALICEVISION_BUNDLE }}
-                            -DALICEVISION_BUILD_TESTS=ON
-                            -DALICEVISION_USE_OPENCV=ON
-                            -DALICEVISION_USE_CUDA=ON
-                            -DALICEVISION_USE_CCTAG=ON
-                            -DALICEVISION_USE_POPSIFT=ON
-                            -DALICEVISION_USE_ALEMBIC=ON
-                            -DALICEVISION_USE_USD=ON
-                            -DALICEVISION_BUILD_SWIG_BINDING=ON
-                            -DBOOST_NO_CXX11=ON
-                            -DVCPKG_MANIFEST_MODE=OFF
-                            -DPython3_EXECUTABLE=${{ env.PYTHON_BUILD_VENV }}\Scripts\python.exe
-                            -DALICEVISION_BUNDLE_PYTHON_ROOT=${{ env.VCPKG_PYTHON_ROOT }}
-                            -DCMAKE_CUDA_COMPILER="${{ env.CUDACXX }}"
-                            -DCUDAToolkit_ROOT="${{ env.CUDA_PATH }}"
-                            -DCMAKE_C_COMPILER_LAUNCHER=sccache
-                            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+        run: cmake --build "${{ env.buildDir }}" --config Release --target install --parallel
 
       # Assemble a self-contained redistributable bundle with all runtime DLL dependencies.
       - name: Bundle
