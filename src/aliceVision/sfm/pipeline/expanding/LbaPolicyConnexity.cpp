@@ -17,7 +17,7 @@ bool LbaPolicyConnexity::build(sfmData::SfMData & sfmData, const track::TracksHa
     }
 
     
-    if (!_graph.build(sfmData, tracksHandler.getTracksPerView(), viewIds))
+    if (!_graph.build(sfmData, viewIds))
     {
         return false;
     }
