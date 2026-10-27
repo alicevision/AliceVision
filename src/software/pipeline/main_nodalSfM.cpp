@@ -37,6 +37,7 @@
 #include <random>
 #include <regex>
 #include <fstream>
+#include <tuple>
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -265,7 +266,8 @@ IndexT findBestNext(const sfmData::SfMData& sfmData,
                 }
             }
 
-            if (count > localBestCount)
+            // On equal counts, keep the smallest view id so the choice does not depend on thread scheduling
+            if (count > localBestCount || (count > 0 && count == localBestCount && viewId < localBestId))
             {
                 localBestCount = count;
                 localBestId = viewId;
@@ -276,7 +278,7 @@ IndexT findBestNext(const sfmData::SfMData& sfmData,
         // so there is no window where bestCount and bestId can refer to different views.
         #pragma omp critical
         {
-            if (localBestCount > bestCount)
+            if (localBestCount > bestCount || (localBestCount > 0 && localBestCount == bestCount && localBestId < bestId))
             {
                 bestCount = localBestCount;
                 bestId = localBestId;
@@ -600,9 +602,13 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        // Sort reconstructedPairs by quality
+        // Sort reconstructedPairs by quality, ties broken on view ids since file iteration order is unspecified
         std::sort(reconstructedPairs.begin(), reconstructedPairs.end(), [](const sfm::ReconstructedPair& p1, const sfm::ReconstructedPair& p2) {
-            return p1.score > p2.score;
+            if (p1.score != p2.score)
+            {
+                return p1.score > p2.score;
+            }
+            return std::tie(p1.reference, p1.next) < std::tie(p2.reference, p2.next);
         });
 
         // Using two views, create an initial map and pair of cameras
