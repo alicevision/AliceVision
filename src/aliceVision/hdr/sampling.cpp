@@ -10,6 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
+#include <algorithm>
 #include <random>
 
 namespace aliceVision {
@@ -477,14 +478,16 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
         }
     }
 
-    std::random_device randomDevice;
-    std::mt19937 rng(randomDevice());
+    // Fixed seed so the selected samples are repeatable
+    std::mt19937 rng(std::mt19937::default_seed);
 
     for (auto& item : counters)
     {
         if (item.second.size() > params.maxCountSample)
         {
             // Shuffle and ignore the exceeding samples
+            // Sort first: the list was merged from per-thread lists
+            std::sort(item.second.begin(), item.second.end());
             std::shuffle(item.second.begin(), item.second.end(), rng);
             item.second.resize(params.maxCountSample);
         }
@@ -533,8 +536,8 @@ void Sampling::analyzeSource(std::vector<ImageSample>& samples, int channelQuant
         }
     }
 
-    std::random_device randomDevice;
-    std::mt19937 rng(randomDevice());
+    // Fixed seed so the selected samples are repeatable
+    std::mt19937 rng(std::mt19937::default_seed);
 
     for (auto& item : _positions)
     {
@@ -555,8 +558,8 @@ void Sampling::filter(size_t maxTotalPoints)
     size_t limitPerGroup = 510;
     size_t total_points = maxTotalPoints + 1;
 
-    std::random_device randomDevice;
-    std::mt19937 rng(randomDevice());
+    // Fixed seed so the selected samples are repeatable
+    std::mt19937 rng(std::mt19937::default_seed);
 
     while (total_points > maxTotalPoints)
     {
