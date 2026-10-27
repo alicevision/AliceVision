@@ -24,8 +24,10 @@
 #include <aliceVision/dataio/json.hpp>
 
 #include <boost/program_options.hpp>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <tuple>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -121,6 +123,11 @@ int aliceVision_main(int argc, char** argv)
             reconstructedPairs.insert(reconstructedPairs.end(), localVector.begin(), localVector.end());
         }
     }
+
+    // Directory iteration order is unspecified: sort the pairs so the solver input is repeatable
+    std::sort(reconstructedPairs.begin(), reconstructedPairs.end(), [](const sfm::ReconstructedPair& p1, const sfm::ReconstructedPair& p2) {
+        return std::tie(p1.reference, p1.next) < std::tie(p2.reference, p2.next);
+    });
 
     rotationAveraging::RelativeRotations rotations;
     for (const auto & pair : reconstructedPairs)
