@@ -240,7 +240,9 @@ int aliceVision_main(int argc, char** argv)
     const fs::path p = fs::path(warpingFolder);
     const std::regex pattern("([0-9]+)_([0-9]+).exr");
 
-    std::map<IndexT, std::vector<std::string>> paths_per_view;
+    // Tiles are keyed by their number: directory iteration order is unspecified,
+    // and the imageCounter (and thus the new view ids) must be repeatable
+    std::map<IndexT, std::map<long, std::string>> paths_per_view;
     for (auto& iter : fs::directory_iterator(p))
     {
         if (!fs::is_regular_file(iter))
@@ -261,7 +263,7 @@ int aliceVision_main(int argc, char** argv)
         }
 
         IndexT index = std::stol(m[1].str());
-        paths_per_view[index].push_back(iter.path().stem().string());
+        paths_per_view[index][std::stol(m[2].str())] = iter.path().stem().string();
     }
 
     auto copyviews = sfmData.getViews();
@@ -269,21 +271,23 @@ int aliceVision_main(int argc, char** argv)
 
     for (auto pv : copyviews)
     {
-        std::vector<std::string>& images = paths_per_view[pv.first];
+        const std::map<long, std::string>& images = paths_per_view[pv.first];
         if (images.empty())
             continue;
 
-        for (int idx = 0; idx < images.size(); idx++)
+        int idx = 0;
+        for (const auto& [tileNumber, image] : images)
         {
             std::shared_ptr<sfmData::View> newView(pv.second->clone());
 
             newView->getImage().addMetadata("AliceVision:previousViewId", std::to_string(pv.first));
             newView->getImage().addMetadata("AliceVision:imageCounter", std::to_string(idx));
-            newView->getImage().addMetadata("AliceVision:warpedPath", images[idx]);
+            newView->getImage().addMetadata("AliceVision:warpedPath", image);
             const IndexT newIndex = sfmData::computeViewUID(*newView);
 
             newView->setViewId(newIndex);
             sfmData.getViews().emplace(newIndex, newView);
+            ++idx;
         }
     }
 
