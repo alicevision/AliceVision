@@ -148,12 +148,13 @@ void getTracksInImage(const std::size_t& imageIndex, const TracksMap& tracks, st
 
 void getTracksInImageFast(const std::size_t& imageId, const TracksPerView& tracksPerView, std::set<std::size_t>& tracksIds)
 {
-    if (tracksPerView.find(imageId) == tracksPerView.end())
+    tracksIds.clear();
+
+    const auto it = tracksPerView.find(imageId);
+    if (it == tracksPerView.end())
         return;
 
-    const TrackIdSet& imageTracks = tracksPerView.at(imageId);
-    tracksIds.clear();
-    tracksIds.insert(imageTracks.cbegin(), imageTracks.cend());
+    tracksIds.insert(it->second.cbegin(), it->second.cend());
 }
 
 void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
@@ -277,14 +278,7 @@ void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track
             {
                 p.second = next->first;
 
-                if (covisibility.find(p) == covisibility.end())
-                {
-                    covisibility[p] = 0;
-                }
-                else
-                {
-                    covisibility[p]++;
-                }
+                covisibility[p]++;
             }
         }
     }

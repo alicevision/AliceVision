@@ -85,11 +85,17 @@ class TracksBuilder
      */
     std::size_t nbTracks() const;
 
+    /**
+     * @brief Return the number of tracks removed by the last call to filter() which did not return early
+     * @return number of removed tracks (0 if filter() was never called)
+     */
+    std::size_t getFilteredCount() const { return _filteredCounter; }
+
     void displayStats(const TracksMap & allTracks) const;
 
   private:
     std::unique_ptr<TracksBuilderData> _d;
-    size_t _filteredCounter;
+    size_t _filteredCounter = 0;
 };
 
 }  // namespace track

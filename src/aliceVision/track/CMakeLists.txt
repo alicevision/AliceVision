@@ -30,6 +30,10 @@ alicevision_add_library(aliceVision_track
 
 # Unit tests
 alicevision_add_test(track_test.cpp NAME "track" LINKS aliceVision_track)
+alicevision_add_test(tracksBuilder_test.cpp NAME "track_tracksBuilder" LINKS aliceVision_track aliceVision_feature)
+alicevision_add_test(tracksUtils_test.cpp NAME "track_tracksUtils" LINKS aliceVision_track aliceVision_sfmData aliceVision_camera)
+alicevision_add_test(tracksMerger_test.cpp NAME "track_tracksMerger" LINKS aliceVision_track)
+alicevision_add_test(trackIO_test.cpp NAME "track_trackIO" LINKS aliceVision_track)
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
