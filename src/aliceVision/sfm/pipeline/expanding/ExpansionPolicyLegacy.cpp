@@ -115,11 +115,13 @@ bool ExpansionPolicyLegacy::process(const sfmData::SfMData & sfmData, const trac
         return false;
     }
 
-    //Sort views by decreasing scores
-    std::sort(vscoring.begin(), vscoring.end(), 
-                [](const ViewScoring & v1, const ViewScoring & v2) 
+    //Sort views by decreasing scores, ties broken on view id since the views were collected in thread completion order
+    std::sort(vscoring.begin(), vscoring.end(),
+                [](const ViewScoring & v1, const ViewScoring & v2)
                 {
-                    return v1.score > v2.score;
+                    if (v1.score != v2.score)
+                        return v1.score > v2.score;
+                    return v1.id < v2.id;
                 });
 
     //Always add at least the best score, whatever it is
