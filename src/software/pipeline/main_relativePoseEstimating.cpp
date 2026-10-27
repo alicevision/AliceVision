@@ -34,12 +34,16 @@
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/geometry/lie.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
+#include <aliceVision/numeric/randomGenerator.hpp>
 
 #include <boost/program_options.hpp>
 
 #include <aliceVision/sfm/pipeline/relativePoses.hpp>
 
+#include <algorithm>
 #include <cstdlib>
+#include <optional>
+#include <random>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -222,14 +226,6 @@ int aliceVision_main(int argc, char** argv)
     HardwareContext hwc = cmdline.getHardwareContext();
     omp_set_num_threads(hwc.getMaxThreads());
 
-    // Generate one number generator per thread to enable repetability
-    // Without thread concurrency
-    std::vector<std::mt19937> randomNumberGenerators;
-    for (int i = 0; i < omp_get_max_threads(); i++)
-    {
-        randomNumberGenerators.emplace_back(randomSeed);
-    }
-
     // load input SfMData scene
     sfmData::SfMData sfmData;
     if (!sfmDataIO::load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -296,7 +292,10 @@ int aliceVision_main(int argc, char** argv)
     ALICEVISION_LOG_INFO("A total of " << covisibility.size() << " pairs has to be processed.");
     ALICEVISION_LOG_INFO("Current chunk will analyze pairs from " << chunkStart << " to " << chunkEnd << ".");
 
-    //Output container
+    // Pairs are processed by batches: each batch is computed in parallel, then written in pair order,
+    // so the output does not depend on thread scheduling and the memory stays bounded
+    const int batchSize = 10000;
+    std::vector<std::optional<sfm::ReconstructedPair>> results;
     std::vector<sfm::ReconstructedPair> reconstructedPairs;
 
     ALICEVISION_LOG_INFO("Process co-visibility");
@@ -304,136 +303,150 @@ int aliceVision_main(int argc, char** argv)
     ss << outputDirectory << "/pairs_" << rangeIteration << ".json";
     std::ofstream of(ss.str());
 
-    // For each covisible pair
-#pragma omp parallel for //schedule(dynamic)
-    for (int posPairs = chunkStart; posPairs < chunkEnd; posPairs++)
+    for (int batchStart = chunkStart; batchStart < chunkEnd; batchStart += batchSize)
     {
-        auto iterPairs = covisibility.begin();
-        std::advance(iterPairs, posPairs);
+        const int batchEnd = std::min(batchStart + batchSize, chunkEnd);
+        results.assign(batchEnd - batchStart, std::nullopt);
 
-        std::mt19937 & randomNumberGenerator = randomNumberGenerators[omp_get_thread_num()];
+        // For each covisible pair of the batch
+#pragma omp parallel for //schedule(dynamic)
+        for (int posPairs = batchStart; posPairs < batchEnd; posPairs++)
+        {
+            auto iterPairs = covisibility.begin();
+            std::advance(iterPairs, posPairs);
 
-        // Retrieve pair information
-        IndexT refImage = iterPairs->first.first;
-        IndexT nextImage = iterPairs->first.second;
+            // Retrieve pair information
+            IndexT refImage = iterPairs->first.first;
+            IndexT nextImage = iterPairs->first.second;
 
-        const sfmData::View& refView = sfmData.getView(refImage);
-        const sfmData::View& nextView = sfmData.getView(nextImage);
+            // Seed from the pair itself so the result does not depend on thread count or chunking
+            std::mt19937 randomNumberGenerator = createSeededGenerator(static_cast<std::mt19937::result_type>(randomSeed), refImage, nextImage);
 
-        std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
-        std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
+            const sfmData::View& refView = sfmData.getView(refImage);
+            const sfmData::View& nextView = sfmData.getView(nextImage);
+
+            std::shared_ptr<camera::IntrinsicBase> refIntrinsics = sfmData.getIntrinsicSharedPtr(refView.getIntrinsicId());
+            std::shared_ptr<camera::IntrinsicBase> nextIntrinsics = sfmData.getIntrinsicSharedPtr(nextView.getIntrinsicId());
         
 
-        aliceVision::track::TracksMap mapTracksCommon;
-        track::getCommonTracksInImagesFast({refImage, nextImage}, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), mapTracksCommon);
+            aliceVision::track::TracksMap mapTracksCommon;
+            track::getCommonTracksInImagesFast({refImage, nextImage}, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), mapTracksCommon);
 
-        if (mapTracksCommon.size() == 0)
-        {
-            continue;
-        }
-
-        // Build features coordinates matrices
-        const std::size_t n = mapTracksCommon.size();
-        std::vector<Eigen::Vector2d> refpts, nextpts;
-        for (const auto& commonItem : mapTracksCommon)
-        {
-            const track::Track & track = commonItem.second;
-            refpts.push_back(track.featPerView.at(refImage).coords);
-            nextpts.push_back(track.featPerView.at(nextImage).coords);
-        }
-
-        std::vector<size_t> vecInliers;
-        sfm::ReconstructedPair reconstructed;
-        double errorMax = 0.0;
-
-        if (enforcePureRotation)
-        {
-            // Try to fit an essential matrix (we assume we are approx. calibrated)
-            Mat3 R;
-            const bool relativeSuccess = robustRotation(R, 
-                                                        vecInliers, 
-                                                        errorMax,
-                                                        *refIntrinsics,
-                                                        *nextIntrinsics, 
-                                                        refpts, 
-                                                        nextpts, 
-                                                        randomNumberGenerator, 
-                                                        countIterations, 
-                                                        minInliers,
-                                                        distanceThreshold);
-            if (!relativeSuccess)
+            if (mapTracksCommon.size() == 0)
             {
                 continue;
             }
 
-            reconstructed.reference = refImage;
-            reconstructed.next = nextImage;
-            reconstructed.pose.setRotation(R);
-            reconstructed.errorMax = errorMax;
-        }
-        else
-        {
-            // Try to fit an essential matrix (we assume we are approx. calibrated)
-            Mat3 E;
-            std::vector<size_t> inliers;
-            const bool essentialSuccess = robustEssential(E,
-                                                          inliers,
-                                                          errorMax,
-                                                          *refIntrinsics,
-                                                          *nextIntrinsics,
-                                                          refpts,
-                                                          nextpts,
-                                                          randomNumberGenerator,
-                                                          countIterations,
-                                                          minInliers,
-                                                          distanceThreshold);
-            if (!essentialSuccess)
+            // Build features coordinates matrices
+            const std::size_t n = mapTracksCommon.size();
+            std::vector<Eigen::Vector2d> refpts, nextpts;
+            for (const auto& commonItem : mapTracksCommon)
             {
-                continue;
+                const track::Track & track = commonItem.second;
+                refpts.push_back(track.featPerView.at(refImage).coords);
+                nextpts.push_back(track.featPerView.at(nextImage).coords);
             }
 
-            std::vector<Vec3> structure;
-            reconstructed.reference = refImage;
-            reconstructed.next = nextImage;
-            reconstructed.errorMax = errorMax;
+            std::vector<size_t> vecInliers;
+            sfm::ReconstructedPair reconstructed;
+            double errorMax = 0.0;
 
-            Mat4 T;
-            if (!estimateTransformStructureFromEssential(T, structure, vecInliers, E, inliers, 
-                                                      *refIntrinsics, *nextIntrinsics, 
-                                                      refpts, nextpts))
+            if (enforcePureRotation)
             {
-                continue;
-            }
+                // Try to fit an essential matrix (we assume we are approx. calibrated)
+                Mat3 R;
+                const bool relativeSuccess = robustRotation(R, 
+                                                            vecInliers, 
+                                                            errorMax,
+                                                            *refIntrinsics,
+                                                            *nextIntrinsics, 
+                                                            refpts, 
+                                                            nextpts, 
+                                                            randomNumberGenerator, 
+                                                            countIterations, 
+                                                            minInliers,
+                                                            distanceThreshold);
+                if (!relativeSuccess)
+                {
+                    continue;
+                }
 
-            if (vecInliers.size() < minInliers)
+                reconstructed.reference = refImage;
+                reconstructed.next = nextImage;
+                reconstructed.pose.setRotation(R);
+                reconstructed.errorMax = errorMax;
+            }
+            else
             {
-                continue;
-            }
+                // Try to fit an essential matrix (we assume we are approx. calibrated)
+                Mat3 E;
+                std::vector<size_t> inliers;
+                const bool essentialSuccess = robustEssential(E,
+                                                              inliers,
+                                                              errorMax,
+                                                              *refIntrinsics,
+                                                              *nextIntrinsics,
+                                                              refpts,
+                                                              nextpts,
+                                                              randomNumberGenerator,
+                                                              countIterations,
+                                                              minInliers,
+                                                              distanceThreshold);
+                if (!essentialSuccess)
+                {
+                    continue;
+                }
 
-            reconstructed.pose = geometry::Pose3(T);
-        }
+                std::vector<Vec3> structure;
+                reconstructed.reference = refImage;
+                reconstructed.next = nextImage;
+                reconstructed.errorMax = errorMax;
+
+                Mat4 T;
+                if (!estimateTransformStructureFromEssential(T, structure, vecInliers, E, inliers, 
+                                                          *refIntrinsics, *nextIntrinsics, 
+                                                          refpts, nextpts))
+                {
+                    continue;
+                }
+
+                if (vecInliers.size() < minInliers)
+                {
+                    continue;
+                }
+
+                reconstructed.pose = geometry::Pose3(T);
+            }
         
-        // Extract inliers
-        std::vector<Vec2> refPtsValid, nextPtsValid;
-        for (auto id : vecInliers)
-        {
-            refPtsValid.push_back(refpts[id]);
-            nextPtsValid.push_back(nextpts[id]);
+            // Extract inliers
+            std::vector<Vec2> refPtsValid, nextPtsValid;
+            for (auto id : vecInliers)
+            {
+                refPtsValid.push_back(refpts[id]);
+                nextPtsValid.push_back(nextpts[id]);
+            }
+
+            // Compute matched points coverage of image
+            const double areaScore = sfm::computeAreaScore(refPtsValid, nextPtsValid, refIntrinsics->w(), refIntrinsics->h(), nextIntrinsics->w(), nextIntrinsics->h());
+
+            // Compute ratio of matched points
+            const double iunion = n;
+            const double iinter = vecInliers.size();
+            const double score = iinter / iunion;
+            reconstructed.score = 0.5 * score + 0.5 * areaScore;
+
+            results[posPairs - batchStart] = reconstructed;
         }
 
-        // Compute matched points coverage of image
-        const double areaScore = sfm::computeAreaScore(refPtsValid, nextPtsValid, refIntrinsics->w(), refIntrinsics->h(), nextIntrinsics->w(), nextIntrinsics->h());
-
-        // Compute ratio of matched points
-        const double iunion = n;
-        const double iinter = vecInliers.size();
-        const double score = iinter / iunion;
-        reconstructed.score = 0.5 * score + 0.5 * areaScore;
-
-// Buffered output to avoid lo
-#pragma omp critical
+        // Buffered output, in pair order
+        for (const auto& result : results)
         {
-            reconstructedPairs.push_back(reconstructed);
+            if (!result)
+            {
+                continue;
+            }
+
+            reconstructedPairs.push_back(*result);
 
             if (reconstructedPairs.size() > 1000)
             {
