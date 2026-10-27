@@ -88,6 +88,7 @@ int aliceVision_main(int argc, char** argv)
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
     ("localizerEstimatorMaxIterations", po::value<std::size_t>(&localizerEstimatorMaxIterations)->default_value(localizerEstimatorMaxIterations), "Maximum number of RANSAC iterations.")
     ("localizerEstimatorError", po::value<double>(&localizerEstimatorError)->default_value(0.0), "Reprojection error threshold (in pixels) for the localizer estimator (0 for default value according to the estimator).")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed), "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.")
     ("enableDepthPrior", po::value<bool>(&enableDepthPrior)->default_value(enableDepthPrior),"If available in the tracks, use the depth prior.")
     ("ignoreMultiviewOnPrior", po::value<bool>(&ignoreMultiviewOnPrior)->default_value(ignoreMultiviewOnPrior),"Favour the prior based 3d reconstruction over the multiview reconstruction.")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),"Lock/Unlock scene previously reconstructed.")
@@ -254,6 +255,7 @@ int aliceVision_main(int argc, char** argv)
     expansionChunk->setIgnoreMultiviewOnPrior(ignoreMultiviewOnPrior);
     expansionChunk->setMinAngleTriangulation(minAngleForTriangulation);
     expansionChunk->setWeakResectionSize(weakResectionSize);
+    expansionChunk->setRandomSeed((randomSeed == -1) ? std::random_device()() : static_cast<unsigned int>(randomSeed));
 
     sfm::ExpansionPolicy::uptr expansionPolicy;
     {

@@ -1,4 +1,4 @@
-__version__ = "4.2"
+__version__ = "4.3"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -80,6 +80,16 @@ The output is a partially initialized SfMData with the first two cameras localiz
             value=40.0,
             range=(0.1, 60.0, 0.1),
             advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="Seed of the random number generators used by the robust estimations.\n"
+                        "The default, 5489, is the generators' own default seed. Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
+            enabled=lambda node: node.method.value == "depth",
         ),
         desc.File(
             name="initialPairA",
