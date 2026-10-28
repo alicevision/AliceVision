@@ -6,6 +6,9 @@
 
 #include "KeyframeSelector.hpp"
 #include <aliceVision/sfmDataIO/viewIO.hpp>
+#include <aliceVision/sfmDataIO/SfMDataFeed.hpp>
+#include <aliceVision/dataio/ImageFeed.hpp>
+#include <aliceVision/dataio/VideoFeed.hpp>
 #include <aliceVision/sfmData/ImageSet.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/utils/filesIO.hpp>
@@ -90,6 +93,11 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
     {
         ALICEVISION_THROW(std::invalid_argument, "The number of provided mask paths must match the number of media paths.");
     }
+
+    // Feeds FeedProvider can open, tried in this order
+    sfmDataIO::registerSfMDataFeed();
+    dataio::registerImageFeed();
+    dataio::registerVideoFeed();
 
     scoresMap["Sharpness"] = &_sharpnessScores;
     scoresMap["OpticalFlow"] = &_flowScores;
@@ -707,6 +715,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
     for (std::size_t id = 0; id < _mediaPaths.size(); ++id)
     {
         const auto& path = _mediaPaths.at(id);
+        const bool isVideo = dataio::VideoFeed::isSupported(path);
 
         // Create a feed provider per mediaPaths
         dataio::FeedProvider feed(path);
@@ -776,7 +785,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
 
                 image::ImageWriteOptions options;
                 // If the feed is a video, frames are read as OpenCV RGB matrices before being converted to image::ImageRGB
-                if (feed.isVideo())
+                if (isVideo)
                 {
                     options.fromColorSpace(image::EImageColorSpace::SRGB);
                     options.toColorSpace(image::EImageColorSpace::AUTO);
@@ -805,7 +814,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
         }
 
         // If the current media is a video and there is no output keyframe, the corresponding SfMData file will not be written
-        if (feed.isVideo() && outputExtension == "none")
+        if (isVideo && outputExtension == "none")
         {
             ALICEVISION_THROW(std::invalid_argument,
                               "The keyframes selected from the input video have not been "
@@ -1251,7 +1260,7 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath,
 {
     bool filledOutputs = false;
 
-    if (!feed.isSfMData())
+    if (!sfmDataIO::SfMDataFeed::isSupported(mediaPath))
     {
         filledOutputs = writeSfMDataFromSequences(mediaPath, feed, brands, models, mmFocals, mediaIndex, intrinsicId);
     }
@@ -1272,7 +1281,7 @@ bool KeyframeSelector::writeSfMData(const std::string& mediaPath,
         return false;
     }
 
-    if (!feed.isVideo())
+    if (!dataio::VideoFeed::isSupported(mediaPath))
     {
         if (!sfmDataIO::save(_outputSfmFrames, _outputSfmFramesPath, sfmDataIO::ESfMData::ALL))
         {
@@ -1409,6 +1418,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
     bool hasIntrinsics = false;
     std::string currentImgName;
 
+    const bool isVideo = dataio::VideoFeed::isSupported(mediaPath);
     std::size_t selectedKeyframesCounter = 0;  // Used to find the path of the written images when the feed is video
     std::shared_ptr<camera::IntrinsicBase> previousIntrinsic = nullptr;
 
@@ -1429,7 +1439,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
             ALICEVISION_LOG_ERROR("Error reading image.");
 
             // Frames may be seldomly corrupted in the VideoFeeds, but this should not occur with other feeds
-            if (feed.isVideo())
+            if (isVideo)
             {
                 ALICEVISION_LOG_WARNING("Skipping to the next frame.");
                 continue;
@@ -1480,7 +1490,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         // Fill the SfMData files
         if (_selectedFrames[i] == '1')
         {
-            if (feed.isVideo())
+            if (isVideo)
             {
                 // If the feed is a video, all views will have the same view ID by default, this needs to be fixed
                 view->setViewId(view->getViewId() + viewId++);
@@ -1494,7 +1504,7 @@ bool KeyframeSelector::writeSfMDataFromSequences(const std::string& mediaPath,
         else
         {
             // No rejected frames if the feed is a video one, as they are not written on disk
-            if (!feed.isVideo())
+            if (!isVideo)
             {
                 framesViews.emplace(view->getViewId(), view);
                 framesIntrinsics.emplace(intrinsicId, intrinsic);
