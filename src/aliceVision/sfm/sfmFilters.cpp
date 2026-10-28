@@ -194,6 +194,17 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
         }
     }
 
+    // Pose ids in use, so that detached rig views do not get a pose id already used elsewhere
+    std::set<IndexT> usedPoseIds;
+    for (auto it = sfmData.getPoses().begin(); it != sfmData.getPoses().end(); ++it)
+    {
+        usedPoseIds.insert(it->first);
+    }
+    for (const auto& [viewId, view] : sfmData.getViews())
+    {
+        usedPoseIds.insert(view->getPoseId());
+    }
+
     // If usage count is smaller than the threshold, remove the Pose
     for (const auto & [idPose, count] : posesCount)
     {
@@ -207,8 +218,19 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
                 {
                     if (view->isPartOfRig())
                     {
-                        // the pose is now independant
-                        view->setPoseId(idPose);
+                        // the pose is now independant, give each view its own pose id
+                        // (the view id, unless it is already used by another pose)
+                        IndexT newPoseId = viewId;
+                        if (newPoseId != idPose)
+                        {
+                            while (usedPoseIds.count(newPoseId) > 0)
+                            {
+                                ++newPoseId;
+                            }
+                        }
+                        usedPoseIds.insert(newPoseId);
+
+                        view->setPoseId(newPoseId);
                         view->setIndependantPose(true);
                     }
 
@@ -295,29 +317,26 @@ bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
                                        const IndexT minPointsPerLandmark,
                                        std::set<IndexT>* outRemovedViewsId)
 {
-    IndexT removeIteration = 0;
-    bool removedContent = false;
+    // Observations are only removed as a consequence of removed poses
     bool removedPoses = false;
-    bool removedObservations = false;
+    bool removedContent = false;
     do
     {
         removedContent = false;
         if (eraseUnstablePoses(sfmData, minPointsPerPose, outRemovedViewsId))
         {
             removedPoses = true;
-            removedContent = eraseObservationsWithMissingPoses(sfmData, minPointsPerLandmark);
-            if (removedContent)
-            {
-                removedObservations = true;
-            }
 
-            removedContent = eraseLandmarksWithMissingReferenceView(sfmData);
+            // Both must run: keep them as separate statements (no short-circuit)
+            const bool removedObservations = eraseObservationsWithMissingPoses(sfmData, minPointsPerLandmark);
+            const bool removedLandmarks = eraseLandmarksWithMissingReferenceView(sfmData);
+
             // Erase some observations can make some Poses index disappear so perform the process in a loop
+            removedContent = removedObservations || removedLandmarks;
         }
-        removeIteration += removedContent ? 1 : 0;
     } while (removedContent);
 
-    return removedPoses || removedObservations;
+    return removedPoses;
 }
 
 IndexT removeConstraints(sfmData::SfMData& sfmData, double maxDist)

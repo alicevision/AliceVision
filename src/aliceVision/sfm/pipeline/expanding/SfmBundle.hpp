@@ -162,7 +162,6 @@ private:
     size_t _bundleAdjustmentMaxOutlier = 50;
     size_t _minNbCamerasToRefinePrincipalPoint = 3;
     unsigned int _maxIterationCount = 50;
-    bool _useLBA = true;
     bool _bundleTemporalConstraint = false;
     aliceVision::sfm::TemporalConstraintParams _tempConstrParams;
     size_t _minNbCamerasLBA = 100;

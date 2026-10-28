@@ -17,7 +17,7 @@ bool LbaPolicyConnexity::build(sfmData::SfMData & sfmData, const track::TracksHa
     }
 
     
-    if (!_graph.build(sfmData, tracksHandler.getTracksPerView(), viewIds))
+    if (!_graph.build(sfmData, viewIds))
     {
         return false;
     }
@@ -85,12 +85,27 @@ void LbaPolicyConnexity::upgradeSfmData(sfmData::SfMData & sfmData)
             }
         }
 
+        // A landmark expressed in a reference view frame requires that view's pose in the bundle,
+        // even if the reference view does not observe the landmark anymore
+        const IndexT refViewId = landmark.getReferenceViewIndex();
+        if (refViewId != UndefinedIndexT && sfmData.isPoseAndIntrinsicDefined(refViewId))
+        {
+            const IndexT refPoseId = sfmData.getView(refViewId).getPoseId();
+            if (sfmData.getAbsolutePose(refPoseId).getState() == EEstimatorParameterState::IGNORED)
+            {
+                hasIgnored = true;
+            }
+        }
+
         //If no associated view which has to be computed, 
         //then obviously we want to ignore it (should be implicit in the bundle though)
         if ((!hasEstimated) || hasIgnored)
         {
-            landmark.setState(EEstimatorParameterState::IGNORED);
+            state = EEstimatorParameterState::IGNORED;
         }
+
+        // Always assign, so that a landmark ignored in a previous call can be refined again
+        landmark.setState(state);
     }
 }
 

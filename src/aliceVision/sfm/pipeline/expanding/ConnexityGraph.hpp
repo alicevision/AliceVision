@@ -20,13 +20,11 @@ public:
     /**
      * Compute distances of all the sfmData views to the viewsOfInterest views
      * @param sfmData the sfmData containing all the views
-     * @param tracksPerView list of track ids indexed per view
-     * @param viewsOfInterest the list of views to compute the distance from. 
+     * @param viewsOfInterest the list of views to compute the distance from.
      * Those views must also be in the sfmData !
      * @return false if an error occurred
     */
-    bool build(const sfmData::SfMData & sfmData,  
-                const track::TracksPerView& tracksPerViews,
+    bool build(const sfmData::SfMData & sfmData,
                 const std::set<IndexT> & viewsOfInterest);
 
     /**
@@ -39,17 +37,24 @@ public:
 
 private:
     /**
-     * update the coCardinalities
+     * update the coCardinalities (number of landmarks shared by each pair of views)
+     * Only the landmarks which changed since the previous call are processed
      * @param sfmData the sfmData containing all the views
-     * @param tracksPerView list of track ids indexed per view
      * @return false if an error occurred
     */
-    bool updateCocardinalities(const sfmData::SfMData & sfmData, 
-                              const track::TracksPerView& tracksPerViews);
+    bool updateCocardinalities(const sfmData::SfMData & sfmData);
+
+    /**
+     * Add or remove the contribution of one landmark to the coCardinalities
+     * @param observers the sorted list of view ids observing the landmark
+     * @param add true to add the contribution, false to remove it
+    */
+    void updatePairs(const std::vector<IndexT> & observers, bool add);
 
 private:
     std::map<IndexT, int> _distancesPerPoseId;
-    std::set<IndexT> _previousViews;
+    /// Sorted view ids observing each landmark, as seen during the previous update
+    std::map<IndexT, std::vector<IndexT>> _observersPerLandmark;
     std::map<Pair, size_t> _cocardinalities;
 
 private:

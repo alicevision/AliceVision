@@ -44,7 +44,16 @@ bool ExpansionIteration::process(sfmData::SfMData & sfmData, track::TracksHandle
             break;
         }
    
-        if (!_chunkHandler->process(sfmData, tracksHandler, _policy->getNextViews(), expansionMode))
+        const EChunkResult result = _chunkHandler->process(sfmData, tracksHandler, _policy->getNextViews(), expansionMode);
+
+        // The scene may have been partially modified, do not go on with it
+        if (result == EChunkResult::CHUNK_ERROR)
+        {
+            return false;
+        }
+
+        // Nothing could be done with these views
+        if (result == EChunkResult::CHUNK_SKIPPED)
         {
             continue;
         }

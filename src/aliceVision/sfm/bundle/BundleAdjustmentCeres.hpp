@@ -41,7 +41,7 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
             maxNumIterations(maxIterations)
         {
             setDenseBA();  // use dense BA by default
-            lossFunction.reset(new ceres::HuberLoss(huberLoss));
+            lossParameter = huberLoss;
         }
 
         void setDenseBA();
@@ -50,7 +50,8 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
         ceres::LinearSolverType linearSolverType;
         ceres::PreconditionerType preconditionerType;
         ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
-        std::shared_ptr<ceres::LossFunction> lossFunction;
+        /// Huber loss threshold applied to the observations residuals
+        double lossParameter = 16.0;
         unsigned int nbThreads;
         unsigned int maxNumIterations;
         bool useParametersOrdering = true;
@@ -162,6 +163,15 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
      * @brief Clear structures for a new problem
      */
     void resetProblem();
+
+    /**
+     * @brief Get a loss function for a new residual block.
+     *        The returned pointer must be passed immediately to problem.AddResidualBlock,
+     *        which takes ownership of it (shared objects are deleted once by ceres).
+     * @param[in] weight The observation weight, a ScaledLoss is created if different from 1
+     * @return the loss function
+     */
+    ceres::LossFunction* getLossFunction(double weight = 1.0);
 
     /**
      * @brief Set user Ceres options to the solver
@@ -280,6 +290,9 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     std::map<IndexT, std::vector<double>> _intrinsicsBlocks;
     std::map<IndexT, std::vector<double>> _distortionsBlocks;
     std::map<IndexT, std::shared_ptr<camera::IntrinsicBase>> _intrinsicObjects;
+
+    /// unweighted loss shared by residual blocks of the current problem (owned by the problem)
+    ceres::LossFunction* _lossFunction = nullptr;
 
     double _fakeDistortionBlock;
     /// landmarks blocks wrapper

@@ -188,6 +188,15 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
+    // lock all intrinsics, so that they are constant for the bundle and the local strategy
+    if (lockAllIntrinsics)
+    {
+        for (auto& [_, intrinsic] : sfmData.getIntrinsics())
+        {
+            intrinsic->lock();
+        }
+    }
+
     // Load tracks
     ALICEVISION_LOG_INFO("Load tracks");
     track::TracksHandler tracksHandler;
@@ -284,7 +293,9 @@ int aliceVision_main(int argc, char** argv)
 
     if (!expansionProcess->process(sfmData, tracksHandler))
     {
-        ALICEVISION_LOG_INFO("Error processing sfmData");
+        // Keep the work done so far: it can be resumed, as an existing scene is bundled again on input
+        ALICEVISION_LOG_ERROR("Error processing sfmData, saving the partial scene to '" << sfmDataOutputFilename << "'");
+        sfmDataIO::save(sfmData, sfmDataOutputFilename, sfmDataIO::ESfMData::ALL);
         return EXIT_FAILURE;
     }
 

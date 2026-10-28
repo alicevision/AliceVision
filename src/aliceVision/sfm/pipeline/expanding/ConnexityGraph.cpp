@@ -37,120 +37,103 @@ struct viewIdScored
     size_t card = 0;        
 };
 
-bool ConnexityGraph::updateCocardinalities(const sfmData::SfMData & sfmData, 
-                              const track::TracksPerView& tracksPerViews)
+void ConnexityGraph::updatePairs(const std::vector<IndexT> & observers, bool add)
 {
-    //Create a list of reconstructed views
-    std::set<IndexT> setViews;
-    for (const auto & [viewId, view] : sfmData.getViews())
+    // observers are sorted by increasing view id, so pairs are ordered (first < second)
+    for (size_t i = 0; i < observers.size(); i++)
     {
-        if (sfmData.isPoseAndIntrinsicDefined(viewId))
+        for (size_t j = i + 1; j < observers.size(); j++)
         {
-            setViews.insert(viewId);
-        }
-    }
+            const Pair p(observers[i], observers[j]);
 
-    //Get incoming views
-    std::set<IndexT> newViews;
-    std::set_difference(setViews.begin(), setViews.end(), 
-                        _previousViews.begin(), _previousViews.end(), 
-                        std::inserter(newViews, newViews.begin()));
-    
-    ALICEVISION_LOG_INFO("Update cocardinalities with " << newViews.size() << " new views");
-
-    //Retrieve landmarks
-    const sfmData::Landmarks & landmarks = sfmData.getLandmarks();
-    
-    //Get All landmark ids (keys)
-    std::set<IndexT> landmarkIds;
-    std::transform(landmarks.begin(), landmarks.end(), 
-                    std::inserter(landmarkIds, landmarkIds.begin()), 
-                    stl::RetrieveKey());
-
-    //For all incoming views only
-    for (const IndexT newView: newViews)
-    {
-        const track::TrackIdSet & trackIds = tracksPerViews.at(newView);
-        
-        //Build a list of landmarks observed by this view
-        std::vector<IndexT> newViewLandmarks;
-        newViewLandmarks.reserve(trackIds.size());
-        std::set_intersection(trackIds.begin(), trackIds.end(), 
-                              landmarkIds.begin(), landmarkIds.end(), 
-                              std::back_inserter(newViewLandmarks));
-
-        //Loop over all landmarks
-        std::map<IndexT, size_t> commonLandmarksCountPerView;
-        for (const IndexT & idLandmark : newViewLandmarks)
-        {   
-            //Loop over all view observing the landmark
-            const sfmData::Landmark & landmark = landmarks.at(idLandmark);
-            for (const auto & [idView, _] : landmark.getObservations())
+            if (add)
             {
-                if (idView == newView)
-                {
-                    continue;
-                }
+                _cocardinalities[p]++;
+                continue;
+            }
 
-                //Update the coobservation counter
-                auto it = commonLandmarksCountPerView.find(idView);
-                if (it != commonLandmarksCountPerView.end())
-                {
-                    it->second++;
-                }
-                else
-                {
-                    commonLandmarksCountPerView[idView] = 1;
-                }
+            auto it = _cocardinalities.find(p);
+            if (it == _cocardinalities.end())
+            {
+                continue;
+            }
+
+            if (--(it->second) == 0)
+            {
+                _cocardinalities.erase(it);
             }
         }
-
-        //Update the cocardinalities sparse matrix 
-        for (const auto [otherView, card]: commonLandmarksCountPerView)
-        {
-            Pair p;
-            p.first = std::min(newView, otherView);
-            p.second = std::max(newView, otherView);
-            _cocardinalities[p] = card;
-        }
     }
+}
 
-    
+bool ConnexityGraph::updateCocardinalities(const sfmData::SfMData & sfmData)
+{
+    // Compare the current landmarks with the ones from the previous call
+    // and only update the pairs of landmarks which changed.
+    // This keeps the cocardinalities exact for a cost linear in the number of observations.
+    std::map<IndexT, std::vector<IndexT>> observersPerLandmark;
+    size_t countChanged = 0;
 
-    //Get Removed views
-    std::set<IndexT> removedViews;
-    std::set_difference(_previousViews.begin(), _previousViews.end(),
-                        setViews.begin(), setViews.end(), 
-                        std::inserter(removedViews, removedViews.begin()));
-
-    ALICEVISION_LOG_INFO("Update cocardinalities with " << removedViews.size() << " removed views");
-
-    for (const IndexT removedView : removedViews)
+    for (const auto & [landmarkId, landmark] : sfmData.getLandmarks())
     {
-        std::erase_if(_cocardinalities, 
-                    [removedView](const auto & item)
-                    {
-                        const auto & pair = item.first;
-                        return ((pair.first == removedView) || (pair.second == removedView));
-                    }
-        );
+        const sfmData::Observations & observations = landmark.getObservations();
+
+        auto itPrevious = _observersPerLandmark.find(landmarkId);
+        if (itPrevious != _observersPerLandmark.end())
+        {
+            const std::vector<IndexT> & previous = itPrevious->second;
+            const bool unchanged = std::equal(previous.begin(), previous.end(), 
+                                              observations.begin(), observations.end(), 
+                                              [](IndexT viewId, const auto & obs) { return viewId == obs.first; });
+
+            if (unchanged)
+            {
+                observersPerLandmark.emplace_hint(observersPerLandmark.end(), landmarkId, std::move(itPrevious->second));
+                _observersPerLandmark.erase(itPrevious);
+                continue;
+            }
+
+            //Remove the previous contribution of this landmark
+            updatePairs(previous, false);
+            _observersPerLandmark.erase(itPrevious);
+        }
+
+        //Observations are sorted by view id
+        std::vector<IndexT> observers;
+        observers.reserve(observations.size());
+        for (const auto & [viewId, _] : observations)
+        {
+            observers.push_back(viewId);
+        }
+
+        updatePairs(observers, true);
+        observersPerLandmark.emplace_hint(observersPerLandmark.end(), landmarkId, std::move(observers));
+        countChanged++;
     }
+
+    //Remaining landmarks do not exist anymore
+    for (const auto & [landmarkId, previous] : _observersPerLandmark)
+    {
+        updatePairs(previous, false);
+    }
+
+    ALICEVISION_LOG_INFO("Update cocardinalities with " << countChanged << " new or modified landmarks and " 
+                            << _observersPerLandmark.size() << " removed landmarks");
 
     //Copy for next iteration
-    _previousViews = setViews;
+    _observersPerLandmark = std::move(observersPerLandmark);
     
     return true;
 }
 
-bool ConnexityGraph::build(const sfmData::SfMData & sfmData, 
-                        const track::TracksPerView& tracksPerViews, 
+bool ConnexityGraph::build(const sfmData::SfMData & sfmData,
                         const std::set<IndexT> & viewsOfInterest)
 {
     lemon::ListGraph graph;
     std::map<IndexT, lemon::ListGraph::Node> nodePerViewId;
     std::map<lemon::ListGraph::Node, IndexT> viewIdPerNode;
 
-    if (!updateCocardinalities(sfmData, tracksPerViews))
+    if (!updateCocardinalities(sfmData))
     {
         return false;
     }
@@ -163,14 +146,16 @@ bool ConnexityGraph::build(const sfmData::SfMData & sfmData,
     std::vector<IndexT> views;
     for (const auto & [viewId, view] : sfmData.getViews())
     {
-        if (sfmData.isPoseAndIntrinsicDefined(viewId))
+        if (!sfmData.isPoseAndIntrinsicDefined(viewId))
         {
-            views.push_back(viewId);
-
-            lemon::ListGraph::Node newNode = graph.addNode();
-            nodePerViewId[viewId] = newNode;
-            viewIdPerNode[newNode] = viewId;
+            continue;
         }
+
+        views.push_back(viewId);
+
+        lemon::ListGraph::Node newNode = graph.addNode();
+        nodePerViewId[viewId] = newNode;
+        viewIdPerNode[newNode] = viewId;
     }
 
     
@@ -224,10 +209,15 @@ bool ConnexityGraph::build(const sfmData::SfMData & sfmData,
         {
             IndexT viewId2 = part.viewId;
 
-            const lemon::ListGraph::Node & node1 = nodePerViewId[viewId1];
-            const lemon::ListGraph::Node & node2 = nodePerViewId[viewId2];
+            //Observations may belong to views which are not reconstructed (not in the graph)
+            const auto it1 = nodePerViewId.find(viewId1);
+            const auto it2 = nodePerViewId.find(viewId2);
+            if (it1 == nodePerViewId.end() || it2 == nodePerViewId.end())
+            {
+                continue;
+            }
 
-            graph.addEdge(node1, node2);
+            graph.addEdge(it1->second, it2->second);
         }
     }
 
@@ -289,18 +279,14 @@ bool ConnexityGraph::build(const sfmData::SfMData & sfmData,
 
         if (bfs.reached(node))
         {
-            int d = bfs.dist(node);
+            const int d = bfs.dist(node);
 
-            auto lookupIt = _distancesPerPoseId.find(poseId);
-            if (lookupIt == _distancesPerPoseId.end())
+            //A pose shared by multiple views (rig) keeps the smallest distance
+            auto [it, inserted] = _distancesPerPoseId.emplace(poseId, d);
+            if (!inserted)
             {
-                _distancesPerPoseId[x.first] = d;
+                it->second = std::min(it->second, d);
             }
-            else
-            {
-                _distancesPerPoseId[x.first] = std::min(lookupIt->second, d);
-            }
-            
         }
     }
 
