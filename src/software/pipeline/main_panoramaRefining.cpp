@@ -25,6 +25,7 @@
 #include <fstream>
 #include <algorithm>
 #include <iterator>
+#include <tuple>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -117,7 +118,12 @@ int aliceVision_main(int argc, char** argv)
         }
     }
 
-    
+    // Directory iteration order is unspecified: sort the pairs so the constraints order is repeatable
+    std::sort(reconstructedPairs.begin(), reconstructedPairs.end(), [](const sfm::ReconstructedPair& p1, const sfm::ReconstructedPair& p2) {
+        return std::tie(p1.reference, p1.next) < std::tie(p2.reference, p2.next);
+    });
+
+
     const auto & tracksPerView = tracksHandler.getTracksPerView();
     const auto & tracksMap = tracksHandler.getAllTracks();
 

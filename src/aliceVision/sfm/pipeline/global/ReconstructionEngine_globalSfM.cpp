@@ -18,8 +18,12 @@
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
+#include <aliceVision/numeric/randomGenerator.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
+
+#include <algorithm>
+#include <tuple>
 
 #ifdef _MSC_VER
     #pragma warning(once : 4267)  // warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
@@ -468,6 +472,10 @@ void ReconstructionEngine_globalSfM::computeRelativeRotations(rotationAveraging:
     }
 
     auto progressDisplay = system::createConsoleProgressDisplay(poseWiseMatches.size(), "\n- Relative pose computation -\n");
+
+    // Draw a base seed once, then seed one generator per pose pair so the result does not depend on thread scheduling
+    const std::mt19937::result_type baseSeed = _randomNumberGenerator();
+
 #pragma omp parallel for schedule(dynamic)
     // Compute the relative pose from pairwise point matches:
     for (int i = 0; i < poseWiseMatches.size(); ++i)
@@ -551,7 +559,8 @@ void ReconstructionEngine_globalSfM::computeRelativeRotations(rotationAveraging:
             const std::pair<size_t, size_t> imageSize(1., 1.);
             const Mat3 K = Mat3::Identity();
 
-            if (!robustRelativePose(K, K, x1, x2, _randomNumberGenerator, relativePoseInfo, imageSize, imageSize, 256))
+            std::mt19937 pairRandomNumberGenerator = createSeededGenerator(baseSeed, relativePosePair.first, relativePosePair.second);
+            if (!robustRelativePose(K, K, x1, x2, pairRandomNumberGenerator, relativePoseInfo, imageSize, imageSize, 256))
             {
                 continue;
             }
@@ -642,6 +651,11 @@ void ReconstructionEngine_globalSfM::computeRelativeRotations(rotationAveraging:
             }
         }
     }  // for all relative pose
+
+    // The rotations were collected in thread completion order: sort them so the rotation averaging input is repeatable
+    std::sort(vecRelativesR.begin(), vecRelativesR.end(), [](const rotationAveraging::RelativeRotation& a, const rotationAveraging::RelativeRotation& b) {
+        return std::tie(a.i, a.j) < std::tie(b.i, b.j);
+    });
 
     // Re-weight rotation in [0,1]
     if (vecRelativesR.size() > 1)

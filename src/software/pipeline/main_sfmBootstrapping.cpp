@@ -34,8 +34,10 @@
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 #include <aliceVision/sfmData/MeshPointFetcher.hpp>
 
+#include <algorithm>
 #include <cstdlib>
 #include <random>
+#include <tuple>
 #include <regex>
 #include <fstream>
 
@@ -556,6 +558,11 @@ int aliceVision_main(int argc, char** argv)
                 }
             }
         }
+
+        // Directory iteration order is unspecified: sort the pairs so the selection is repeatable
+        std::sort(reconstructedPairs.begin(), reconstructedPairs.end(), [](const sfm::ReconstructedPair& p1, const sfm::ReconstructedPair& p2) {
+            return std::tie(p1.reference, p1.next) < std::tie(p2.reference, p2.next);
+        });
 
         ALICEVISION_LOG_INFO("Pairs to process : " << reconstructedPairs.size());
     }

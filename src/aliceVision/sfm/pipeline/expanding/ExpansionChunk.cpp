@@ -7,6 +7,8 @@
 #include "ExpansionChunk.hpp"
 
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
+
+#include <algorithm>
 #include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
@@ -97,6 +99,11 @@ EChunkResult ExpansionChunk::process(sfmData::SfMData & sfmData, const track::Tr
             }
         }
     }
+
+    // The infos were collected in thread completion order: sort them so the poses are added in a repeatable order
+    std::sort(intermediateInfos.begin(), intermediateInfos.end(), [](const IntermediateResectionInfo& a, const IntermediateResectionInfo& b) {
+        return a.viewId < b.viewId;
+    });
 
     //Early exit if no valid resections
     if (intermediateInfos.size() == 0)

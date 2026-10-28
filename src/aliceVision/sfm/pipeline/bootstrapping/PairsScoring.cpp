@@ -12,6 +12,8 @@
 #include <aliceVision/sfm/pipeline/expanding/SfmResection.hpp>
 #include <aliceVision/sfm/pipeline/expanding/LocalizationValidationPolicyLegacy.hpp>
 
+#include <tuple>
+
 namespace aliceVision {
 namespace sfm {
 
@@ -108,7 +110,10 @@ IndexT findBestPair(const sfmData::SfMData & sfmData,
 
         #pragma omp critical
         {
-            if (score > maxScore)
+            // On equal scores, keep the pair with the smallest view ids so the choice does not depend on thread scheduling
+            if (score > maxScore ||
+                (bestPair != UndefinedIndexT && score == maxScore &&
+                 std::tie(pair.reference, pair.next) < std::tie(pairs[bestPair].reference, pairs[bestPair].next)))
             {
                 maxScore = score;
                 bestPair = pairId;
