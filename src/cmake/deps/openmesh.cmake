@@ -16,10 +16,8 @@ if(AV_BUILD_OPENMESH)
     endif()
 
     ExternalProject_Add(${OPENMESH_TARGET}
-        URL              ${DEP_OPENMESH_URL}
-        URL_HASH         ${DEP_OPENMESH_HASH}
-        DOWNLOAD_DIR     ${BUILD_DIR}/download/OpenMesh
-        DOWNLOAD_NO_PROGRESS TRUE
+        GIT_REPOSITORY   ${DEP_OPENMESH_GIT_REPO}
+        GIT_TAG          ${DEP_OPENMESH_GIT_TAG}
         PREFIX           ${BUILD_DIR}
         BUILD_IN_SOURCE  0
         BUILD_ALWAYS     0
