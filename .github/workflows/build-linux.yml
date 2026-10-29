@@ -64,7 +64,8 @@ jobs:
            -DAlembic_DIR:PATH="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \
            -DSWIG_DIR:PATH="${DEPS_INSTALL_DIR}/share/swig/4.3.0" \
            -DSWIG_EXECUTABLE:PATH="${DEPS_INSTALL_DIR}/bin-deps/swig" \
-           -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV:-/usr}/bin/python"
+           -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
+           -DALICEVISION_BUNDLE_PYTHON_ROOT:PATH=/opt/python
 
       - name: Build
         working-directory: ./build
@@ -128,13 +129,6 @@ jobs:
 
           python EvaluationLauncher.py -s ${ALICEVISION_ROOT}/bin -i $PWD/Benchmarking_Camera_Calibration_2008/ -o $PWD/reconstructions/ -r $PWD/results.json -v
 
-      - name: Python Binding - Unit Tests
-        run: |
-          export PYTHONPATH=${ALICEVISION_ROOT}/lib64/python:${ALICEVISION_ROOT}/lib/python:${PYTHONPATH}
-          export LD_LIBRARY_PATH=${ALICEVISION_ROOT}/lib:${ALICEVISION_ROOT}/lib64:${DEPS_INSTALL_DIR}/lib64:${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-          python -m pip install pytest
-          pytest ./pyTests
-
       - name: Meshroom Plugin - Templates validity
         working-directory: ./functional_tests
         run: |
@@ -188,6 +182,21 @@ jobs:
         working-directory: ./build
         run: |
           cmake --build . --config Release --target bundle
+
+      # The interpreter embedded in the bundle must be relocatable and work offline.
+      - name: Bundled Python - Relocation Check
+        run: |
+          bash docker/check-python-relocation.sh "${ALICEVISION_BUNDLE}/python"
+
+      # Validate the Python (SWIG) bindings with the interpreter shipped in the bundle.
+      - name: Python Binding - Unit Tests
+        run: |
+          rm -rf ../pyenv-test
+          "${ALICEVISION_BUNDLE}/python/bin/python3.11" -I -m venv ../pyenv-test
+          ../pyenv-test/bin/python -m pip install -r requirements.txt
+          export PYTHONPATH=${ALICEVISION_BUNDLE}/lib64/python:${ALICEVISION_BUNDLE}/lib/python:${PYTHONPATH}
+          export LD_LIBRARY_PATH=${ALICEVISION_BUNDLE}/lib:${ALICEVISION_BUNDLE}/lib64:${LD_LIBRARY_PATH}
+          ../pyenv-test/bin/python -m pytest ./pyTests
 
       # Only runs when called from nightly.yml; skipped on regular CI.
       - name: Create archive
