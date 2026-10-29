@@ -11,7 +11,7 @@ jobs:
       BUILD_TYPE: Release
       CUDA_VERSION: '13.2.1'
       CUDA_MAJOR_MINOR: '13.2'
-      VCPKG_VERSION: '2026.09.01'
+      VCPKG_VERSION: '2026.10.29'
 
       buildDir: '${{ github.workspace }}\build\'
       dependenciesDir: '${{ github.workspace }}\dependencies'
@@ -21,6 +21,10 @@ jobs:
       ALICEVISION_LIBPATH: '${{ github.workspace }}/install/bundle/bin'
       PYTHONPATH: '${{ github.workspace }}/install/bundle/lib/python'
       CUDA_ENV_FILE: '${{ github.workspace }}\cuda_env.txt'
+      # Must match vcpkg/overlay_ports/python3/vcpkg.json and docker/install-python-standalone.sh
+      PYTHON_VERSION: '3.11.17'
+      VCPKG_PYTHON_ROOT: '${{ github.workspace }}\dependencies\x64-windows-release\installed\x64-windows-release\tools\python3'
+      PYTHON_BUILD_VENV: '${{ github.workspace }}\pyenv-build'
 
     steps:
 
@@ -43,14 +47,6 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path "${{ env.dependenciesDir }}"
           New-Item -ItemType Directory -Force -Path "${{ env.ALICEVISION_ROOT }}"
-
-      # Install Python 3.12 — required by the SWIG binding build and pyTests.
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: requirements.txt
 
        # ---- CACHES ----
 
@@ -86,13 +82,15 @@ jobs:
             sccache-${{ runner.os }}-cuda${{ env.CUDA_VERSION }}-develop
             sccache-${{ runner.os }}
           max-size: "1000M"
-      
-      # ---- REQUIREMENTS -----
 
-      # Install Python packages from requirements.txt (used by pyTests and build tooling).
-      - name: Install Python requirements
-        run: |
-          pip install -r requirements.txt 
+      # Keep downloaded wheels across runs (the venvs themselves are recreated).
+      - name: Cache pip downloads
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: pip-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('requirements.txt') }}
+
+      # ---- REQUIREMENTS -----
 
       # Download prebuilt vcpkg binaries only when the cache is cold (avoids redundant transfer).
       - name: Download zip file with prebuilt binaries
@@ -111,6 +109,24 @@ jobs:
         if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         run: |
           rm ${{ env.archivePath }}
+
+      # Build venv on top of the vcpkg python3 (python-build-standalone, vcpkg/overlay_ports/python3):
+      # the dependencies, AliceVision and the bundle then share the same interpreter binaries.
+      # Packages go to the venv only, the interpreter that is bundled stays pristine.
+      - name: Python build venv
+        shell: pwsh
+        run: |
+          $python = "${{ env.VCPKG_PYTHON_ROOT }}\python.exe"
+          if (!(Test-Path $python)) {
+            throw "vcpkg python3 not found at $python"
+          }
+          & $python -I -m venv "${{ env.PYTHON_BUILD_VENV }}"
+          if ($LASTEXITCODE) { throw "venv creation failed" }
+          $venvPython = "${{ env.PYTHON_BUILD_VENV }}\Scripts\python.exe"
+          & $venvPython -m pip install -r requirements.txt
+          if ($LASTEXITCODE) { throw "pip install failed" }
+          & $venvPython -c "import os, sys; v = '.'.join(map(str, sys.version_info[:3])); assert v == os.environ['PYTHON_VERSION'], v; assert os.path.samefile(sys.base_prefix, os.environ['VCPKG_PYTHON_ROOT']), sys.base_prefix; print(sys.version, sys.base_prefix)"
+          if ($LASTEXITCODE) { throw "the build venv does not use the vcpkg python3" }
 
       # Install the CUDA Toolkit (nvcc, headers, libraries) when not restored from cache.
       - name: Get CUDA Toolkit
@@ -183,7 +199,8 @@ jobs:
                             -DALICEVISION_BUILD_SWIG_BINDING=ON
                             -DBOOST_NO_CXX11=ON
                             -DVCPKG_MANIFEST_MODE=OFF
-                            -DPython3_EXECUTABLE=${{ env.Python3_ROOT_DIR }}\python.exe
+                            -DPython3_EXECUTABLE=${{ env.PYTHON_BUILD_VENV }}\Scripts\python.exe
+                            -DALICEVISION_BUNDLE_PYTHON_ROOT=${{ env.VCPKG_PYTHON_ROOT }}
                             -DCMAKE_CUDA_COMPILER="${{ env.CUDACXX }}"
                             -DCUDAToolkit_ROOT="${{ env.CUDA_PATH }}"
                             -DCMAKE_C_COMPILER_LAUNCHER=sccache
@@ -195,11 +212,19 @@ jobs:
 
       # ------ TESTS ------
 
-      # Validate the Python (SWIG) bindings against the installed bundle.
+      # Validate the Python (SWIG) bindings with the interpreter shipped in the bundle.
       - name: Python Binding - Unit Tests
+        shell: pwsh
         run: |
+          $bundlePython = "${{ env.ALICEVISION_BUNDLE }}\python\python.exe"
+          $testVenv = "${{ github.workspace }}\pyenv-test"
+          & $bundlePython -I -m venv $testVenv
+          if ($LASTEXITCODE) { throw "venv creation from the bundled python failed" }
+          & "$testVenv\Scripts\python.exe" -m pip install -r requirements.txt
+          if ($LASTEXITCODE) { throw "pip install failed" }
           $env:PATH = "${{ env.ALICEVISION_LIBPATH }};$env:PATH"
-          python -m pytest ./pyTests
+          & "$testVenv\Scripts\python.exe" -m pytest ./pyTests
+          if ($LASTEXITCODE) { throw "pyTests failed" }
 
       # Run the C++ unit tests via ctest.
       - name: Unit Tests
