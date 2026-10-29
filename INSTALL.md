@@ -115,8 +115,11 @@ In the scope of AliceVision, vcpkg has only been tested on Windows.
                      -DCMAKE_INSTALL_PREFIX=\path\to\install ^
                      -DALICEVISION_BUILD_SWIG_BINDING=ON ^
                      -DVCPKG_MANIFEST_MODE=OFF ^
-                     -DPython3_EXECUTABLE=\path\to\python\python.exe
+                     -DPython3_EXECUTABLE=\path\to\venv\Scripts\python.exe
     ```
+
+    The Python used to build AliceVision must be the one the dependencies were built against: the `python3` vcpkg port is overlaid (`vcpkg/overlay_ports/python3`) to install a relocatable [python-build-standalone](https://github.com/astral-sh/python-build-standalone) CPython in `\path\to\dependencies\x64-windows-release\installed\x64-windows-release\tools\python3`.
+    Create a venv from it for the build packages (`tools\python3\python.exe -m venv \path\to\venv`, then `\path\to\venv\Scripts\python.exe -m pip install -r requirements.txt`) and keep the interpreter itself pristine: the `bundle` target embeds it as `<bundle>\python` (see `ALICEVISION_BUNDLE_PYTHON_ROOT`).
 
     This generates an "aliceVision.sln" solution inside the `build` folder that you can open in Visual Studio to launch the build.
     Do not forget to switch the build type to "Release". If you want to continue without an IDE, then use:
