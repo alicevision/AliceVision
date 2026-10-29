@@ -164,5 +164,20 @@ void meanLandmarks2viewsPose(const std::vector<double*> landmarks, const std::ve
     meanL2V[2] = posesMean[2] - landmarksMean[2];
 }
 
+std::map<IndexT, std::size_t> countPosedViewsPerIntrinsic(const sfmData::SfMData& sfmData)
+{
+    std::map<IndexT, std::size_t> nbViewsPerIntrinsic;
+    for (const auto& [viewId, view] : sfmData.getViews())
+    {
+        std::size_t& count = nbViewsPerIntrinsic[view->getIntrinsicId()];
+        if (sfmData.isPoseAndIntrinsicDefined(*view))
+        {
+            ++count;
+        }
+    }
+
+    return nbViewsPerIntrinsic;
+}
+
 }  // namespace sfm
 }  // namespace aliceVision

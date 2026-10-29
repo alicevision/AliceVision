@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <map>
 #include <vector>
 #include <Eigen/Dense>
 #include <aliceVision/types.hpp>
@@ -61,6 +62,13 @@ const double cameraTrajectoryLength(const std::vector<double*> poses);
  * @param[out] meanL2V    Output 3D vector to store the mean offset: poses centroid minus landmarks centroid.
  */
 void meanLandmarks2viewsPose(const std::vector<double*> landmarks, const std::vector<double*> poses, std::vector<double>& meanL2V);
+
+/**
+ * @brief Count the views with a defined pose for each intrinsic referenced by a view
+ * @param[in] sfmData : scene containing the views
+ * @return for each intrinsic id referenced by at least one view, the number of views with a defined pose using it (may be 0)
+ */
+std::map<IndexT, std::size_t> countPosedViewsPerIntrinsic(const sfmData::SfMData& sfmData);
 
 }  // namespace sfm
 }  // namespace aliceVision

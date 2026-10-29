@@ -11,6 +11,11 @@
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
 #include <aliceVision/track/TracksBuilder.hpp>
+#include <aliceVision/sfm/utils/statistics.hpp>
+#include <aliceVision/camera/IntrinsicScaleOffset.hpp>
+
+#include <algorithm>
+#include <numeric>
 
 namespace aliceVision {
 namespace sfm {
@@ -471,6 +476,152 @@ void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData,
         nbObservationsLengthsPerViewFirstQuartile[viewIdx] = observationsLengthsStats.firstQuartile;
         nbObservationsLengthsPerViewThirdQuartile[viewIdx] = observationsLengthsStats.thirdQuartile;
     }
+}
+
+NormalizedResidualStatistics computeNormalizedResidualStatistics(const sfmData::SfMData& sfmData,
+                                                                 bool advancedStatistics,
+                                                                 const std::vector<double>& thresholds,
+                                                                 const std::set<IndexT>& specificViews)
+{
+    NormalizedResidualStatistics statistics;
+    if (advancedStatistics)
+    {
+        statistics.thresholds = thresholds;
+        statistics.nbAboveThresholds.assign(thresholds.size(), 0);
+    }
+
+    std::vector<double> norms;
+    std::vector<double> components;
+    std::vector<double> componentsLongTracks;
+
+    for (const auto& [landmarkId, landmark] : sfmData.getLandmarks())
+    {
+        const sfmData::Observations& observations = landmark.getObservations();
+        const bool isLongTrack = observations.size() >= NormalizedResidualStatistics::longTrackMinLength;
+
+        for (const auto& [viewId, observation] : observations)
+        {
+            if (!specificViews.empty() && specificViews.count(viewId) == 0)
+            {
+                continue;
+            }
+
+            const sfmData::View& view = sfmData.getView(viewId);
+            if (!sfmData.isPoseAndIntrinsicDefined(view))
+            {
+                continue;
+            }
+
+            const geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+            const camera::IntrinsicBase& intrinsic = *sfmData.getIntrinsics().at(view.getIntrinsicId());
+
+            Vec2 residual = intrinsic.residual(pose, landmark.getX().homogeneous(), observation.getCoordinates());
+            if (observation.getScale() > 0.0)
+            {
+                residual /= observation.getScale();
+            }
+
+            const double norm = residual.norm();
+            norms.push_back(norm);
+
+            if (!advancedStatistics)
+            {
+                continue;
+            }
+
+            components.push_back(residual.x());
+            components.push_back(residual.y());
+
+            if (isLongTrack)
+            {
+                statistics.nbObservationsLongTracks++;
+                componentsLongTracks.push_back(residual.x());
+                componentsLongTracks.push_back(residual.y());
+            }
+
+            for (std::size_t i = 0; i < thresholds.size(); ++i)
+            {
+                if (norm > thresholds[i])
+                {
+                    statistics.nbAboveThresholds[i]++;
+                }
+            }
+        }
+    }
+
+    statistics.nbObservations = norms.size();
+    statistics.mean = norms.empty() ? 0.0 : std::accumulate(norms.begin(), norms.end(), 0.0) / norms.size();
+    statistics.median = computeQuantile(norms, 0.5);
+
+    if (!advancedStatistics)
+    {
+        return statistics;
+    }
+
+    statistics.p90 = computeQuantile(norms, 0.9);
+    statistics.p99 = computeQuantile(norms, 0.99);
+    statistics.max = computeQuantile(norms, 1.0);
+    statistics.sigma = madSigma(components);
+    statistics.sigmaLongTracks = madSigma(componentsLongTracks);
+
+    return statistics;
+}
+
+std::ostream& operator<<(std::ostream& os, const NormalizedResidualStatistics& statistics)
+{
+    const double total = static_cast<double>(std::max<std::size_t>(statistics.nbObservations, 1));
+
+    os << "\t- observations: " << statistics.nbObservations << " (in tracks of " << NormalizedResidualStatistics::longTrackMinLength
+       << "+ observations: " << statistics.nbObservationsLongTracks << ")\n"
+       << "\t- norm mean: " << statistics.mean << ", median: " << statistics.median << ", p90: " << statistics.p90 << ", p99: " << statistics.p99
+       << ", max: " << statistics.max << "\n"
+       << "\t- MAD sigma: " << statistics.sigma << " (tracks of " << NormalizedResidualStatistics::longTrackMinLength
+       << "+ observations: " << statistics.sigmaLongTracks << ")";
+
+    for (std::size_t i = 0; i < statistics.thresholds.size(); ++i)
+    {
+        os << "\n\t- above " << statistics.thresholds[i] << ": " << statistics.nbAboveThresholds[i] << " ("
+           << 100.0 * statistics.nbAboveThresholds[i] / total << "%)";
+    }
+
+    return os;
+}
+
+std::vector<IntrinsicUsage> computeIntrinsicsUsage(const sfmData::SfMData& sfmData)
+{
+    std::vector<IntrinsicUsage> usages;
+    for (const auto& [intrinsicId, nbViews] : countPosedViewsPerIntrinsic(sfmData))
+    {
+        if (nbViews == 0)
+        {
+            continue;
+        }
+
+        const auto intrinsic = camera::IntrinsicScaleOffset::cast(sfmData.getIntrinsics().at(intrinsicId));
+        if (!intrinsic)
+        {
+            continue;
+        }
+
+        IntrinsicUsage usage;
+        usage.intrinsicId = intrinsicId;
+        usage.nbViews = nbViews;
+        usage.focal = intrinsic->getScale();
+        usage.offset = intrinsic->getOffset();
+        usage.locked = intrinsic->isLocked();
+        usages.push_back(usage);
+    }
+
+    return usages;
+}
+
+std::ostream& operator<<(std::ostream& os, const IntrinsicUsage& usage)
+{
+    os << "intrinsic " << usage.intrinsicId << ": used by " << usage.nbViews << " views"
+       << ", focal (" << usage.focal.x() << ", " << usage.focal.y() << ")"
+       << ", offset (" << usage.offset.x() << ", " << usage.offset.y() << ")"
+       << ", locked: " << usage.locked;
+    return os;
 }
 
 }  // namespace sfm
