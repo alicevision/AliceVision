@@ -118,7 +118,7 @@
     },
     {
       "name": "python3",
-      "version": "3.12.13#1"
+      "version": "3.11.17"
     },
     {
       "name": "zlib",

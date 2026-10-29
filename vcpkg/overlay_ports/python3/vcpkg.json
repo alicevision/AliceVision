@@ -1,0 +1,23 @@
+{
+  "name": "python3",
+  "version": "3.11.17",
+  "maintainers": "alicevision-team@googlegroups.com",
+  "description": "The Python programming language, repackaged from a relocatable python-build-standalone release so that the dependencies, AliceVision and the bundle share the same interpreter binaries",
+  "homepage": "https://github.com/astral-sh/python-build-standalone",
+  "license": "Python-2.0",
+  "supports": "windows & x64 & !uwp & !staticcrt",
+  "dependencies": [
+    {
+      "name": "vcpkg-get-python",
+      "host": true
+    }
+  ],
+  "default-features": [
+    "extensions"
+  ],
+  "features": {
+    "extensions": {
+      "description": "Allow the build and usage of python extensions (always available: the interpreter is a dynamic library)"
+    }
+  }
+}
