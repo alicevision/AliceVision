@@ -91,6 +91,12 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
          */
         void show() const;
 
+        /**
+         * @brief Statistics about bundle adjustment as a multi-line text
+         * @return the text displayed by show()
+         */
+        std::string toString() const;
+
         // public members
 
         /// number of successful iterations

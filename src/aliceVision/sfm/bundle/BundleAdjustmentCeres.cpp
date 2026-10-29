@@ -142,6 +142,11 @@ bool BundleAdjustmentCeres::Statistics::exportToFile(const std::string& folder, 
 
 void BundleAdjustmentCeres::Statistics::show() const
 {
+    ALICEVISION_LOG_INFO(toString());
+}
+
+std::string BundleAdjustmentCeres::Statistics::toString() const
+{
     std::map<EParameter, std::map<EEstimatorParameterState, std::size_t>> states = parametersStates;
     std::stringstream ss;
 
@@ -176,25 +181,26 @@ void BundleAdjustmentCeres::Statistics::show() const
         ss << "\t- local strategy enabled: no\n";
     }
 
-    ALICEVISION_LOG_INFO("Bundle Adjustment Statistics:\n"
-                         << ss.str() << "\t- adjustment duration: " << time << " s\n"
-                         << "\t- poses:\n"
-                         << "\t    - # refined:  " << states[EParameter::POSE][EEstimatorParameterState::REFINED] << "\n"
-                         << "\t    - # constant: " << states[EParameter::POSE][EEstimatorParameterState::CONSTANT] << "\n"
-                         << "\t    - # ignored:  " << states[EParameter::POSE][EEstimatorParameterState::IGNORED] << "\n"
-                         << "\t- landmarks:\n"
-                         << "\t    - # refined:  " << states[EParameter::LANDMARK][EEstimatorParameterState::REFINED] << "\n"
-                         << "\t    - # constant: " << states[EParameter::LANDMARK][EEstimatorParameterState::CONSTANT] << "\n"
-                         << "\t    - # ignored:  " << states[EParameter::LANDMARK][EEstimatorParameterState::IGNORED] << "\n"
-                         << "\t- intrinsics:\n"
-                         << "\t    - # refined:  " << states[EParameter::INTRINSIC][EEstimatorParameterState::REFINED] << "\n"
-                         << "\t    - # constant: " << states[EParameter::INTRINSIC][EEstimatorParameterState::CONSTANT] << "\n"
-                         << "\t    - # ignored:  " << states[EParameter::INTRINSIC][EEstimatorParameterState::IGNORED] << "\n"
-                         << "\t- # residual blocks: " << nbResidualBlocks << "\n"
-                         << "\t- # successful iterations: " << nbSuccessfullIterations << "\n"
-                         << "\t- # unsuccessful iterations: " << nbUnsuccessfullIterations << "\n"
-                         << "\t- initial RMSE: " << RMSEinitial << "\n"
-                         << "\t- final   RMSE: " << RMSEfinal);
+    ss << "\t- adjustment duration: " << time << " s\n"
+       << "\t- poses:\n"
+       << "\t    - # refined:  " << states[EParameter::POSE][EEstimatorParameterState::REFINED] << "\n"
+       << "\t    - # constant: " << states[EParameter::POSE][EEstimatorParameterState::CONSTANT] << "\n"
+       << "\t    - # ignored:  " << states[EParameter::POSE][EEstimatorParameterState::IGNORED] << "\n"
+       << "\t- landmarks:\n"
+       << "\t    - # refined:  " << states[EParameter::LANDMARK][EEstimatorParameterState::REFINED] << "\n"
+       << "\t    - # constant: " << states[EParameter::LANDMARK][EEstimatorParameterState::CONSTANT] << "\n"
+       << "\t    - # ignored:  " << states[EParameter::LANDMARK][EEstimatorParameterState::IGNORED] << "\n"
+       << "\t- intrinsics:\n"
+       << "\t    - # refined:  " << states[EParameter::INTRINSIC][EEstimatorParameterState::REFINED] << "\n"
+       << "\t    - # constant: " << states[EParameter::INTRINSIC][EEstimatorParameterState::CONSTANT] << "\n"
+       << "\t    - # ignored:  " << states[EParameter::INTRINSIC][EEstimatorParameterState::IGNORED] << "\n"
+       << "\t- # residual blocks: " << nbResidualBlocks << "\n"
+       << "\t- # successful iterations: " << nbSuccessfullIterations << "\n"
+       << "\t- # unsuccessful iterations: " << nbUnsuccessfullIterations << "\n"
+       << "\t- initial RMSE: " << RMSEinitial << "\n"
+       << "\t- final   RMSE: " << RMSEfinal;
+
+    return "Bundle Adjustment Statistics:\n" + ss.str();
 }
 
 void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptions) const
@@ -202,7 +208,7 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
     solverOptions.preconditioner_type = _ceresOptions.preconditionerType;
     solverOptions.linear_solver_type = _ceresOptions.linearSolverType;
     solverOptions.sparse_linear_algebra_library_type = _ceresOptions.sparseLinearAlgebraLibraryType;
-    solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
+    solverOptions.minimizer_progress_to_stdout = false;
     solverOptions.logging_type = ceres::SILENT;
     solverOptions.update_state_every_iteration = true;
     solverOptions.num_threads = _ceresOptions.nbThreads;
@@ -334,9 +340,6 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
     const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
 
-    std::map<IndexT, std::size_t> intrinsicsUsage;
-
-
     //Create a fake distortion block which is always constant
     //This is to trick ceres limitations
     _fakeDistortionBlock = 0.0;
@@ -344,20 +347,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     problem.SetParameterBlockConstant(&_fakeDistortionBlock);
 
     // count the number of reconstructed views per intrinsic
-    for (const auto& viewPair : sfmData.getViews())
-    {
-        const sfmData::View& view = *(viewPair.second);
-
-        if (intrinsicsUsage.find(view.getIntrinsicId()) == intrinsicsUsage.end())
-        {
-            intrinsicsUsage[view.getIntrinsicId()] = 0;
-        }
-
-        if (sfmData.isPoseAndIntrinsicDefined(view))
-        {
-            ++intrinsicsUsage.at(view.getIntrinsicId());
-        }
-    }
+    const std::map<IndexT, std::size_t> intrinsicsUsage = countPosedViewsPerIntrinsic(sfmData);
 
     for (const auto& [intrinsicId, intrinsicPtr] : sfmData.getIntrinsics())
     {
@@ -1294,8 +1284,12 @@ void BundleAdjustmentCeres::surveyInfos(const sfmData::SfMData & sfmData) const
 
 ceres::CallbackReturnType BundleAdjustmentCeres::IterationInfos::operator()(const ceres::IterationSummary& summary)
 {
-    ALICEVISION_LOG_DEBUG(boost::format("iteration: %3d cost: %8e change: %3.2e")
-                          % summary.iteration % summary.cost % summary.cost_change);
+    const double relativeChange = (summary.cost > 0.0) ? summary.cost_change / summary.cost : 0.0;
+    ALICEVISION_LOG_TRACE(boost::format("BundleAdjustmentCeres iteration: %3d cost: %8e change: %3.2e relative change: %3.2e "
+                                        "|gradient|: %3.2e |step|: %3.2e tr_ratio: %3.2e tr_radius: %3.2e successful: %d time: %3.2e s")
+                          % summary.iteration % summary.cost % summary.cost_change % relativeChange
+                          % summary.gradient_max_norm % summary.step_norm % summary.relative_decrease
+                          % summary.trust_region_radius % summary.step_is_successful % summary.iteration_time_in_seconds);
     return ceres::SOLVER_CONTINUE;
 }
 
@@ -1338,6 +1332,13 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
     // solve BA
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+
+    const double relativeGain = (summary.initial_cost > 0.0) ? (summary.initial_cost - summary.final_cost) / summary.initial_cost : 0.0;
+    ALICEVISION_LOG_TRACE("BundleAdjustmentCeres solve: " << summary.num_successful_steps << " successful / "
+                          << summary.num_unsuccessful_steps << " unsuccessful iterations, termination "
+                          << ceres::TerminationTypeToString(summary.termination_type) << " (" << summary.message << ")"
+                          << ", cost " << summary.initial_cost << " -> " << summary.final_cost
+                          << " (relative gain " << relativeGain << "), time " << summary.total_time_in_seconds << " s");
 
     ALICEVISION_LOG_INFO("landmarksBlockIds : " << landmarksBlockIds.size());
     evaluateOptions.residual_blocks = landmarksBlockIds;
