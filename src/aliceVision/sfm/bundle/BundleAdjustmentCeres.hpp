@@ -52,6 +52,8 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
         ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
         /// Huber loss threshold applied to the observations residuals
         double lossParameter = 16.0;
+        /// Solver stops when |cost_change| / cost falls below this value
+        double functionTolerance = 1e-6;
         unsigned int nbThreads;
         unsigned int maxNumIterations;
         bool useParametersOrdering = true;
