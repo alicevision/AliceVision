@@ -13,6 +13,8 @@
 #include <aliceVision/sfm/bundle/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/expanding/DistanceWeighting.hpp>
 
+#include <sstream>
+
 namespace aliceVision {
 namespace sfm {
 
@@ -51,17 +53,29 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
     options.setSparseBA();
     BundleAdjustmentCeres bundleObject(options, _minNbCamerasToRefinePrincipalPoint);
 
+    const bool traceEnabled = system::isTraceEnabled();
+    int pass = 0;
+
     //Repeat until nothing change
     do
     {
-        // Compute statistics on residuals
-        double mean, median;
-        computeResidualsMeanMedian(sfmData, mean, median);
-        ALICEVISION_LOG_INFO("SfmBundle statistics before minimization - mean " << mean << ", median " << median);
+        ALICEVISION_LOG_TRACE("SfmBundle pass " << pass);
+        pass++;
+
+        // Compute statistics on residuals, normalized by the feature scale like the thresholds
+        // of the Huber loss and of the residual outlier filter
+        const std::vector<double> thresholds = {_lossParameter, _maxReprojectionError};
+        NormalizedResidualStatistics residuals = computeNormalizedResidualStatistics(sfmData, traceEnabled, thresholds);
+        ALICEVISION_LOG_INFO("SfmBundle normalized statistics before minimization - mean " << residuals.mean << ", median " << residuals.median);
 
         if (!initializeIteration(sfmData, tracksHandler, viewIds))
         {
             return false;
+        }
+
+        if (traceEnabled)
+        {
+            logTraceStatistics(sfmData, residuals, "before minimization");
         }
 
         const bool success = bundleObject.adjust(sfmData, refineOptions);
@@ -70,13 +84,30 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
             return false;
         }
 
-        computeResidualsMeanMedian(sfmData, mean, median);
-        ALICEVISION_LOG_INFO("SfmBundle statistics after minimization - mean " << mean << ", median " << median);
+        residuals = computeNormalizedResidualStatistics(sfmData, traceEnabled, thresholds);
+        ALICEVISION_LOG_INFO("SfmBundle normalized statistics after minimization - mean " << residuals.mean << ", median " << residuals.median);
+
+        if (traceEnabled)
+        {
+            ALICEVISION_LOG_TRACE(bundleObject.getStatistics().toString());
+            logTraceStatistics(sfmData, residuals, "after minimization");
+        }
     }
     while (cleanup(sfmData));
 
     ALICEVISION_LOG_INFO("SfmBundle::process end");
     return true;
+}
+
+void SfmBundle::logTraceStatistics(const sfmData::SfMData & sfmData, const NormalizedResidualStatistics & residuals, const std::string & label) const
+{
+    ALICEVISION_LOG_TRACE("SfmBundle residuals " << label << " (normalized by feature scale, thresholds: loss parameter "
+                          << _lossParameter << ", max reprojection error " << _maxReprojectionError << "):\n" << residuals);
+
+    for (const IntrinsicUsage & usage : computeIntrinsicsUsage(sfmData))
+    {
+        ALICEVISION_LOG_TRACE("SfmBundle " << label << ", " << usage);
+    }
 }
 
 bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
@@ -101,6 +132,20 @@ bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
 
     bool somethingChanged = /*somethingErased || */(nbOutliers > _bundleAdjustmentMaxOutlier) || (nbOutliersConstraints > 0);
 
+    if (!removedViewsIdIteration.empty())
+    {
+        std::stringstream ss;
+        for (const IndexT viewId : removedViewsIdIteration)
+        {
+            ss << " " << viewId;
+        }
+        ALICEVISION_LOG_TRACE("SfmBundle::cleanup removed " << removedViewsIdIteration.size() << " unstable views:" << ss.str());
+    }
+
+    ALICEVISION_LOG_TRACE("SfmBundle::cleanup another pass needed: " << somethingChanged
+                          << " (outliers " << nbOutliers << " > max " << _bundleAdjustmentMaxOutlier << ": " << (nbOutliers > _bundleAdjustmentMaxOutlier)
+                          << ", constraints removed: " << nbOutliersConstraints << ")");
+
     ALICEVISION_LOG_INFO("SfmBundle::cleanup : ");
     ALICEVISION_LOG_INFO(" - nbOutliersResidualErr : " << nbOutliersResidualErr);
     ALICEVISION_LOG_INFO(" - nbOutliersAngleErr : " << nbOutliersAngleErr);
@@ -115,9 +160,17 @@ bool SfmBundle::initializeIteration(sfmData::SfMData & sfmData, const track::Tra
 {
     const bool enableLocalStrategy = _lbaPolicy && (sfmData.getPoses().size() >= _minNbCamerasLBA);
 
+    ALICEVISION_LOG_TRACE("SfmBundle local strategy: " << (enableLocalStrategy ? "enabled" : "disabled")
+                          << " (" << sfmData.getPoses().size() << " poses, minimum " << _minNbCamerasLBA
+                          << ", policy " << (_lbaPolicy ? "set" : "not set") << ")");
+
     // Fall back to a full bundle if the local strategy cannot be set up
     if (!enableLocalStrategy || !_lbaPolicy->build(sfmData, tracksHandler, viewIds))
     {
+        if (enableLocalStrategy)
+        {
+            ALICEVISION_LOG_TRACE("SfmBundle local strategy could not be built, falling back to a full bundle");
+        }
         sfmData.resetParameterStates();
     }
 

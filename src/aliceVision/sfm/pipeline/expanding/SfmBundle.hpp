@@ -16,6 +16,8 @@
 namespace aliceVision {
 namespace sfm {
 
+struct NormalizedResidualStatistics;
+
 class SfmBundle
 {
 public:
@@ -147,6 +149,14 @@ private:
      * @return true if enough change occurred during the cleaning
     */
     bool cleanup(sfmData::SfMData & sfmData);
+
+    /**
+     * @brief Log statistics on residuals and intrinsics at trace level
+     * @param sfmData the scene
+     * @param residuals the residual statistics of the scene
+     * @param label a label identifying the step in the logs
+    */
+    void logTraceStatistics(const sfmData::SfMData & sfmData, const NormalizedResidualStatistics & residuals, const std::string & label) const;
 
 private:
     LbaPolicy::uptr _lbaPolicy;
