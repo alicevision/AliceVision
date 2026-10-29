@@ -170,8 +170,8 @@ set(DEP_E57FORMAT_GIT_REPO "https://github.com/asmaloney/libE57Format.git")
 set(DEP_E57FORMAT_GIT_TAG  "v3.2.0")
 
 set(DEP_OPENMESH_VERSION "10.0.0")
-set(DEP_OPENMESH_URL     "https://www.graphics.rwth-aachen.de/media/openmesh_static/Releases/10.0/OpenMesh-${DEP_OPENMESH_VERSION}.tar.bz2")
-set(DEP_OPENMESH_HASH    "MD5=4d166aecbc09df58b38de9759c92a437")
+set(DEP_OPENMESH_GIT_REPO "https://github.com/meshroomHubWarehouse/OpenMesh.git")
+set(DEP_OPENMESH_GIT_TAG  "OpenMesh-10.0")
 
 set(DEP_PCL_VERSION "1.15.1")
 set(DEP_PCL_URL     "https://github.com/PointCloudLibrary/pcl/archive/refs/tags/pcl-${DEP_PCL_VERSION}.tar.gz")
