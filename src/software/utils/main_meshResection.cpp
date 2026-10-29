@@ -44,7 +44,7 @@ bool parseObservation(const boost::json::value& value, sfmData::SurveyPoint& obs
     }
 
     const boost::json::object& obj = value.as_object();
-    static constexpr std::array<const char*, 6> requiredKeys = {"X", "Y", "Z", "x", "y", "picked"};
+    static constexpr std::array<const char*, 7> requiredKeys = {"X", "Y", "Z", "x", "y", "picked2d", "picked3d"};
     for (const char* key : requiredKeys)
     {
         if (!obj.contains(key))
@@ -54,9 +54,9 @@ bool parseObservation(const boost::json::value& value, sfmData::SurveyPoint& obs
     }
 
     if (!obj.at("X").is_number() || !obj.at("Y").is_number() || !obj.at("Z").is_number() ||
-        !obj.at("x").is_number() || !obj.at("y").is_number() || !obj.at("picked").is_bool())
+        !obj.at("x").is_number() || !obj.at("y").is_number() || !obj.at("picked2d").is_bool() || !obj.at("picked3d").is_bool())
     {
-        throw std::invalid_argument("Observation fields X, Y, Z, x, y must be numeric and picked must be boolean.");
+        throw std::invalid_argument("Observation fields X, Y, Z, x, y must be numeric and picked2d and picked3d must be boolean.");
     }
 
     observation.point3d = Vec3(boost::json::value_to<double>(obj.at("X")),
@@ -66,7 +66,7 @@ bool parseObservation(const boost::json::value& value, sfmData::SurveyPoint& obs
                               boost::json::value_to<double>(obj.at("y")));
     observation.residual = Vec2::Zero();
 
-    return obj.at("picked").as_bool();
+    return obj.at("picked2d").as_bool() && obj.at("picked3d").as_bool();
 }
 
 bool loadObservationsFromJson(const std::string& jsonFilename, ObservationsPerView& observationsPerView)
