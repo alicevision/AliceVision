@@ -202,3 +202,26 @@ BOOST_AUTO_TEST_CASE(Numeric_divideRoundUp)
     BOOST_CHECK_EQUAL(divideRoundUp(-1001000, -1000), 1001);
     BOOST_CHECK_EQUAL(divideRoundUp(-1001001, -1000), 1002);
 }
+
+BOOST_AUTO_TEST_CASE(Numeric_quantile)
+{
+    BOOST_CHECK_EQUAL(computeQuantile({}, 0.5), 0.0);
+
+    const std::vector<double> values = {5.0, 1.0, 4.0, 2.0, 3.0};
+    BOOST_CHECK_EQUAL(computeQuantile(values, 0.0), 1.0);
+    BOOST_CHECK_EQUAL(computeQuantile(values, 0.5), 3.0);
+    BOOST_CHECK_EQUAL(computeQuantile(values, 1.0), 5.0);
+}
+
+BOOST_AUTO_TEST_CASE(Numeric_madSigma)
+{
+    BOOST_CHECK_EQUAL(madSigma({}), 0.0);
+
+    // median 3, absolute deviations {2, 1, 1, 0, 2}, median deviation 1
+    const std::vector<double> values = {1.0, 2.0, 4.0, 3.0, 5.0};
+    BOOST_CHECK_CLOSE(madSigma(values), 1.4826, 1e-9);
+
+    // an outlier does not change the estimate
+    const std::vector<double> withOutlier = {1.0, 2.0, 4.0, 3.0, 1000.0};
+    BOOST_CHECK_CLOSE(madSigma(withOutlier), 1.4826, 1e-9);
+}

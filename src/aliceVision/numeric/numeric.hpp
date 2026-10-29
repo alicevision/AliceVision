@@ -376,6 +376,21 @@ void pick(std::vector<T>& result, const std::vector<T>& input, const std::vector
 
 void MeanAndVarianceAlongRows(const Mat& A, Vec* mean_pointer, Vec* variance_pointer);
 
+/**
+ * @brief Value at the given quantile of a list of values (lower value, no interpolation)
+ * @param values the input values (taken by copy as they are partially sorted)
+ * @param q the quantile, between 0 (min) and 1 (max)
+ * @return the value at the quantile, or 0 if values is empty
+ */
+double computeQuantile(std::vector<double> values, double q);
+
+/**
+ * @brief Robust estimate of the standard deviation: 1.4826 * median absolute deviation
+ * @param values the input values
+ * @return the estimated standard deviation, or 0 if values is empty
+ */
+double madSigma(const std::vector<double>& values);
+
 bool exportMatToTextFile(const Mat& mat, const std::string& filename, const std::string& sPrefix = "A");
 
 inline int is_finite(const double val)

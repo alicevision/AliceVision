@@ -120,6 +120,33 @@ void MeanAndVarianceAlongRows(const Mat& A, Vec* mean_pointer, Vec* variance_poi
     }
 }
 
+double computeQuantile(std::vector<double> values, double q)
+{
+    if (values.empty())
+    {
+        return 0.0;
+    }
+
+    q = clamp(q, 0.0, 1.0);
+    auto it = values.begin() + static_cast<std::size_t>(q * (values.size() - 1));
+    std::nth_element(values.begin(), it, values.end());
+    return *it;
+}
+
+double madSigma(const std::vector<double>& values)
+{
+    const double median = computeQuantile(values, 0.5);
+
+    std::vector<double> deviations;
+    deviations.reserve(values.size());
+    for (const double value : values)
+    {
+        deviations.push_back(std::abs(value - median));
+    }
+
+    return 1.4826 * computeQuantile(deviations, 0.5);
+}
+
 bool exportMatToTextFile(const Mat& mat, const std::string& filename, const std::string& sPrefix)
 {
     bool bOk = false;
