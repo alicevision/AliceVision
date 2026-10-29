@@ -115,5 +115,12 @@ class Logger
     static std::shared_ptr<Logger> _instance;
 };
 
+/**
+ * @brief Check whether a trace message would be emitted with the current log level
+ * Useful to skip a costly computation whose result is only logged at trace level
+ * @return true if trace messages are logged
+ */
+bool isTraceEnabled();
+
 }  // namespace system
 }  // namespace aliceVision

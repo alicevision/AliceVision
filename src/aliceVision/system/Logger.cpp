@@ -180,5 +180,11 @@ void Logger::setLogLevel(const boost::log::trivial::severity_level level)
     boost::log::core::get()->set_filter(boost::log::trivial::severity >= level);
 }
 
+bool isTraceEnabled()
+{
+    auto record = boost::log::trivial::logger::get().open_record(boost::log::keywords::severity = boost::log::trivial::trace);
+    return static_cast<bool>(record);
+}
+
 }  // namespace system
 }  // namespace aliceVision
