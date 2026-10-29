@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.30)
 #   - CMAKE_INSTALL_PREFIX      : install target path (required)
 #   - BUNDLE_INSTALL_PREFIX     : bundle installation path (required)
 #   - BUNDLE_LIBS_PATHS         : additional paths (semicolon-separated) to look for runtime dependencies
+#   - BUNDLE_PYTHON_ROOT        : relocatable Python runtime to embed as <bundle>/python (optional)
+#   - BUNDLE_PYTHON_REFERENCE   : Python executable AliceVision was built with, checked against BUNDLE_PYTHON_ROOT (optional)
 #   - CMAKE_INSTALL_BINDIR      : relative bin dir  (default: bin)
 #   - CMAKE_INSTALL_LIBDIR      : relative lib dir  (default: lib)
 #   - CMAKE_INSTALL_INCLUDEDIR  : relative include dir (default: include)
@@ -171,6 +173,8 @@ message(STATUS "  CMAKE_INSTALL_FULL_LIBDIR  : ${CMAKE_INSTALL_FULL_LIBDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_INCLUDEDIR : ${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_DATADIR : ${CMAKE_INSTALL_FULL_DATADIR}")
 message(STATUS "  BUNDLE_LIBS_PATHS       : ${BUNDLE_LIBS_PATHS}")
+message(STATUS "  BUNDLE_PYTHON_ROOT      : ${BUNDLE_PYTHON_ROOT}")
+message(STATUS "  BUNDLE_PYTHON_REFERENCE : ${BUNDLE_PYTHON_REFERENCE}")
 
 # ─── Dependency lookup paths ─────────────────────────────────────────────────
 
@@ -257,5 +261,78 @@ if (WIN32)
         endif()
     endforeach()
 endif(WIN32)
+
+# ─── Embed the Python runtime ────────────────────────────────────────────────
+# Copied after fixup_bundle, which must not rewrite the interpreter and its modules.
+# The runtime must be the one AliceVision was built against (same build, not only same version).
+
+if(BUNDLE_PYTHON_ROOT)
+    if(WIN32)
+        set(_python_exe_rel "python.exe")
+    else()
+        set(_python_exe_rel "bin/python3")
+    endif()
+    if(NOT EXISTS "${BUNDLE_PYTHON_ROOT}/${_python_exe_rel}")
+        message(FATAL_ERROR "MakeBundle.cmake: no interpreter in BUNDLE_PYTHON_ROOT: "
+                            "${BUNDLE_PYTHON_ROOT}/${_python_exe_rel}")
+    endif()
+
+    set(_python_check "import sys, importlib.util; print(sys.version); print(sys.base_prefix); print(importlib.util.find_spec('numpy') is None)")
+
+    if(BUNDLE_PYTHON_REFERENCE)
+        execute_process(COMMAND "${BUNDLE_PYTHON_REFERENCE}" -c "${_python_check}"
+                        OUTPUT_VARIABLE _ref_out OUTPUT_STRIP_TRAILING_WHITESPACE
+                        COMMAND_ERROR_IS_FATAL ANY)
+        string(REPLACE "\n" ";" _ref_out "${_ref_out}")
+        list(GET _ref_out 0 _ref_version)
+        list(GET _ref_out 1 _ref_base_prefix)
+        file(REAL_PATH "${_ref_base_prefix}" _ref_base_prefix)
+        file(REAL_PATH "${BUNDLE_PYTHON_ROOT}" _bundle_python_root)
+        if(NOT _ref_base_prefix STREQUAL _bundle_python_root)
+            message(FATAL_ERROR "MakeBundle.cmake: AliceVision was built against the Python in ${_ref_base_prefix} "
+                                "(${BUNDLE_PYTHON_REFERENCE}), but the bundle would embed ${_bundle_python_root}")
+        endif()
+    endif()
+
+    message(STATUS "  Copying Python runtime: ${BUNDLE_PYTHON_ROOT} -> ${BUNDLE_INSTALL_PREFIX}/python")
+    file(REMOVE_RECURSE "${BUNDLE_INSTALL_PREFIX}/python")
+    file(MAKE_DIRECTORY "${BUNDLE_INSTALL_PREFIX}/python")
+    file(COPY "${BUNDLE_PYTHON_ROOT}/"
+         DESTINATION "${BUNDLE_INSTALL_PREFIX}/python"
+         USE_SOURCE_PERMISSIONS
+         PATTERN "__pycache__" EXCLUDE
+         PATTERN "*.pdb" EXCLUDE)
+
+    # The relocated copy must start in isolated mode and stay pristine (packages belong in venvs).
+    execute_process(COMMAND "${BUNDLE_INSTALL_PREFIX}/python/${_python_exe_rel}" -I -B -c "${_python_check}"
+                    OUTPUT_VARIABLE _bundle_out OUTPUT_STRIP_TRAILING_WHITESPACE
+                    COMMAND_ERROR_IS_FATAL ANY)
+    string(REPLACE "\n" ";" _bundle_out "${_bundle_out}")
+    list(GET _bundle_out 0 _bundle_version)
+    list(GET _bundle_out 2 _bundle_no_numpy)
+    message(STATUS "  Bundled Python: ${_bundle_version}")
+    if(BUNDLE_PYTHON_REFERENCE AND NOT _bundle_version STREQUAL _ref_version)
+        message(FATAL_ERROR "MakeBundle.cmake: bundled Python '${_bundle_version}' differs from the build Python '${_ref_version}'")
+    endif()
+    if(NOT _bundle_no_numpy STREQUAL "True")
+        message(FATAL_ERROR "MakeBundle.cmake: the Python runtime ${BUNDLE_PYTHON_ROOT} is not pristine (numpy is installed in it)")
+    endif()
+
+    # On Windows the Python DLL is also resolved into bin/ for the extension modules:
+    # it must be the very same file as the interpreter's.
+    if(WIN32)
+        file(GLOB _bundle_python_dlls RELATIVE "${BUNDLE_INSTALL_PREFIX}/python" "${BUNDLE_INSTALL_PREFIX}/python/python3*.dll")
+        foreach(_dll IN LISTS _bundle_python_dlls)
+            set(_bin_dll "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${_dll}")
+            if(EXISTS "${_bin_dll}")
+                file(SHA256 "${_bin_dll}" _bin_dll_hash)
+                file(SHA256 "${BUNDLE_INSTALL_PREFIX}/python/${_dll}" _python_dll_hash)
+                if(NOT _bin_dll_hash STREQUAL _python_dll_hash)
+                    message(FATAL_ERROR "MakeBundle.cmake: ${_bin_dll} differs from the bundled interpreter's ${_dll}")
+                endif()
+            endif()
+        endforeach()
+    endif()
+endif()
 
 message(STATUS "=== Bundle done: ${BUNDLE_INSTALL_PREFIX} ===")

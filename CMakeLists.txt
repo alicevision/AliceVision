@@ -157,11 +157,22 @@ if(CMAKE_PREFIX_PATH)
     endforeach()
 endif()
 
+# Relocatable Python runtime copied into <bundle>/python.
+# It must be the interpreter the dependencies and AliceVision were built against
+# (vcpkg: the python3 overlay port, Linux images: /opt/python).
+set(_bundle_python_root_default "")
+if(_VCPKG_INSTALLED_DIR AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/python3")
+    set(_bundle_python_root_default "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/python3")
+endif()
+set(ALICEVISION_BUNDLE_PYTHON_ROOT "${_bundle_python_root_default}" CACHE PATH "Python runtime to embed in the bundle (empty: no interpreter in the bundle)")
+
 add_custom_target(bundle
     ${CMAKE_COMMAND}
     -DBUNDLE_INSTALL_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     -DBUNDLE_LIBS_PATHS=${BUNDLE_LIBS_PATHS}
+    -DBUNDLE_PYTHON_ROOT=${ALICEVISION_BUNDLE_PYTHON_ROOT}
+    -DBUNDLE_PYTHON_REFERENCE=${Python3_EXECUTABLE}
     -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}
     -DCMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
