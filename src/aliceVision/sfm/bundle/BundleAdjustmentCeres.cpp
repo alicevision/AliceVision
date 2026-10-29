@@ -208,7 +208,6 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
     solverOptions.preconditioner_type = _ceresOptions.preconditionerType;
     solverOptions.linear_solver_type = _ceresOptions.linearSolverType;
     solverOptions.sparse_linear_algebra_library_type = _ceresOptions.sparseLinearAlgebraLibraryType;
-    solverOptions.minimizer_progress_to_stdout = false;
     solverOptions.logging_type = ceres::SILENT;
     solverOptions.update_state_every_iteration = true;
     solverOptions.num_threads = _ceresOptions.nbThreads;
