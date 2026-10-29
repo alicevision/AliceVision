@@ -71,7 +71,7 @@ option(AV_BUILD_VPX         "Build libvpx (ffmpeg codec)" ON)
 option(AV_BUILD_FFMPEG      "Build FFmpeg"                ON)
 
 # Color / image processing
-option(AV_BUILD_ONNXRUNTIME  "Build ONNX Runtime"   ON)
+option(AV_BUILD_ONNXRUNTIME  "Build ONNX Runtime"   OFF)
 option(AV_BUILD_OPENCOLORIO  "Build OpenColorIO"    ON)
 option(AV_BUILD_OPENIMAGEIO  "Build OpenImageIO"    ON)
 option(AV_BUILD_OPENCV       "Build OpenCV"         ON)
