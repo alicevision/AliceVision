@@ -43,16 +43,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates                                       \
         gpg                                                   \
-        wget                                                  \
-        software-properties-common                          && \
+        wget                                                && \
     # ── Kitware PPA for a recent CMake ──────────────────────────────────────
     wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc \
         | gpg --dearmor \
         | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null  && \
     echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(. /etc/os-release && echo "${VERSION_CODENAME}") main" \
         | tee /etc/apt/sources.list.d/kitware.list >/dev/null              && \
-    # ── deadsnakes PPA for Python 3.11 ───────────────────────────────────────
-    add-apt-repository ppa:deadsnakes/ppa                               && \
+    apt-get update                                                      && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         automake                                                          \
         bison                                                             \
@@ -73,12 +71,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libyaml-cpp-dev                                                   \
         nasm                                                              \
         pkg-config                                                        \
-        python3.11                                                        \
-        python3.11-dev                                                    \
-        python3.11-distutils                                              \
         texinfo                                                           \
         unzip                                                             \
         yasm                                                              \
+        zstd                                                              \
         ninja-build                                                       \
     && update-alternatives \
         --install /usr/bin/gcc     gcc     /usr/bin/gcc-12     100        \
@@ -87,17 +83,30 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         --slave   /usr/bin/gfortran gfortran /usr/bin/gfortran-12
 
 # =============================================================================
-# Python packages + convenience symlink
-# pip comes from its versioned zipapp, checksum-pinned (get-pip.py is unversioned).
+# Relocatable release runtime, same as the Rocky image
+# (pins in docker/install-python-standalone.sh).
+# Keep the installation intact; build packages belong ONLY in the separate venv.
 # numpy is pinned to the same version as in the Rocky image.
 # BuildKit cache mount on pip avoids re-downloading wheels on rebuild.
 # =============================================================================
-RUN --mount=type=cache,target=/root/.cache/pip                                \
-    curl -sSfL -o /tmp/pip.pyz https://bootstrap.pypa.io/pip/zipapp/pip-25.2.pyz && \
-    echo "769a10214aca718618e7014ec8e70b36288fe9d49a9d7ba3185ea3917e84a4d3  /tmp/pip.pyz" | sha256sum -c - && \
-    python3.11 /tmp/pip.pyz install "pip==25.2" "numpy==1.26.4"            && \
-    rm /tmp/pip.pyz                                                         && \
-    ln -sf /usr/bin/python3.11 /usr/bin/python
+ENV PYTHON_BUILD_VENV="/opt/python-build-venv"
+
+COPY docker/install-python-standalone.sh /usr/local/bin/install-python-standalone.sh
+RUN bash /usr/local/bin/install-python-standalone.sh /opt/python
+
+# Test before creating the build venv; no network or Python/loader overrides.
+COPY docker/check-python-relocation.sh /usr/local/bin/check-python-relocation.sh
+RUN --network=none bash /usr/local/bin/check-python-relocation.sh /opt/python
+
+# Suppress build-time bytecode writes to the release runtime.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/opt/python-build-venv/bin:${PATH}"
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    /opt/python/bin/python3.11 -m venv "${PYTHON_BUILD_VENV}" && \
+    "${PYTHON_BUILD_VENV}/bin/python" -m pip install "numpy==1.26.4" && \
+    /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' && \
+    "${PYTHON_BUILD_VENV}/bin/python" -c 'import numpy, sys; assert sys.prefix != sys.base_prefix; assert numpy.__version__ == "1.26.4"'
 
 # Allows --target toolchain validation without fetching/building C++ deps.
 FROM toolchain AS deps-base
@@ -149,12 +158,14 @@ RUN --mount=type=cache,id=alicevision-deps-build-ubuntu,target=${AV_BUILD},shari
         -DCMAKE_BUILD_TYPE=Release \
         -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON \
         -DAV_BUILD_ALICEVISION:BOOL=OFF \
-        -DPython3_EXECUTABLE=/usr/bin/python3.11 \
+        -DPython_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
+        -DPython3_EXECUTABLE:FILEPATH="${PYTHON_BUILD_VENV}/bin/python" \
         -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" \
         -DAV_BUILD_DEPENDENCIES_PARALLEL=${CPU_CORES} \
     && mkdir -p "${AV_INSTALL}/bin" "${AV_INSTALL}/lib" \
     && ln -sfn lib "${AV_INSTALL}/lib64" \
     && cmake --build . --parallel 1 \
+    && /opt/python/bin/python3.11 -c 'import importlib.util; assert importlib.util.find_spec("numpy") is None' \
     && rm -rf /export \
     && cp -a "${AV_INSTALL}" /export \
     && mv /export/bin /export/bin-deps
