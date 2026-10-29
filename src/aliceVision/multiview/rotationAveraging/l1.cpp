@@ -464,8 +464,8 @@ unsigned int FilterRelativeRotations(const RelativeRotations& RelRs, const Matri
         const Matrix3x3& Rj = Rs[relR.j];
         const Matrix3x3& Rij = relR.Rij;
         const Mat3 eRij(Rj.transpose() * Rij * Ri);
-        const aliceVision::Vec3 erij;
-        ceres::RotationMatrixToAngleAxis((const double*)eRij.data(), (double*)erij.data());
+        aliceVision::Vec3 erij;
+        ceres::RotationMatrixToAngleAxis(eRij.data(), erij.data());
         errors[r] = (float)erij.norm();
     }
     if (threshold == 0)
@@ -633,8 +633,8 @@ inline void _FillErrorMatrix(const RelativeRotations& RelRs, const Matrix3x3Arr&
         const Matrix3x3& Rj = Rs[relR.j];
         const Matrix3x3& Rij = relR.Rij;
         const Mat3 eRij(Rj.transpose() * Rij * Ri);
-        const aliceVision::Vec3 erij;
-        ceres::RotationMatrixToAngleAxis((const double*)eRij.data(), (double*)erij.data());
+        aliceVision::Vec3 erij;
+        ceres::RotationMatrixToAngleAxis(eRij.data(), erij.data());
         b.block<3, 1>(3 * r, 0) = aliceVision::Vec3(erij * relR.weight);
     }
 }
@@ -649,8 +649,8 @@ inline void _CorrectMatrix(const Eigen::Matrix<REAL, Eigen::Dynamic, 1>& x, cons
         Matrix3x3& Ri = Rs[r];
         const size_t i = (r < nMainViewID ? r : r - 1);
         aliceVision::Vec3 eRid = aliceVision::Vec3(x.block<3, 1>(3 * i, 0));
-        const Mat3 eRi;
-        ceres::AngleAxisToRotationMatrix((const double*)eRid.data(), (double*)eRi.data());
+        Mat3 eRi;
+        ceres::AngleAxisToRotationMatrix(eRid.data(), eRi.data());
         Ri = Ri * eRi;
     }
 }
