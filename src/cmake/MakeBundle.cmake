@@ -124,26 +124,22 @@ set(LINUX_OS_LIB_BLACKLIST
     libjack
 )
 
-# ─── Platform overrides ───────────────────────────────────────────────────────
+# ─── Windows exclusions ──────────────────────────────────────────────────────
+# DLLs that must never be embedded in the bundle:
+#   - api-ms-win-* / ext-ms-win-*: API sets resolved by the OS loader
+#   - libomp*.x86_64.dll: the LLVM OpenMP runtime (/openmp:llvm), shipped with Windows
+#   - CUDA runtime DLLs (cuBLAS, cuFFT, NPP, etc.): require CUDA to be installed
+#     on the target machine
+set(WINDOWS_DLL_EXCLUDE_REGEXES
+    "^api-ms-win-"
+    "^ext-ms-win-"
+    "^libomp[0-9]*\\.x86_64\\.dll$"
+    "^(cublas|cublaslt|cufft|curand|cusolver|cusparse|nvrtc|nvjitlink)[0-9_]*\\.dll$"
+    "^npp[a-z]+[0-9_]*\\.dll$"
+    "^cudart[0-9_]*\\.dll$"
+)
 
-function(gp_resolve_item_override context item exepath dirs resolved_item_var resolved_var)
-  # avoid log flood for those system libraries with non-absolute path
-  if(item MATCHES "^(api-ms-win-)[^/]+dll"
-     OR item MATCHES "^libomp[0-9]*\\.x86_64\\.dll$"
-     OR item MATCHES "^(cublas|cublasLt|cufft|curand|cusolver|cusparse|nvrtc|nvJitLink)[0-9_]*\\.dll$"
-     OR item MATCHES "^npp[a-z]+[0-9_]*\\.dll$"
-     OR item MATCHES "^cudart[0-9_]*\\.dll$")
-    # resolve item with fake absolute system path to keep them identified as system libs
-    # By doing this, fixup_bundle:
-    #   - won't complain about those libraries
-    #   - won't embed them in the bundle
-    # Note: libomp*.x86_64.dll is the LLVM OpenMP runtime (/openmp:llvm).
-    # CUDA runtime DLLs (cuBLAS, cuFFT, NPP, etc.) require CUDA to be installed
-    # on the target machine and must not be bundled.
-    set(${resolved_item_var} "$ENV{SystemRoot}/system/${item}" PARENT_SCOPE)
-    set(${resolved_var} TRUE PARENT_SCOPE)
-  endif()
-endfunction()
+# ─── Platform overrides ───────────────────────────────────────────────────────
 
 if(UNIX)
     function(gp_resolved_file_type_override resolved_file type_var)
@@ -217,19 +213,84 @@ foreach(_dir
     endif()
 endforeach()
 
-# ─── fixup_bundle ────────────────────────────────────────────────────────────
+# ─── Runtime dependencies ────────────────────────────────────────────────────
 
-get_bundle_all_executables("${BUNDLE_INSTALL_PREFIX}" BUNDLE_APPS)
+if(WIN32)
+    # fixup_bundle is not used on Windows: it has nothing to patch there, and it runs
+    # dumpbin once per dependency of every binary (twice, with verify_app), which takes
+    # about an hour. GET_RUNTIME_DEPENDENCIES scans each binary only once.
+    if(POLICY CMP0207)
+        cmake_policy(SET CMP0207 NEW)
+    endif()
 
-if(NOT BUNDLE_APPS)
-    message(FATAL_ERROR "MakeBundle.cmake: no executables found under "
-                        "${BUNDLE_INSTALL_PREFIX}")
+    set(_bundle_bindir "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+    # Executables and DLLs in bin/, plus the Python bindings' extension modules in lib/
+    file(GLOB BUNDLE_APPS "${_bundle_bindir}/*.exe" "${_bundle_bindir}/*.dll")
+    file(GLOB_RECURSE _bundle_pyds "${BUNDLE_INSTALL_PREFIX}/lib/*.pyd")
+    list(APPEND BUNDLE_APPS ${_bundle_pyds})
+
+    if(NOT BUNDLE_APPS)
+        message(FATAL_ERROR "MakeBundle.cmake: no executables found under "
+                            "${BUNDLE_INSTALL_PREFIX}")
+    endif()
+    list(LENGTH BUNDLE_APPS _bundle_apps_count)
+    message(STATUS "  Scanning runtime dependencies of ${_bundle_apps_count} binaries")
+
+    file(GET_RUNTIME_DEPENDENCIES
+         EXECUTABLES ${BUNDLE_APPS}
+         DIRECTORIES ${LIBS_LOOKUPS_PATHS}
+         PRE_EXCLUDE_REGEXES ${WINDOWS_DLL_EXCLUDE_REGEXES}
+         POST_EXCLUDE_REGEXES "^[A-Za-z]:/[Ww][Ii][Nn][Dd][Oo][Ww][Ss]/"
+         RESOLVED_DEPENDENCIES_VAR _resolved_deps
+         UNRESOLVED_DEPENDENCIES_VAR _unresolved_deps
+         CONFLICTING_DEPENDENCIES_PREFIX _conflicting_deps)
+
+    if(_unresolved_deps)
+        list(JOIN _unresolved_deps "\n    " _unresolved_deps)
+        message(FATAL_ERROR "MakeBundle.cmake: unresolved runtime dependencies "
+                            "(add their location to ALICEVISION_BUNDLE_SEARCH_LIBS_PATHS):\n    ${_unresolved_deps}")
+    endif()
+
+    # All DLLs end up side by side in bin/, so a name resolved to several files
+    # can only be bundled once: keep the one already in the bundle, else the first found.
+    foreach(_name IN LISTS _conflicting_deps_FILENAMES)
+        if(EXISTS "${_bundle_bindir}/${_name}")
+            continue()
+        endif()
+        list(GET _conflicting_deps_${_name} 0 _chosen)
+        message(WARNING "MakeBundle.cmake: ${_name} resolved to several files, bundling ${_chosen}:\n"
+                        "    ${_conflicting_deps_${_name}}")
+        list(APPEND _resolved_deps "${_chosen}")
+    endforeach()
+
+    file(REAL_PATH "${_bundle_bindir}" _bundle_bindir_real)
+    set(_deps_to_copy "")
+    foreach(_dep IN LISTS _resolved_deps)
+        get_filename_component(_dep_dir "${_dep}" DIRECTORY)
+        file(REAL_PATH "${_dep_dir}" _dep_dir)
+        if(NOT _dep_dir STREQUAL _bundle_bindir_real)
+            list(APPEND _deps_to_copy "${_dep}")
+        endif()
+    endforeach()
+
+    list(LENGTH _deps_to_copy _deps_to_copy_count)
+    message(STATUS "  Copying ${_deps_to_copy_count} runtime dependencies into ${_bundle_bindir}")
+    if(_deps_to_copy)
+        file(COPY ${_deps_to_copy} DESTINATION "${_bundle_bindir}")
+    endif()
+else()
+    get_bundle_all_executables("${BUNDLE_INSTALL_PREFIX}" BUNDLE_APPS)
+
+    if(NOT BUNDLE_APPS)
+        message(FATAL_ERROR "MakeBundle.cmake: no executables found under "
+                            "${BUNDLE_INSTALL_PREFIX}")
+    endif()
+
+    # fixup_bundle uses the first app as anchor; it fixes up all others automatically.
+    list(GET BUNDLE_APPS 0 MAIN_APP)
+    message(STATUS "  Main app for fixup_bundle: ${MAIN_APP}")
+    fixup_bundle("${MAIN_APP}" "" "${LIBS_LOOKUPS_PATHS}")
 endif()
-
-# fixup_bundle uses the first app as anchor; it fixes up all others automatically.
-list(GET BUNDLE_APPS 0 MAIN_APP)
-message(STATUS "  Main app for fixup_bundle: ${MAIN_APP}")
-fixup_bundle("${MAIN_APP}" "" "${LIBS_LOOKUPS_PATHS}")
 
 # ─── Move stray libs that fixup_bundle dropped into bin/ back into lib/ ──────
 
