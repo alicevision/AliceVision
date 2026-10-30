@@ -115,6 +115,15 @@ public:
     }
 
     /**
+     * @brief Set the solver function tolerance for bundle adjustment
+     * @param functionTolerance the solver stops when |cost_change| / cost falls below this value
+    */
+    void setFunctionTolerance(double functionTolerance)
+    {
+        _functionTolerance = functionTolerance;
+    }
+
+    /**
      * @brief Get the number of valid points per pose required
      * @return the threshold used to discriminate a valid pose
     */
@@ -170,6 +179,7 @@ private:
     bool _isStructureRefinementEnabled = true;
     bool _enableObservationsWeighting = false;
     double _lossParameter = 16.0;
+    double _functionTolerance = 1e-6;
 };
 
 } // namespace sfm
