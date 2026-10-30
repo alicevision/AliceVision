@@ -30,7 +30,9 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_centerMatrix)
     for (std::size_t i = 0; i < numTrials; ++i)
     {
         Eigen::Matrix2Xf points(2, numPoints);
-        const Vec2f coeff = 100 * Vec2f::Random();
+        Vec2f coeff = 100 * Vec2f::Random();
+        // centerMatrix clamps the standard deviation to 0.1: keep the spread of the points well above it
+        coeff(0) = std::copysign(std::max(std::abs(coeff(0)), 1.f), coeff(0));
         points = ((coeff(0) * points.setRandom()).array() + coeff(1)).matrix();
 
         Mat3 transformation;
@@ -45,6 +47,42 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_centerMatrix)
         //    std::cout << "Mean " << mean.isZero() << "\nStd dev " << stdDev.isOnes() << std::endl;
         BOOST_CHECK(mean.isZero(threshold));
         BOOST_CHECK(stdDev.isOnes());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(matchingImageCollection_centerMatrix_degenerate)
+{
+    makeRandomOperationsReproducible();
+
+    const std::size_t numPoints{100};
+    const float threshold{0.001f};
+
+    // points almost on a horizontal line: the y standard deviation is far below the 0.1 clamp
+    Eigen::Matrix2Xf line(2, numPoints);
+    line.row(0) = 100.f * Eigen::RowVectorXf::Random(numPoints);
+    line.row(1) = (50.f + 0.001f * Eigen::RowVectorXf::Random(numPoints).array()).matrix();
+
+    // all the points at the same location
+    const Eigen::Matrix2Xf coincident = Vec2f(12.f, -7.f).replicate(1, numPoints);
+
+    for (const Eigen::Matrix2Xf& points : {line, coincident})
+    {
+        Mat3 transformation;
+        matchingImageCollection::centerMatrix(points, transformation);
+
+        // the clamp keeps the transformation finite and invertible
+        BOOST_CHECK(transformation.allFinite());
+        BOOST_CHECK((transformation.inverse() * transformation).isIdentity());
+
+        Eigen::Matrix2Xf points2d = (transformation.cast<float>() * points.colwise().homogeneous()).colwise().hnormalized();
+        Vec2f mean;
+        Vec2f stdDev;
+        meanAndStd(points2d, mean, stdDev);
+
+        // still centered, and the degenerate axis is not blown up
+        BOOST_CHECK(points2d.allFinite());
+        BOOST_CHECK(mean.isZero(threshold));
+        BOOST_CHECK(stdDev(1) <= 1.f);
     }
 }
 

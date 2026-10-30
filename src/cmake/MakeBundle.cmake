@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.30)
 #   - CMAKE_INSTALL_PREFIX      : install target path (required)
 #   - BUNDLE_INSTALL_PREFIX     : bundle installation path (required)
 #   - BUNDLE_LIBS_PATHS         : additional paths (semicolon-separated) to look for runtime dependencies
+#   - BUNDLE_PYTHON_ROOT        : relocatable Python runtime to embed as <bundle>/python (optional)
+#   - BUNDLE_PYTHON_REFERENCE   : Python executable AliceVision was built with, checked against BUNDLE_PYTHON_ROOT (optional)
 #   - CMAKE_INSTALL_BINDIR      : relative bin dir  (default: bin)
 #   - CMAKE_INSTALL_LIBDIR      : relative lib dir  (default: lib)
 #   - CMAKE_INSTALL_INCLUDEDIR  : relative include dir (default: include)
@@ -122,26 +124,22 @@ set(LINUX_OS_LIB_BLACKLIST
     libjack
 )
 
-# ─── Platform overrides ───────────────────────────────────────────────────────
+# ─── Windows exclusions ──────────────────────────────────────────────────────
+# DLLs that must never be embedded in the bundle:
+#   - api-ms-win-* / ext-ms-win-*: API sets resolved by the OS loader
+#   - libomp*.x86_64.dll: the LLVM OpenMP runtime (/openmp:llvm), shipped with Windows
+#   - CUDA runtime DLLs (cuBLAS, cuFFT, NPP, etc.): require CUDA to be installed
+#     on the target machine
+set(WINDOWS_DLL_EXCLUDE_REGEXES
+    "^api-ms-win-"
+    "^ext-ms-win-"
+    "^libomp[0-9]*\\.x86_64\\.dll$"
+    "^(cublas|cublaslt|cufft|curand|cusolver|cusparse|nvrtc|nvjitlink)[0-9_]*\\.dll$"
+    "^npp[a-z]+[0-9_]*\\.dll$"
+    "^cudart[0-9_]*\\.dll$"
+)
 
-function(gp_resolve_item_override context item exepath dirs resolved_item_var resolved_var)
-  # avoid log flood for those system libraries with non-absolute path
-  if(item MATCHES "^(api-ms-win-)[^/]+dll"
-     OR item MATCHES "^libomp[0-9]*\\.x86_64\\.dll$"
-     OR item MATCHES "^(cublas|cublasLt|cufft|curand|cusolver|cusparse|nvrtc|nvJitLink)[0-9_]*\\.dll$"
-     OR item MATCHES "^npp[a-z]+[0-9_]*\\.dll$"
-     OR item MATCHES "^cudart[0-9_]*\\.dll$")
-    # resolve item with fake absolute system path to keep them identified as system libs
-    # By doing this, fixup_bundle:
-    #   - won't complain about those libraries
-    #   - won't embed them in the bundle
-    # Note: libomp*.x86_64.dll is the LLVM OpenMP runtime (/openmp:llvm).
-    # CUDA runtime DLLs (cuBLAS, cuFFT, NPP, etc.) require CUDA to be installed
-    # on the target machine and must not be bundled.
-    set(${resolved_item_var} "$ENV{SystemRoot}/system/${item}" PARENT_SCOPE)
-    set(${resolved_var} TRUE PARENT_SCOPE)
-  endif()
-endfunction()
+# ─── Platform overrides ───────────────────────────────────────────────────────
 
 if(UNIX)
     function(gp_resolved_file_type_override resolved_file type_var)
@@ -171,6 +169,8 @@ message(STATUS "  CMAKE_INSTALL_FULL_LIBDIR  : ${CMAKE_INSTALL_FULL_LIBDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_INCLUDEDIR : ${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_DATADIR : ${CMAKE_INSTALL_FULL_DATADIR}")
 message(STATUS "  BUNDLE_LIBS_PATHS       : ${BUNDLE_LIBS_PATHS}")
+message(STATUS "  BUNDLE_PYTHON_ROOT      : ${BUNDLE_PYTHON_ROOT}")
+message(STATUS "  BUNDLE_PYTHON_REFERENCE : ${BUNDLE_PYTHON_REFERENCE}")
 
 # ─── Dependency lookup paths ─────────────────────────────────────────────────
 
@@ -213,19 +213,84 @@ foreach(_dir
     endif()
 endforeach()
 
-# ─── fixup_bundle ────────────────────────────────────────────────────────────
+# ─── Runtime dependencies ────────────────────────────────────────────────────
 
-get_bundle_all_executables("${BUNDLE_INSTALL_PREFIX}" BUNDLE_APPS)
+if(WIN32)
+    # fixup_bundle is not used on Windows: it has nothing to patch there, and it runs
+    # dumpbin once per dependency of every binary (twice, with verify_app), which takes
+    # about an hour. GET_RUNTIME_DEPENDENCIES scans each binary only once.
+    if(POLICY CMP0207)
+        cmake_policy(SET CMP0207 NEW)
+    endif()
 
-if(NOT BUNDLE_APPS)
-    message(FATAL_ERROR "MakeBundle.cmake: no executables found under "
-                        "${BUNDLE_INSTALL_PREFIX}")
+    set(_bundle_bindir "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+    # Executables and DLLs in bin/, plus the Python bindings' extension modules in lib/
+    file(GLOB BUNDLE_APPS "${_bundle_bindir}/*.exe" "${_bundle_bindir}/*.dll")
+    file(GLOB_RECURSE _bundle_pyds "${BUNDLE_INSTALL_PREFIX}/lib/*.pyd")
+    list(APPEND BUNDLE_APPS ${_bundle_pyds})
+
+    if(NOT BUNDLE_APPS)
+        message(FATAL_ERROR "MakeBundle.cmake: no executables found under "
+                            "${BUNDLE_INSTALL_PREFIX}")
+    endif()
+    list(LENGTH BUNDLE_APPS _bundle_apps_count)
+    message(STATUS "  Scanning runtime dependencies of ${_bundle_apps_count} binaries")
+
+    file(GET_RUNTIME_DEPENDENCIES
+         EXECUTABLES ${BUNDLE_APPS}
+         DIRECTORIES ${LIBS_LOOKUPS_PATHS}
+         PRE_EXCLUDE_REGEXES ${WINDOWS_DLL_EXCLUDE_REGEXES}
+         POST_EXCLUDE_REGEXES "^[A-Za-z]:/[Ww][Ii][Nn][Dd][Oo][Ww][Ss]/"
+         RESOLVED_DEPENDENCIES_VAR _resolved_deps
+         UNRESOLVED_DEPENDENCIES_VAR _unresolved_deps
+         CONFLICTING_DEPENDENCIES_PREFIX _conflicting_deps)
+
+    if(_unresolved_deps)
+        list(JOIN _unresolved_deps "\n    " _unresolved_deps)
+        message(FATAL_ERROR "MakeBundle.cmake: unresolved runtime dependencies "
+                            "(add their location to ALICEVISION_BUNDLE_SEARCH_LIBS_PATHS):\n    ${_unresolved_deps}")
+    endif()
+
+    # All DLLs end up side by side in bin/, so a name resolved to several files
+    # can only be bundled once: keep the one already in the bundle, else the first found.
+    foreach(_name IN LISTS _conflicting_deps_FILENAMES)
+        if(EXISTS "${_bundle_bindir}/${_name}")
+            continue()
+        endif()
+        list(GET _conflicting_deps_${_name} 0 _chosen)
+        message(WARNING "MakeBundle.cmake: ${_name} resolved to several files, bundling ${_chosen}:\n"
+                        "    ${_conflicting_deps_${_name}}")
+        list(APPEND _resolved_deps "${_chosen}")
+    endforeach()
+
+    file(REAL_PATH "${_bundle_bindir}" _bundle_bindir_real)
+    set(_deps_to_copy "")
+    foreach(_dep IN LISTS _resolved_deps)
+        get_filename_component(_dep_dir "${_dep}" DIRECTORY)
+        file(REAL_PATH "${_dep_dir}" _dep_dir)
+        if(NOT _dep_dir STREQUAL _bundle_bindir_real)
+            list(APPEND _deps_to_copy "${_dep}")
+        endif()
+    endforeach()
+
+    list(LENGTH _deps_to_copy _deps_to_copy_count)
+    message(STATUS "  Copying ${_deps_to_copy_count} runtime dependencies into ${_bundle_bindir}")
+    if(_deps_to_copy)
+        file(COPY ${_deps_to_copy} DESTINATION "${_bundle_bindir}")
+    endif()
+else()
+    get_bundle_all_executables("${BUNDLE_INSTALL_PREFIX}" BUNDLE_APPS)
+
+    if(NOT BUNDLE_APPS)
+        message(FATAL_ERROR "MakeBundle.cmake: no executables found under "
+                            "${BUNDLE_INSTALL_PREFIX}")
+    endif()
+
+    # fixup_bundle uses the first app as anchor; it fixes up all others automatically.
+    list(GET BUNDLE_APPS 0 MAIN_APP)
+    message(STATUS "  Main app for fixup_bundle: ${MAIN_APP}")
+    fixup_bundle("${MAIN_APP}" "" "${LIBS_LOOKUPS_PATHS}")
 endif()
-
-# fixup_bundle uses the first app as anchor; it fixes up all others automatically.
-list(GET BUNDLE_APPS 0 MAIN_APP)
-message(STATUS "  Main app for fixup_bundle: ${MAIN_APP}")
-fixup_bundle("${MAIN_APP}" "" "${LIBS_LOOKUPS_PATHS}")
 
 # ─── Move stray libs that fixup_bundle dropped into bin/ back into lib/ ──────
 
@@ -257,5 +322,114 @@ if (WIN32)
         endif()
     endforeach()
 endif(WIN32)
+
+# ─── Embed the Python runtime ────────────────────────────────────────────────
+# Copied after fixup_bundle, which must not rewrite the interpreter and its modules.
+# The runtime must be the one AliceVision was built against (same build, not only same version).
+
+if(BUNDLE_PYTHON_ROOT)
+    if(WIN32)
+        set(_python_exe_rel "python.exe")
+    else()
+        set(_python_exe_rel "bin/python3")
+    endif()
+    if(NOT EXISTS "${BUNDLE_PYTHON_ROOT}/${_python_exe_rel}")
+        message(FATAL_ERROR "MakeBundle.cmake: no interpreter in BUNDLE_PYTHON_ROOT: "
+                            "${BUNDLE_PYTHON_ROOT}/${_python_exe_rel}")
+    endif()
+
+    set(_python_check "import sys, importlib.util; print(sys.version); print(sys.base_prefix); print(importlib.util.find_spec('numpy') is None)")
+
+    if(BUNDLE_PYTHON_REFERENCE)
+        execute_process(COMMAND "${BUNDLE_PYTHON_REFERENCE}" -c "${_python_check}"
+                        OUTPUT_VARIABLE _ref_out OUTPUT_STRIP_TRAILING_WHITESPACE
+                        COMMAND_ERROR_IS_FATAL ANY)
+        string(REPLACE "\n" ";" _ref_out "${_ref_out}")
+        list(GET _ref_out 0 _ref_version)
+        list(GET _ref_out 1 _ref_base_prefix)
+        file(REAL_PATH "${_ref_base_prefix}" _ref_base_prefix)
+        file(REAL_PATH "${BUNDLE_PYTHON_ROOT}" _bundle_python_root)
+        if(NOT _ref_base_prefix STREQUAL _bundle_python_root)
+            message(FATAL_ERROR "MakeBundle.cmake: AliceVision was built against the Python in ${_ref_base_prefix} "
+                                "(${BUNDLE_PYTHON_REFERENCE}), but the bundle would embed ${_bundle_python_root}")
+        endif()
+    endif()
+
+    message(STATUS "  Copying Python runtime: ${BUNDLE_PYTHON_ROOT} -> ${BUNDLE_INSTALL_PREFIX}/python")
+    file(REMOVE_RECURSE "${BUNDLE_INSTALL_PREFIX}/python")
+    file(MAKE_DIRECTORY "${BUNDLE_INSTALL_PREFIX}/python")
+    file(COPY "${BUNDLE_PYTHON_ROOT}/"
+         DESTINATION "${BUNDLE_INSTALL_PREFIX}/python"
+         USE_SOURCE_PERMISSIONS
+         PATTERN "__pycache__" EXCLUDE
+         PATTERN "*.pdb" EXCLUDE)
+
+    # The relocated copy must start in isolated mode, and the runtime itself must be pristine
+    # (packages belong in the build venv; they are reinstalled in the bundle below).
+    set(_bundle_python "${BUNDLE_INSTALL_PREFIX}/python/${_python_exe_rel}")
+    execute_process(COMMAND "${_bundle_python}" -I -B -c "${_python_check}"
+                    OUTPUT_VARIABLE _bundle_out OUTPUT_STRIP_TRAILING_WHITESPACE
+                    COMMAND_ERROR_IS_FATAL ANY)
+    string(REPLACE "\n" ";" _bundle_out "${_bundle_out}")
+    list(GET _bundle_out 0 _bundle_version)
+    list(GET _bundle_out 2 _bundle_no_numpy)
+    message(STATUS "  Bundled Python: ${_bundle_version}")
+    if(BUNDLE_PYTHON_REFERENCE AND NOT _bundle_version STREQUAL _ref_version)
+        message(FATAL_ERROR "MakeBundle.cmake: bundled Python '${_bundle_version}' differs from the build Python '${_ref_version}'")
+    endif()
+    if(NOT _bundle_no_numpy STREQUAL "True")
+        message(FATAL_ERROR "MakeBundle.cmake: the Python runtime ${BUNDLE_PYTHON_ROOT} is not pristine (numpy is installed in it)")
+    endif()
+
+    # Reinstall the build venv's packages in the bundled runtime, at the exact versions
+    # AliceVision was built against (the venv itself is not relocatable).
+    if(BUNDLE_PYTHON_REFERENCE)
+        set(_pip_freeze -I -m pip freeze --exclude-editable --disable-pip-version-check)
+        execute_process(COMMAND "${BUNDLE_PYTHON_REFERENCE}" ${_pip_freeze}
+                        OUTPUT_VARIABLE _ref_packages OUTPUT_STRIP_TRAILING_WHITESPACE
+                        COMMAND_ERROR_IS_FATAL ANY)
+        string(REGEX REPLACE "\r?\n" ";" _ref_packages "${_ref_packages}")
+        foreach(_package IN LISTS _ref_packages)
+            if(NOT _package MATCHES "^[A-Za-z0-9._-]+(\\[[^]]*\\])?==[^ ]+$")
+                message(FATAL_ERROR "MakeBundle.cmake: cannot reinstall '${_package}' from the build venv "
+                                    "${BUNDLE_PYTHON_REFERENCE} in the bundle (not a released package)")
+            endif()
+        endforeach()
+
+        if(_ref_packages)
+            list(JOIN _ref_packages " " _ref_packages_str)
+            message(STATUS "  Installing build venv packages in the bundled Python: ${_ref_packages_str}")
+            execute_process(COMMAND "${_bundle_python}" -I -m pip install
+                                    --disable-pip-version-check --no-warn-script-location
+                                    --no-deps --no-compile ${_ref_packages}
+                            COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+
+        execute_process(COMMAND "${_bundle_python}" ${_pip_freeze}
+                        OUTPUT_VARIABLE _bundle_packages OUTPUT_STRIP_TRAILING_WHITESPACE
+                        COMMAND_ERROR_IS_FATAL ANY)
+        string(REGEX REPLACE "\r?\n" ";" _bundle_packages "${_bundle_packages}")
+        if(NOT _bundle_packages STREQUAL _ref_packages)
+            message(FATAL_ERROR "MakeBundle.cmake: packages of the bundled Python (${_bundle_packages}) "
+                                "differ from the build venv's (${_ref_packages})")
+        endif()
+    endif()
+
+    # On Windows the Python DLL is also resolved into bin/ for the extension modules:
+    # it must be the very same file as the interpreter's.
+    if(WIN32)
+        file(GLOB _bundle_python_dlls RELATIVE "${BUNDLE_INSTALL_PREFIX}/python" "${BUNDLE_INSTALL_PREFIX}/python/python3*.dll")
+        foreach(_dll IN LISTS _bundle_python_dlls)
+            set(_bin_dll "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${_dll}")
+            if(EXISTS "${_bin_dll}")
+                file(SHA256 "${_bin_dll}" _bin_dll_hash)
+                file(SHA256 "${BUNDLE_INSTALL_PREFIX}/python/${_dll}" _python_dll_hash)
+                if(NOT _bin_dll_hash STREQUAL _python_dll_hash)
+                    message(FATAL_ERROR "MakeBundle.cmake: ${_bin_dll} differs from the bundled interpreter's ${_dll}")
+                endif()
+            endif()
+        endforeach()
+    endif()
+endif()
 
 message(STATUS "=== Bundle done: ${BUNDLE_INSTALL_PREFIX} ===")

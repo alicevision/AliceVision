@@ -1,9 +1,11 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO alicevision/cctag
-    REF "v${VERSION}"
-    SHA512 65f8260213faab1965ff97e38b890d85f5599c5db5f50f09ab1ed2d73d7008d2e93693145d66a4d9af6342666817204736c3b0384885fa50402850f1dc5dceae
+    REF 71021443af3f7946e8e9025a37634b57e7aad77d
+    SHA512 72d6772c6941aa5c8f34c66e44bb36e68a6fc2beada382fccfea71113b31942e43d21c471de09989ab9cae4c24cf788347120ec96e24f0d4eba22108eaedd3a1
     HEAD_REF develop
+    PATCHES
+        fix-msvc-inline-recursion.patch
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
