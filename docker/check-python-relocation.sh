@@ -1,7 +1,16 @@
 #!/bin/bash
 # Run with networking disabled (Docker RUN --network=none / docker run --network=none).
 # Moves the runtime out of its original location, tests it, then restores it.
+# Usage: check-python-relocation.sh [--with-packages] [runtime] [version]
+#   --with-packages: the runtime has packages installed (the AliceVision bundle reinstalls
+#   the build venv's ones): numpy must be importable from it, but not from its venvs.
 set -euo pipefail
+
+with_packages=0
+if [[ "${1:-}" == "--with-packages" ]]; then
+    with_packages=1
+    shift
+fi
 
 runtime=$(realpath "${1:-/opt/python}")
 expected_version=${2:-3.11.17}
@@ -25,7 +34,7 @@ clean_python() {
 }
 
 check_interpreter() {
-    clean_python "$1" -B - "$2" "$3" "${expected_version}" <<'PY'
+    clean_python "$1" -B - "$2" "$3" "${expected_version}" "${with_packages}" <<'PY'
 import bz2
 import ctypes
 import ensurepip
@@ -41,7 +50,7 @@ import venv
 import zlib
 from pathlib import Path
 
-prefix, base, version = sys.argv[1:]
+prefix, base, version, with_packages = sys.argv[1:]
 assert sys.version.split()[0] == version, sys.version
 assert Path(sys.prefix) == Path(prefix), (sys.prefix, prefix)
 assert Path(sys.base_prefix) == Path(base), (sys.base_prefix, base)
@@ -49,7 +58,10 @@ assert Path(sysconfig.get_path("stdlib")).is_relative_to(base)
 assert Path(ssl.__file__).is_relative_to(base), ssl.__file__
 assert all(not p or Path(p).is_relative_to(prefix) or Path(p).is_relative_to(base)
            for p in sys.path), sys.path
-assert importlib.util.find_spec("numpy") is None, "Build NumPy leaked into runtime"
+if with_packages == "1" and prefix == base:
+    assert importlib.util.find_spec("numpy") is not None, "NumPy missing from runtime"
+else:
+    assert importlib.util.find_spec("numpy") is None, "Build NumPy leaked into runtime"
 assert ensurepip.version()
 assert list((Path(ensurepip.__file__).parent / "_bundled").glob("pip-*.whl"))
 assert Path(base, "lib/libpython3.11.so.1.0").is_file()
@@ -96,6 +108,9 @@ mv "${runtime}" "${relocated}"
 test ! -e "${runtime}"
 check_interpreter "${relocated}/bin/python3.11" "${relocated}" "${relocated}"
 clean_python "${relocated}/bin/python3.11" -B -m pip --isolated --version
+if (( with_packages )); then
+    clean_python "${relocated}/bin/python3.11" -B -m pip --isolated check
+fi
 
 for mode in symlinks copies; do
     venv="${work}/venv-${mode}"

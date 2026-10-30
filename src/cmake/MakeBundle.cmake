@@ -364,8 +364,10 @@ if(BUNDLE_PYTHON_ROOT)
          PATTERN "__pycache__" EXCLUDE
          PATTERN "*.pdb" EXCLUDE)
 
-    # The relocated copy must start in isolated mode and stay pristine (packages belong in venvs).
-    execute_process(COMMAND "${BUNDLE_INSTALL_PREFIX}/python/${_python_exe_rel}" -I -B -c "${_python_check}"
+    # The relocated copy must start in isolated mode, and the runtime itself must be pristine
+    # (packages belong in the build venv; they are reinstalled in the bundle below).
+    set(_bundle_python "${BUNDLE_INSTALL_PREFIX}/python/${_python_exe_rel}")
+    execute_process(COMMAND "${_bundle_python}" -I -B -c "${_python_check}"
                     OUTPUT_VARIABLE _bundle_out OUTPUT_STRIP_TRAILING_WHITESPACE
                     COMMAND_ERROR_IS_FATAL ANY)
     string(REPLACE "\n" ";" _bundle_out "${_bundle_out}")
@@ -377,6 +379,40 @@ if(BUNDLE_PYTHON_ROOT)
     endif()
     if(NOT _bundle_no_numpy STREQUAL "True")
         message(FATAL_ERROR "MakeBundle.cmake: the Python runtime ${BUNDLE_PYTHON_ROOT} is not pristine (numpy is installed in it)")
+    endif()
+
+    # Reinstall the build venv's packages in the bundled runtime, at the exact versions
+    # AliceVision was built against (the venv itself is not relocatable).
+    if(BUNDLE_PYTHON_REFERENCE)
+        set(_pip_freeze -I -m pip freeze --exclude-editable --disable-pip-version-check)
+        execute_process(COMMAND "${BUNDLE_PYTHON_REFERENCE}" ${_pip_freeze}
+                        OUTPUT_VARIABLE _ref_packages OUTPUT_STRIP_TRAILING_WHITESPACE
+                        COMMAND_ERROR_IS_FATAL ANY)
+        string(REGEX REPLACE "\r?\n" ";" _ref_packages "${_ref_packages}")
+        foreach(_package IN LISTS _ref_packages)
+            if(NOT _package MATCHES "^[A-Za-z0-9._-]+(\\[[^]]*\\])?==[^ ]+$")
+                message(FATAL_ERROR "MakeBundle.cmake: cannot reinstall '${_package}' from the build venv "
+                                    "${BUNDLE_PYTHON_REFERENCE} in the bundle (not a released package)")
+            endif()
+        endforeach()
+
+        if(_ref_packages)
+            list(JOIN _ref_packages " " _ref_packages_str)
+            message(STATUS "  Installing build venv packages in the bundled Python: ${_ref_packages_str}")
+            execute_process(COMMAND "${_bundle_python}" -I -m pip install
+                                    --disable-pip-version-check --no-warn-script-location
+                                    --no-deps --no-compile ${_ref_packages}
+                            COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+
+        execute_process(COMMAND "${_bundle_python}" ${_pip_freeze}
+                        OUTPUT_VARIABLE _bundle_packages OUTPUT_STRIP_TRAILING_WHITESPACE
+                        COMMAND_ERROR_IS_FATAL ANY)
+        string(REGEX REPLACE "\r?\n" ";" _bundle_packages "${_bundle_packages}")
+        if(NOT _bundle_packages STREQUAL _ref_packages)
+            message(FATAL_ERROR "MakeBundle.cmake: packages of the bundled Python (${_bundle_packages}) "
+                                "differ from the build venv's (${_ref_packages})")
+        endif()
     endif()
 
     # On Windows the Python DLL is also resolved into bin/ for the extension modules:

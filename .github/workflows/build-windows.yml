@@ -112,7 +112,8 @@ jobs:
 
       # Build venv on top of the vcpkg python3 (python-build-standalone, vcpkg/overlay_ports/python3):
       # the dependencies, AliceVision and the bundle then share the same interpreter binaries.
-      # Packages go to the venv only, the interpreter that is bundled stays pristine.
+      # Packages go to the venv only, the vcpkg interpreter stays pristine
+      # (the bundle target reinstalls the venv's packages in its own copy).
       - name: Python build venv
         shell: pwsh
         run: |

@@ -183,10 +183,11 @@ jobs:
         run: |
           cmake --build . --config Release --target bundle
 
-      # The interpreter embedded in the bundle must be relocatable and work offline.
+      # The interpreter embedded in the bundle (with the build venv's packages) must be
+      # relocatable and work offline.
       - name: Bundled Python - Relocation Check
         run: |
-          bash docker/check-python-relocation.sh "${ALICEVISION_BUNDLE}/python"
+          bash docker/check-python-relocation.sh --with-packages "${ALICEVISION_BUNDLE}/python"
 
       # Validate the Python (SWIG) bindings with the interpreter shipped in the bundle.
       - name: Python Binding - Unit Tests
