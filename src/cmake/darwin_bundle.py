@@ -320,8 +320,10 @@ def copy_safe(src: Path, dst_dir: Path) -> Path:
         # Copy the target file first
         if not (dst_dir / target.name).exists():
             _ = shutil.copy2(target, dst_dir / target.name)
-        # Recreate the symlink in the target dir
-        dst.symlink_to(target.name)
+        # Recreate the symlink in the target dir, unless it has the name of its
+        # target (e.g. Homebrew lib/ links to the Cellar): the copy is enough then
+        if target.name != dst.name:
+            dst.symlink_to(target.name)
     else:
         # Regular file
         _ = shutil.copy2(src, dst)
