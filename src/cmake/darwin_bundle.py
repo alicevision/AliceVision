@@ -134,12 +134,22 @@ def is_cached(dep: Path, macho: Path, cache) -> bool:
             return True
     return False
 
+# Orders the candidates of a dependency so the first one is picked deterministically:
+# those under the preferred prefix (the AliceVision install) come first, so that
+# libraries from e.g. Homebrew found through extra rpaths are not bundled instead
+def sort_candidates(matches: list[Path], preferred_prefix: Optional[Path]) -> list[Path]:
+    def key(p: Path):
+        preferred = preferred_prefix is not None and p.resolve().is_relative_to(preferred_prefix)
+        return (not preferred, str(p))
+    return sorted(matches, key=key)
+
 def resolve_dependency(
     dep: Path,
     macho: Path,
     lookup_paths: set[Path],
     is_executable: bool,
     rpath_errors: list[str],
+    preferred_prefix: Optional[Path] = None,
 ) -> tuple[list[Path], list[str], list[list[Path]]]:
     resolved = []
     errors = []
@@ -163,10 +173,10 @@ def resolve_dependency(
     # @rpath case
     if "@rpath" in dep.parts:
         target = Path(*dep.parts[1:])
-        matches = [
+        matches = sort_candidates([
             p / target for p in lookup_paths
             if (p / target).exists() and check_arch_match(macho, p / target)
-        ]
+        ], preferred_prefix)
 
         if not matches:
             errors.append("Could not resolve via rpaths")
@@ -182,10 +192,10 @@ def resolve_dependency(
 
     # Relative path
     if not dep.is_absolute():
-        matches = [
+        matches = sort_candidates([
             p / dep for p in lookup_paths
             if (p / dep).exists() and check_arch_match(macho, p / dep)
-        ]
+        ], preferred_prefix)
 
         if not matches:
             errors.append("Relative path did not resolve")
@@ -207,7 +217,7 @@ def resolve_dependency(
 # (3) Tuple of reasons and unresolved paths (must be empty on success)
 # (4) Tuple of conflicting paths per dependency
 # (5) The resolved rpaths to pass through to subdependencies
-def try_and_match_deps(input, globalCache, additionalLookupPaths=None):
+def try_and_match_deps(input, globalCache, additionalLookupPaths=None, preferredPrefix=None):
     macho, deps, rpaths = input
     is_executable = macho.suffix == ""
 
@@ -226,7 +236,7 @@ def try_and_match_deps(input, globalCache, additionalLookupPaths=None):
             continue
 
         r, e, c = resolve_dependency(
-            dep, macho, lookup_paths, is_executable, rpath_errors
+            dep, macho, lookup_paths, is_executable, rpath_errors, preferredPrefix
         )
 
         resolved.extend(r)
@@ -247,13 +257,13 @@ def try_and_match_deps(input, globalCache, additionalLookupPaths=None):
     )
 
 def traverse_deps_and_resolve(
-    input: tuple[Path, list[Path], list[Path]], globalCache
+    input: tuple[Path, list[Path], list[Path]], globalCache, preferredPrefix=None
 ) -> tuple[
     bool, list[Path], list[tuple[list[str], Path]], list[tuple[list[Path], Path]]
 ]:
     # Initial state
     successTop, resolvedTop, unresolvedTop, conflictingTop, lookupPathsCombined = (
-        try_and_match_deps(input, globalCache)
+        try_and_match_deps(input, globalCache, preferredPrefix=preferredPrefix)
     )
 
     # Use sets for quick membership tests
@@ -269,7 +279,7 @@ def traverse_deps_and_resolve(
         processed.add(subDep)
 
         ok, resolved, unresolved, conflicting, uniqueLookupPaths = try_and_match_deps(
-            get_deps_and_rpaths(subDep), globalCache, lookupPathsCombined
+            get_deps_and_rpaths(subDep), globalCache, lookupPathsCombined, preferredPrefix
         )
 
         # Update overall success flag
@@ -391,6 +401,12 @@ def parse_args():
     )
 
     parser.add_argument(
+        "-p", "--preferred-prefix",
+        type=Path,
+        help="Prefix whose libraries win when a dependency has several candidates",
+    )
+
+    parser.add_argument(
         "input_files",
         type=Path,
         nargs="+",
@@ -437,12 +453,12 @@ def extract_dependencies(files: list[Path]):
     with Pool(cpu_count()) as pool:
         return pool.map(get_deps_and_rpaths, files)
 
-def resolve_dependencies(deps_info):
+def resolve_dependencies(deps_info, preferred_prefix: Optional[Path] = None):
     with Pool(cpu_count()) as pool:
         manager = Manager()
         cache = manager.dict()
 
-        resolver = partial(traverse_deps_and_resolve, globalCache=cache)
+        resolver = partial(traverse_deps_and_resolve, globalCache=cache, preferredPrefix=preferred_prefix)
         return pool.map(resolver, deps_info)
 
 def ensure_success(results):
@@ -525,7 +541,8 @@ def entry():
     deps_info = extract_dependencies(bins + libs)
 
     print("[ INFO ] (2 / 5) Resolving dependencies...")
-    results = resolve_dependencies(deps_info)
+    preferred_prefix = args.preferred_prefix.resolve() if args.preferred_prefix else None
+    results = resolve_dependencies(deps_info, preferred_prefix)
 
     ensure_success(results)
 
