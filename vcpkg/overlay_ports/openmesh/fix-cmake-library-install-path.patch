@@ -1,0 +1,14 @@
+diff --git a/VCI/VCICommon.cmake b/VCI/VCICommon.cmake
+index 7a5269c..e3f87ff 100644
+--- a/VCI/VCICommon.cmake
++++ b/VCI/VCICommon.cmake
+@@ -242,7 +242,8 @@
+     set (_and_static 0)
+   endif ()
+ 
+-  add_library (${_target} ${_type} ${ARGN} )
++  set(_and_static 0)
++  add_library (${_target} ${ARGN} )
+ 
+   # set common target properties defined in common.cmake
+   vci_set_target_props (${_target})
