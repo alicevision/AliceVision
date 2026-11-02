@@ -173,6 +173,10 @@ set(DEP_OPENMESH_VERSION "10.0.0")
 set(DEP_OPENMESH_GIT_REPO "https://github.com/meshroomHubWarehouse/OpenMesh.git")
 set(DEP_OPENMESH_GIT_TAG  "OpenMesh-10.0")
 
+set(DEP_EMBREE_VERSION "4.4.1")
+set(DEP_EMBREE_URL     "https://github.com/RenderKit/embree/archive/refs/tags/v${DEP_EMBREE_VERSION}.tar.gz")
+set(DEP_EMBREE_HASH    "SHA256=dcf338cc61b636c871ccf370e673bfd380c5ecb71ce49ad50f28e1d4ec9995dc")
+
 set(DEP_PCL_VERSION "1.15.1")
 set(DEP_PCL_URL     "https://github.com/PointCloudLibrary/pcl/archive/refs/tags/pcl-${DEP_PCL_VERSION}.tar.gz")
 set(DEP_PCL_HASH    "MD5=e29ad2147fbe2109233e2b3a0254dbab")

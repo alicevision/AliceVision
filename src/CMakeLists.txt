@@ -69,6 +69,7 @@ trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
 trilean_option(ALICEVISION_USE_APRILTAG "Enable AprilTag markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
+trilean_option(ALICEVISION_USE_EMBREE "Enable Embree ray tracing" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_ONNX "Enable ONNX Runtime" OFF)
 option(ALICEVISION_USE_ONNX_GPU "Use CUDA with ONNX Runtime" ON)
@@ -875,6 +876,24 @@ if (ALICEVISION_BUILD_SFM)
 endif()
 
 # ==============================================================================
+# Embree
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_EMBREE is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_EMBREE 0)
+
+if (NOT ALICEVISION_USE_EMBREE STREQUAL "OFF")
+    find_package(embree 4 CONFIG)
+
+    if (embree_FOUND)
+        set(ALICEVISION_HAVE_EMBREE 1)
+        message(STATUS "Embree found.")
+    elseif (ALICEVISION_USE_EMBREE STREQUAL "ON")
+        message(SEND_ERROR "Failed to find Embree.")
+    endif()
+endif()
+
+# ==============================================================================
 # PopSift
 # ==============================================================================
 # - optional, only external and enabled only if ALICEVISION_USE_POPSIFT is ON
@@ -1027,6 +1046,7 @@ message("** Use OpenCV SIFT features: " ${ALICEVISION_HAVE_OCVSIFT})
 message("** Use PopSift feature extractor: " ${ALICEVISION_HAVE_POPSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
 message("** Use AprilTag markers: " ${ALICEVISION_HAVE_APRILTAG})
+message("** Use Embree: " ${ALICEVISION_HAVE_EMBREE})
 message("** Use ONNX: " ${ALICEVISION_HAVE_ONNX})
 message("** Use ONNX with CUDA: " ${ALICEVISION_HAVE_ONNX_GPU})
 message("\n")

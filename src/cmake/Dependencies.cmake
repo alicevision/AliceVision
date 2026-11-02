@@ -94,6 +94,7 @@ option(AV_BUILD_ALEMBIC     "Build Alembic"   ON)
 option(AV_BUILD_E57FORMAT   "Build E57Format" ON)
 av_conditional_option(AV_BUILD_XERCESC  "Build XERCESC" IF AV_BUILD_E57FORMAT THEN ON ELSE OFF)
 option(AV_BUILD_OPENMESH    "Build OpenMesh"  ON)
+option(AV_BUILD_EMBREE      "Build Embree"    ON)
 option(AV_BUILD_PCL         "Build PCL"       OFF)
 option(AV_BUILD_OPENSUBDIV  "Build OpenSubdiv" ON)
 option(AV_BUILD_USD         "Build USD"        ON)
@@ -116,7 +117,7 @@ set(_all_av_options
     AV_BUILD_FLANN AV_BUILD_NANOFLANN
     AV_BUILD_COINUTILS AV_BUILD_OSI AV_BUILD_CLP AV_BUILD_LEMON
     AV_BUILD_GEOGRAM AV_BUILD_ASSIMP AV_BUILD_ALEMBIC AV_BUILD_E57FORMAT AV_BUILD_XERCESC
-    AV_BUILD_OPENMESH AV_BUILD_PCL AV_BUILD_USD AV_BUILD_OPENSUBDIV
+    AV_BUILD_OPENMESH AV_BUILD_EMBREE AV_BUILD_PCL AV_BUILD_USD AV_BUILD_OPENSUBDIV
     AV_BUILD_POPSIFT AV_BUILD_CCTAG AV_BUILD_APRILTAG
 )
 
@@ -205,6 +206,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/alembic.cmake)      # depends: boost, ope
 include(${CMAKE_CURRENT_LIST_DIR}/deps/xercesc.cmake)      # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/e57format.cmake)    # depends: (xercesc)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/openmesh.cmake)     # depends: (none)
+include(${CMAKE_CURRENT_LIST_DIR}/deps/embree.cmake)       # depends: tbb
 include(${CMAKE_CURRENT_LIST_DIR}/deps/pcl.cmake)          # depends: eigen, boost, png, flann, lz4, zlib, cuda, openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/opensubdiv.cmake)   # depends: openmp
 include(${CMAKE_CURRENT_LIST_DIR}/deps/usd.cmake)          # depends: (opensubdiv)
@@ -261,6 +263,7 @@ if(AV_BUILD_ALICEVISION)
             ${XERCESC_CMAKE_FLAGS}
             ${E57FORMAT_CMAKE_FLAGS}
             ${OPENMESH_CMAKE_FLAGS}
+            ${EMBREE_CMAKE_FLAGS}
             ${PCL_CMAKE_FLAGS}
             ${OPENSUBDIV_CMAKE_FLAGS}
             ${USD_CMAKE_FLAGS}

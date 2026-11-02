@@ -42,6 +42,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * Alembic (data I/O)
 * CCTag (feature extraction/matching and localization on CPU or GPU)
 * Cuda >= 11.0 (feature extraction and depth map computation)
+* Embree >= 4 (ray tracing)
 * Magma (required for UncertaintyTE)
 * Mosek >= 6 (linear programming)
 * OpenCV >= 3.4.11 (feature extraction, calibration module, video IO), >= 4.5 for colorchecker (mcc)
@@ -280,6 +281,10 @@ At the end of the cmake process, a report shows for each library which version (
 * `ALICEVISION_USE_APRILTAG` (default: `AUTO`)  
   Build with AprilTag markers support.  
   `-Dapriltag_DIR:PATH=/path/to/apriltag/install/share/apriltag/cmake` (where apriltagConfig.cmake can be found)
+
+* `ALICEVISION_USE_EMBREE` (default: `AUTO`)  
+  Build with Embree ray tracing support (required version >= 4).  
+  `-Dembree_DIR:PATH=/path/to/embree/install/lib/cmake/embree-4.4.1` (where embree-config.cmake can be found)
 
 * `ALICEVISION_USE_ALEMBIC` (default `AUTO`)  
   Build with Alembic file format support (required version >= 1.7).  

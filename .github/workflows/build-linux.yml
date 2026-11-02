@@ -7,7 +7,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: "alicevision/alicevision-deps:2026.10.12-rocky9-cuda12.8.0"
+      image: "alicevision/alicevision-deps:2026.11.02-rocky9-cuda12.8.0"
     env:
       DEPS_INSTALL_DIR: /opt/AliceVision_install
       BUILD_TYPE: Release
