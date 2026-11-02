@@ -330,7 +330,61 @@ def copy_safe(src: Path, dst_dir: Path) -> Path:
 
     return dst
 
-def fixup_macho_with_predefined_rpaths(macho: Path) -> bool:
+DYLIB_LOAD_COMMANDS = {"LC_LOAD_DYLIB", "LC_LOAD_WEAK_DYLIB", "LC_REEXPORT_DYLIB", "LC_LOAD_UPWARD_DYLIB"}
+
+# Parses the output of "otool -l" into
+# (1) The install name of the Mach-O (None for an executable)
+# (2) The libraries it loads
+# Unlike "otool -L", it does not mistake the first library of an executable for its install name.
+def parse_load_commands(otoolOutput: str) -> tuple[Optional[str], list[str]]:
+    installName = None
+    loads = []
+    cmd = None
+    for line in otoolOutput.splitlines():
+        line = line.strip()
+        if line.startswith("cmd "):
+            cmd = line.removeprefix("cmd ")
+        elif line.startswith("name ") and (cmd == "LC_ID_DYLIB" or cmd in DYLIB_LOAD_COMMANDS):
+            name = sub(r"\s*\(offset \d+\)$", "", line.removeprefix("name "))
+            if cmd == "LC_ID_DYLIB":
+                installName = name
+            else:
+                loads.append(name)
+    return installName, loads
+
+def is_system_library(name: str) -> bool:
+    return name.startswith(("/usr/lib/", "/System/"))
+
+# Path of a library relative to the bundle lib folder: the framework folder
+# and what follows for a framework, the file name otherwise
+def bundled_name(name: str) -> str:
+    parts = Path(name).parts
+    for i, part in enumerate(parts):
+        if part.endswith(".framework"):
+            return str(Path(*parts[i:]))
+    return parts[-1]
+
+# Returns the install_name_tool arguments pointing the absolute install name and
+# libraries of a Mach-O to their copy in the bundle lib folder (through the rpaths)
+def absolute_names_fixup_args(installName: Optional[str], loads: list[str], libDir: Path) -> list[str]:
+    args = []
+    if installName and installName.startswith("/"):
+        args += ["-id", f"@rpath/{bundled_name(installName)}"]
+    for name in loads:
+        if name.startswith("/") and not is_system_library(name) and (libDir / bundled_name(name)).exists():
+            args += ["-change", name, f"@rpath/{bundled_name(name)}"]
+    return args
+
+def get_load_commands(machoInner: Path) -> tuple[Optional[str], list[str]]:
+    otoolCmd = subprocess.run(
+        ["otool", "-l", machoInner],
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    return parse_load_commands(otoolCmd.stdout)
+
+def fixup_macho_with_predefined_rpaths(macho: Path, libDir: Path) -> bool:
     success = True
 
     # Special case Framework
@@ -338,6 +392,28 @@ def fixup_macho_with_predefined_rpaths(macho: Path) -> bool:
         machoInner = macho.joinpath(macho.stem)
     else:
         machoInner = macho
+
+    # Libraries found through absolute paths (e.g. Homebrew, or an install name
+    # pointing to the build machine) are copied into the bundle: load these copies
+    installName, loads = get_load_commands(machoInner)
+    changeArgs = absolute_names_fixup_args(installName, loads, libDir)
+    if changeArgs:
+        changeCmd = subprocess.run(
+            ["install_name_tool", *changeArgs, machoInner],
+            universal_newlines=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+        )
+        if changeCmd.returncode != 0:
+            print(f"[ ERROR ] Could not rewrite the absolute install names of {macho}: {changeCmd.stderr.strip()}")
+            success = False
+
+    # The bundle must not depend on anything from the build machine
+    installName, loads = get_load_commands(machoInner)
+    for name in [installName] + loads:
+        if name and name.startswith("/") and not is_system_library(name):
+            print(f"[ ERROR ] {macho} still refers to {name}")
+            success = False
 
     rpaths: set[Path] = set()
     # Extract existing rpaths
@@ -524,9 +600,9 @@ def copy_all_files(bundle_paths, input_files, results):
 
     return dest_bins | dest_libs | dest_deps
 
-def fixup_binaries(files: set[Path]):
+def fixup_binaries(files: set[Path], libDir: Path):
     with Pool(cpu_count()) as pool:
-        results = pool.map(fixup_macho_with_predefined_rpaths, files)
+        results = pool.map(partial(fixup_macho_with_predefined_rpaths, libDir=libDir), files)
 
     if not all(results):
         print("[ ERROR ] Fixup failed.")
@@ -555,7 +631,7 @@ def entry():
     copied_files = copy_all_files(bundle_paths, args.input_files, results)
 
     print("[ INFO ] (5 / 5) Fixing binaries...")
-    fixup_binaries(copied_files)
+    fixup_binaries(copied_files, bundle_paths["lib"])
 
     print(f"\n[ INFO ] Bundle created at {args.output.resolve()}")
 
