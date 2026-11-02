@@ -33,18 +33,10 @@ def get_deps_and_rpaths(macho: Path) -> tuple[Path, list[Path], list[Path]]:
     oldPath = macho
     if "framework" in macho.suffix:
         macho = macho.joinpath(macho.stem)
-    deps: list[Path] = []
+    # Not "otool -L": it prints no install name for an executable, whose first library was then skipped
+    _, loads = get_load_commands(macho)
+    deps: list[Path] = [Path(name) for name in loads]
     rpaths: list[Path] = []
-    depsCmd = subprocess.run(
-        ["otool", "-L", macho], universal_newlines=True, stdout=subprocess.PIPE
-    )
-    depsLines = depsCmd.stdout.splitlines()
-    for line in depsLines[
-        2:
-    ]:  # Skip the first line (just info) and the second line (always denotes itself)
-        deps.append(
-            Path(sub(r"\(compatibility version [^)]+\)", "", line.strip()).strip())
-        )  # Remove the compatibility stuff
 
     rpathCmd = subprocess.run(
         ["otool", "-l", macho], universal_newlines=True, stdout=subprocess.PIPE
