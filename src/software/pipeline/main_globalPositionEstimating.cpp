@@ -27,7 +27,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -54,6 +54,9 @@ int aliceVision_main(int argc, char** argv)
          "Tracks file.");
 
     po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision Global Rotation Estimating");
@@ -122,7 +125,7 @@ int aliceVision_main(int argc, char** argv)
 
 
     ALICEVISION_LOG_INFO("Processing positioning");
-    std::mt19937 gen(randomSeed);
+    std::mt19937 gen(randomSeed == -1 ? std::random_device()() : randomSeed);
     sfm::GlobalPositioning positionning;
     if (!positionning.process(sfmData, gen))
     {
