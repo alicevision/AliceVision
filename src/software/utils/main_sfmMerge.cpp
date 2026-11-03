@@ -21,7 +21,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -214,15 +214,20 @@ bool simpleMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2,
  * Align using common landmarks
  * @param [in, out] sfmData1 the first sfmData
  * @param [in] sfmData2 the second sfmData
+ * @param [in] pairwiseMatches the matches between the views of both sfmData
+ * @param [in] randomSeed the seed of the random number generator used by the alignment
  * @return true if no duplicate found
 */
-bool fromLandmarksMerge(sfmData::SfMData & sfmData1, const sfmData::SfMData & sfmData2, const matching::PairwiseMatches & pairwiseMatches)
+bool fromLandmarksMerge(sfmData::SfMData & sfmData1,
+                        const sfmData::SfMData & sfmData2,
+                        const matching::PairwiseMatches & pairwiseMatches,
+                        const std::mt19937::result_type randomSeed)
 {
     double S;
     Vec3 t;
     Mat3 R;
     std::vector<std::pair<IndexT, IndexT>> inlierLandmarkPairs;
-    std::mt19937 randomNumberGenerator;
+    std::mt19937 randomNumberGenerator(randomSeed);
 
     if (!sfm::computeSimilarityFromCommonLandmarks(sfmData1, sfmData2, pairwiseMatches, randomNumberGenerator, &S, &R, &t, &inlierLandmarkPairs))
     {
@@ -324,6 +329,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::string> matchesFolders;
     std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
     bool ignoreDuplicates = false;
+    int randomSeed = std::mt19937::default_seed;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -344,7 +350,9 @@ int aliceVision_main(int argc, char** argv)
         ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
          feature::EImageDescriberType_informations().c_str())
         ("ignoreDuplicates", po::value<bool>(&ignoreDuplicates)->default_value(ignoreDuplicates),
-         "If false, an error will be thrown if a duplicate view or intrinsic is found. Only valid for simple_copy method.");
+         "If false, an error will be thrown if a duplicate view or intrinsic is found. Only valid for simple_copy method.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision sfmMerge");
@@ -354,6 +362,8 @@ int aliceVision_main(int argc, char** argv)
     {
         return EXIT_FAILURE;
     }
+
+    const std::mt19937::result_type seed = randomSeed == -1 ? std::random_device()() : randomSeed;
 
     if (sfmDataFilenames.empty())
     {
@@ -409,7 +419,7 @@ int aliceVision_main(int argc, char** argv)
                 return EXIT_FAILURE;
             }
 
-            if (!fromLandmarksMerge(outputSfmData, sfmData, pairwiseMatches))
+            if (!fromLandmarksMerge(outputSfmData, sfmData, pairwiseMatches, seed))
             {
                 return EXIT_FAILURE;
             }
