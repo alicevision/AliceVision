@@ -9,14 +9,16 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/dataio/FeedFactory.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
 
+#include <filesystem>
 #include <string>
 
 namespace aliceVision {
-namespace dataio {
+namespace sfmDataIO {
 
 class SfMDataFeed::FeederImpl
 {
@@ -164,13 +166,25 @@ bool SfMDataFeed::goToNextFrame() { return _sfmDataFeed->goToNextFrame(); }
 
 bool SfMDataFeed::isInit() const { return (_sfmDataFeed->isInit()); }
 
-bool SfMDataFeed::isSupported(const std::string& extension)
+bool SfMDataFeed::isSupported(const std::string& path)
 {
-    std::string ext = boost::to_lower_copy(extension);
+    namespace fs = std::filesystem;
+    if (!fs::is_regular_file(fs::path(path)))
+        return false;
+
+    const std::string ext = boost::to_lower_copy(fs::path(path).extension().string());
     return (ext == ".sfm" || ext == ".abc" || ext == ".json" || ext == ".usda");
 }
 
 SfMDataFeed::~SfMDataFeed() {}
 
-}  // namespace dataio
+void registerSfMDataFeed()
+{
+    dataio::FeedFactory::instance().registerFeed(
+      "sfmData", &SfMDataFeed::isSupported, [](const std::string& path, const std::string& calibPath) -> std::unique_ptr<dataio::IFeed> {
+          return std::make_unique<SfMDataFeed>(path, calibPath);
+      });
+}
+
+}  // namespace sfmDataIO
 }  // namespace aliceVision

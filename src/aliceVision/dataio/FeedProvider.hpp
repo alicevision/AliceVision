@@ -14,9 +14,16 @@
 namespace aliceVision {
 namespace dataio {
 
+/**
+ * @brief Open a feed using the first feed registered in FeedFactory that supports the given path.
+ * Feeds must have been registered beforehand (e.g. registerImageFeed(), registerVideoFeed(), sfmDataIO::registerSfMDataFeed()).
+ */
 class FeedProvider
 {
   public:
+    /**
+     * @throw std::invalid_argument if the path is empty or no registered feed supports it
+     */
     FeedProvider(const std::string& feedPath, const std::string& calibPath = "");
 
     /**
@@ -85,34 +92,10 @@ class FeedProvider
      */
     bool isInit() const;
 
-    /**
-     * @brief Return true if the feed is a video.
-     *
-     * @return True if the feed is a video.
-     */
-    bool isVideo() const { return _isVideo; }
-
-    /**
-     * @brief Return true if the feed is a live stream (e.g. a  webcam).
-     *
-     * @return True if the feed is correctly initialized.
-     */
-    bool isLiveFeed() const { return _isLiveFeed; }
-
-    /**
-     * @brief Return true if the feed is an SfMData one.
-     *
-     * @return True if the feed is an SfMData feed, false otherwise.
-     */
-    bool isSfMData() const { return _isSfmData; }
-
     virtual ~FeedProvider();
 
   private:
     std::unique_ptr<IFeed> _feeder;
-    bool _isVideo;
-    bool _isLiveFeed;
-    bool _isSfmData;
 };
 
 }  // namespace dataio
