@@ -13,11 +13,13 @@
 
 #include <filesystem>
 #include <boost/program_options.hpp>
+#include <cstdlib>
+#include <random>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -29,6 +31,7 @@ int aliceVision_main(int argc, char** argv)
     // command-line parameters
     std::string sfmOutputDataFilepath;  // output file path for SfM Data
     sfmDataIO::ESceneType sceneSample = sfmDataIO::ESceneType::SCENE_SPHERE;  // scene type to generate ('cube' or 'sphere')
+    int randomSeed = 1;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -37,17 +40,25 @@ int aliceVision_main(int argc, char** argv)
          "Output sfm file to generate.")
         ("scene,s", po::value<sfmDataIO::ESceneType>(&sceneSample)->default_value(sceneSample),
          "Scene sample to generate. ['cube', 'sphere']");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("This program is used to generate a sample scene and save it to a given file path.\n"
                     "AliceVision generateSampleScene");
     cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
     }
 
     sfmData::SfMData sfmData;
+    // Eigen's Random() used by the scene generation relies on std::rand
+    std::srand(randomSeed == -1 ? std::random_device()() : randomSeed);
     sfmDataIO::generateSampleScene(sfmData, sceneSample);
 
     ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilepath);
