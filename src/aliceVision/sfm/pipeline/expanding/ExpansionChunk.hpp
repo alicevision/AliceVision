@@ -123,6 +123,15 @@ public:
         _ignoreMultiviewOnPrior = flag;
     }
 
+    /**
+     * @brief Set the seed of the random number generators
+     * @param seed the seed value
+    */
+    void setRandomSeed(std::mt19937::result_type seed)
+    {
+        _randomSeed = seed;
+    }
+
 private:
 
     /**
@@ -161,6 +170,7 @@ private:
     size_t _weakResectionSize = 100;
     bool _enableDepthPrior = true;
     bool _ignoreMultiviewOnPrior = false;
+    std::mt19937::result_type _randomSeed = std::mt19937::default_seed;
 };
 
 } // namespace sfm

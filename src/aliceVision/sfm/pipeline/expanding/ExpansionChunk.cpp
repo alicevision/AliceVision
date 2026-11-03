@@ -84,7 +84,7 @@ EChunkResult ExpansionChunk::process(sfmData::SfMData & sfmData, const track::Tr
             IntermediateResectionInfo iri;
             iri.viewId = viewId;
 
-            std::mt19937 randomNumberGenerator;
+            std::mt19937 randomNumberGenerator(_randomSeed);
             if (!_resectionHandler->processView(sfmData, 
                                 tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                 randomNumberGenerator, viewId, 
@@ -199,7 +199,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
     {
         std::set<IndexT> evaluatedTracks;
         std::map<IndexT, sfmData::Landmark> outputLandmarks;
-        std::mt19937 randomNumberGenerator;
+        std::mt19937 randomNumberGenerator(_randomSeed);
         if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                     randomNumberGenerator, viewIds, 
                                     evaluatedTracks, outputLandmarks, false))
@@ -255,7 +255,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
     {
         std::set<IndexT> evaluatedTracks;
         std::map<IndexT, sfmData::Landmark> outputLandmarks;
-        std::mt19937 randomNumberGenerator;
+        std::mt19937 randomNumberGenerator(_randomSeed);
 
         if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                     randomNumberGenerator, viewIds, 

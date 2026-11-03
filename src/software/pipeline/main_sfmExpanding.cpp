@@ -27,10 +27,12 @@
 
 #include <boost/program_options.hpp>
 
+#include <random>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 7
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 8
 
 using namespace aliceVision;
 
@@ -135,7 +137,8 @@ int aliceVision_main(int argc, char** argv)
     ("rigMinNbCamerasForCalibration", po::value<int>(&minNbCamerasForRigCalibration)->default_value(minNbCamerasForRigCalibration),"Minimal number of cameras to start the calibration of the rig.")
     ("enableObservationsWeighting", po::value<bool>(&enableObservationsWeighting)->default_value(enableObservationsWeighting), "Enable observations weighting to reduce impact of regions with high point density.")
     ("lossParameter", po::value<double>(&lossParameter)->default_value(lossParameter), "Huber loss threshold used in bundle adjustment.")
-    ("meshFilename,m", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh file.");
+    ("meshFilename,m", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh file.")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed), "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     ;
      // clang-format on
 
@@ -263,6 +266,7 @@ int aliceVision_main(int argc, char** argv)
     expansionChunk->setIgnoreMultiviewOnPrior(ignoreMultiviewOnPrior);
     expansionChunk->setMinAngleTriangulation(minAngleForTriangulation);
     expansionChunk->setWeakResectionSize(weakResectionSize);
+    expansionChunk->setRandomSeed(randomSeed == -1 ? std::random_device()() : randomSeed);
 
     sfm::ExpansionPolicy::uptr expansionPolicy;
     {
