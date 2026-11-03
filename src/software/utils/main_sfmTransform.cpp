@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <random>
 #include <vector>
 #include <fstream>
 
@@ -35,7 +36,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 3
 
 using namespace aliceVision;
 
@@ -380,7 +381,7 @@ bool computeNewScaleFromDepths(const std::string & tracksFilename, sfmData::SfMD
 }
 
 
-bool parseLineUp(const std::string & lineUpFilename, const std::string & tracksFilename, const std::string & objectFilename, sfmData::SfMData& sfmData, double & S, Eigen::Matrix3d &  R, Eigen::Vector3d & t)
+bool parseLineUp(const std::string & lineUpFilename, const std::string & tracksFilename, const std::string & objectFilename, sfmData::SfMData& sfmData, std::mt19937 & randomNumberGenerator, double & S, Eigen::Matrix3d &  R, Eigen::Vector3d & t)
 {
     // Load new pose from file and the lined up frame id
     IndexT frameId = UndefinedIndexT;
@@ -489,7 +490,6 @@ bool parseLineUp(const std::string & lineUpFilename, const std::string & tracksF
     }
 
 
-    std::mt19937 randomNumberGenerator;
     if (!sfm::computeSimilarityFromPairs(landmarkCoordinates, meshCoordinates, randomNumberGenerator, &S, &R, &t))
     {
         return false;
@@ -518,6 +518,7 @@ int aliceVision_main(int argc, char** argv)
     std::string manualTransform;
     std::string lineUpFilename = "";
     std::string tracksFilename = "";
+    int randomSeed = std::mt19937::default_seed;
     std::string objectFilename = "";
 
     // clang-format off
@@ -570,7 +571,9 @@ int aliceVision_main(int argc, char** argv)
         ("objectFile", po::value<std::string>(&objectFilename)->default_value(objectFilename),
          "object file used as information for lineup.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-         "Path of the output SfMData file.");
+         "Path of the output SfMData file.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision sfmTransform");
@@ -580,6 +583,8 @@ int aliceVision_main(int argc, char** argv)
     {
         return EXIT_FAILURE;
     }
+
+    std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 
     if (alignmentMethod == EAlignmentMethod::FROM_MARKERS && markers.empty())
     {
@@ -734,7 +739,6 @@ int aliceVision_main(int argc, char** argv)
         }
         case EAlignmentMethod::FROM_GPS:
         {
-            std::mt19937 randomNumberGenerator;
             if (!sfm::computeNewCoordinateSystemFromGpsData(sfmData, randomNumberGenerator, S, R, t))
             {
                 ALICEVISION_LOG_ERROR("Failed to find a valid transformation from the GPS metadata.");
@@ -744,7 +748,7 @@ int aliceVision_main(int argc, char** argv)
         }
         case EAlignmentMethod::FROM_LINEUP:
         {
-            if (!parseLineUp(lineUpFilename, tracksFilename, objectFilename, sfmData, S, R, t))
+            if (!parseLineUp(lineUpFilename, tracksFilename, objectFilename, sfmData, randomNumberGenerator, S, R, t))
             {
                 ALICEVISION_LOG_ERROR("Failed to use given lineup");
                 return EXIT_FAILURE;
