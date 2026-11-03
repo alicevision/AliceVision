@@ -1,4 +1,4 @@
-__version__ = '1.0'
+__version__ = '1.1'
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -32,6 +32,15 @@ Estimate the camera intrinsics and extrinsincs on a set of checkerboard images.
             description="Checkerboard square width in mm",
             value=10.,
             range=(0.1, 100., 0.1),
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

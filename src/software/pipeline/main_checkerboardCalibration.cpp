@@ -38,12 +38,13 @@
 
 #include <fstream>
 #include <map>
+#include <random>
 #include <utility>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 namespace po = boost::program_options;
 using namespace aliceVision;
@@ -62,7 +63,10 @@ Eigen::Matrix<double, 1, 6> computeV(const Eigen::Matrix3d& H, int i, int j)
     return v;
 }
 
-bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData, std::map<IndexT, calibration::CheckerDetector>& boardsAllImages, const double squareSize)
+bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData,
+                             std::map<IndexT, calibration::CheckerDetector>& boardsAllImages,
+                             const double squareSize,
+                             const std::mt19937::result_type randomSeed)
 {
     if (boardsAllImages.size() < 2)
     {
@@ -166,7 +170,7 @@ bool estimateIntrinsicsPoses(sfmData::SfMData& sfmData, std::map<IndexT, calibra
             KernelType kernel(Mref, 1.0, 1.0, Mcur, cameraPinhole->w(), cameraPinhole->h(), false);  // configure as point to point error model.
 
             robustEstimation::Mat3Model model;
-            std::mt19937 generator;
+            std::mt19937 generator(randomSeed);
             std::vector<size_t> vec_inliers;
 
             robustEstimation::ACRANSAC(kernel, generator, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
@@ -445,6 +449,7 @@ int aliceVision_main(int argc, char* argv[])
     std::string sfmOutputDataFilepath;
 
     double squareSize = 10.;
+    int randomSeed = std::mt19937::default_seed;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -459,7 +464,9 @@ int aliceVision_main(int argc, char* argv[])
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
         ("squareSize,s", po::value<double>(&squareSize)->default_value(squareSize),
-         "Checkerboard square width in mm.");
+         "Checkerboard square width in mm.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("This program calibrates camera intrinsics and extrinsics.\n"
@@ -503,7 +510,8 @@ int aliceVision_main(int argc, char* argv[])
     }
 
     // Calibrate intrinsics and poses
-    if (!estimateIntrinsicsPoses(sfmData, boardsAllImages, squareSize))
+    const std::mt19937::result_type seed = randomSeed == -1 ? std::random_device()() : randomSeed;
+    if (!estimateIntrinsicsPoses(sfmData, boardsAllImages, squareSize, seed))
     {
         return EXIT_FAILURE;
     }
