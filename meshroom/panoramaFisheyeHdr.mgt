@@ -461,7 +461,7 @@
             }
         },
         "FeatureMatching": {
-            "2.1": {
+            "2.2": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -577,6 +577,10 @@
                         "type": "BoolParam",
                         "value": false
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -671,7 +675,7 @@
             }
         },
         "LdrToHdrCalibration": {
-            "3.2": {
+            "3.3": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -749,6 +753,10 @@
                     "maxTotalPoints": {
                         "type": "IntParam",
                         "value": 1000000
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -919,7 +927,7 @@
             }
         },
         "LdrToHdrSampling": {
-            "4.0": {
+            "4.1": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -995,6 +1003,10 @@
                     "debug": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1095,7 +1107,7 @@
             }
         },
         "PanoramaEstimation": {
-            "1.0": {
+            "1.1": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1200,6 +1212,10 @@
                         "type": "BoolParam",
                         "value": false
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -1226,7 +1242,7 @@
             }
         },
         "PanoramaInit": {
-            "2.0": {
+            "2.1": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1302,6 +1318,10 @@
                     "debugFisheyeCircleEstimation": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 1
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1648,7 +1668,7 @@
             }
         },
         "SfMTransform": {
-            "3.2": {
+            "3.3": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1808,6 +1828,10 @@
                         "type": "BoolParam",
                         "value": true
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -1877,7 +1901,7 @@
         },
         "FeatureMatching_1": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 1600,
                 0
@@ -1907,7 +1931,7 @@
         },
         "LdrToHdrCalibration_1": {
             "nodeType": "LdrToHdrCalibration",
-            "version": "3.2",
+            "version": "3.3",
             "position": [
                 600,
                 0
@@ -1941,7 +1965,7 @@
         },
         "LdrToHdrSampling_1": {
             "nodeType": "LdrToHdrSampling",
-            "version": "4.0",
+            "version": "4.1",
             "position": [
                 400,
                 0
@@ -1966,7 +1990,7 @@
         },
         "PanoramaEstimation_1": {
             "nodeType": "PanoramaEstimation",
-            "version": "1.0",
+            "version": "1.1",
             "position": [
                 1800,
                 0
@@ -1982,7 +2006,7 @@
         },
         "PanoramaInit_1": {
             "nodeType": "PanoramaInit",
-            "version": "2.0",
+            "version": "2.1",
             "position": [
                 1000,
                 0
@@ -2053,7 +2077,7 @@
         },
         "SfMTransform_1": {
             "nodeType": "SfMTransform",
-            "version": "3.2",
+            "version": "3.3",
             "position": [
                 2000,
                 0

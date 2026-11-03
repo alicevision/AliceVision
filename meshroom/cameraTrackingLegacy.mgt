@@ -1259,7 +1259,7 @@
             }
         },
         "FeatureMatching": {
-            "2.1": {
+            "2.2": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1374,6 +1374,10 @@
                     "exportDebugFiles": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1716,7 +1720,7 @@
             }
         },
         "KeyframeSelection": {
-            "5.0": {
+            "5.1": {
                 "inputs": {
                     "inputPaths": {
                         "type": "ListAttribute",
@@ -1846,6 +1850,10 @@
                             "halfFinite",
                             "auto"
                         ]
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": -1
                     },
                     "debugOptions": {
                         "type": "GroupAttribute",
@@ -2578,7 +2586,7 @@
             }
         },
         "SfMTriangulation": {
-            "1.0": {
+            "1.1": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2663,6 +2671,10 @@
                             ".usda"
                         ]
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -2689,7 +2701,7 @@
             }
         },
         "StructureFromMotion": {
-            "3.3": {
+            "3.4": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2872,6 +2884,10 @@
                     "logIntermediateSteps": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -3389,7 +3405,7 @@
         },
         "FeatureMatching_1": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 600,
                 0
@@ -3407,7 +3423,7 @@
         },
         "FeatureMatching_2": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 1200,
                 360
@@ -3424,7 +3440,7 @@
         },
         "FeatureMatching_3": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 1200,
                 200
@@ -3531,7 +3547,7 @@
         },
         "KeyframeSelection_1": {
             "nodeType": "KeyframeSelection",
-            "version": "5.0",
+            "version": "5.1",
             "position": [
                 200,
                 0
@@ -3648,7 +3664,7 @@
         },
         "SfMTriangulation_1": {
             "nodeType": "SfMTriangulation",
-            "version": "1.0",
+            "version": "1.1",
             "position": [
                 1800,
                 0
@@ -3666,7 +3682,7 @@
         },
         "StructureFromMotion_1": {
             "nodeType": "StructureFromMotion",
-            "version": "3.3",
+            "version": "3.4",
             "position": [
                 1400,
                 200
@@ -3695,7 +3711,7 @@
         },
         "StructureFromMotion_2": {
             "nodeType": "StructureFromMotion",
-            "version": "3.3",
+            "version": "3.4",
             "position": [
                 800,
                 0

@@ -1259,7 +1259,7 @@
             }
         },
         "FeatureMatching": {
-            "2.1": {
+            "2.2": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1374,6 +1374,10 @@
                     "exportDebugFiles": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1716,7 +1720,7 @@
             }
         },
         "KeyframeSelection": {
-            "5.0": {
+            "5.1": {
                 "inputs": {
                     "inputPaths": {
                         "type": "ListAttribute",
@@ -1846,6 +1850,10 @@
                             "halfFinite",
                             "auto"
                         ]
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": -1
                     },
                     "debugOptions": {
                         "type": "GroupAttribute",
@@ -2504,7 +2512,7 @@
             }
         },
         "StructureFromMotion": {
-            "3.3": {
+            "3.4": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2687,6 +2695,10 @@
                     "logIntermediateSteps": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -3232,7 +3244,7 @@
         },
         "FeatureMatching_1": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 600,
                 0
@@ -3250,7 +3262,7 @@
         },
         "FeatureMatching_2": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 1200,
                 360
@@ -3267,7 +3279,7 @@
         },
         "FeatureMatching_3": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 1200,
                 200
@@ -3285,7 +3297,7 @@
         },
         "FeatureMatching_4": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 0,
                 -500
@@ -3302,7 +3314,7 @@
         },
         "FeatureMatching_5": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 600,
                 -300
@@ -3445,7 +3457,7 @@
         },
         "KeyframeSelection_1": {
             "nodeType": "KeyframeSelection",
-            "version": "5.0",
+            "version": "5.1",
             "position": [
                 200,
                 0
@@ -3536,7 +3548,7 @@
         },
         "StructureFromMotion_1": {
             "nodeType": "StructureFromMotion",
-            "version": "3.3",
+            "version": "3.4",
             "position": [
                 1400,
                 200
@@ -3566,7 +3578,7 @@
         },
         "StructureFromMotion_2": {
             "nodeType": "StructureFromMotion",
-            "version": "3.3",
+            "version": "3.4",
             "position": [
                 800,
                 0
@@ -3593,7 +3605,7 @@
         },
         "StructureFromMotion_3": {
             "nodeType": "StructureFromMotion",
-            "version": "3.3",
+            "version": "3.4",
             "position": [
                 200,
                 -500

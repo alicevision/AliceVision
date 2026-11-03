@@ -825,7 +825,7 @@
             }
         },
         "FeatureMatching": {
-            "2.1": {
+            "2.2": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -940,6 +940,10 @@
                     "exportDebugFiles": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1284,7 +1288,7 @@
             }
         },
         "KeyframeSelection": {
-            "5.0": {
+            "5.1": {
                 "inputs": {
                     "inputPaths": {
                         "type": "ListAttribute",
@@ -1414,6 +1418,10 @@
                             "halfFinite",
                             "auto"
                         ]
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": -1
                     },
                     "debugOptions": {
                         "type": "GroupAttribute",
@@ -1665,7 +1673,7 @@
             }
         },
         "SfMBootStrapping": {
-            "4.2": {
+            "4.3": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1712,6 +1720,10 @@
                     "initialPairB": {
                         "type": "File",
                         "value": ""
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1767,7 +1779,7 @@
             }
         },
         "SfMExpanding": {
-            "2.7": {
+            "2.8": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1920,6 +1932,10 @@
                     "rigMinNbCamerasForCalibration": {
                         "type": "IntParam",
                         "value": 20
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -2649,7 +2665,7 @@
         },
         "FeatureMatching_1": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 770,
                 -48
@@ -2667,7 +2683,7 @@
         },
         "FeatureMatching_2": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 2270,
                 354
@@ -2684,7 +2700,7 @@
         },
         "FeatureMatching_3": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 2277,
                 188
@@ -2816,7 +2832,7 @@
         },
         "KeyframeSelection_1": {
             "nodeType": "KeyframeSelection",
-            "version": "5.0",
+            "version": "5.1",
             "position": [
                 140,
                 -48
@@ -2954,7 +2970,7 @@
         },
         "SfMBootStrapping_1": {
             "nodeType": "SfMBootStrapping",
-            "version": "4.2",
+            "version": "4.3",
             "position": [
                 1190,
                 -48
@@ -2986,7 +3002,7 @@
         },
         "SfMExpanding_2": {
             "nodeType": "SfMExpanding",
-            "version": "2.7",
+            "version": "2.8",
             "position": [
                 2907,
                 188
@@ -3011,7 +3027,7 @@
         },
         "SfMExpanding_3": {
             "nodeType": "SfMExpanding",
-            "version": "2.7",
+            "version": "2.8",
             "position": [
                 3117,
                 188
@@ -3038,7 +3054,7 @@
         },
         "SfMExpanding_4": {
             "nodeType": "SfMExpanding",
-            "version": "2.7",
+            "version": "2.8",
             "position": [
                 1400,
                 -48
