@@ -7,6 +7,27 @@ from meshroom.core.utils import VERBOSE_LEVEL
 class MeshResection(desc.CommandLineNode):
     
     category = "Utils"
+    documentation = """
+Estimate camera poses by manually aligning views on a reference mesh.
+
+For each view, the user places survey points: every survey point links a 2D location in the image
+to a 3D location picked on the reference mesh. The camera pose of the view is then computed by
+resection (robust PnP) from these 2D/3D correspondences.
+
+Requirements:
+ - Each survey point must be defined both in 2D (picked in the image) and in 3D (picked on the mesh).
+   Points defined in only one of the two spaces are ignored.
+ - Each view needs at least 4 valid survey points to be localized. Views with fewer points are skipped.
+ - The input SfMData must provide intrinsics with an approximate focal length for each view,
+   as the focal length is not estimated by this node.
+
+Outputs:
+ - An SfMData containing the estimated poses for the localized views, along with their survey points.
+ - A JSON file with the survey points, updated with the reprojection of each 3D point
+   in the localized views so the alignment error can be inspected.
+
+The node fails if no view could be localized.
+"""
 
     commandLine = 'aliceVision_meshResection {allParams}'
     size = desc.DynamicNodeSize('input')
