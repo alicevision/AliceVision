@@ -47,7 +47,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -520,7 +520,9 @@ int aliceVision_main(int argc, char** argv)
          "Pixel residual threshold for outlier removal after bundle adjustment.")
         ("minObservations", po::value<int>(&minObservations)->default_value(minObservations),
          "Minimum number of observations required to keep a landmark after outlier removal.")
-        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).");
+        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision Nodal SfM");
@@ -630,7 +632,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Loop until termination of the process using the current bootstrapped map
-    std::mt19937 randomNumberGenerator(randomSeed);
+    std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
     std::set<IndexT> visited;
     while (true)
     {

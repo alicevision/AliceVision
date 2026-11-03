@@ -1,4 +1,4 @@
-__version__ = "2.1"
+__version__ = "2.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -74,6 +74,15 @@ calibrated rotations but no translational component, suitable for panorama stitc
             description="Minimum number of observations required to keep a landmark after outlier removal.",
             value=2,
             range=(1, 10, 1),
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",
