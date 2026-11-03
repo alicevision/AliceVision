@@ -22,7 +22,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
@@ -122,6 +122,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outSfMDataFilename;
     std::string sfmDataReferenceFilename;
     bool applyScale = true;
+    int randomSeed = std::mt19937::default_seed;
     bool applyRotation = true;
     bool applyTranslation = true;
     EAlignmentMethod alignmentMethod = EAlignmentMethod::FROM_CAMERAS_VIEWID;
@@ -168,7 +169,9 @@ int aliceVision_main(int argc, char** argv)
         ("applyTranslation", po::value<bool>(&applyTranslation)->default_value(applyTranslation),
          "Apply translation transformation.")
         ("outputViewsAndPoses", po::value<std::string>(&outputViewsAndPosesFilepath),
-         "Path of the output SfMData file.");
+         "Path of the output SfMData file.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision sfmAlignment");
@@ -179,7 +182,7 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    std::mt19937 randomNumberGenerator;
+    std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 
     // Load input scene
     sfmData::SfMData sfmData;
