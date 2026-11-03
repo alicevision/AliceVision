@@ -27,11 +27,12 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <random>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 using namespace aliceVision::feature;
@@ -88,6 +89,7 @@ int aliceVision_main(int argc, char** argv)
     std::vector<std::string> matchesFolders;
     std::string filterA = "";
     std::string filterB = "";
+    int randomSeed = 1;
 
     // user optional parameters
 
@@ -110,7 +112,9 @@ int aliceVision_main(int argc, char** argv)
         ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
          EImageDescriberType_informations().c_str())
          ("filterA", po::value<std::string>(&filterA)->default_value(filterA), "Restrict one of the two views to be this.")
-         ("filterB", po::value<std::string>(&filterB)->default_value(filterB), "Restrict one of the two views to be this.");
+         ("filterB", po::value<std::string>(&filterB)->default_value(filterB), "Restrict one of the two views to be this.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision exportMatches");
@@ -120,6 +124,8 @@ int aliceVision_main(int argc, char** argv)
     {
         return EXIT_FAILURE;
     }
+
+    std::srand(randomSeed == -1 ? std::random_device()() : randomSeed);
 
     //Make sure we have somewhere to write images
     if (outputFolder.empty())
