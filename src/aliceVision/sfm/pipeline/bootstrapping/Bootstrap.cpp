@@ -92,7 +92,8 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
                     const IndexT referenceViewId,
                     const IndexT nextViewId,
                     const track::TracksMap& tracksMap, 
-                    const track::TracksPerView & tracksPerView)
+                    const track::TracksPerView & tracksPerView,
+                    const std::mt19937::result_type randomSeed)
 {
     //Select which view to resect
     IndexT viewId = referenceViewId;
@@ -104,7 +105,7 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
     //Assign new landmarks to sfmData to allow resection to work
     sfmData.getLandmarks() = landmarks;
 
-    std::mt19937 randomNumberGenerator;
+    std::mt19937 randomNumberGenerator(randomSeed);
     Eigen::Matrix4d pose;
     double threshold;
     size_t countInliers;
@@ -179,9 +180,10 @@ bool bootstrapDepth(sfmData::SfMData & sfmData,
                     const IndexT referenceViewId,
                     const IndexT nextViewId,
                     const track::TracksMap& tracksMap, 
-                    const track::TracksPerView & tracksPerView)
+                    const track::TracksPerView & tracksPerView,
+                    const std::mt19937::result_type randomSeed)
 {
-    std::mt19937 randomNumberGenerator;
+    std::mt19937 randomNumberGenerator(randomSeed);
 
     const sfmData::View & viewReference = sfmData.getView(referenceViewId);
     const sfmData::View & viewNext = sfmData.getView(nextViewId);
