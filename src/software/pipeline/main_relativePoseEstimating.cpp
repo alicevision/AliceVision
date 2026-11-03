@@ -48,7 +48,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -210,7 +210,9 @@ int aliceVision_main(int argc, char** argv)
         ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
          "Path(s) to one or more files which contain the list of image pairs to match.")
         ("rangeIteration", po::value<int>(&rangeIteration)->default_value(rangeIteration), "Chunk id.")
-        ("rangeBlocksCount", po::value<int>(&rangeBlocksCount)->default_value(rangeBlocksCount), "Chunk count.");
+        ("rangeBlocksCount", po::value<int>(&rangeBlocksCount)->default_value(rangeBlocksCount), "Chunk count.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision relativePoseEstimating");
@@ -289,6 +291,9 @@ int aliceVision_main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Nothing to compute in this chunk");
     }
 
+    // Drawn once so that all the pairs share the same base seed
+    const std::mt19937::result_type baseSeed = randomSeed == -1 ? std::random_device()() : randomSeed;
+
     ALICEVISION_LOG_INFO("A total of " << covisibility.size() << " pairs has to be processed.");
     ALICEVISION_LOG_INFO("Current chunk will analyze pairs from " << chunkStart << " to " << chunkEnd << ".");
 
@@ -320,7 +325,7 @@ int aliceVision_main(int argc, char** argv)
             IndexT nextImage = iterPairs->first.second;
 
             // Seed from the pair itself so the result does not depend on thread count or chunking
-            std::mt19937 randomNumberGenerator = createSeededGenerator(static_cast<std::mt19937::result_type>(randomSeed), refImage, nextImage);
+            std::mt19937 randomNumberGenerator = createSeededGenerator(baseSeed, refImage, nextImage);
 
             const sfmData::View& refView = sfmData.getView(refImage);
             const sfmData::View& nextView = sfmData.getView(nextImage);
