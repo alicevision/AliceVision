@@ -28,7 +28,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -125,6 +125,8 @@ class CircleDetector
     {}
 
     void setDebugDirectory(const std::string& dir) { _debugDirectory = dir; }
+
+    void setRandomSeed(std::default_random_engine::result_type seed) { _randomSeed = seed; }
 
     bool appendImage(const image::Image<float>& grayscale_input)
     {
@@ -328,7 +330,7 @@ class CircleDetector
         //
         // RANSAC
         //
-        std::default_random_engine generator;
+        std::default_random_engine generator(_randomSeed);
         std::uniform_int_distribution<int> distribution(0, selected_points.size() - 1);
 
         size_t maxcount = 0;
@@ -652,6 +654,7 @@ class CircleDetector
     std::vector<PyramidFloat> _pyramids;
     image::Image<float> _gradientImage;
     std::string _debugDirectory;
+    std::default_random_engine::result_type _randomSeed = std::default_random_engine::default_seed;
 
     double _center_x;
     double _center_y;
@@ -859,6 +862,7 @@ int main(int argc, char* argv[])
     double fisheyeRadius = 96.0;
     float additionalAngle = 0.0f;
     bool debugFisheyeCircleEstimation = false;
+    int randomSeed = std::default_random_engine::default_seed;
     bool buildContactSheet = false;
     int contactSheetItemMaxSize = 256;
 
@@ -899,7 +903,9 @@ int main(int argc, char* argv[])
         ("fisheyeRadius,r", po::value<double>(&fisheyeRadius),
          "Fisheye circle's radius (% of image shortest side).")
         ("debugFisheyeCircleEstimation", po::value<bool>(&debugFisheyeCircleEstimation),
-         "Debug fisheye circle detection.");
+         "Debug fisheye circle detection.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("Initialize information on the panorama pipeline's input images, specifically from a file "
@@ -1324,6 +1330,7 @@ int main(int argc, char* argv[])
                 camera::Equidistant & cam = dynamic_cast<camera::Equidistant&>(sfmData.getIntrinsic(intrinsicId));
 
                 CircleDetector detector(cam.w(), cam.h(), 256);
+                detector.setRandomSeed(randomSeed == -1 ? std::random_device()() : randomSeed);
                 if (debugFisheyeCircleEstimation)
                 {
                     fs::path path(sfmOutputDataFilepath);
