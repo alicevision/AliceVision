@@ -313,7 +313,7 @@ int aliceVision_main(int argc, char* argv[])
     mp.userParams.put("LargeScale.densifyNbFront", densifyNbFront);
     mp.userParams.put("LargeScale.densifyNbBack", densifyNbBack);
     mp.userParams.put("LargeScale.densifyScale", densifyScale);
-    mp.userParams.put("delaunaycut.seed", seed);
+    mp.userParams.put("delaunaycut.seed", seed == 0 ? -1 : static_cast<int>(seed));
     mp.userParams.put("delaunaycut.nPixelSizeBehind", nPixelSizeBehind);
     mp.userParams.put("delaunaycut.fullWeight", fullWeight);
     mp.userParams.put("delaunaycut.voteFilteringForWeaklySupportedSurfaces", voteFilteringForWeaklySupportedSurfaces);

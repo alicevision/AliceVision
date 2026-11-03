@@ -694,9 +694,9 @@ StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensio
     return voxels;
 }
 
-std::vector<int> createRandomArrayOfIntegers(const int size, const unsigned int seed)
+std::vector<int> createRandomArrayOfIntegers(const int size, const int seed)
 {
-    std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
+    std::mt19937 generator(seed == -1 ? std::random_device{}() : seed);
 
     std::vector<int> v(size);
     std::iota(v.begin(), v.end(), 0);
