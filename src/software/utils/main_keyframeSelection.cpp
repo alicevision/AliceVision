@@ -21,7 +21,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 5
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -59,6 +59,7 @@ int aliceVision_main(int argc, char** argv)
     bool renameKeyframes = false;        // name selected keyframes as consecutive frames instead of using their index as a name
     std::size_t minBlockSize = 10;       // minimum number of frames in a block for multi-threading
     std::vector<std::string> maskPaths;  // masks path list
+    int randomSeed = -1;                 // seed for the image unique IDs (-1 to use a random seed)
 
     // Debug options
     bool exportScores = false;               // export the sharpness and optical flow scores to a CSV file
@@ -112,7 +113,11 @@ int aliceVision_main(int argc, char** argv)
          "file.\n"
          "Supported extensions are: " + supportedExtensions).c_str())
         ("storageDataType", po::value<image::EStorageDataType>(&exrDataType)->default_value(exrDataType),
-         ("Storage data type for EXR output files: " + image::EStorageDataType_informations()).c_str());
+         ("Storage data type for EXR output files: " + image::EStorageDataType_informations()).c_str())
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.\n"
+         "It is used to generate the image unique IDs: a fixed seed may lead to identical view IDs between different "
+         "data sets.");
 
     po::options_description regularAlgorithmParams("Regular algorithm parameters");
     regularAlgorithmParams.add_options()
@@ -301,7 +306,7 @@ int aliceVision_main(int argc, char** argv)
         selector.processRegular();
 
     // Write selected keyframes
-    selector.writeSelection(brands, models, mmFocals, renameKeyframes, outputExtension, exrDataType);
+    selector.writeSelection(brands, models, mmFocals, renameKeyframes, outputExtension, exrDataType, randomSeed);
 
     // If debug options are set, export the scores as a CSV file and / or the motion vectors as images
     if (exportScores)

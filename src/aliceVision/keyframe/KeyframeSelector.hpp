@@ -129,6 +129,7 @@ class KeyframeSelector
      * @param[in] renameKeyframes name output keyframes as consecutive frames instead of using their index as a name
      * @param[in] outputExtension file extension of the written keyframes
      * @param[in] storageDataType EXR storage data type for the output keyframes (ignored when the extension is not EXR)
+     * @param[in] randomSeed seed used to generate the image unique IDs (-1 to use a random seed)
      * @return true if all the selected keyframes were successfully written, false otherwise
      */
     bool writeSelection(const std::vector<std::string>& brands,
@@ -136,7 +137,8 @@ class KeyframeSelector
                         const std::vector<float>& mmFocals,
                         const bool renameKeyframes,
                         const std::string& outputExtension,
-                        const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined);
+                        const image::EStorageDataType storageDataType = image::EStorageDataType::Undefined,
+                        const int randomSeed = -1);
 
     /**
      * @brief Export the computed sharpness and optical flow scores to a CSV file

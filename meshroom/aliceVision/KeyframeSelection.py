@@ -1,4 +1,4 @@
-__version__ = "5.0"
+__version__ = "5.1"
 
 from meshroom.core import desc
 from meshroom.core.desc.validators import success, error
@@ -327,6 +327,17 @@ class KeyframeSelection(desc.AVCommandLineNode):
             values=EXR_STORAGE_DATA_TYPE,
             value="float",
             enabled=lambda node: node.outputExtension.value == "exr",
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.\n"
+                        "It is used to generate the image unique IDs: a fixed seed may lead to identical view IDs "
+                        "between different data sets.",
+            value=-1,
+            range=(-1, 10000, 1),
             advanced=True,
         ),
         desc.GroupAttribute(
