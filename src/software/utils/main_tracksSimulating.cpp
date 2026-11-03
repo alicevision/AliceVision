@@ -18,11 +18,12 @@
 #include <boost/program_options.hpp>
 
 #include <cstdlib>
+#include <random>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -37,6 +38,7 @@ int aliceVision_main(int argc, char** argv)
     double outlierRatio = 0.0;
     double outlierEpipolarRatio = 0.2;
     bool randomNoiseVariancePerView = false;
+    int randomSeed = std::mt19937::default_seed;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -51,7 +53,9 @@ int aliceVision_main(int argc, char** argv)
         ("sigmaNoise", po::value<double>(&sigmaNoise)->default_value(sigmaNoise))
         ("outlierRatio", po::value<double>(&outlierRatio)->default_value(outlierRatio))
         ("outlierEpipolarRatio", po::value<double>(&outlierEpipolarRatio)->default_value(outlierEpipolarRatio))
-        ("randomNoiseVariancePerView", po::value<bool>(&randomNoiseVariancePerView)->default_value(randomNoiseVariancePerView), "Use different noise variance per view.");
+        ("randomNoiseVariancePerView", po::value<bool>(&randomNoiseVariancePerView)->default_value(randomNoiseVariancePerView), "Use different noise variance per view.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
 
     // clang-format on
 
@@ -77,7 +81,8 @@ int aliceVision_main(int argc, char** argv)
     }
 
     track::TracksMap mapTracks;
-    track::simulateTracks(sfmData, sigmaNoise, outlierRatio, outlierEpipolarRatio, randomNoiseVariancePerView, mapTracks);
+    track::simulateTracks(sfmData, sigmaNoise, outlierRatio, outlierEpipolarRatio, randomNoiseVariancePerView, mapTracks,
+                         randomSeed == -1 ? std::random_device()() : randomSeed);
 
      // write the json file
     ALICEVISION_LOG_INFO("Export to file");
