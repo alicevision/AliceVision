@@ -21,7 +21,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -35,6 +35,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputSfmDataFilename;
     std::string outputDirectory;
     std::string masks;
+    int randomSeed = std::mt19937::default_seed;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -47,10 +48,16 @@ int aliceVision_main(int argc, char** argv)
          "Input Masks.")
         ("outputDirectory", po::value<std::string>(&outputDirectory)->required(),
          "Output directory with modified images.");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision maskRandomApplying");
     cmdline.add(requiredParams);
+    cmdline.add(optionalParams);
     if (!cmdline.execute(argc, argv))
     {
         return EXIT_FAILURE;
@@ -90,7 +97,7 @@ int aliceVision_main(int argc, char** argv)
         viewIds.push_back(idview);
     }
 
-    std::mt19937 gen;
+    std::mt19937 gen(randomSeed == -1 ? std::random_device()() : randomSeed);
     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
     
     #pragma omp parallel for schedule(dynamic)
