@@ -24,17 +24,22 @@
 
 #include <boost/program_options.hpp>
 #include <fstream>
+#include <random>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-bool computeSubMesh(const std::string& pathSfmData, std::string& outputFile, const Eigen::Vector3d& bbMin, const Eigen::Vector3d& bbMax)
+bool computeSubMesh(const std::string& pathSfmData,
+                    std::string& outputFile,
+                    const Eigen::Vector3d& bbMin,
+                    const Eigen::Vector3d& bbMax,
+                    const int randomSeed)
 {
     // initialization
     StaticVector<StaticVector<int>> ptsCams;
@@ -56,7 +61,7 @@ bool computeSubMesh(const std::string& pathSfmData, std::string& outputFile, con
     mp.userParams.put("LargeScale.densifyNbFront", 0);
     mp.userParams.put("LargeScale.densifyNbBack", 0);
     mp.userParams.put("LargeScale.densifyScale", 1.0);
-    mp.userParams.put("delaunaycut.seed", 0);
+    mp.userParams.put("delaunaycut.seed", randomSeed);
     mp.userParams.put("delaunaycut.nPixelSizeBehind", 4);
     mp.userParams.put("delaunaycut.fullWeight", 1.0);
     mp.userParams.put("delaunaycut.voteFilteringForWeaklySupportedSurfaces", true);
@@ -147,6 +152,7 @@ int aliceVision_main(int argc, char* argv[])
     int rangeStart = -1;
     int rangeSize = 1;
     int rangeEnd = 1;
+    int randomSeed = -1;
 
     std::string jsonFilename = "";
     std::string outputDirectory = "";
@@ -171,7 +177,9 @@ int aliceVision_main(int argc, char* argv[])
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
          "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-         "Range size.");
+         "Range size.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision lidarMeshing");
@@ -224,7 +232,7 @@ int aliceVision_main(int argc, char* argv[])
         std::string ss = outputDirectory + "/subobj_" + std::to_string(idSub) + ".obj";
 
         ALICEVISION_LOG_INFO("Computing sub mesh " << idSub + 1 << " / " << setSize);
-        if (!computeSubMesh(input.sfmPath, ss, input.bbMin, input.bbMax))
+        if (!computeSubMesh(input.sfmPath, ss, input.bbMin, input.bbMax, randomSeed))
         {
             ALICEVISION_LOG_ERROR("Error computing sub mesh");
             return EXIT_FAILURE;
