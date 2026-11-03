@@ -478,8 +478,8 @@ bool Sampling::extractSamplesFromImages(std::vector<ImageSample>& out_samples,
         }
     }
 
-    // Fixed seed so the selected samples are repeatable
-    std::mt19937 rng(std::mt19937::default_seed);
+    // Seeded so the selected samples are repeatable
+    std::mt19937 rng(params.randomSeed);
 
     for (auto& item : counters)
     {
@@ -536,8 +536,8 @@ void Sampling::analyzeSource(std::vector<ImageSample>& samples, int channelQuant
         }
     }
 
-    // Fixed seed so the selected samples are repeatable
-    std::mt19937 rng(std::mt19937::default_seed);
+    // Seeded so the selected samples are repeatable
+    std::mt19937 rng(_randomSeed);
 
     for (auto& item : _positions)
     {
@@ -558,8 +558,8 @@ void Sampling::filter(size_t maxTotalPoints)
     size_t limitPerGroup = 510;
     size_t total_points = maxTotalPoints + 1;
 
-    // Fixed seed so the selected samples are repeatable
-    std::mt19937 rng(std::mt19937::default_seed);
+    // Seeded so the selected samples are repeatable
+    std::mt19937 rng(_randomSeed);
 
     while (total_points > maxTotalPoints)
     {

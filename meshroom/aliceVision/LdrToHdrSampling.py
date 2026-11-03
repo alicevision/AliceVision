@@ -1,4 +1,4 @@
-__version__ = "4.0"
+__version__ = "4.1"
 
 import json
 
@@ -151,6 +151,15 @@ across the bracketed frames is essential for an accurate CRF estimation.
             value=False,
             invalidate=False,
             enabled=lambda node: node.byPass.enabled and not node.byPass.value,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

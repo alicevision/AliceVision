@@ -40,7 +40,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 3
 
 using namespace aliceVision;
 using namespace aliceVision::hdr;
@@ -152,6 +152,7 @@ int aliceVision_main(int argc, char** argv)
     int channelQuantizationPower = 10;
     image::EImageColorSpace workingColorSpace = image::EImageColorSpace::AUTO;
     std::size_t maxTotalPoints = 1000000;
+    int randomSeed = std::mt19937::default_seed;
     bool byPass = false;
 
     // Command line parameters
@@ -186,7 +187,9 @@ int aliceVision_main(int argc, char** argv)
          ("Working color space: " + image::EImageColorSpace_informations()).c_str())
         ("maxTotalPoints", po::value<std::size_t>(&maxTotalPoints)->default_value(maxTotalPoints),
          "Maximum number of points used from the sampling. This ensures that the number of pixels values extracted by "
-         "the sampling can be managed by the calibration step (in terms of computation time and memory usage).");
+         "the sampling can be managed by the calibration step (in terms of computation time and memory usage).")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("This program recovers the Camera Response Function (CRF) from samples extracted from LDR images with multi-bracketing.\n"
@@ -321,6 +324,7 @@ int aliceVision_main(int argc, char** argv)
 
             std::size_t group_pos = 0;
             hdr::Sampling sampling;
+            sampling.setRandomSeed(randomSeed == -1 ? std::random_device()() : randomSeed);
 
             ALICEVISION_LOG_INFO("Analyzing samples for each group.");
             for (auto& group : groupedViews)
