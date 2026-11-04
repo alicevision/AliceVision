@@ -1,10 +1,12 @@
 #the port uses inside the CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS, which is discouraged by vcpkg.
 
+# Note: AliceVision fork = upstream f9caaf6 + "fix random seed" (KDTreeIndex honours the "random_seed" index param),
+# same source as DEP_FLANN_GIT_TAG in src/cmake/DependenciesVersions.cmake
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO flann-lib/flann
-    REF  f9caaf609d8b8cb2b7104a85cf59eb92c275a25d
-    SHA512 14cd7d3249109ce66c43258f8b9d158efa3b57f654708e76751290eba25e2cb7fc8044a1d882c6b24d0cda1a8b206709acdb5338086ca1f2d60fef35f0fa85be
+    REPO alicevision/flann
+    REF  46e72429ef60ce9c413fa926ac7729f8dee96395
+    SHA512 7316b2d4649a1ff417dab7cf5471fbb6cd73f987b8171762ccb328996836b4ec460d27c65c15ec531265cf1bc76407a95c8c4c848a88e0b36ed52d5e261ec542
     HEAD_REF master
     PATCHES
         fix-dependency-hdf5.patch
