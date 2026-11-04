@@ -218,7 +218,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     //If lcp exists and is valid
     camera::EINTRINSIC lcpIntrinsicType = camera::EINTRINSIC::UNKNOWN;
     camera::EDISTORTION lcpDistortionType = camera::EDISTORTION::DISTORTION_NONE;
-    if (!(lensParam != nullptr || lensParam->isEmpty()))
+    if (lensParam != nullptr && !lensParam->isEmpty())
     {
         lcpIntrinsicType = camera::EINTRINSIC::PINHOLE_CAMERA;
 
