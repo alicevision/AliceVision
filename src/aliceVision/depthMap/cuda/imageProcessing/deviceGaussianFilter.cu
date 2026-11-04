@@ -13,6 +13,9 @@
 
 #include <cuda_runtime.h>
 
+#include <mutex>
+#include <set>
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -20,6 +23,7 @@ namespace depthMap {
 * global / constant data structures
 *********************************************************************************/
 std::set<int>                 d_gaussianArrayInitialized;
+std::mutex                    d_gaussianArrayInitializedMutex; // one thread per GPU may initialize concurrently
 __device__ __constant__ int   d_gaussianArrayOffset[MAX_CONSTANT_GAUSS_SCALES];
 __device__ __constant__ float d_gaussianArray[MAX_CONSTANT_GAUSS_MEM_SIZE];
 
@@ -204,6 +208,8 @@ __host__ void cuda_createConstantGaussianArray(int cudaDeviceId, int scales) // 
     }
 
     cudaError_t err;
+
+    std::lock_guard<std::mutex> lock(d_gaussianArrayInitializedMutex);
 
     if(d_gaussianArrayInitialized.find(cudaDeviceId) != d_gaussianArrayInitialized.end())
         return;
