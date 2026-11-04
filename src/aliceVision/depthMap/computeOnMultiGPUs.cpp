@@ -27,6 +27,15 @@ void computeOnMultiGPUs(const std::vector<int>& cams, IGPUJob& gpujob, int nbGPU
         nbThreads = std::min(nbThreads, nbGPUsToUse);
     }
 
+    if (cams.empty())
+        return;
+
+    if (nbThreads < 1)
+        ALICEVISION_THROW_ERROR("No CUDA device available (number of GPU devices: " << nbGPUDevices << ").");
+
+    // do not use more GPUs than cameras, otherwise some threads would get an empty camera list
+    nbThreads = std::min(nbThreads, static_cast<int>(cams.size()));
+
     if (nbThreads == 1)
     {
         // the GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
