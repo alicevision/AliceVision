@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v1
 
       - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1.2.24
         with:
           # Isolate writes per ref (branch/PR) to reduce cross-PR cache contamination.
           key: ccache-${{ runner.os }}-rocky9-cuda12.8.0-${{ github.ref_name }}-${{ hashFiles('CMakeLists.txt', 'src/CMakeLists.txt', 'vcpkg.json', 'vcpkg-configuration.json', '.github/workflows/build-linux.yml') }}
@@ -98,8 +98,8 @@ jobs:
           git clone --branch develop https://github.com/alicevision/Meshroom.git
           git clone --branch main https://github.com/alicevision/dataset_panoramaFisheyeHdr.git
           cd Meshroom/
-          meshroom_avBranch=$(git ls-remote --heads https://github.com/alicevision/Meshroom.git $GITHUB_HEAD_REF | cut -f 1)
-          if [ $meshroom_avBranch != "" ]; then git checkout $meshroom_avBranch; echo "Use Meshroom/$GITHUB_HEAD_REF"; fi
+          meshroom_avBranch=$(git ls-remote --heads https://github.com/alicevision/Meshroom.git "refs/heads/$GITHUB_HEAD_REF" | cut -f 1)
+          if [ -n "$meshroom_avBranch" ]; then git checkout "$meshroom_avBranch"; echo "Use Meshroom/$GITHUB_HEAD_REF"; fi
 
           # Set environment variables specific to Meshroom
           export MESHROOM_INSTALL_DIR=$PWD
@@ -135,29 +135,29 @@ jobs:
           # Clone and checkout mrSegmentation, align the branch if necessary
           git clone https://github.com/meshroomHub/mrSegmentation.git
           cd mrSegmentation
-          mrSegmentation_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrSegmentation.git $GITHUB_HEAD_REF | cut -f 1)
-          if [ $mrSegmentation_avBranch != "" ]; then git checkout $mrSegmentation_avBranch; echo "Use mrSegmentation/$GITHUB_HEAD_REF"; fi
+          mrSegmentation_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrSegmentation.git "refs/heads/$GITHUB_HEAD_REF" | cut -f 1)
+          if [ -n "$mrSegmentation_avBranch" ]; then git checkout "$mrSegmentation_avBranch"; echo "Use mrSegmentation/$GITHUB_HEAD_REF"; fi
           cd ..
 
           # Clone and checkout mrBlenderSfmRenderer, align the branch if necessary
           git clone https://github.com/meshroomHub/mrBlenderSfmRenderer.git
           cd mrBlenderSfmRenderer
-          mrBlenderSfmRenderer_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrBlenderSfmRenderer.git $GITHUB_HEAD_REF | cut -f 1)
-          if [ $mrBlenderSfmRenderer_avBranch != "" ]; then git checkout $mrBlenderSfmRenderer_avBranch; echo "Use mrBlenderSfmRenderer/$GITHUB_HEAD_REF"; fi
+          mrBlenderSfmRenderer_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrBlenderSfmRenderer.git "refs/heads/$GITHUB_HEAD_REF" | cut -f 1)
+          if [ -n "$mrBlenderSfmRenderer_avBranch" ]; then git checkout "$mrBlenderSfmRenderer_avBranch"; echo "Use mrBlenderSfmRenderer/$GITHUB_HEAD_REF"; fi
           cd ..
 
           # Clone and checkout mrIntrinsicImageDecomposition, align the branch if necessary
           git clone https://github.com/meshroomHub/mrIntrinsicImageDecomposition.git
           cd mrIntrinsicImageDecomposition
-          mrIntrinsicImageDecomposition_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrIntrinsicImageDecomposition.git $GITHUB_HEAD_REF | cut -f 1)
-          if [ $mrIntrinsicImageDecomposition_avBranch != "" ]; then git checkout $mrIntrinsicImageDecomposition_avBranch; echo "Use mrIntrinsicImageDecomposition/$GITHUB_HEAD_REF"; fi
+          mrIntrinsicImageDecomposition_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrIntrinsicImageDecomposition.git "refs/heads/$GITHUB_HEAD_REF" | cut -f 1)
+          if [ -n "$mrIntrinsicImageDecomposition_avBranch" ]; then git checkout "$mrIntrinsicImageDecomposition_avBranch"; echo "Use mrIntrinsicImageDecomposition/$GITHUB_HEAD_REF"; fi
           cd ..
 
           # Clone and checkout mrRoma, align the branch if necessary
           git clone https://github.com/meshroomHub/mrRoma.git
           cd mrRoma
-          mrRoma_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrRoma $GITHUB_HEAD_REF | cut -f 1)
-          if [ $mrRoma_avBranch != "" ]; then git checkout $mrRoma_avBranch; echo "Use mrRoma/$GITHUB_HEAD_REF"; fi
+          mrRoma_avBranch=$(git ls-remote --heads https://github.com/meshroomHub/mrRoma "refs/heads/$GITHUB_HEAD_REF" | cut -f 1)
+          if [ -n "$mrRoma_avBranch" ]; then git checkout "$mrRoma_avBranch"; echo "Use mrRoma/$GITHUB_HEAD_REF"; fi
           cd ../Meshroom/
 
           export MESHROOM_INSTALL_DIR=$PWD
@@ -213,7 +213,7 @@ jobs:
  
       - name: Upload archive artifact
         if: github.workflow == 'Nightly'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-package
           path: ${{ steps.archive.outputs.filename }}

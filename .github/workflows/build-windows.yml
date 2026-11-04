@@ -32,7 +32,7 @@ jobs:
 
       # Clone the repository together with all submodules (vendored third-party code).
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             submodules: recursive
       
@@ -53,7 +53,7 @@ jobs:
       # Restore the prebuilt vcpkg binary tree; skips the multi-GB download when the key matches.
       - name: Cache vcpkg prebuilt binaries
         id: cache-vcpkg
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.dependenciesDir }}\x64-windows-release
           key: vcpkg-${{ runner.os }}-${{ env.VCPKG_VERSION }}
@@ -61,7 +61,7 @@ jobs:
       # Restore the full CUDA Toolkit installation to avoid re-installing it on every run.
       - name: Cache CUDA Toolkit
         id: cache-cuda
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2
@@ -72,7 +72,7 @@ jobs:
       # Install sccache with a local cache dir, saved as a single GHA cache entry per run
       # (the sccache GHA backend creates one cache entry per object file).
       - name: Setup sccache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1.2.24
         with:
           variant: sccache
           # Isolate writes per ref (branch/PR) to reduce cross-PR cache contamination.
@@ -173,39 +173,36 @@ jobs:
 
       # ------ BUILD ----- 
 
-      # CMake configure + compile the full AliceVision project and install it to ALICEVISION_ROOT.
+      # CMake configure the full AliceVision project.
+      - name: Configure
+        run: |
+          cmake -S . -B "${{ env.buildDir }}" -G "Ninja Multi-Config" `
+            -DCMAKE_TOOLCHAIN_FILE=${{ env.dependenciesDir }}\x64-windows-release\scripts\buildsystems\vcpkg.cmake `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-release `
+            -DBUILD_SHARED_LIBS=ON `
+            -DTARGET_ARCHITECTURE=core `
+            -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }} `
+            -DALICEVISION_BUNDLE_PREFIX:PATH=${{ env.ALICEVISION_BUNDLE }} `
+            -DALICEVISION_BUILD_TESTS=ON `
+            -DALICEVISION_USE_OPENCV=ON `
+            -DALICEVISION_USE_CUDA=ON `
+            -DALICEVISION_USE_CCTAG=ON `
+            -DALICEVISION_USE_POPSIFT=ON `
+            -DALICEVISION_USE_ALEMBIC=ON `
+            -DALICEVISION_USE_USD=ON `
+            -DALICEVISION_BUILD_SWIG_BINDING=ON `
+            -DBOOST_NO_CXX11=ON `
+            -DVCPKG_MANIFEST_MODE=OFF `
+            -DPython3_EXECUTABLE=${{ env.PYTHON_BUILD_VENV }}\Scripts\python.exe `
+            -DALICEVISION_BUNDLE_PYTHON_ROOT=${{ env.VCPKG_PYTHON_ROOT }} `
+            -DCMAKE_CUDA_COMPILER="${{ env.CUDACXX }}" `
+            -DCUDAToolkit_ROOT="${{ env.CUDA_PATH }}" `
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+
+      # Compile the full AliceVision project and install it to ALICEVISION_ROOT.
       - name: Build
-        uses: lukka/run-cmake@v3
-        with:
-          cmakeBuildType: Release
-          buildWithCMake: true
-          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          buildDirectory: ${{ env.buildDir }}
-          buildWithCMakeArgs: '--config Release --target install --parallel'
-          cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.dependenciesDir }}\x64-windows-release\scripts\buildsystems\vcpkg.cmake
-                            -DVCPKG_TARGET_TRIPLET=x64-windows-release
-                            -G "Ninja Multi-Config"
-                            -DBUILD_SHARED_LIBS=ON
-                            -DTARGET_ARCHITECTURE=core
-                            -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }}
-                            -DALICEVISION_BUNDLE_PREFIX:PATH=${{ env.ALICEVISION_BUNDLE }}
-                            -DALICEVISION_BUILD_TESTS=ON
-                            -DALICEVISION_USE_OPENCV=ON
-                            -DALICEVISION_USE_CUDA=ON
-                            -DALICEVISION_USE_CCTAG=ON
-                            -DALICEVISION_USE_POPSIFT=ON
-                            -DALICEVISION_USE_ALEMBIC=ON
-                            -DALICEVISION_USE_USD=ON
-                            -DALICEVISION_BUILD_SWIG_BINDING=ON
-                            -DBOOST_NO_CXX11=ON
-                            -DVCPKG_MANIFEST_MODE=OFF
-                            -DPython3_EXECUTABLE=${{ env.PYTHON_BUILD_VENV }}\Scripts\python.exe
-                            -DALICEVISION_BUNDLE_PYTHON_ROOT=${{ env.VCPKG_PYTHON_ROOT }}
-                            -DCMAKE_CUDA_COMPILER="${{ env.CUDACXX }}"
-                            -DCUDAToolkit_ROOT="${{ env.CUDA_PATH }}"
-                            -DCMAKE_C_COMPILER_LAUNCHER=sccache
-                            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+        run: cmake --build "${{ env.buildDir }}" --config Release --target install --parallel
 
       # Assemble a self-contained redistributable bundle with all runtime DLL dependencies.
       - name: Bundle
@@ -249,7 +246,7 @@ jobs:
       # Upload the zip so nightly.yml can attach it to the GitHub release.
       - name: Upload archive artifact
         if: github.workflow == 'Nightly'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-package
           path: ${{ steps.archive.outputs.filename }}
