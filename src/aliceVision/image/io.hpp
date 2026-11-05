@@ -27,6 +27,7 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/color.h>
 
+#include <cstddef>
 #include <string>
 
 namespace aliceVision {
@@ -406,6 +407,25 @@ void readImage(const std::string& path, Image<RGBAfColor>& image, const ImageRea
 void readImage(const std::string& path, Image<RGBAColor>& image, const ImageReadOptions& imageReadOptions);
 void readImage(const std::string& path, Image<RGBfColor>& image, const ImageReadOptions& imageReadOptions);
 void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions& imageReadOptions);
+
+/**
+ * @brief Read an image from an encoded image file held in memory (PNG, JPEG, EXR...).
+ * @param[in] data Encoded file bytes. They are only read during the call.
+ * @param[in] size Number of bytes in data.
+ * @param[in] formatHint File extension identifying the format, without the dot (e.g. "png", "exr").
+ * @param[out] image Decoded image.
+ * @param[in] imageReadOptions Same options as readImage. Camera raw images are not supported.
+ * @note The default input color space follows readImage: linear for "exr", sRGB otherwise, unless the
+ *       metadata says otherwise.
+ * @throws std::exception when the data cannot be decoded.
+ */
+void readImageFromMemory(const void* data, std::size_t size, const std::string& formatHint, Image<float>& image, const ImageReadOptions& imageReadOptions);
+void readImageFromMemory(const void* data, std::size_t size, const std::string& formatHint, Image<unsigned char>& image, const ImageReadOptions& imageReadOptions);
+void readImageFromMemory(const void* data, std::size_t size, const std::string& formatHint, Image<IndexT>& image, const ImageReadOptions& imageReadOptions);
+void readImageFromMemory(const void* data, std::size_t size, const std::string& formatHint, Image<RGBAfColor>& image, const ImageReadOptions& imageReadOptions);
+void readImageFromMemory(const void* data, std::size_t size, const std::string& formatHint, Image<RGBAColor>& image, const ImageReadOptions& imageReadOptions);
+void readImageFromMemory(const void* data, std::size_t size, const std::string& formatHint, Image<RGBfColor>& image, const ImageReadOptions& imageReadOptions);
+void readImageFromMemory(const void* data, std::size_t size, const std::string& formatHint, Image<RGBColor>& image, const ImageReadOptions& imageReadOptions);
 
 /**
  * @brief read an image with a given path and buffer without any processing such as color conversion

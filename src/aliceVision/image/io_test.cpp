@@ -15,6 +15,8 @@
 #include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <cstdio>
+#include <fstream>
+#include <iterator>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -270,4 +272,69 @@ BOOST_AUTO_TEST_CASE(read_write_from_grayscale_to_rgb)
         BOOST_CHECK_EQUAL(read_image(1, 0).b(), imageRGB(1, 0).b());
         remove(filename.c_str());
     }
+}
+
+/**
+ * @brief Load the whole content of a file into a byte buffer.
+ * @param[in] filename File to read.
+ * @return The file bytes, empty if the file cannot be read.
+ */
+static std::vector<char> readFileBytes(const std::string& filename)
+{
+    std::ifstream stream(filename, std::ios::binary);
+    return std::vector<char>(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
+}
+
+/**
+ * @brief Check that readImageFromMemory decodes a file exactly as readImage does.
+ * @param[in] filename Image file.
+ * @param[in] formatHint Extension passed to readImageFromMemory.
+ * @param[in] colorSpace Working color space used for both reads.
+ */
+template<typename T>
+static void checkReadFromMemoryMatchesFile(const std::string& filename, const std::string& formatHint, image::EImageColorSpace colorSpace)
+{
+    const std::vector<char> bytes = readFileBytes(filename);
+    BOOST_REQUIRE(!bytes.empty());
+
+    Image<T> fromFile;
+    Image<T> fromMemory;
+    BOOST_REQUIRE_NO_THROW(readImage(filename, fromFile, colorSpace));
+    BOOST_REQUIRE_NO_THROW(readImageFromMemory(bytes.data(), bytes.size(), formatHint, fromMemory, colorSpace));
+
+    BOOST_REQUIRE_EQUAL(fromMemory.width(), fromFile.width());
+    BOOST_REQUIRE_EQUAL(fromMemory.height(), fromFile.height());
+    for (int y = 0; y < fromFile.height(); ++y)
+    {
+        for (int x = 0; x < fromFile.width(); ++x)
+        {
+            BOOST_CHECK(fromMemory(y, x) == fromFile(y, x));
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(read_from_memory_png)
+{
+    const std::string filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.png";
+    checkReadFromMemoryMatchesFile<RGBAColor>(filename, "png", image::EImageColorSpace::NO_CONVERSION);
+    checkReadFromMemoryMatchesFile<RGBColor>(filename, "png", image::EImageColorSpace::NO_CONVERSION);
+    checkReadFromMemoryMatchesFile<unsigned char>(filename, "png", image::EImageColorSpace::NO_CONVERSION);
+
+    const std::string lena = string(THIS_SOURCE_DIR) + "/image_test/lena.png";
+    checkReadFromMemoryMatchesFile<RGBAColor>(lena, "png", image::EImageColorSpace::SRGB);
+    checkReadFromMemoryMatchesFile<RGBfColor>(lena, "png", image::EImageColorSpace::LINEAR);
+}
+
+BOOST_AUTO_TEST_CASE(read_from_memory_jpg)
+{
+    const std::string filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.jpg";
+    checkReadFromMemoryMatchesFile<RGBColor>(filename, "jpg", image::EImageColorSpace::NO_CONVERSION);
+}
+
+BOOST_AUTO_TEST_CASE(read_from_memory_invalid)
+{
+    const std::string garbage = "this is not an image";
+    Image<RGBAColor> image;
+    BOOST_CHECK_THROW(readImageFromMemory(garbage.data(), garbage.size(), "png", image, image::EImageColorSpace::SRGB), std::exception);
+    BOOST_CHECK_THROW(readImageFromMemory(nullptr, 0, "png", image, image::EImageColorSpace::SRGB), std::exception);
 }
