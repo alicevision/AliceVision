@@ -72,6 +72,10 @@ set(DEP_LIBRAW_CMAKE_GIT_TAG  "eb98e4325aef2ce85d2eb031c2ff18640ca616d3")
 set(DEP_LIBRAW_GIT_REPO       "https://github.com/LibRaw/LibRaw")
 set(DEP_LIBRAW_GIT_TAG        "0.22.2")
 
+set(DEP_WEBP_VERSION   "1.6.0")
+set(DEP_WEBP_URL       "https://github.com/webmproject/libwebp/archive/v${DEP_WEBP_VERSION}.tar.gz")
+set(DEP_WEBP_HASH      "MD5=d498caf9323a24ce3ed40b84c22a32cd")
+
 set(DEP_OPENEXR_VERSION "3.4.15")
 set(DEP_OPENEXR_URL     "https://github.com/AcademySoftwareFoundation/openexr/archive/v${DEP_OPENEXR_VERSION}.tar.gz")
 set(DEP_OPENEXR_HASH    "MD5=f54150623ed23c2783f1aa5f680c2b7f")

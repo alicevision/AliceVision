@@ -45,7 +45,7 @@
     },
     {
       "name":"openimageio",
-      "features": ["opencolorio","libraw","gif","openjpeg", "pybind11"],
+      "features": ["opencolorio","libraw","gif","openjpeg", "pybind11", "webp"],
       "default-features": false
     },
     {
@@ -70,7 +70,7 @@
     },
     {
       "name": "assimp",
-      "version": "6.0.5#1"
+      "version": "6.0.5"
     },
     {
       "name": "geogram",

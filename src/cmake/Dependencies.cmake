@@ -65,6 +65,7 @@ option(AV_BUILD_PNG         "Build libpng"         ON)
 option(AV_BUILD_JPEG        "Build libjpeg-turbo"  ON)
 option(AV_BUILD_LIBRAW      "Build LibRaw"         ON)
 option(AV_BUILD_OPENEXR     "Build OpenEXR"        ON)
+option(AV_BUILD_WEBP        "Build libwebp"        ON)
 
 # Video
 option(AV_BUILD_VPX         "Build libvpx (ffmpeg codec)" ON)
@@ -110,7 +111,7 @@ set(_all_av_options
     AV_BUILD_ZLIB AV_BUILD_TBB AV_BUILD_EIGEN AV_BUILD_EXPAT
     AV_BUILD_BOOST AV_BUILD_PYBIND11 AV_BUILD_SWIG AV_BUILD_OPENMP
     AV_BUILD_CUDA
-    AV_BUILD_TIFF AV_BUILD_PNG AV_BUILD_JPEG AV_BUILD_LIBRAW AV_BUILD_OPENEXR
+    AV_BUILD_TIFF AV_BUILD_PNG AV_BUILD_JPEG AV_BUILD_LIBRAW AV_BUILD_OPENEXR AV_BUILD_WEBP
     AV_BUILD_VPX AV_BUILD_FFMPEG
     AV_BUILD_ONNXRUNTIME AV_BUILD_OPENCOLORIO AV_BUILD_OPENIMAGEIO AV_BUILD_OPENCV
     AV_BUILD_LAPACK AV_BUILD_SUITESPARSE AV_BUILD_CERES
@@ -176,6 +177,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/png.cmake)        # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/jpeg.cmake)       # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/libraw.cmake)     # depends: zlib
 include(${CMAKE_CURRENT_LIST_DIR}/deps/openexr.cmake)    # depends: zlib
+include(${CMAKE_CURRENT_LIST_DIR}/deps/webp.cmake)       # depends: (none)
 
 # Video — vpx before ffmpeg
 include(${CMAKE_CURRENT_LIST_DIR}/deps/vpx.cmake)        # depends: (none)
@@ -184,7 +186,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/deps/ffmpeg.cmake)     # depends: vpx
 # Color / image processing
 include(${CMAKE_CURRENT_LIST_DIR}/deps/onnxruntime.cmake)  # depends: (none)
 include(${CMAKE_CURRENT_LIST_DIR}/deps/opencolorio.cmake)  # depends: expat
-include(${CMAKE_CURRENT_LIST_DIR}/deps/openimageio.cmake)  # depends: boost, openexr, tiff, png, jpeg, libraw, zlib, ffmpeg, pybind11, expat, opencolorio
+include(${CMAKE_CURRENT_LIST_DIR}/deps/openimageio.cmake)  # depends: boost, openexr, tiff, png, jpeg, libraw, webp, zlib, ffmpeg, pybind11, expat, opencolorio
 include(${CMAKE_CURRENT_LIST_DIR}/deps/opencv.cmake)       # depends: tbb, zlib, openexr, tiff, png, jpeg, libraw, ffmpeg, openmp
 
 # Math / solvers
