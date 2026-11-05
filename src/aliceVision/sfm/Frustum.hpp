@@ -8,7 +8,7 @@
 #ifndef ALICEVISION_GEOMETRY_FRUSTUM_HPP_
 #define ALICEVISION_GEOMETRY_FRUSTUM_HPP_
 
-#include "aliceVision/geometry/HalfPlane.hpp"
+#include "aliceVision/sfm/HalfPlane.hpp"
 
 namespace aliceVision {
 namespace geometry {

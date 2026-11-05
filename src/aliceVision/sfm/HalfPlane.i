@@ -4,9 +4,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-%include <aliceVision/geometry/HalfPlane.i>
-%include <aliceVision/geometry/Frustum.hpp>
+%include <aliceVision/sfm/HalfPlane.hpp>
 
 %{
-#include <aliceVision/geometry/Frustum.hpp>
+#include <aliceVision/sfm/HalfPlane.hpp>
+using namespace aliceVision;
+using namespace aliceVision::geometry;
 %}

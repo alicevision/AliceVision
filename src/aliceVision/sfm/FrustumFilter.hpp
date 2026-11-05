@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/geometry/Frustum.hpp>
+#include <aliceVision/sfm/Frustum.hpp>
 
 namespace aliceVision {
 

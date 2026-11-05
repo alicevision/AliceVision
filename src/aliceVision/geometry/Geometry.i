@@ -20,9 +20,12 @@
 %eigen_typemaps(Mat3X)
 %eigen_typemaps(SE3::Matrix)
 
-%include <aliceVision/geometry/Frustum.i>
-%include <aliceVision/geometry/HalfPlane.i>
 %include <aliceVision/geometry/Intersection.i>
 %include <aliceVision/geometry/Pose3.i>
 %include <aliceVision/geometry/RigidTransformation3D.i>
 %include <aliceVision/geometry/lie.i>
+
+%{
+using namespace aliceVision;
+using namespace aliceVision::geometry;
+%}
