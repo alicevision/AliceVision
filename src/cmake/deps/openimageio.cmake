@@ -1,6 +1,6 @@
 # =============================================================================
 # deps/openimageio.cmake
-# Dependencies: boost, openexr, tiff, png, jpeg, libraw, zlib, ffmpeg,
+# Dependencies: boost, openexr, tiff, png, jpeg, libraw, webp, zlib, ffmpeg,
 #               pybind11, expat, opencolorio
 # Provides:     OPENIMAGEIO_TARGET, OPENIMAGEIO_CMAKE_FLAGS
 # =============================================================================
@@ -35,6 +35,7 @@ if(AV_BUILD_OPENIMAGEIO)
             ${JPEG_CMAKE_FLAGS}
             ${LIBRAW_CMAKE_FLAGS}
             ${OPENEXR_CMAKE_FLAGS}
+            ${WEBP_CMAKE_FLAGS}
             ${OPENCOLORIO_CMAKE_FLAGS}
             -DSTOP_ON_WARNING=OFF
             -DUSE_FFMPEG=${AV_BUILD_FFMPEG}
@@ -43,6 +44,7 @@ if(AV_BUILD_OPENIMAGEIO)
             -DUSE_OPENEXR=${AV_BUILD_OPENEXR}
             -DUSE_TIFF=${AV_BUILD_TIFF}
             -DUSE_PNG=${AV_BUILD_PNG}
+            -DUSE_WEBP=${AV_BUILD_WEBP}
             -DPython3_EXECUTABLE=${Python_EXECUTABLE}
             -DUSE_PYTHON=ON
             -DUSE_OPENCV=OFF
@@ -64,6 +66,7 @@ if(AV_BUILD_OPENIMAGEIO)
             ${BOOST_TARGET}
             ${OPENEXR_TARGET}   ${TIFF_TARGET}   ${PNG_TARGET}
             ${JPEG_TARGET}      ${LIBRAW_TARGET}  ${ZLIB_TARGET}
+            ${WEBP_TARGET}
             ${FFMPEG_TARGET}    ${PYBIND11_TARGET}
             ${EXPAT_TARGET}     ${OPENCOLORIO_TARGET}
     )
