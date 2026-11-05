@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -33,6 +33,15 @@ between image pairs and resolves scale ambiguities using the track observations.
             label="Tracks File",
             description="Tracks file.",
             value="",
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

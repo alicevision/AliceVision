@@ -768,8 +768,8 @@ void PointCloud::addGridHelperPoints(int helperPointsGridSize, const Point3d vox
     const Point3d maxNoiseSize(md * (voxel[1] - voxel[0]).size(), md * (voxel[3] - voxel[0]).size(), md * (voxel[4] - voxel[0]).size());
     Point3d center = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0;
 
-    const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
-    std::mt19937 generator(seed != 0 ? seed : std::random_device{}());
+    const int seed = _mp.userParams.get<int>("delaunaycut.seed", -1);
+    std::mt19937 generator(seed == -1 ? std::random_device{}() : seed);
     auto rand = std::bind(std::uniform_real_distribution<float>{-1.0, 1.0}, generator);
 
     const double minDist2 = minDist * minDist;

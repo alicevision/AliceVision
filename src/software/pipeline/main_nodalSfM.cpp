@@ -37,6 +37,7 @@
 #include <random>
 #include <regex>
 #include <fstream>
+#include <tuple>
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -46,7 +47,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
 
 using namespace aliceVision;
 
@@ -265,7 +266,8 @@ IndexT findBestNext(const sfmData::SfMData& sfmData,
                 }
             }
 
-            if (count > localBestCount)
+            // On equal counts, keep the smallest view id so the choice does not depend on thread scheduling
+            if (count > localBestCount || (count > 0 && count == localBestCount && viewId < localBestId))
             {
                 localBestCount = count;
                 localBestId = viewId;
@@ -276,7 +278,7 @@ IndexT findBestNext(const sfmData::SfMData& sfmData,
         // so there is no window where bestCount and bestId can refer to different views.
         #pragma omp critical
         {
-            if (localBestCount > bestCount)
+            if (localBestCount > bestCount || (localBestCount > 0 && localBestCount == bestCount && localBestId < bestId))
             {
                 bestCount = localBestCount;
                 bestId = localBestId;
@@ -518,7 +520,9 @@ int aliceVision_main(int argc, char** argv)
          "Pixel residual threshold for outlier removal after bundle adjustment.")
         ("minObservations", po::value<int>(&minObservations)->default_value(minObservations),
          "Minimum number of observations required to keep a landmark after outlier removal.")
-        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).");
+        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision Nodal SfM");
@@ -600,9 +604,13 @@ int aliceVision_main(int argc, char** argv)
             return EXIT_FAILURE;
         }
 
-        // Sort reconstructedPairs by quality
+        // Sort reconstructedPairs by quality, ties broken on view ids since file iteration order is unspecified
         std::sort(reconstructedPairs.begin(), reconstructedPairs.end(), [](const sfm::ReconstructedPair& p1, const sfm::ReconstructedPair& p2) {
-            return p1.score > p2.score;
+            if (p1.score != p2.score)
+            {
+                return p1.score > p2.score;
+            }
+            return std::tie(p1.reference, p1.next) < std::tie(p2.reference, p2.next);
         });
 
         // Using two views, create an initial map and pair of cameras
@@ -624,7 +632,7 @@ int aliceVision_main(int argc, char** argv)
     }
 
     // Loop until termination of the process using the current bootstrapped map
-    std::mt19937 randomNumberGenerator(randomSeed);
+    std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
     std::set<IndexT> visited;
     while (true)
     {

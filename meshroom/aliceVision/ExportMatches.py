@@ -1,4 +1,4 @@
-__version__ = "2.0"
+__version__ = "2.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -67,6 +67,15 @@ the corresponding feature files.
             label="Filter B",
             description="One item of the pair must match this.",
             value="",
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=1,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

@@ -1,4 +1,4 @@
-__version__ = "3.3"
+__version__ = "3.4"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -360,6 +360,15 @@ It iterates like that, adding cameras and triangulating new 2D features into 3D 
             description="Dump the current state of the scene as an SfMData file every 3 resections.",
             value=False,
             invalidate=False,
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
             advanced=True,
         ),
         desc.ChoiceParam(

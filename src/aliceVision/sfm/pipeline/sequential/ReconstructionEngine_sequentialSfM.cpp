@@ -14,6 +14,7 @@
 #include <aliceVision/sfm/sfmStatistics.hpp>
 #include <aliceVision/sfm/utils/preprocess.hpp>
 #include <aliceVision/numeric/BoxStats.hpp>
+#include <aliceVision/numeric/randomGenerator.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/graph/connectedComponent.hpp>
@@ -1007,9 +1008,11 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(std::vector<ViewConn
         }
     }
 
-    // Sort by the image score
+    // Sort by the image score, ties broken on view id since the views were collected in thread completion order
     std::sort(out_connectedViews.begin(), out_connectedViews.end(), [](const ViewConnectionScore& t1, const ViewConnectionScore& t2) {
-        return std::get<2>(t1) > std::get<2>(t2);
+        if (std::get<2>(t1) != std::get<2>(t2))
+            return std::get<2>(t1) > std::get<2>(t2);
+        return std::get<0>(t1) < std::get<0>(t2);
     });
     return !out_connectedViews.empty();
 }
@@ -1755,6 +1758,9 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViewsLORANSAC(SfMData& 
     std::vector<IndexT> setTracksId;  // <trackId>
     std::transform(mapTracksToTriangulate.begin(), mapTracksToTriangulate.end(), std::inserter(setTracksId, setTracksId.begin()), stl::RetrieveKey());
 
+    // Draw a base seed once, then seed one generator per track so the result does not depend on thread scheduling
+    const std::mt19937::result_type baseSeed = _randomNumberGenerator();
+
 #pragma omp parallel for
     for (int i = 0; i < setTracksId.size(); i++)  // each track (already reconstructed or not)
     {
@@ -1841,7 +1847,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViewsLORANSAC(SfMData& 
             Vec4 X_homogeneous = Vec4::Zero();
             std::vector<std::size_t> inliersIndex;
 
-            multiview::TriangulateNViewLORANSAC(features, Ps, _randomNumberGenerator, X_homogeneous, &inliersIndex, 8.0);
+            std::mt19937 trackRandomNumberGenerator = createSeededGenerator(baseSeed, trackId);
+            multiview::TriangulateNViewLORANSAC(features, Ps, trackRandomNumberGenerator, X_homogeneous, &inliersIndex, 8.0);
 
             homogeneousToEuclidean(X_homogeneous, X_euclidean);
 

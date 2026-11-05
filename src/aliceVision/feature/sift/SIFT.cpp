@@ -369,7 +369,9 @@ bool extractSIFT(const image::Image<float>& image,
             filteredKeypointsIndex.swap(newFilteredKeypointsIndex);
         }
 
-        std::vector<std::vector<double>> anglesPerKeypoint(filteredKeypointsIndex.size());
+        // One slot per keypoint, appended in keypoint order afterwards so the output does not depend on thread scheduling
+        std::vector<std::vector<PointFeature>> featuresPerKeypoint(filteredKeypointsIndex.size());
+        std::vector<std::vector<typename SIFT_Region_T::DescriptorT>> descriptorsPerKeypoint(filteredKeypointsIndex.size());
 
 #pragma omp parallel for
         for (int ii = 0; ii < static_cast<int>(filteredKeypointsIndex.size()); ++ii)
@@ -393,12 +395,19 @@ bool extractSIFT(const image::Image<float>& image,
                 vl_sift_calc_keypoint_descriptor(filt, &vlFeatDescriptor[0], keys + i, angles[q]);
                 convertSIFT<T>(&vlFeatDescriptor[0], descriptor, params._rootSift);
 
-#pragma omp critical
-                {
-                    regionsCasted->Descriptors().push_back(descriptor);
-                    regionsCasted->Features().push_back(fp);
-                    featuresPeakValue.push_back(keys[i].peak_value);
-                }
+                featuresPerKeypoint[ii].push_back(fp);
+                descriptorsPerKeypoint[ii].push_back(descriptor);
+            }
+        }
+
+        for (std::size_t ii = 0; ii < filteredKeypointsIndex.size(); ++ii)
+        {
+            const int i = filteredKeypointsIndex[ii];
+            for (std::size_t q = 0; q < featuresPerKeypoint[ii].size(); ++q)
+            {
+                regionsCasted->Descriptors().push_back(descriptorsPerKeypoint[ii][q]);
+                regionsCasted->Features().push_back(featuresPerKeypoint[ii][q]);
+                featuresPeakValue.push_back(keys[i].peak_value);
             }
         }
 

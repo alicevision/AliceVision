@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -25,6 +25,15 @@ with TracksSimulating.
             description="Type of sample scene to generate (cube or sphere).",
             value="sphere",
             values=["cube", "sphere"],
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=1,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
     ]
 

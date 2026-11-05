@@ -137,13 +137,16 @@ bool ExpansionPolicySequence::process(const sfmData::SfMData & sfmData, const tr
         return false;
     }
 
-    // Sort: primary key = frame-ID distance (ascending), secondary = track count (descending)
+    // Sort: primary key = frame-ID distance (ascending), secondary = track count (descending),
+    // last = view id, since the views were collected in thread completion order
     std::sort(vscoring.begin(), vscoring.end(),
               [](const ViewScoring & a, const ViewScoring & b)
               {
                   if (a.frameIdDist != b.frameIdDist)
                       return a.frameIdDist < b.frameIdDist;
-                  return a.count > b.count;
+                  if (a.count != b.count)
+                      return a.count > b.count;
+                  return a.id < b.id;
               });
 
     // Always add the best candidate, whatever its characteristics

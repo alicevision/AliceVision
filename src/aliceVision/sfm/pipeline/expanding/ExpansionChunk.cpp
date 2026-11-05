@@ -7,6 +7,8 @@
 #include "ExpansionChunk.hpp"
 
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
+
+#include <algorithm>
 #include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
@@ -82,7 +84,7 @@ EChunkResult ExpansionChunk::process(sfmData::SfMData & sfmData, const track::Tr
             IntermediateResectionInfo iri;
             iri.viewId = viewId;
 
-            std::mt19937 randomNumberGenerator;
+            std::mt19937 randomNumberGenerator(_randomSeed);
             if (!_resectionHandler->processView(sfmData, 
                                 tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                 randomNumberGenerator, viewId, 
@@ -97,6 +99,11 @@ EChunkResult ExpansionChunk::process(sfmData::SfMData & sfmData, const track::Tr
             }
         }
     }
+
+    // The infos were collected in thread completion order: sort them so the poses are added in a repeatable order
+    std::sort(intermediateInfos.begin(), intermediateInfos.end(), [](const IntermediateResectionInfo& a, const IntermediateResectionInfo& b) {
+        return a.viewId < b.viewId;
+    });
 
     //Early exit if no valid resections
     if (intermediateInfos.size() == 0)
@@ -192,7 +199,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
     {
         std::set<IndexT> evaluatedTracks;
         std::map<IndexT, sfmData::Landmark> outputLandmarks;
-        std::mt19937 randomNumberGenerator;
+        std::mt19937 randomNumberGenerator(_randomSeed);
         if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                     randomNumberGenerator, viewIds, 
                                     evaluatedTracks, outputLandmarks, false))
@@ -248,7 +255,7 @@ bool ExpansionChunk::triangulate(sfmData::SfMData & sfmData, const track::Tracks
     {
         std::set<IndexT> evaluatedTracks;
         std::map<IndexT, sfmData::Landmark> outputLandmarks;
-        std::mt19937 randomNumberGenerator;
+        std::mt19937 randomNumberGenerator(_randomSeed);
 
         if (!_triangulationHandler->process(sfmData, tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(), 
                                     randomNumberGenerator, viewIds, 

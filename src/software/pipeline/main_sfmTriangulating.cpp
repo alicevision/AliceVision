@@ -15,11 +15,13 @@
 
 #include <boost/program_options.hpp>
 
+#include <random>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -34,6 +36,7 @@ int aliceVision_main(int argc, char** argv)
     double minAngleForTriangulation = 1.0;
     size_t minNbObservationsForTriangulation = 0;
     double maxTriangulationError = 8.0;
+    int randomSeed = std::mt19937::default_seed;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -46,7 +49,9 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("maxTriangulationError", po::value<double>(&maxTriangulationError)->default_value(maxTriangulationError), "Maximum reprojection error in the triangulation process (in pixels).")
         ("minAngleForTriangulation", po::value<double>(&minAngleForTriangulation)->default_value(minAngleForTriangulation), "Minimum angle for triangulation in degrees.")
-        ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation), "Minimum number of observations to triangulate a point.");
+        ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation), "Minimum number of observations to triangulate a point.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("AliceVision SfM Triangulation");
@@ -80,7 +85,7 @@ int aliceVision_main(int argc, char** argv)
 
     std::set<IndexT> evaluatedTracks;
     std::map<IndexT, sfmData::Landmark> outputLandmarks;
-    std::mt19937 randomNumberGenerator;
+    std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
 
 
     // Effectively triangulate tracks

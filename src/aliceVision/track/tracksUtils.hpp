@@ -9,6 +9,8 @@
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 
+#include <random>
+
 namespace aliceVision {
 namespace track {
 
@@ -157,8 +159,15 @@ void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track
  * @param[in] outlierEpipolarRatio the proportion of outliers which are still respecting the epipolar constraint
  * @param[in] randomNoiseVariancePerView specify whether to use different noise variance per view
  * @param[out] mapTracks the output tracks map
+ * @param[in] randomSeed the seed of the random number generator
  */
-void simulateTracks(const sfmData::SfMData& sfmData, double sigmaNoise, double outlierRatio, double outlierEpipolarRatio, bool randomNoiseVariancePerView, TracksMap& mapTracks);
+void simulateTracks(const sfmData::SfMData& sfmData,
+                    double sigmaNoise,
+                    double outlierRatio,
+                    double outlierEpipolarRatio,
+                    bool randomNoiseVariancePerView,
+                    TracksMap& mapTracks,
+                    std::mt19937::result_type randomSeed = std::mt19937::default_seed);
 
 }  // namespace track
 }  // namespace aliceVision

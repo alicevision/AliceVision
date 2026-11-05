@@ -18,6 +18,7 @@
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 
 #include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/numeric/randomGenerator.hpp>
 #include <aliceVision/camera/camera.hpp>
 
 namespace aliceVision {
@@ -55,11 +56,16 @@ bool SfmTriangulation::process(
     allInterestingViews.insert(validViews.begin(), validViews.end());
 
 
+    // Draw a base seed once, then seed one generator per track so the result does not depend on thread scheduling
+    const std::mt19937::result_type baseSeed = randomNumberGenerator();
+
     #pragma omp parallel for
     for(int pos = 0; pos < viewTracksVector.size(); pos++)
     {
         const std::size_t trackId = viewTracksVector[pos];
         const track::Track& track = tracks.at(trackId);
+
+        std::mt19937 trackRandomNumberGenerator = createSeededGenerator(baseSeed, trackId);
 
         // Get all views observing the current track (Keeping their Id)
         std::set<IndexT> trackViews;
@@ -87,14 +93,14 @@ bool SfmTriangulation::process(
         {
             if (_pointFetcherHandler)
             {
-                if (!processTrackWithPointFetcher(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+                if (!processTrackWithPointFetcher(sfmData, track, trackRandomNumberGenerator, trackViewsFiltered, result))
                 {
                     continue;
                 }
             }
             else 
             {
-                if (!processTrackWithPrior(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+                if (!processTrackWithPrior(sfmData, track, trackRandomNumberGenerator, trackViewsFiltered, result))
                 {
                     continue;
                 }
@@ -102,7 +108,7 @@ bool SfmTriangulation::process(
         }
         else 
         {
-            if (!processTrack(sfmData, track, randomNumberGenerator, trackViewsFiltered, result))
+            if (!processTrack(sfmData, track, trackRandomNumberGenerator, trackViewsFiltered, result))
             {
                 continue;
             }

@@ -13,10 +13,13 @@
 
 #include <boost/program_options.hpp>
 
+#include <cstdlib>
+#include <random>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -30,6 +33,7 @@ int aliceVision_main(int argc, char** argv)
     std::string outputSfMViewsAndPoses;
     float positionNoise = 0.;
     float rotationNoise = 0.;
+    int randomSeed = std::mt19937::default_seed;
 
     // clang-format off
     po::options_description requiredParams("Required parameters");
@@ -41,7 +45,9 @@ int aliceVision_main(int argc, char** argv)
     optionalParams.add_options()
         ("positionNoise", po::value<float>(&positionNoise)->default_value(positionNoise), "Noise level to add to view positions.")
         ("rotationNoise", po::value<float>(&rotationNoise)->default_value(rotationNoise), "Noise level to add to view orientations. [0..1]")
-        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).");
+        ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses), "Path to the output SfMData file (with only views and poses).")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("This program adds noise to view positions and view orientations and saves it to a given file path.\n"
@@ -61,7 +67,15 @@ int aliceVision_main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if (!sfm::addPoseNoise(sfmData, positionNoise, rotationNoise))
+    const std::mt19937::result_type seed = randomSeed == -1 ? std::random_device()() : randomSeed;
+
+    // Eigen's Random() relies on std::rand: only reseed it when a seed is given, to keep the default sequence
+    if (randomSeed != std::mt19937::default_seed)
+    {
+        std::srand(seed);
+    }
+
+    if (!sfm::addPoseNoise(sfmData, positionNoise, rotationNoise, seed))
     {
         ALICEVISION_LOG_INFO("Error during sfmData processing");
         return EXIT_FAILURE;

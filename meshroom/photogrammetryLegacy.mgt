@@ -873,7 +873,7 @@
             }
         },
         "FeatureMatching": {
-            "2.1": {
+            "2.2": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -988,6 +988,10 @@
                     "exportDebugFiles": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1522,7 +1526,7 @@
             }
         },
         "StructureFromMotion": {
-            "3.3": {
+            "3.4": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1705,6 +1709,10 @@
                     "logIntermediateSteps": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -2098,7 +2106,7 @@
         },
         "FeatureMatching_1": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 600,
                 0
@@ -2160,7 +2168,7 @@
         },
         "StructureFromMotion_1": {
             "nodeType": "StructureFromMotion",
-            "version": "3.3",
+            "version": "3.4",
             "position": [
                 800,
                 0

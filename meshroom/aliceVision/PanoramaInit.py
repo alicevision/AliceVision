@@ -1,4 +1,4 @@
-__version__ = "2.0"
+__version__ = "2.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -129,6 +129,15 @@ This node allows to setup the Panorama:
             description="Debug fisheye circle detection.",
             value=False,
             enabled=lambda node: node.useFisheye.value,
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=1,
+            range=(-1, 10000, 1),
             advanced=True,
         ),
         desc.ChoiceParam(

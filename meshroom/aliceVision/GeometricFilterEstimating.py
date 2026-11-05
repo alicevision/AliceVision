@@ -1,4 +1,4 @@
-__version__ = "1.1"
+__version__ = "1.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -92,6 +92,15 @@ then it checks the number of features that validates this model and iterate thro
             description="Maximum number of matches to keep.",
             value=0,
             range=(0, 10000, 1),
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
             advanced=True,
         ),
         desc.ChoiceParam(

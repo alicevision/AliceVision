@@ -1,4 +1,4 @@
-__version__ = "4.2"
+__version__ = "4.3"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -92,6 +92,15 @@ The output is a partially initialized SfMData with the first two cameras localiz
             label="Initial Pair B",
             description="View ID of the second image.",
             value="",
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

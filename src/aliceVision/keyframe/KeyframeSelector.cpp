@@ -25,15 +25,14 @@ namespace aliceVision::keyframe {
 
 /**
  * @brief Get a random int in order to generate uid.
- * @warning The random doesn't use a repeatable seed to avoid conflicts between different launches on different data sets
+ * @warning A repeatable seed may lead to conflicts between different launches on different data sets
+ * @param[in,out] randomNumberGenerator the random number generator
  * @return int between 0 and std::numeric_limits<int>::max()
  */
-int getRandomInt()
+int getRandomInt(std::mt19937& randomNumberGenerator)
 {
-    std::random_device rd;              // will be used to obtain a seed for the random number engine
-    std::mt19937 randomTwEngine(rd());  // standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<> randomDist(0, std::numeric_limits<int>::max());
-    return randomDist(randomTwEngine);
+    return randomDist(randomNumberGenerator);
 }
 
 /**
@@ -696,8 +695,11 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                                       const std::vector<float>& mmFocals,
                                       const bool renameKeyframes,
                                       const std::string& outputExtension,
-                                      const image::EStorageDataType storageDataType)
+                                      const image::EStorageDataType storageDataType,
+                                      const int randomSeed)
 {
+    std::mt19937 randomNumberGenerator(randomSeed == -1 ? std::random_device()() : randomSeed);
+
     image::Image<image::RGBColor> image;
     camera::Pinhole queryIntrinsics;
     bool hasIntrinsics = false;
@@ -762,7 +764,7 @@ bool KeyframeSelector::writeSelection(const std::vector<std::string>& brands,
                 metadata.push_back(oiio::ParamValue("Make", brands[id]));
                 metadata.push_back(oiio::ParamValue("Model", models[id]));
                 metadata.push_back(oiio::ParamValue("Exif:FocalLength", mmFocals[id]));
-                metadata.push_back(oiio::ParamValue("Exif:ImageUniqueID", std::to_string(getRandomInt())));
+                metadata.push_back(oiio::ParamValue("Exif:ImageUniqueID", std::to_string(getRandomInt(randomNumberGenerator))));
                 metadata.push_back(oiio::ParamValue("Orientation", orientation));  // Will not propagate for PNG outputs
                 metadata.push_back(oiio::ParamValue("PixelAspectRatio", pixelAspectRatio));
 

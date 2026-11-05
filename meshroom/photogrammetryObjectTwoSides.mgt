@@ -968,7 +968,7 @@
             }
         },
         "FeatureMatching": {
-            "2.1": {
+            "2.2": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1083,6 +1083,10 @@
                     "exportDebugFiles": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1864,7 +1868,7 @@
             }
         },
         "SfMMerge": {
-            "3.0": {
+            "3.1": {
                 "inputs": {
                     "inputs": {
                         "type": "ListAttribute",
@@ -1926,6 +1930,10 @@
                             "usda"
                         ]
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -1948,7 +1956,7 @@
             }
         },
         "SfMTransform": {
-            "3.2": {
+            "3.3": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2108,6 +2116,10 @@
                         "type": "BoolParam",
                         "value": true
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -2134,7 +2146,7 @@
             }
         },
         "SfMTriangulation": {
-            "1.0": {
+            "1.1": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2219,6 +2231,10 @@
                             ".usda"
                         ]
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -2245,7 +2261,7 @@
             }
         },
         "StructureFromMotion": {
-            "3.3": {
+            "3.4": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2428,6 +2444,10 @@
                     "logIntermediateSteps": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -2914,7 +2934,7 @@
         },
         "FeatureMatching_1": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 600,
                 0
@@ -2931,7 +2951,7 @@
         },
         "FeatureMatching_2": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 600,
                 750
@@ -2948,7 +2968,7 @@
         },
         "FeatureMatching_3": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 1000,
                 400
@@ -2968,7 +2988,7 @@
         },
         "FeatureMatching_4": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 1000,
                 200
@@ -2981,7 +3001,7 @@
         },
         "FeatureMatching_5": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 1000,
                 600
@@ -3180,7 +3200,7 @@
         },
         "SfMMerge_1": {
             "nodeType": "SfMMerge",
-            "version": "3.0",
+            "version": "3.1",
             "position": [
                 1400,
                 400
@@ -3202,7 +3222,7 @@
         },
         "SfMTransform_1": {
             "nodeType": "SfMTransform",
-            "version": "3.2",
+            "version": "3.3",
             "position": [
                 1800,
                 400
@@ -3213,7 +3233,7 @@
         },
         "SfMTriangulation_2": {
             "nodeType": "SfMTriangulation",
-            "version": "1.0",
+            "version": "1.1",
             "position": [
                 1200,
                 200
@@ -3228,7 +3248,7 @@
         },
         "SfMTriangulation_3": {
             "nodeType": "SfMTriangulation",
-            "version": "1.0",
+            "version": "1.1",
             "position": [
                 1200,
                 600
@@ -3243,7 +3263,7 @@
         },
         "SfMTriangulation_4": {
             "nodeType": "SfMTriangulation",
-            "version": "1.0",
+            "version": "1.1",
             "position": [
                 1600,
                 400
@@ -3260,7 +3280,7 @@
         },
         "StructureFromMotion_1": {
             "nodeType": "StructureFromMotion",
-            "version": "3.3",
+            "version": "3.4",
             "position": [
                 800,
                 0
@@ -3279,7 +3299,7 @@
         },
         "StructureFromMotion_2": {
             "nodeType": "StructureFromMotion",
-            "version": "3.3",
+            "version": "3.4",
             "position": [
                 800,
                 750

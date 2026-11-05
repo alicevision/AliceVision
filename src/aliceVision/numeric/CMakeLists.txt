@@ -6,6 +6,7 @@ set(numeric_files_headers
     gps.hpp
     algebra.hpp
     BoxStats.hpp
+    randomGenerator.hpp
 )
 
 # Sources

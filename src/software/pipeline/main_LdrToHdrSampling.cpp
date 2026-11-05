@@ -39,7 +39,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
@@ -62,6 +62,7 @@ int aliceVision_main(int argc, char** argv)
 
     int rangeStart = -1;
     int rangeSize = 1;
+    int randomSeed = std::mt19937::default_seed;
 
     // Command line parameters
     // clang-format off
@@ -97,7 +98,9 @@ int aliceVision_main(int argc, char** argv)
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
           "Range image index start.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-          "Range size.");
+          "Range size.")
+        ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed),
+         "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
     // clang-format on
 
     CmdLine cmdline("This program extracts stable samples from multiple LDR images with different bracketing.\n"
@@ -109,6 +112,8 @@ int aliceVision_main(int argc, char** argv)
     {
         return EXIT_FAILURE;
     }
+
+    params.randomSeed = randomSeed == -1 ? std::random_device()() : randomSeed;
 
     // Set maxThreads
     HardwareContext hwc = cmdline.getHardwareContext();

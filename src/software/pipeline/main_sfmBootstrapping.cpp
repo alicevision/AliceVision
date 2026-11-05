@@ -34,15 +34,17 @@
 #include <aliceVision/sfm/pipeline/expanding/SfmTriangulation.hpp>
 #include <aliceVision/sfmData/MeshPointFetcher.hpp>
 
+#include <algorithm>
 #include <cstdlib>
 #include <random>
+#include <tuple>
 #include <regex>
 #include <fstream>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 4
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 3
 
 using namespace aliceVision;
 
@@ -225,7 +227,8 @@ bool processMesh(sfmData::SfMData & sfmData,
                 const std::string & meshFilename,
                 double minAngleHard, 
                 double minAngleSoft, 
-                double maxAngle)
+                double maxAngle,
+                const std::mt19937::result_type randomSeed)
 {
     //Load mesh in the mesh intersection object
     if (meshFilename.empty())
@@ -280,7 +283,8 @@ bool processMesh(sfmData::SfMData & sfmData,
     if (!sfm::bootstrapMesh(sfmData, 
                         landmarks,
                         bestPair.reference, bestPair.next, 
-                        tracksHandler.getAllTracks(), tracksHandler.getTracksPerView()))
+                        tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(),
+                        randomSeed))
     {
         return false;
     }
@@ -334,11 +338,12 @@ bool processDepth(sfmData::SfMData & sfmData,
                 const std::vector<sfm::ReconstructedPair> &reconstructedPairs,
                 double minAngleHard, 
                 double minAngleSoft, 
-                double maxAngle)
+                double maxAngle,
+                const std::mt19937::result_type randomSeed)
 {
     //Check all pairs
     ALICEVISION_LOG_INFO("Find best pair");
-    std::mt19937 randomNumberGenerator;
+    std::mt19937 randomNumberGenerator(randomSeed);
     sfm::ReconstructedPair bestPair;
     bestPair = sfm::findBestPairFromTrackDepths(sfmData, 
                                                 reconstructedPairs,
@@ -354,7 +359,8 @@ bool processDepth(sfmData::SfMData & sfmData,
     
     if (!sfm::bootstrapDepth(sfmData, 
                 bestPair.reference, bestPair.next, 
-                tracksHandler.getAllTracks(), tracksHandler.getTracksPerView()))
+                tracksHandler.getAllTracks(), tracksHandler.getTracksPerView(),
+                randomSeed))
     {
         ALICEVISION_LOG_INFO("Failed to create initial sfmData.");
         return false;
@@ -403,7 +409,8 @@ int aliceVision_main(int argc, char** argv)
     ("maxAngleInitialPair", po::value<double>(&maxAngle)->default_value(maxAngle), "Maximum angle for the initial pair.")
     ("meshFilename,m", po::value<std::string>(&meshFilename)->default_value(meshFilename), "Mesh object file.")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first), "UID or filepath or filename of the first image.")
-    ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second), "UID or filepath or filename of the second image.");
+    ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second), "UID or filepath or filename of the second image.")
+    ("randomSeed", po::value<int>(&randomSeed)->default_value(randomSeed), "This seed value will generate a sequence using a linear random generator. Set -1 to use a random seed.");
 
     CmdLine cmdline("AliceVision SfM Bootstrapping");
 
@@ -557,10 +564,17 @@ int aliceVision_main(int argc, char** argv)
             }
         }
 
+        // Directory iteration order is unspecified: sort the pairs so the selection is repeatable
+        std::sort(reconstructedPairs.begin(), reconstructedPairs.end(), [](const sfm::ReconstructedPair& p1, const sfm::ReconstructedPair& p2) {
+            return std::tie(p1.reference, p1.next) < std::tie(p2.reference, p2.next);
+        });
+
         ALICEVISION_LOG_INFO("Pairs to process : " << reconstructedPairs.size());
     }
 
     
+    const std::mt19937::result_type seed = randomSeed == -1 ? std::random_device()() : randomSeed;
+
     bool ret;
 
     switch (method)
@@ -568,14 +582,14 @@ int aliceVision_main(int argc, char** argv)
     case MESH:
         ret = processMesh(sfmData, tracksHandler, reconstructedPairs, 
                         firstViewFilters, meshFilename,
-                        minAngleHard, minAngleSoft, maxAngle);
+                        minAngleHard, minAngleSoft, maxAngle, seed);
         break;
     case MESH_SINGLE:
         ret = processMeshSingle(sfmData, tracksHandler, firstViewFilters, meshFilename);
         break;
     case DEPTH:
         ret = processDepth(sfmData, tracksHandler, reconstructedPairs,  
-                        minAngleHard, minAngleSoft, maxAngle);
+                        minAngleHard, minAngleSoft, maxAngle, seed);
         break;
     default:
         ret = processClassic(sfmData, tracksHandler, reconstructedPairs,  

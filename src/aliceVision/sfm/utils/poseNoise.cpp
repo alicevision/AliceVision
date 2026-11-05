@@ -12,7 +12,7 @@
 namespace aliceVision {
 namespace sfm {
 
-bool addPoseNoise(sfmData::SfMData& sfmData, const float positionNoise, const float rotationNoise)
+bool addPoseNoise(sfmData::SfMData& sfmData, const float positionNoise, const float rotationNoise, const std::mt19937::result_type randomSeed)
 {
     if (positionNoise == 0. && rotationNoise == 0.)
     {
@@ -24,7 +24,7 @@ bool addPoseNoise(sfmData::SfMData& sfmData, const float positionNoise, const fl
 
     using namespace Eigen;
 
-    std::mt19937 gen;
+    std::mt19937 gen(randomSeed);
     std::uniform_real_distribution<double> dist(-1., 1.);
 
     for (const auto& [viewID, viewPtr] : sfmData.getViews())

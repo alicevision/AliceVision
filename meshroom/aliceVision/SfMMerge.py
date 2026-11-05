@@ -1,4 +1,4 @@
-__version__ = "3.0"
+__version__ = "3.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -96,6 +96,15 @@ sub-scenes before a joint bundle adjustment.
             value="usda",
             values=["abc", "sfm", "json", "usda"],
             commandLineGroup="",  # exclude from command line
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

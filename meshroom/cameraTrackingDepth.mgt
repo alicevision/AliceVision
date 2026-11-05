@@ -1346,7 +1346,7 @@
             }
         },
         "FeatureMatching": {
-            "2.1": {
+            "2.2": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -1461,6 +1461,10 @@
                     "exportDebugFiles": {
                         "type": "BoolParam",
                         "value": false
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -1794,7 +1798,7 @@
             }
         },
         "KeyframeSelection": {
-            "5.0": {
+            "5.1": {
                 "inputs": {
                     "inputPaths": {
                         "type": "ListAttribute",
@@ -1924,6 +1928,10 @@
                             "halfFinite",
                             "auto"
                         ]
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": -1
                     },
                     "debugOptions": {
                         "type": "GroupAttribute",
@@ -2536,7 +2544,7 @@
             }
         },
         "RelativePoseEstimating": {
-            "3.1": {
+            "3.2": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2565,6 +2573,10 @@
                     "imagePairsList": {
                         "type": "File",
                         "value": ""
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -2682,7 +2694,7 @@
             }
         },
         "SfMBootStrapping": {
-            "4.2": {
+            "4.3": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2729,6 +2741,10 @@
                     "initialPairB": {
                         "type": "File",
                         "value": ""
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -2784,7 +2800,7 @@
             }
         },
         "SfMExpanding": {
-            "2.7": {
+            "2.8": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -2938,6 +2954,10 @@
                         "type": "IntParam",
                         "value": 20
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -3074,7 +3094,7 @@
             }
         },
         "SfMTransform": {
-            "3.2": {
+            "3.3": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -3234,6 +3254,10 @@
                         "type": "BoolParam",
                         "value": true
                     },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
+                    },
                     "verboseLevel": {
                         "type": "ChoiceParam",
                         "value": "info",
@@ -3260,7 +3284,7 @@
             }
         },
         "SfMTriangulation": {
-            "1.0": {
+            "1.1": {
                 "inputs": {
                     "input": {
                         "type": "File",
@@ -3344,6 +3368,10 @@
                             ".ply",
                             ".usda"
                         ]
+                    },
+                    "randomSeed": {
+                        "type": "IntParam",
+                        "value": 5489
                     },
                     "verboseLevel": {
                         "type": "ChoiceParam",
@@ -4033,7 +4061,7 @@
         },
         "FeatureMatching_1": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 600,
                 0
@@ -4051,7 +4079,7 @@
         },
         "FeatureMatching_2": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 2027,
                 415
@@ -4068,7 +4096,7 @@
         },
         "FeatureMatching_3": {
             "nodeType": "FeatureMatching",
-            "version": "2.1",
+            "version": "2.2",
             "position": [
                 2027,
                 215
@@ -4188,7 +4216,7 @@
         },
         "KeyframeSelection_1": {
             "nodeType": "KeyframeSelection",
-            "version": "5.0",
+            "version": "5.1",
             "position": [
                 200,
                 0
@@ -4272,7 +4300,7 @@
         },
         "RelativePoseEstimating_1": {
             "nodeType": "RelativePoseEstimating",
-            "version": "3.1",
+            "version": "3.2",
             "position": [
                 1201,
                 6
@@ -4307,7 +4335,7 @@
         },
         "SfMBootStrapping_1": {
             "nodeType": "SfMBootStrapping",
-            "version": "4.2",
+            "version": "4.3",
             "position": [
                 1401,
                 6
@@ -4338,7 +4366,7 @@
         },
         "SfMExpanding_1": {
             "nodeType": "SfMExpanding",
-            "version": "2.7",
+            "version": "2.8",
             "position": [
                 1601,
                 6
@@ -4359,7 +4387,7 @@
         },
         "SfMExpanding_2": {
             "nodeType": "SfMExpanding",
-            "version": "2.7",
+            "version": "2.8",
             "position": [
                 2828,
                 215
@@ -4415,7 +4443,7 @@
         },
         "SfMTransform_1": {
             "nodeType": "SfMTransform",
-            "version": "3.2",
+            "version": "3.3",
             "position": [
                 3031.5,
                 210.0
@@ -4429,7 +4457,7 @@
         },
         "SfMTriangulation_1": {
             "nodeType": "SfMTriangulation",
-            "version": "1.0",
+            "version": "1.1",
             "position": [
                 3685,
                 28

@@ -13,6 +13,7 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/matchingImageCollection/GeometricInfo.hpp>
+#include <aliceVision/numeric/randomGenerator.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <map>
@@ -52,6 +53,8 @@ void robustModelEstimation(PairwiseMatches& out_geometricMatches,
 
     auto progressDisplay = system::createConsoleProgressDisplay(putativeMatches.size(), "Robust Model Estimation\n");
 
+    const std::mt19937::result_type baseSeed = randomNumberGenerator();
+
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int)putativeMatches.size(); ++i)
     {
@@ -66,8 +69,9 @@ void robustModelEstimation(PairwiseMatches& out_geometricMatches,
         {
             MatchesPerDescType inliers;
             GeometryFunctor geometricFilter = functor;  // use a copy since we are in a multi-thread context
+            std::mt19937 pairRandomNumberGenerator = createSeededGenerator(baseSeed, imagePair.first, imagePair.second);
             const EstimationStatus state =
-              geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, randomNumberGenerator, inliers);
+              geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, pairRandomNumberGenerator, inliers);
             if (state.hasStrongSupport)
             {
                 if (guidedMatching)
@@ -113,6 +117,8 @@ void robustModelEstimation(PairwiseGeometricInfo& out_geometricInfos,
 
     auto progressDisplay = system::createConsoleProgressDisplay(putativeMatches.size(), "Robust Model Estimation\n");
 
+    const std::mt19937::result_type baseSeed = randomNumberGenerator();
+
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int)putativeMatches.size(); ++i)
     {
@@ -127,7 +133,8 @@ void robustModelEstimation(PairwiseGeometricInfo& out_geometricInfos,
         {
             MatchesPerDescType inliers;
             GeometryFunctor geometricFilter = functor;  // use a copy since we are in a multi-thread context
-            const EstimationStatus state = geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, randomNumberGenerator, inliers);
+            std::mt19937 pairRandomNumberGenerator = createSeededGenerator(baseSeed, imagePair.first, imagePair.second);
+            const EstimationStatus state = geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, pairRandomNumberGenerator, inliers);
             
             ALICEVISION_LOG_DEBUG("Pair " << imagePair.first << ", " << imagePair.second << " : " << inliers.getNbAllMatches() << " inliers");
 

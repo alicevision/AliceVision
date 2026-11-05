@@ -1,4 +1,4 @@
-__version__ = "2.1"
+__version__ = "2.2"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -92,6 +92,15 @@ The alignment can be based on:
             label="Translation",
             description="Apply translation transformation.",
             value=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

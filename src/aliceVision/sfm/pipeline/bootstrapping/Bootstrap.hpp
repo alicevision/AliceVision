@@ -7,6 +7,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/track/tracksUtils.hpp>
 
+#include <random>
+
 namespace aliceVision {
 namespace sfm {
 
@@ -35,6 +37,7 @@ bool bootstrapBase(sfmData::SfMData & sfmData,
  * @param nextViewId the reference view id
  * @param tracksMap the input map of tracks
  * @param tracksPerView tracks grouped by views
+ * @param randomSeed the seed of the random number generator
  * @return true
 */
 bool bootstrapMesh(sfmData::SfMData & sfmData, 
@@ -42,7 +45,8 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
                     const IndexT referenceViewId,
                     const IndexT nextViewId,
                     const track::TracksMap& tracksMap, 
-                    const track::TracksPerView & tracksPerView);
+                    const track::TracksPerView & tracksPerView,
+                    const std::mt19937::result_type randomSeed = std::mt19937::default_seed);
 
 /**
  * @brief Create a minimal SfmData with poses and landmarks for two views
@@ -51,13 +55,15 @@ bool bootstrapMesh(sfmData::SfMData & sfmData,
  * @param otherViewId the other view id
  * @param tracksMap the input map of tracks
  * @param tracksPerView tracks grouped by views
+ * @param randomSeed the seed of the random number generator
  * @return true
 */
 bool bootstrapDepth(sfmData::SfMData & sfmData, 
                     const IndexT referenceViewId,
                     const IndexT otherViewId,
                     const track::TracksMap& tracksMap, 
-                    const track::TracksPerView & tracksPerView);
+                    const track::TracksPerView & tracksPerView,
+                    const std::mt19937::result_type randomSeed = std::mt19937::default_seed);
 
 }
 }

@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 
 from meshroom.core import desc
@@ -79,6 +79,15 @@ It is known to be faster but less robust to challenging datasets than the Increm
                         "principal point, distortion if any) constant during the reconstruction.\n"
                         "This may be helpful if the input cameras are already fully calibrated.",
             value=False,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
+            advanced=True,
         ),
         desc.ChoiceParam(
             name="verboseLevel",

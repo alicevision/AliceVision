@@ -1,4 +1,4 @@
-__version__ = "1.0"
+__version__ = "1.1"
 
 from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
@@ -156,6 +156,15 @@ The result is an SfMData containing the estimated rotation for each view.
             label="Intermediate Refine: Focal And Distortion",
             description="Intermediate refine with rotation, focal length and distortion.",
             value=False,
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
             advanced=True,
         ),
         desc.ChoiceParam(

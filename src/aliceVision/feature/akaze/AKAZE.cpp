@@ -396,15 +396,20 @@ void AKAZE::subpixelRefinement(std::vector<AKAZEKeypoint>& keypoints) const
     in_keypoints.swap(keypoints);
     keypoints.reserve(in_keypoints.size());
 
+    // Flag the stable points, then keep them in input order so the output does not depend on thread scheduling
+    std::vector<char> isStable(in_keypoints.size(), 0);
+
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < static_cast<int>(in_keypoints.size()); ++i)
     {
         AKAZEKeypoint& point = in_keypoints[i];
-        if (subpixelRefinement(point, this->_evolution[point.class_id].Lhess))
-        {
-#pragma omp critical
-            keypoints.emplace_back(point);
-        }
+        isStable[i] = subpixelRefinement(point, this->_evolution[point.class_id].Lhess);
+    }
+
+    for (std::size_t i = 0; i < in_keypoints.size(); ++i)
+    {
+        if (isStable[i])
+            keypoints.emplace_back(in_keypoints[i]);
     }
 }
 

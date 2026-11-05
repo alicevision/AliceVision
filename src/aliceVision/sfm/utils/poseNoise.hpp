@@ -8,6 +8,8 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 
+#include <random>
+
 namespace aliceVision {
 namespace sfm {
 
@@ -16,9 +18,13 @@ namespace sfm {
  * @param sfmData the scene description
  * @param positionNoise noise level to add to camera positions
  * @param rotationNoise noise level to add to camera orientations
+ * @param randomSeed the seed of the random number generator
  * @return false if an error occurred
 */
-bool addPoseNoise(sfmData::SfMData& sfmData, const float positionNoise, const float rotationNoise);
+bool addPoseNoise(sfmData::SfMData& sfmData,
+                  const float positionNoise,
+                  const float rotationNoise,
+                  const std::mt19937::result_type randomSeed = std::mt19937::default_seed);
 
 } // namespace sfm
 } // namespace aliceVision

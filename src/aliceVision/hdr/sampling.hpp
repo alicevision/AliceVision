@@ -10,6 +10,7 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <random>
 #include <set>
 
 namespace aliceVision {
@@ -59,11 +60,14 @@ class Sampling
         int blockSize = 256;
         int radius = 5;
         size_t maxCountSample = 200;
+        std::mt19937::result_type randomSeed = std::mt19937::default_seed;
     };
 
     using MapSampleRefList = std::map<UniqueDescriptor, std::vector<Coordinates>>;
 
   public:
+    void setRandomSeed(std::mt19937::result_type seed) { _randomSeed = seed; }
+
     void analyzeSource(std::vector<ImageSample>& samples, int channelQuantization, int imageIndex);
     void filter(size_t maxTotalPoints);
     void extractUsefulSamples(std::vector<ImageSample>& out_samples, const std::vector<ImageSample>& samples, int imageIndex) const;
@@ -81,6 +85,7 @@ class Sampling
 
   private:
     MapSampleRefList _positions;
+    std::mt19937::result_type _randomSeed = std::mt19937::default_seed;
 };
 
 }  // namespace hdr

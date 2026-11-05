@@ -1,4 +1,4 @@
-__version__ = "2.7"
+__version__ = "2.8"
 
 from meshroom.core import desc
 from meshroom.core.utils import VERBOSE_LEVEL
@@ -332,6 +332,15 @@ Bundle adjustment is performed periodically to refine all camera poses and 3D po
             description="Minimum number of cameras to start the calibration of the rig.",
             value=20,
             range=(1, 50, 1),
+            advanced=True,
+        ),
+        desc.IntParam(
+            name="randomSeed",
+            label="Random Seed",
+            description="This seed value will generate a sequence using a linear random generator.\n"
+                        "Set -1 to use a random seed.",
+            value=5489,
+            range=(-1, 10000, 1),
             advanced=True,
         ),
         desc.ChoiceParam(

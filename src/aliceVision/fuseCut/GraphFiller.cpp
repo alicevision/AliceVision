@@ -84,7 +84,7 @@ void GraphFiller::fillGraph(double nPixelSizeBehind, float fullWeight)
     ALICEVISION_LOG_INFO("Computing s-t graph weights.");
 
     // choose random order to prevent waiting
-    const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
+    const int seed = _mp.userParams.get<int>("delaunaycut.seed", -1);
     const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
 
 #pragma omp parallel for 
@@ -275,7 +275,7 @@ void GraphFiller::forceTedgesByGradientIJCV(float nPixelSizeBehind)
 
 
     // choose random order to prevent waiting
-    const unsigned int seed = (unsigned int)_mp.userParams.get<unsigned int>("delaunaycut.seed", 0);
+    const int seed = _mp.userParams.get<int>("delaunaycut.seed", -1);
     const std::vector<int> verticesRandIds = mvsUtils::createRandomArrayOfIntegers(_verticesAttr.size(), seed);
 
 

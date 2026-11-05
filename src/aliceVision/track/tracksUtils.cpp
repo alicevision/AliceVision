@@ -284,9 +284,15 @@ void computeCovisibility(std::map<Pair, unsigned int>& covisibility, const track
     }
 }
 
-void simulateTracks(const sfmData::SfMData& sfmData, double sigmaNoise, double outlierRatio, double outlierEpipolarRatio, bool randomNoiseVariancePerView, TracksMap &mapTracks)
+void simulateTracks(const sfmData::SfMData& sfmData,
+                    double sigmaNoise,
+                    double outlierRatio,
+                    double outlierEpipolarRatio,
+                    bool randomNoiseVariancePerView,
+                    TracksMap& mapTracks,
+                    std::mt19937::result_type randomSeed)
 {
-    std::mt19937 generator;
+    std::mt19937 generator(randomSeed);
     std::uniform_real_distribution<double> rand(0, 1);
     std::uniform_real_distribution<double> randDepth(0.1, 100.0);
     std::normal_distribution<double> randNoise(0.0, sigmaNoise);
