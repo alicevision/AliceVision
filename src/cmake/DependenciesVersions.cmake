@@ -154,9 +154,9 @@ set(DEP_GEOGRAM_VERSION "1.9.6")
 set(DEP_GEOGRAM_URL     "https://github.com/BrunoLevy/geogram/releases/download/v${DEP_GEOGRAM_VERSION}/geogram_${DEP_GEOGRAM_VERSION}.tar.gz")
 set(DEP_GEOGRAM_HASH    "MD5=ca4f42cbda64d8fb386708150dac7057")
 
-set(DEP_ASSIMP_VERSION "5.4.3")
+set(DEP_ASSIMP_VERSION "6.0.5")
 set(DEP_ASSIMP_URL     "https://github.com/assimp/assimp/archive/refs/tags/v${DEP_ASSIMP_VERSION}.tar.gz")
-set(DEP_ASSIMP_HASH    "MD5=fd64a9a57a3d81940ba7fc4a3a946502")
+set(DEP_ASSIMP_HASH    "MD5=b15787a3bc2f022d01cda9aa712a6681")
 
 set(DEP_ALEMBIC_VERSION "1.8.12")
 set(DEP_ALEMBIC_URL     "https://github.com/alembic/alembic/archive/${DEP_ALEMBIC_VERSION}.tar.gz")
