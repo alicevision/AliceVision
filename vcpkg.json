@@ -69,6 +69,10 @@
       "version": "3.1.14.0#1"
     },
     {
+      "name": "assimp",
+      "version": "6.0.5#1"
+    },
+    {
       "name": "geogram",
       "version": "1.9.3#1"
     },
