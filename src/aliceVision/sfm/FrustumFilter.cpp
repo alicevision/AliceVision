@@ -12,7 +12,7 @@
 #include <aliceVision/system/ProgressDisplay.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/types.hpp>
-#include <aliceVision/geometry/HalfPlane.hpp>
+#include <aliceVision/sfm/HalfPlane.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 
 #include <fstream>

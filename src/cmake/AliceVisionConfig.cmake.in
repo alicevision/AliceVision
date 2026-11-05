@@ -44,9 +44,6 @@
 ## Public dependencies that needs to be propagated
 include(CMakeFindDependencyMacro)
 
-set(Ceres_DIR @Ceres_DIR@)
-find_dependency(Ceres)
-find_dependency(LEMON)
 find_dependency(OpenImageIO 3.0)
 
 # whether it is built with CCTags
@@ -93,6 +90,9 @@ find_dependency(Boost COMPONENTS @ALICEVISION_BOOST_COMPONENTS@)
 
 set(ALICEVISION_BUILD_SFM @ALICEVISION_BUILD_SFM@)
 if(ALICEVISION_BUILD_SFM)
+  set(Ceres_DIR @Ceres_DIR@)
+  find_dependency(Ceres)
+  find_dependency(LEMON)
   find_dependency(CoinUtils REQUIRED)
   find_dependency(Clp REQUIRED)
   find_dependency(Osi REQUIRED)

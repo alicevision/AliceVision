@@ -540,10 +540,9 @@ endif()
 # ==============================================================================
 # Assimp
 # ==============================================================================
-if (ALICEVISION_BUILD_MVS OR ALICEVISION_BUILD_SFM)
-    find_package(assimp REQUIRED)
-    message(STATUS "Assimp: ${ASSIMP_LIBRARIES}, ${ASSIMP_INCLUDE_DIRS}, ${ASSIMP_LIBRARY_DIRS}")
-endif()
+# Needed by sfmDataIO (core)
+find_package(assimp REQUIRED)
+message(STATUS "Assimp: ${ASSIMP_LIBRARIES}, ${ASSIMP_INCLUDE_DIRS}, ${ASSIMP_LIBRARY_DIRS}")
 
 # ==============================================================================
 # OpenCV
@@ -602,20 +601,19 @@ endif()
 # ==============================================================================
 set(ALICEVISION_HAVE_ALEMBIC 0)
 
-if (ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
-    if (NOT ALICEVISION_USE_ALEMBIC STREQUAL "OFF")
-        find_package(Alembic 1.7.0 CONFIG)
+# Used by sfmDataIO (core)
+if (NOT ALICEVISION_USE_ALEMBIC STREQUAL "OFF")
+    find_package(Alembic 1.7.0 CONFIG)
 
-        if (Alembic_FOUND)
-            set(ALICEVISION_HAVE_ALEMBIC 1)
-            message(STATUS "Alembic version ${Alembic_VERSION} found.")
-            # There is a missing include dependency in Alembic cmake export.
-            add_target_properties(Alembic::Alembic PROPERTIES
-                INTERFACE_INCLUDE_DIRECTORIES "${ILMBASE_INCLUDE_DIR}"
-            )
-        elseif (ALICEVISION_USE_ALEMBIC STREQUAL "ON")
-            message(SEND_ERROR "Failed to find Alembic.")
-        endif()
+    if (Alembic_FOUND)
+        set(ALICEVISION_HAVE_ALEMBIC 1)
+        message(STATUS "Alembic version ${Alembic_VERSION} found.")
+        # There is a missing include dependency in Alembic cmake export.
+        add_target_properties(Alembic::Alembic PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${ILMBASE_INCLUDE_DIR}"
+        )
+    elseif (ALICEVISION_USE_ALEMBIC STREQUAL "ON")
+        message(SEND_ERROR "Failed to find Alembic.")
     endif()
 endif()
 
@@ -1130,9 +1128,8 @@ set(ALICEVISION_GLOBAL_TARGET_LIST "" CACHE INTERNAL "Global list of all AliceVi
 
 # software(s) under patent or commercial licence
 # Included for research purpose only
-if (ALICEVISION_BUILD_SFM)
-    add_subdirectory(nonFree)
-endif()
+# vlsift is needed by feature (core)
+add_subdirectory(nonFree)
 
 # The aliceVision library itself
 add_subdirectory(aliceVision)

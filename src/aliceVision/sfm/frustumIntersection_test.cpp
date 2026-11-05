@@ -5,8 +5,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/geometry/HalfPlane.hpp"
-#include "aliceVision/geometry/Frustum.hpp"
+#include "aliceVision/sfm/HalfPlane.hpp"
+#include "aliceVision/sfm/Frustum.hpp"
 
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/projection.hpp"

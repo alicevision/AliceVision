@@ -55,7 +55,9 @@ set(sfm_files_headers
     utils/sfmTransfer.hpp
     utils/syntheticScene.hpp
     LocalBundleAdjustmentGraph.hpp
+    Frustum.hpp
     FrustumFilter.hpp
+    HalfPlane.hpp
     filters.hpp
     generateReport.hpp
     sfm.hpp
@@ -146,6 +148,17 @@ alicevision_add_library(aliceVision_sfm
 )
 
 # Unit tests
+
+alicevision_add_test(halfSpaceIntersection_test.cpp
+    NAME "sfm_halfSpaceIntersection"
+    LINKS aliceVision_sfm
+)
+
+alicevision_add_test(frustumIntersection_test.cpp
+    NAME "sfm_frustumIntersection"
+    LINKS aliceVision_sfm
+          aliceVision_multiview_test_data
+)
 
 alicevision_add_test(bundle/bundleAdjustment_test.cpp
     NAME "sfm_bundleAdjustment"
