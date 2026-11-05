@@ -601,6 +601,223 @@ bool isRawFormat(const std::string& path)
     return (imgFormat.compare("raw") == 0);
 }
 
+/**
+ * @brief Finish an image read: DCP processing, color conversion, channel adaptation and export to an Image.
+ * @param[in,out] inBuf Decoded image, in float.
+ * @param[in] imgMetadata Metadata of the source image.
+ * @param[in] path Source name, used in messages and to guess the default color space from its extension.
+ * @param[in] isRawImage True when the source is a camera raw image.
+ * @param[in,out] neutral Camera neutral, updated when a DCP profile is applied from the metadata.
+ * @param[in] format Pixel type of the output image.
+ * @param[in] nchannels Number of channels of the output image.
+ * @param[out] image Output image.
+ * @param[in] imageReadOptions Read options.
+ */
+template<typename T>
+void finalizeReadImage(oiio::ImageBuf& inBuf,
+                       const oiio::ParamValueList& imgMetadata,
+                       const std::string& path,
+                       bool isRawImage,
+                       image::DCPProfile::Triple& neutral,
+                       oiio::TypeDesc format,
+                       int nchannels,
+                       Image<T>& image,
+                       const ImageReadOptions& imageReadOptions)
+{
+    // Apply DCP profile
+    if (!imageReadOptions.colorProfileFileName.empty() && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+    {
+        image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
+
+        // oiio::ParamValueList imgMetadata = readImageMetadata(path);
+        std::string cam_mul = "";
+        if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
+        {
+            cam_mul = "{1024, 1024, 1024, 1024}";
+            ALICEVISION_LOG_WARNING(
+              "[readImage]: cam_mul metadata not available, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
+        }
+
+        std::vector<float> v_mult;
+        size_t last = 1;
+        size_t next = 1;
+        while ((next = cam_mul.find(",", last)) != std::string::npos)
+        {
+            v_mult.push_back(std::stof(cam_mul.substr(last, next - last)));
+            last = next + 1;
+        }
+        v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last)));
+
+        image::DCPProfile::Triple neutral;
+        for (int i = 0; i < 3; i++)
+        {
+            neutral[i] = v_mult[i] / v_mult[1];
+        }
+
+        ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = " << neutral);
+
+        double cct = imageReadOptions.correlatedColorTemperature;
+
+        dcpProfile.applyLinear(inBuf, neutral, cct, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
+    }
+
+    // color conversion
+    if (imageReadOptions.workingColorSpace == EImageColorSpace::AUTO)
+        ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
+
+    // Get color space name. Default image color space is sRGB
+    const std::string ext = boost::to_lower_copy(fs::path(path).extension().string());
+    const std::string colorSpaceFromMetadata = getImageColorSpace(inBuf.spec(), ext == ".exr" ? "linear" : "sRGB", path);
+
+    std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
+                                       ? "aces2065-1"
+                                       : (isRawImage ? "linear"
+                                                     : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
+                                                          ? colorSpaceFromMetadata
+                                                          : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
+
+    ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
+
+    // Manage oiio GammaX.Y color space assuming that the gamma correction has been applied on an image with sRGB primaries.
+    if (fromColorSpaceName.substr(0, 5) == "Gamma")
+    {
+        // Reverse gamma correction
+        oiio::ImageBufAlgo::pow(inBuf, inBuf, std::stof(fromColorSpaceName.substr(5)));
+        fromColorSpaceName = "linear";
+    }
+
+    DCPProfile dcpProf;
+    if ((fromColorSpaceName == "no_conversion") && (imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION))
+    {
+        ALICEVISION_LOG_INFO("Source image is in a raw color space and must be converted into " << imageReadOptions.workingColorSpace << ".");
+        ALICEVISION_LOG_INFO("Check if a DCP profile is available in the metadata to be applied.");
+        if (inBuf.spec().nchannels < 3)
+        {
+            ALICEVISION_THROW_ERROR("A DCP profile cannot be applied on an image containing less than 3 channels.");
+        }
+
+        const std::map<std::string, std::string> imageMetadata = getMapFromMetadata(imgMetadata);
+
+        // load DCP metadata from metadata. An error will be thrown if all required metadata are not there.
+        dcpProf.Load(imageMetadata);
+
+        std::string cam_mul =
+          map_has_non_empty_value(imageMetadata, "raw:cam_mul") ? imageMetadata.at("raw:cam_mul") : imageMetadata.at("AliceVision:raw:cam_mul");
+        std::vector<float> v_mult;
+        size_t last = 0;
+        size_t next = 1;
+        while ((next = cam_mul.find(",", last)) != std::string::npos)
+        {
+            v_mult.push_back(std::stof(cam_mul.substr(last, next - last)));
+            last = next + 1;
+        }
+        v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last)));
+
+        for (int i = 0; i < 3; i++)
+        {
+            neutral[i] = v_mult[i] / v_mult[1];
+        }
+
+        double cct = imageReadOptions.correlatedColorTemperature;
+
+        dcpProf.applyLinear(inBuf, neutral, cct, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
+        fromColorSpaceName = "aces2065-1";
+    }
+
+    if ((imageReadOptions.workingColorSpace == EImageColorSpace::NO_CONVERSION) ||
+        (imageReadOptions.workingColorSpace == EImageColorSpace_stringToEnum(fromColorSpaceName)))
+    {
+        // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
+        // even if no conversion is needed.
+    }
+    else if (EImageColorSpace_isSupportedOIIOEnum(imageReadOptions.workingColorSpace) &&
+             EImageColorSpace_isSupportedOIIOEnum(EImageColorSpace_stringToEnum(fromColorSpaceName)))
+    {
+        const auto colorConfigPath = getAliceVisionOCIOConfig();
+        if (colorConfigPath.empty())
+        {
+            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
+        }
+        oiio::ImageBuf colorspaceBuf;
+        oiio::ColorConfig colorConfig(colorConfigPath);
+        oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
+                                         inBuf,
+                                         fromColorSpaceName,
+                                         EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace),
+                                         true,
+                                         "",
+                                         "",
+                                         &colorConfig);
+        inBuf = colorspaceBuf;
+    }
+    else
+    {
+        oiio::ImageBuf colorspaceBuf;
+        oiio::ImageBufAlgo::colorconvert(
+          colorspaceBuf, inBuf, fromColorSpaceName, EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace));
+        inBuf = colorspaceBuf;
+    }
+
+    // convert to grayscale if needed
+    if (nchannels == 1 && inBuf.spec().nchannels >= 3)
+    {
+        // conversion region of interest (for inBuf.spec().nchannels > 3)
+        oiio::ROI convertionROI = inBuf.roi();
+        convertionROI.chbegin = 0;
+        convertionROI.chend = 3;
+
+        // compute luminance via a weighted sum of R,G,B
+        // (assuming Rec709 primaries and a linear scale)
+        const float weights[3] = {.2126f, .7152f, .0722f};  // To be changed if not sRGB Rec 709 Linear.
+        oiio::ImageBuf grayscaleBuf;
+        oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
+        inBuf.copy(grayscaleBuf);
+
+        // TODO: if inBuf.spec().nchannels == 4: premult?
+    }
+
+    // duplicate first channel for RGB
+    if (nchannels >= 3 && inBuf.spec().nchannels == 1)
+    {
+        oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
+        oiio::ImageBuf requestedBuf(requestedSpec);
+        int channelOrder[] = {0, 0, 0};
+        float channelValues[] = {0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/};
+        oiio::ImageBufAlgo::channels(requestedBuf, inBuf, 3, channelOrder, channelValues);
+        inBuf.swap(requestedBuf);
+    }
+
+    // Add an alpha channel if needed
+    if (nchannels == 4 && inBuf.spec().nchannels == 3)
+    {
+        oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
+        oiio::ImageBuf requestedBuf(requestedSpec);
+        int channelOrder[] = {0, 1, 2, -1 /*constant value*/};
+        float channelValues[] = {0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0};
+        oiio::ImageBufAlgo::channels(requestedBuf,
+                                     inBuf,
+                                     4,  // create an image with 4 channels
+                                     channelOrder,
+                                     channelValues);  // only the 4th value is used
+        inBuf.swap(requestedBuf);
+    }
+
+    // copy pixels from oiio to eigen
+    image.resize(inBuf.spec().width, inBuf.spec().height, false);
+    {
+        oiio::ROI exportROI = inBuf.roi();
+        exportROI.chbegin = 0;
+        exportROI.chend = nchannels;
+
+        if (!inBuf.get_pixels(exportROI, format, image.data()))
+        {
+            const std::string error = inBuf.geterror();
+            ALICEVISION_THROW_ERROR("Failed to export pixels from image file '" << path << "': "
+                                    << (error.empty() ? "unknown OpenImageIO error" : error));
+        }
+    }
+}
+
 template<typename T>
 void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Image<T>& image, const ImageReadOptions& imageReadOptions)
 {
@@ -798,199 +1015,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
         }
     }
 
-    // Apply DCP profile
-    if (!imageReadOptions.colorProfileFileName.empty() && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
-    {
-        image::DCPProfile dcpProfile(imageReadOptions.colorProfileFileName);
-
-        // oiio::ParamValueList imgMetadata = readImageMetadata(path);
-        std::string cam_mul = "";
-        if (!imgMetadata.getattribute("raw:cam_mul", cam_mul))
-        {
-            cam_mul = "{1024, 1024, 1024, 1024}";
-            ALICEVISION_LOG_WARNING(
-              "[readImage]: cam_mul metadata not available, the openImageIO version might be too old (>= 2.4.5.0 requested for dcp management).");
-        }
-
-        std::vector<float> v_mult;
-        size_t last = 1;
-        size_t next = 1;
-        while ((next = cam_mul.find(",", last)) != std::string::npos)
-        {
-            v_mult.push_back(std::stof(cam_mul.substr(last, next - last)));
-            last = next + 1;
-        }
-        v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last)));
-
-        image::DCPProfile::Triple neutral;
-        for (int i = 0; i < 3; i++)
-        {
-            neutral[i] = v_mult[i] / v_mult[1];
-        }
-
-        ALICEVISION_LOG_TRACE("Apply DCP Linear processing with neutral = " << neutral);
-
-        double cct = imageReadOptions.correlatedColorTemperature;
-
-        dcpProfile.applyLinear(inBuf, neutral, cct, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
-    }
-
-    // color conversion
-    if (imageReadOptions.workingColorSpace == EImageColorSpace::AUTO)
-        ALICEVISION_THROW_ERROR("You must specify a requested color space for image file '" + path + "'.");
-
-    // Get color space name. Default image color space is sRGB
-    const std::string ext = boost::to_lower_copy(fs::path(path).extension().string());
-    const std::string colorSpaceFromMetadata = getImageColorSpace(inBuf.spec(), ext == ".exr" ? "linear" : "sRGB", path);
-
-    std::string fromColorSpaceName = (isRawImage && imageReadOptions.rawColorInterpretation == ERawColorInterpretation::DcpLinearProcessing)
-                                       ? "aces2065-1"
-                                       : (isRawImage ? "linear"
-                                                     : (imageReadOptions.inputColorSpace == EImageColorSpace::AUTO
-                                                          ? colorSpaceFromMetadata
-                                                          : EImageColorSpace_enumToString(imageReadOptions.inputColorSpace)));
-
-    ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
-
-    // Manage oiio GammaX.Y color space assuming that the gamma correction has been applied on an image with sRGB primaries.
-    if (fromColorSpaceName.substr(0, 5) == "Gamma")
-    {
-        // Reverse gamma correction
-        oiio::ImageBufAlgo::pow(inBuf, inBuf, std::stof(fromColorSpaceName.substr(5)));
-        fromColorSpaceName = "linear";
-    }
-
-    DCPProfile dcpProf;
-    if ((fromColorSpaceName == "no_conversion") && (imageReadOptions.workingColorSpace != EImageColorSpace::NO_CONVERSION))
-    {
-        ALICEVISION_LOG_INFO("Source image is in a raw color space and must be converted into " << imageReadOptions.workingColorSpace << ".");
-        ALICEVISION_LOG_INFO("Check if a DCP profile is available in the metadata to be applied.");
-        if (inBuf.spec().nchannels < 3)
-        {
-            ALICEVISION_THROW_ERROR("A DCP profile cannot be applied on an image containing less than 3 channels.");
-        }
-
-        int width, height;
-        const std::map<std::string, std::string> imageMetadata = getMapFromMetadata(readImageMetadata(path, width, height));
-
-        // load DCP metadata from metadata. An error will be thrown if all required metadata are not there.
-        dcpProf.Load(imageMetadata);
-
-        std::string cam_mul =
-          map_has_non_empty_value(imageMetadata, "raw:cam_mul") ? imageMetadata.at("raw:cam_mul") : imageMetadata.at("AliceVision:raw:cam_mul");
-        std::vector<float> v_mult;
-        size_t last = 0;
-        size_t next = 1;
-        while ((next = cam_mul.find(",", last)) != std::string::npos)
-        {
-            v_mult.push_back(std::stof(cam_mul.substr(last, next - last)));
-            last = next + 1;
-        }
-        v_mult.push_back(std::stof(cam_mul.substr(last, cam_mul.find("}", last) - last)));
-
-        for (int i = 0; i < 3; i++)
-        {
-            neutral[i] = v_mult[i] / v_mult[1];
-        }
-
-        double cct = imageReadOptions.correlatedColorTemperature;
-
-        dcpProf.applyLinear(inBuf, neutral, cct, imageReadOptions.doWBAfterDemosaicing, imageReadOptions.useDCPColorMatrixOnly);
-        fromColorSpaceName = "aces2065-1";
-    }
-
-    if ((imageReadOptions.workingColorSpace == EImageColorSpace::NO_CONVERSION) ||
-        (imageReadOptions.workingColorSpace == EImageColorSpace_stringToEnum(fromColorSpaceName)))
-    {
-        // Do nothing. Note that calling imageAlgo::colorconvert() will copy the source buffer
-        // even if no conversion is needed.
-    }
-    else if (EImageColorSpace_isSupportedOIIOEnum(imageReadOptions.workingColorSpace) &&
-             EImageColorSpace_isSupportedOIIOEnum(EImageColorSpace_stringToEnum(fromColorSpaceName)))
-    {
-        const auto colorConfigPath = getAliceVisionOCIOConfig();
-        if (colorConfigPath.empty())
-        {
-            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
-        }
-        oiio::ImageBuf colorspaceBuf;
-        oiio::ColorConfig colorConfig(colorConfigPath);
-        oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
-                                         inBuf,
-                                         fromColorSpaceName,
-                                         EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace),
-                                         true,
-                                         "",
-                                         "",
-                                         &colorConfig);
-        inBuf = colorspaceBuf;
-    }
-    else
-    {
-        oiio::ImageBuf colorspaceBuf;
-        oiio::ImageBufAlgo::colorconvert(
-          colorspaceBuf, inBuf, fromColorSpaceName, EImageColorSpace_enumToOIIOString(imageReadOptions.workingColorSpace));
-        inBuf = colorspaceBuf;
-    }
-
-    // convert to grayscale if needed
-    if (nchannels == 1 && inBuf.spec().nchannels >= 3)
-    {
-        // conversion region of interest (for inBuf.spec().nchannels > 3)
-        oiio::ROI convertionROI = inBuf.roi();
-        convertionROI.chbegin = 0;
-        convertionROI.chend = 3;
-
-        // compute luminance via a weighted sum of R,G,B
-        // (assuming Rec709 primaries and a linear scale)
-        const float weights[3] = {.2126f, .7152f, .0722f};  // To be changed if not sRGB Rec 709 Linear.
-        oiio::ImageBuf grayscaleBuf;
-        oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
-        inBuf.copy(grayscaleBuf);
-
-        // TODO: if inBuf.spec().nchannels == 4: premult?
-    }
-
-    // duplicate first channel for RGB
-    if (nchannels >= 3 && inBuf.spec().nchannels == 1)
-    {
-        oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
-        oiio::ImageBuf requestedBuf(requestedSpec);
-        int channelOrder[] = {0, 0, 0};
-        float channelValues[] = {0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/};
-        oiio::ImageBufAlgo::channels(requestedBuf, inBuf, 3, channelOrder, channelValues);
-        inBuf.swap(requestedBuf);
-    }
-
-    // Add an alpha channel if needed
-    if (nchannels == 4 && inBuf.spec().nchannels == 3)
-    {
-        oiio::ImageSpec requestedSpec(inBuf.spec().width, inBuf.spec().height, 3, format);
-        oiio::ImageBuf requestedBuf(requestedSpec);
-        int channelOrder[] = {0, 1, 2, -1 /*constant value*/};
-        float channelValues[] = {0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0};
-        oiio::ImageBufAlgo::channels(requestedBuf,
-                                     inBuf,
-                                     4,  // create an image with 4 channels
-                                     channelOrder,
-                                     channelValues);  // only the 4th value is used
-        inBuf.swap(requestedBuf);
-    }
-
-    // copy pixels from oiio to eigen
-    image.resize(inBuf.spec().width, inBuf.spec().height, false);
-    {
-        oiio::ROI exportROI = inBuf.roi();
-        exportROI.chbegin = 0;
-        exportROI.chend = nchannels;
-
-        if (!inBuf.get_pixels(exportROI, format, image.data()))
-        {
-            const std::string error = inBuf.geterror();
-            ALICEVISION_THROW_ERROR("Failed to export pixels from image file '" << path << "': "
-                                    << (error.empty() ? "unknown OpenImageIO error" : error));
-        }
-    }
+    finalizeReadImage(inBuf, imgMetadata, path, isRawImage, neutral, format, nchannels, image, imageReadOptions);
 }
 
 template<typename T>
