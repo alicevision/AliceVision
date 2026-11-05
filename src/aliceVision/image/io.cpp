@@ -21,6 +21,7 @@
 #include <OpenImageIO/imagebufalgo.h>
 #include <OpenImageIO/color.h>
 #include <OpenImageIO/imagecache.h>
+#include <OpenImageIO/filesystem.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -1018,6 +1019,75 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
     finalizeReadImage(inBuf, imgMetadata, path, isRawImage, neutral, format, nchannels, image, imageReadOptions);
 }
 
+/**
+ * @brief Read an image from an encoded file held in memory.
+ * @param[in] data Encoded file bytes.
+ * @param[in] size Number of bytes in data.
+ * @param[in] formatHint File extension identifying the format, without the dot (e.g. "png", "exr").
+ * @param[in] format Pixel type of the output image.
+ * @param[in] nchannels Number of channels of the output image (1, 3 or 4).
+ * @param[out] image Output image.
+ * @param[in] imageReadOptions Read options. Camera raw images are not supported.
+ */
+template<typename T>
+void readImageFromMemory(const void* data,
+                         std::size_t size,
+                         const std::string& formatHint,
+                         oiio::TypeDesc format,
+                         int nchannels,
+                         Image<T>& image,
+                         const ImageReadOptions& imageReadOptions)
+{
+    // Only used as a name for OIIO to choose its reader and for messages: nothing is read from disk.
+    const std::string sourceName = "memory." + formatHint;
+
+    ALICEVISION_LOG_DEBUG("[IO] Read Image from memory: " << sourceName << " (" << size << " bytes)");
+
+    if (data == nullptr || size == 0)
+    {
+        ALICEVISION_THROW_ERROR("No data to read for image '" << sourceName << "'.");
+    }
+    if (nchannels == 0)
+    {
+        ALICEVISION_THROW_ERROR("Requested channels is 0. Image: '" << sourceName << "'.");
+    }
+    if (nchannels == 2)
+    {
+        ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image: '" << sourceName << "'.");
+    }
+
+    // The proxy must outlive every access of inBuf to the encoded data.
+    oiio::Filesystem::IOMemReader memReader(data, size);
+    const oiio::ImageSpec configSpec;
+    oiio::ImageBuf inBuf(sourceName, 0, 0, nullptr, &configSpec, &memReader);
+
+    if (!inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT))  // force image conversion to float (for grayscale and color space conversion)
+    {
+        const std::string error = inBuf.geterror();
+        ALICEVISION_THROW_ERROR("Failed to read image '" << sourceName << "' from memory: " << (error.empty() ? "unknown OpenImageIO error" : error));
+    }
+    if (!inBuf.initialized())
+    {
+        ALICEVISION_THROW_ERROR("Failed to decode image '" << sourceName << "' from memory.");
+    }
+    if (inBuf.file_format_name() == "raw")
+    {
+        ALICEVISION_THROW_ERROR("Camera raw images cannot be read from memory. Image: '" << sourceName << "'.");
+    }
+    if (inBuf.spec().nchannels == 0)
+    {
+        ALICEVISION_THROW_ERROR("No channel in the input image: '" << sourceName << "'.");
+    }
+    if (inBuf.spec().nchannels == 2)
+    {
+        ALICEVISION_THROW_ERROR("Load of 2 channels is not supported. Image: '" << sourceName << "'.");
+    }
+
+    image::DCPProfile::Triple neutral = {1.0, 1.0, 1.0};
+    const oiio::ParamValueList imgMetadata = inBuf.spec().extra_attribs;
+    finalizeReadImage(inBuf, imgMetadata, sourceName, false, neutral, format, nchannels, image, imageReadOptions);
+}
+
 template<typename T>
 void readImageNoFloat(const std::string& path, oiio::TypeDesc format, Image<T>& image)
 {
@@ -1361,6 +1431,69 @@ void readImage(const std::string& path, Image<RGBfColor>& image, const ImageRead
 void readImage(const std::string& path, Image<RGBColor>& image, const ImageReadOptions& imageReadOptions)
 {
     readImage(path, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
+}
+
+void readImageFromMemory(const void* data,
+                         std::size_t size,
+                         const std::string& formatHint,
+                         Image<float>& image,
+                         const ImageReadOptions& imageReadOptions)
+{
+    readImageFromMemory(data, size, formatHint, oiio::TypeDesc::FLOAT, 1, image, imageReadOptions);
+}
+
+void readImageFromMemory(const void* data,
+                         std::size_t size,
+                         const std::string& formatHint,
+                         Image<IndexT>& image,
+                         const ImageReadOptions& imageReadOptions)
+{
+    readImageFromMemory(data, size, formatHint, oiio::TypeDesc::UINT32, 1, image, imageReadOptions);
+}
+
+void readImageFromMemory(const void* data,
+                         std::size_t size,
+                         const std::string& formatHint,
+                         Image<unsigned char>& image,
+                         const ImageReadOptions& imageReadOptions)
+{
+    readImageFromMemory(data, size, formatHint, oiio::TypeDesc::UINT8, 1, image, imageReadOptions);
+}
+
+void readImageFromMemory(const void* data,
+                         std::size_t size,
+                         const std::string& formatHint,
+                         Image<RGBAfColor>& image,
+                         const ImageReadOptions& imageReadOptions)
+{
+    readImageFromMemory(data, size, formatHint, oiio::TypeDesc::FLOAT, 4, image, imageReadOptions);
+}
+
+void readImageFromMemory(const void* data,
+                         std::size_t size,
+                         const std::string& formatHint,
+                         Image<RGBAColor>& image,
+                         const ImageReadOptions& imageReadOptions)
+{
+    readImageFromMemory(data, size, formatHint, oiio::TypeDesc::UINT8, 4, image, imageReadOptions);
+}
+
+void readImageFromMemory(const void* data,
+                         std::size_t size,
+                         const std::string& formatHint,
+                         Image<RGBfColor>& image,
+                         const ImageReadOptions& imageReadOptions)
+{
+    readImageFromMemory(data, size, formatHint, oiio::TypeDesc::FLOAT, 3, image, imageReadOptions);
+}
+
+void readImageFromMemory(const void* data,
+                         std::size_t size,
+                         const std::string& formatHint,
+                         Image<RGBColor>& image,
+                         const ImageReadOptions& imageReadOptions)
+{
+    readImageFromMemory(data, size, formatHint, oiio::TypeDesc::UINT8, 3, image, imageReadOptions);
 }
 
 void logOIIOImageCacheInfo()
