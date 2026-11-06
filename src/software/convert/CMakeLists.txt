@@ -14,7 +14,6 @@ if (ALICEVISION_BUILD_SFM)
               aliceVision_sfmData
               aliceVision_sfmDataIO
               Boost::program_options
-              Boost::system
     )
 
     if (TARGET E57Format AND ALICEVISION_BUILD_MVS)
