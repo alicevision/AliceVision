@@ -52,7 +52,7 @@ if (NOT ALICEVISION_HAVE_SSE)
     list(APPEND SIMD_DEFINITIONS "-DVL_DISABLE_SSE2")
 endif()
 
-alicevision_add_library(vlsift
+alicevision_add_library(aliceVision_vlsift
     SOURCES
         ${FEATS} ${FEATS_H}
     PRIVATE_LINKS
@@ -63,9 +63,14 @@ alicevision_add_library(vlsift
         -DVL_BUILD_DLL
 )
 
-set_property(TARGET vlsift
+set_property(TARGET aliceVision_vlsift
     PROPERTY FOLDER nonFree
 )
+
+# vlfeat uses the C math library
+if (UNIX)
+    target_link_libraries(aliceVision_vlsift PRIVATE m)
+endif()
 
 install(
     DIRECTORY .
