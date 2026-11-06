@@ -124,6 +124,10 @@ void Sgm::sgmRc(const Tile& tile, const SgmDepthList& tileDepthList)
     if (tile.sgmTCams.empty() || tileDepthList.getDepths().empty())
         ALICEVISION_THROW_ERROR(tile << "Cannot compute Semi-Global Matching, no depths or no T cameras (viewId: " << viewId << ").");
 
+    // wait for the previous asynchronous copy of _depths_hmh on this stream (previous tile) to complete
+    // before overwriting the page-locked host buffer
+    CHECK_CUDA_RETURN_ERROR(cudaStreamSynchronize(_stream));
+
     // copy rc depth data in page-locked host memory
     for (int i = 0; i < tileDepthList.getDepths().size(); ++i)
         _depths_hmh(i, 0) = tileDepthList.getDepths()[i];

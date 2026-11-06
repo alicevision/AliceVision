@@ -184,6 +184,8 @@ void DeviceCache::clear()
     // get the current device id
     const int cudaDeviceId = getCudaDeviceId();
 
+    std::lock_guard<std::mutex> lock(_cachePerDeviceMutex);
+
     // find the current SingleDeviceCache
     auto it = _cachePerDevice.find(cudaDeviceId);
 
@@ -197,14 +199,26 @@ void DeviceCache::build(int maxMipmapImages, int maxCameraParams)
     // get the current device id
     const int cudaDeviceId = getCudaDeviceId();
 
-    // reset the current device cache
-    _cachePerDevice[cudaDeviceId].reset(new SingleDeviceCache(maxMipmapImages, maxCameraParams));
+    // build outside the lock (allocates device memory)
+    std::unique_ptr<SingleDeviceCache> newCache = std::make_unique<SingleDeviceCache>(maxMipmapImages, maxCameraParams);
+    std::unique_ptr<SingleDeviceCache> oldCache;
+
+    {
+        std::lock_guard<std::mutex> lock(_cachePerDeviceMutex);
+
+        // reset the current device cache
+        oldCache = std::move(_cachePerDevice[cudaDeviceId]);
+        _cachePerDevice[cudaDeviceId] = std::move(newCache);
+    }
+    // oldCache is released here, outside the lock
 }
 
 DeviceCache::SingleDeviceCache& DeviceCache::getCurrentDeviceCache()
 {
     // get the current device id
     const int cudaDeviceId = getCudaDeviceId();
+
+    std::lock_guard<std::mutex> lock(_cachePerDeviceMutex);
 
     // find the current SingleDeviceCache
     auto it = _cachePerDevice.find(cudaDeviceId);

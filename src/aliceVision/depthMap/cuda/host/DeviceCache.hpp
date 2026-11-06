@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
@@ -107,6 +108,10 @@ class DeviceCache
         std::vector<std::unique_ptr<DeviceMipmapImage>> mipmaps;  //< cached device mipmap images
     };
     std::map<int, std::unique_ptr<SingleDeviceCache>> _cachePerDevice;  // <cudaDeviceId, SingleDeviceCachePtr>
+
+    // protects _cachePerDevice: one thread per GPU accesses the map concurrently (multi-GPU)
+    // note: each thread only uses its own SingleDeviceCache, so its content does not need locking
+    std::mutex _cachePerDeviceMutex;
 
     // private methods
 
