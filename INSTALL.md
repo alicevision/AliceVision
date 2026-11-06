@@ -460,6 +460,7 @@ In general, you need to specify the list of the AliceVision modules that your li
 depends on.
 
 Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:PATH="YourInstallPath"/share/aliceVision/cmake`
+(this location can be changed when building AliceVision with `ALICEVISION_INSTALL_CMAKEDIR`)
 or by simply adding the installation path to your `CMAKE_PREFIX_PATH`, i.e. `-DCMAKE_PREFIX_PATH:PATH="YourInstallPath"`.
 Check the sample in [samples](src/samples/aliceVisionAs3rdParty) for an example of use.
 
