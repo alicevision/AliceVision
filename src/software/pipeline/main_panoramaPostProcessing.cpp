@@ -226,10 +226,6 @@ void colorSpaceTransform(image::Image<image::RGBAfColor>& inputImage,
     else if (EImageColorSpace_isSupportedOIIOEnum(toColorSpace) && EImageColorSpace_isSupportedOIIOEnum(fromColorSpace))
     {
         const auto colorConfigPath = image::getAliceVisionOCIOConfig();
-        if (colorConfigPath.empty())
-        {
-            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
-        }
         oiio::ColorConfig colorConfig(colorConfigPath);
         oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
                                          *outBuf,

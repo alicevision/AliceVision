@@ -46,6 +46,9 @@ alicevision_add_library(aliceVision_image
     PRIVATE_LINKS
         aliceVision_system
         OpenEXR::OpenEXR
+    PRIVATE_DEFINITIONS
+        # Installed location of config.ocio, used when ALICEVISION_ROOT is not defined
+        -DALICEVISION_INSTALL_DATADIR="${CMAKE_INSTALL_FULL_DATADIR}"
 )
 
 # Install config.ocio

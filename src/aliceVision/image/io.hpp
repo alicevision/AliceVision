@@ -572,7 +572,8 @@ bool tryLoadMask(Image<unsigned char>* mask,
 // TODO: use std::optional when the C++ standard version is upgraded to C++17
 std::string getAliceVisionRoot();
 
-/// Returns path to OpenColorIO config that is shipped with aliceVision
+/// Returns path to OpenColorIO config that is shipped with aliceVision.
+/// Throws if no config file can be found.
 std::string getAliceVisionOCIOConfig();
 
 void setAliceVisionRootOverride(const std::string& value);
