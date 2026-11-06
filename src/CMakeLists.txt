@@ -1153,7 +1153,11 @@ set(cmakeVersionConfig "${generatedDir}/${exportedProjectName}ConfigVersion.cmak
 # the generated cmake version file
 set(cmakeProjectConfig "${generatedDir}/${exportedProjectName}Config.cmake")
 # place to install the cmake-related files
-set(cmakeConfigInstallDir "${CMAKE_INSTALL_DATADIR}/aliceVision/cmake")
+# They contain architecture-specific paths: distributions may install them in an architecture-specific
+# directory, e.g. -DALICEVISION_INSTALL_CMAKEDIR=lib/x86_64-linux-gnu/cmake/AliceVision
+set(ALICEVISION_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/aliceVision/cmake" CACHE STRING
+    "Installation directory of the AliceVision CMake config files, relative to CMAKE_INSTALL_PREFIX")
+set(cmakeConfigInstallDir "${ALICEVISION_INSTALL_CMAKEDIR}")
 # the name of the cmake Target file to export
 set(targetsExportName "${exportedProjectName}Targets")
 
