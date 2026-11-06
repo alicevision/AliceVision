@@ -735,10 +735,6 @@ void finalizeReadImage(oiio::ImageBuf& inBuf,
              EImageColorSpace_isSupportedOIIOEnum(EImageColorSpace_stringToEnum(fromColorSpaceName)))
     {
         const auto colorConfigPath = getAliceVisionOCIOConfig();
-        if (colorConfigPath.empty())
-        {
-            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
-        }
         oiio::ImageBuf colorspaceBuf;
         oiio::ColorConfig colorConfig(colorConfigPath);
         oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
@@ -1258,10 +1254,6 @@ void writeImage(const std::string& path,
     else if (EImageColorSpace_isSupportedOIIOEnum(fromColorSpace) && EImageColorSpace_isSupportedOIIOEnum(toColorSpace))
     {
         const auto colorConfigPath = getAliceVisionOCIOConfig();
-        if (colorConfigPath.empty())
-        {
-            throw std::runtime_error("ALICEVISION_ROOT is not defined, OCIO config file cannot be accessed.");
-        }
         oiio::ColorConfig colorConfig(colorConfigPath);
         oiio::ImageBufAlgo::colorconvert(colorspaceBuf,
                                          *outBuf,
@@ -1624,26 +1616,32 @@ bool tryLoadMask(Image<unsigned char>* mask,
     return false;
 }
 
-static std::string aliceVisionRootOverride;
+namespace {
+// Function-local static: safe to use during static initialization
+// (getAliceVisionRoot is called to build the global OCIO config in colorspace.cpp).
+std::string& aliceVisionRootOverride()
+{
+    static std::string value;
+    return value;
+}
+}  // namespace
 
 std::string getAliceVisionRoot()
 {
-    if (!aliceVisionRootOverride.empty())
-        return aliceVisionRootOverride;
+    if (!aliceVisionRootOverride().empty())
+        return aliceVisionRootOverride();
     const char* value = std::getenv("ALICEVISION_ROOT");
     return value ? value : "";
 }
 
 std::string getAliceVisionOCIOConfig()
 {
-    if (!getAliceVisionRoot().empty())
-        return getAliceVisionRoot() + "/share/aliceVision/config.ocio";
-    return {};
+    return getDefaultColorConfigFilePath();
 }
 
-void setAliceVisionRootOverride(const std::string& value) 
-{ 
-    aliceVisionRootOverride = value; 
+void setAliceVisionRootOverride(const std::string& value)
+{
+    aliceVisionRootOverride() = value;
 }
 
 bool listImages(std::vector<std::string> & images, const std::string & path)
