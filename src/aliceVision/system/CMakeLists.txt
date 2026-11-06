@@ -30,7 +30,6 @@ alicevision_add_library(aliceVision_system
         Boost::log
         Boost::log_setup
         Boost::thread
-        Boost::system
         Boost::date_time
         ${ALICEVISION_NVTX_LIBRARY}
         ${ALICEVISION_OPENMP_CXX_TARGETS}
