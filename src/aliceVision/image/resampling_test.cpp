@@ -25,7 +25,7 @@ using namespace aliceVision::image;
 BOOST_AUTO_TEST_CASE(Resampling_SampleSamePosition)
 {
     Image<unsigned char> image;
-    std::string pngFilename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
+    std::string pngFilename = std::string(THIS_SOURCE_DIR) + "/image_test/synthetic.png";
     ALICEVISION_LOG_DEBUG(pngFilename);
     BOOST_CHECK_NO_THROW(readImage(pngFilename, image, image::EImageColorSpace::NO_CONVERSION));
 
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(Resampling_SampleRotate)
 {
     Image<RGBColor> image;
 
-    std::string pngFilename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
+    std::string pngFilename = std::string(THIS_SOURCE_DIR) + "/image_test/synthetic.png";
     ALICEVISION_LOG_DEBUG(pngFilename);
     BOOST_CHECK_NO_THROW(readImage(pngFilename, image, image::EImageColorSpace::NO_CONVERSION));
 

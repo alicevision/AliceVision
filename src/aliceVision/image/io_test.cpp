@@ -320,9 +320,9 @@ BOOST_AUTO_TEST_CASE(read_from_memory_png)
     checkReadFromMemoryMatchesFile<RGBColor>(filename, "png", image::EImageColorSpace::NO_CONVERSION);
     checkReadFromMemoryMatchesFile<unsigned char>(filename, "png", image::EImageColorSpace::NO_CONVERSION);
 
-    const std::string lena = string(THIS_SOURCE_DIR) + "/image_test/lena.png";
-    checkReadFromMemoryMatchesFile<RGBAColor>(lena, "png", image::EImageColorSpace::SRGB);
-    checkReadFromMemoryMatchesFile<RGBfColor>(lena, "png", image::EImageColorSpace::LINEAR);
+    const std::string synthetic = string(THIS_SOURCE_DIR) + "/image_test/synthetic.png";
+    checkReadFromMemoryMatchesFile<RGBAColor>(synthetic, "png", image::EImageColorSpace::SRGB);
+    checkReadFromMemoryMatchesFile<RGBfColor>(synthetic, "png", image::EImageColorSpace::LINEAR);
 }
 
 BOOST_AUTO_TEST_CASE(read_from_memory_jpg)
