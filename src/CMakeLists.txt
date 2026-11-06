@@ -1128,7 +1128,7 @@ set(ALICEVISION_GLOBAL_TARGET_LIST "" CACHE INTERNAL "Global list of all AliceVi
 
 # software(s) under patent or commercial licence
 # Included for research purpose only
-# vlsift is needed by feature (core)
+# aliceVision_vlsift is needed by feature (core)
 add_subdirectory(nonFree)
 
 # The aliceVision library itself

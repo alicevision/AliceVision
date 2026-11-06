@@ -79,7 +79,7 @@ alicevision_add_library(aliceVision_feature
         aliceVision_numeric
         aliceVision_system
         aliceVision_gpu
-        vlsift
+        aliceVision_vlsift
     PRIVATE_LINKS
         Boost::boost
 )
