@@ -166,11 +166,19 @@ if(_VCPKG_INSTALLED_DIR AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPL
 endif()
 set(ALICEVISION_BUNDLE_PYTHON_ROOT "${_bundle_python_root_default}" CACHE PATH "Python runtime to embed in the bundle (empty: no interpreter in the bundle)")
 
+# Runtime libraries that no AliceVision binary links, but that software built against the bundle
+# needs: Embree, used by QtAliceVision's meshViewer (see src/CMakeLists.txt).
+set(BUNDLE_EXTRA_LIBS "")
+if(TARGET embree)
+    list(APPEND BUNDLE_EXTRA_LIBS "$<TARGET_FILE:embree>")
+endif()
+
 add_custom_target(bundle
     ${CMAKE_COMMAND}
     -DBUNDLE_INSTALL_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     "-DBUNDLE_LIBS_PATHS=${BUNDLE_LIBS_PATHS}"
+    "-DBUNDLE_EXTRA_LIBS=${BUNDLE_EXTRA_LIBS}"
     -DBUNDLE_PYTHON_ROOT=${ALICEVISION_BUNDLE_PYTHON_ROOT}
     -DBUNDLE_PYTHON_REFERENCE=${Python3_EXECUTABLE}
     -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}

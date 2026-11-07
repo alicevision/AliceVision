@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.30)
 #   - CMAKE_INSTALL_PREFIX      : install target path (required)
 #   - BUNDLE_INSTALL_PREFIX     : bundle installation path (required)
 #   - BUNDLE_LIBS_PATHS         : additional paths (semicolon-separated) to look for runtime dependencies
+#   - BUNDLE_EXTRA_LIBS         : runtime libraries (semicolon-separated paths) to bundle although no bundled
+#                                 binary depends on them, for software built against the bundle (optional)
 #   - BUNDLE_PYTHON_ROOT        : relocatable Python runtime to embed as <bundle>/python (optional)
 #   - BUNDLE_PYTHON_REFERENCE   : Python executable AliceVision was built with, checked against BUNDLE_PYTHON_ROOT (optional)
 #   - CMAKE_INSTALL_BINDIR      : relative bin dir  (default: bin)
@@ -169,6 +171,7 @@ message(STATUS "  CMAKE_INSTALL_FULL_LIBDIR  : ${CMAKE_INSTALL_FULL_LIBDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_INCLUDEDIR : ${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_DATADIR : ${CMAKE_INSTALL_FULL_DATADIR}")
 message(STATUS "  BUNDLE_LIBS_PATHS       : ${BUNDLE_LIBS_PATHS}")
+message(STATUS "  BUNDLE_EXTRA_LIBS       : ${BUNDLE_EXTRA_LIBS}")
 message(STATUS "  BUNDLE_PYTHON_ROOT      : ${BUNDLE_PYTHON_ROOT}")
 message(STATUS "  BUNDLE_PYTHON_REFERENCE : ${BUNDLE_PYTHON_REFERENCE}")
 
@@ -211,6 +214,34 @@ foreach(_dir
     else()
         message(STATUS "  Skipping non-existent directory: ${_dir}")
     endif()
+endforeach()
+
+# ─── Extra runtime libraries ─────────────────────────────────────────────────
+# Libraries that no bundled binary depends on, but that software built against the bundle needs
+# (e.g. Embree for QtAliceVision). They are copied next to the other runtime libraries, and their
+# own dependencies are resolved below like those of the bundled binaries.
+
+set(BUNDLE_EXTRA_LIBS_IN_BUNDLE "")
+foreach(_extra_lib IN LISTS BUNDLE_EXTRA_LIBS)
+    if(NOT EXISTS "${_extra_lib}")
+        message(FATAL_ERROR "MakeBundle.cmake: extra runtime library not found: ${_extra_lib}")
+    endif()
+    file(REAL_PATH "${_extra_lib}" _extra_lib_real)
+    get_filename_component(_extra_lib_name "${_extra_lib_real}" NAME)
+    message(STATUS "  Bundling extra runtime library: ${_extra_lib_real}")
+    if(WIN32)
+        set(_extra_lib_dest "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+        file(COPY "${_extra_lib_real}" DESTINATION "${_extra_lib_dest}")
+    else()
+        # Also copy its symlinks (libfoo.so -> libfoo.so.4 -> libfoo.so.4.4.1): the loader
+        # looks for the SONAME, not for the real file name
+        set(_extra_lib_dest "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+        get_filename_component(_extra_lib_dir "${_extra_lib_real}" DIRECTORY)
+        string(REGEX REPLACE "\\.so(\\.[0-9]+)*$" ".so" _extra_lib_base "${_extra_lib_name}")
+        file(GLOB _extra_lib_files "${_extra_lib_dir}/${_extra_lib_base}*")
+        file(COPY ${_extra_lib_files} DESTINATION "${_extra_lib_dest}" USE_SOURCE_PERMISSIONS)
+    endif()
+    list(APPEND BUNDLE_EXTRA_LIBS_IN_BUNDLE "${_extra_lib_dest}/${_extra_lib_name}")
 endforeach()
 
 # ─── Runtime dependencies ────────────────────────────────────────────────────
@@ -287,9 +318,10 @@ else()
     endif()
 
     # fixup_bundle uses the first app as anchor; it fixes up all others automatically.
+    # The extra libraries are not dependencies of any app: pass them explicitly, as plugins.
     list(GET BUNDLE_APPS 0 MAIN_APP)
     message(STATUS "  Main app for fixup_bundle: ${MAIN_APP}")
-    fixup_bundle("${MAIN_APP}" "" "${LIBS_LOOKUPS_PATHS}")
+    fixup_bundle("${MAIN_APP}" "${BUNDLE_EXTRA_LIBS_IN_BUNDLE}" "${LIBS_LOOKUPS_PATHS}")
 endif()
 
 # ─── Move stray libs that fixup_bundle dropped into bin/ back into lib/ ──────

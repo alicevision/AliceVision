@@ -886,6 +886,11 @@ if (NOT ALICEVISION_USE_EMBREE STREQUAL "OFF")
     if (embree_FOUND)
         set(ALICEVISION_HAVE_EMBREE 1)
         message(STATUS "Embree found.")
+        # No AliceVision binary links Embree, but software built against AliceVision does
+        # (QtAliceVision's meshViewer): make the target visible to the bundle target, which ships it.
+        if (TARGET embree)
+            set_target_properties(embree PROPERTIES IMPORTED_GLOBAL TRUE)
+        endif()
     elseif (ALICEVISION_USE_EMBREE STREQUAL "ON")
         message(SEND_ERROR "Failed to find Embree.")
     endif()
