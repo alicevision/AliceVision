@@ -2366,29 +2366,17 @@
             }
         },
         "ScenePreview": {
-            "2.0": {
+            "3.0": {
                 "inputs": {
                     "blenderCmd": {
                         "type": "File",
                         "value": "blender"
-                    },
-                    "script": {
-                        "type": "File",
-                        "value": "{nodeSourceCodeFolder}/scripts/preview.py"
                     },
                     "cameras": {
                         "type": "File",
                         "value": ""
                     },
                     "model": {
-                        "type": "File",
-                        "value": ""
-                    },
-                    "useBackground": {
-                        "type": "BoolParam",
-                        "value": true
-                    },
-                    "undistortedImages": {
                         "type": "File",
                         "value": ""
                     },
@@ -3967,7 +3955,7 @@
         },
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
-            "version": "2.0",
+            "version": "3.0",
             "position": [
                 4828,
                 200
@@ -3975,7 +3963,6 @@
             "inputs": {
                 "cameras": "{ConvertSfMFormat_1.output}",
                 "model": "{MeshDecimate_1.output}",
-                "undistortedImages": "{ExportImages_2.output}",
                 "masks": "{ImageSegmentationSam3_1.output}"
             },
             "internalInputs": {

@@ -1579,29 +1579,17 @@
             }
         },
         "ScenePreview": {
-            "2.0": {
+            "3.0": {
                 "inputs": {
                     "blenderCmd": {
                         "type": "File",
                         "value": "blender"
-                    },
-                    "script": {
-                        "type": "File",
-                        "value": "{nodeSourceCodeFolder}/scripts/preview.py"
                     },
                     "cameras": {
                         "type": "File",
                         "value": ""
                     },
                     "model": {
-                        "type": "File",
-                        "value": ""
-                    },
-                    "useBackground": {
-                        "type": "BoolParam",
-                        "value": true
-                    },
-                    "undistortedImages": {
                         "type": "File",
                         "value": ""
                     },
@@ -2919,7 +2907,7 @@
         },
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
-            "version": "2.0",
+            "version": "3.0",
             "position": [
                 4350,
                 -31
@@ -2927,7 +2915,6 @@
             "inputs": {
                 "cameras": "{ConvertSfMFormat_1.output}",
                 "model": "{Lidarmesh_1.inputFile}",
-                "undistortedImages": "{ExportImages_2.output}",
                 "masks": "{MaskEroding_1.output}"
             },
             "internalInputs": {
@@ -2936,7 +2923,7 @@
         },
         "ScenePreview_2": {
             "nodeType": "ScenePreview",
-            "version": "2.0",
+            "version": "3.0",
             "position": [
                 915,
                 -573
@@ -2944,7 +2931,6 @@
             "inputs": {
                 "cameras": "{ConvertSfMFormat_2.output}",
                 "model": "{Lidarmesh_1.inputFile}",
-                "undistortedImages": "{ExportImages_3.output}",
                 "masks": "{MaskEroding_1.output}"
             },
             "internalInputs": {
@@ -2953,7 +2939,7 @@
         },
         "ScenePreview_3": {
             "nodeType": "ScenePreview",
-            "version": "2.0",
+            "version": "3.0",
             "position": [
                 2709,
                 -553
@@ -2961,7 +2947,6 @@
             "inputs": {
                 "cameras": "{ConvertSfMFormat_3.output}",
                 "model": "{Lidarmesh_1.inputFile}",
-                "undistortedImages": "{ExportImages_4.output}",
                 "masks": "{MaskEroding_1.output}"
             },
             "internalInputs": {
