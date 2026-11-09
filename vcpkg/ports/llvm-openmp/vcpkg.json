@@ -1,0 +1,15 @@
+{
+  "name": "llvm-openmp",
+  "version": "22.1.3",
+  "maintainers": "alicevision-team@googlegroups.com",
+  "description": "LLVM OpenMP runtime library (libomp.dll), built standalone, for code compiled with MSVC's /openmp:llvm",
+  "homepage": "https://openmp.llvm.org/",
+  "license": "Apache-2.0 WITH LLVM-exception",
+  "supports": "windows & x64 & !uwp",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    }
+  ]
+}

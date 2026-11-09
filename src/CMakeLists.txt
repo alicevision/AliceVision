@@ -299,6 +299,12 @@ if (ALICEVISION_USE_OPENMP STREQUAL "OFF")
 else() # ON OR AUTO
     if (MSVC)
         set(OpenMP_RUNTIME_MSVC "llvm")
+        # /openmp:llvm links a default library named libomp.lib. The toolset's one imports libomp140.x86_64.dll,
+        # which vc_redist does not install and Visual Studio does not allow to redistribute (debug_nonredist):
+        # link instead the same runtime built from source (libomp.dll, vcpkg port llvm-openmp), which the bundle ships.
+        find_library(ALICEVISION_OPENMP_LIBRARY NAMES libomp
+                     DOC "Import library of the LLVM OpenMP runtime (libomp.dll) linked instead of the toolset's libomp140.x86_64.dll"
+                     NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
     endif()
     find_package(OpenMP COMPONENTS C CXX)
 
@@ -310,6 +316,21 @@ else() # ON OR AUTO
         message(SEND_ERROR "Failed to find OpenMP.")
     else()
         set(ALICEVISION_HAVE_OPENMP 0)
+    endif()
+endif()
+
+if (ALICEVISION_HAVE_OPENMP AND MSVC)
+    if (ALICEVISION_OPENMP_LIBRARY)
+        message(STATUS "OpenMP runtime: ${ALICEVISION_OPENMP_LIBRARY}")
+        foreach(_lang C CXX)
+            set_property(TARGET OpenMP::OpenMP_${_lang} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${ALICEVISION_OPENMP_LIBRARY}")
+        endforeach()
+        # For every binary, so that one compiled with /openmp:llvm without linking OpenMP::OpenMP_<lang>
+        # fails to link instead of silently using the toolset's runtime
+        add_link_options("LINKER:/NODEFAULTLIB:libomp.lib" "LINKER:/NODEFAULTLIB:libompd.lib")
+    else()
+        message(WARNING "LLVM OpenMP runtime not found (vcpkg port llvm-openmp, or set ALICEVISION_OPENMP_LIBRARY to its libomp.lib): "
+                        "linking the toolset's libomp140.x86_64.dll, which cannot be redistributed (the bundle target will fail).")
     endif()
 endif()
 
@@ -886,6 +907,11 @@ if (NOT ALICEVISION_USE_EMBREE STREQUAL "OFF")
     if (embree_FOUND)
         set(ALICEVISION_HAVE_EMBREE 1)
         message(STATUS "Embree found.")
+        # No AliceVision binary links Embree, but software built against AliceVision does
+        # (QtAliceVision's meshViewer): make the target visible to the bundle target, which ships it.
+        if (TARGET embree)
+            set_target_properties(embree PROPERTIES IMPORTED_GLOBAL TRUE)
+        endif()
     elseif (ALICEVISION_USE_EMBREE STREQUAL "ON")
         message(SEND_ERROR "Failed to find Embree.")
     endif()

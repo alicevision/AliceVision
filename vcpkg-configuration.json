@@ -13,7 +13,7 @@
     {
       "kind": "filesystem",
       "path": "./vcpkg",
-      "packages": ["vcpkg-tool-swig"]
+      "packages": ["llvm-openmp", "vcpkg-tool-swig"]
     }
   ],
   "overlay-ports": [

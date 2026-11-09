@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.30)
 #   - CMAKE_INSTALL_PREFIX      : install target path (required)
 #   - BUNDLE_INSTALL_PREFIX     : bundle installation path (required)
 #   - BUNDLE_LIBS_PATHS         : additional paths (semicolon-separated) to look for runtime dependencies
+#   - BUNDLE_EXTRA_LIBS         : runtime libraries (semicolon-separated paths) to bundle although no bundled
+#                                 binary depends on them, for software built against the bundle (optional)
 #   - BUNDLE_PYTHON_ROOT        : relocatable Python runtime to embed as <bundle>/python (optional)
 #   - BUNDLE_PYTHON_REFERENCE   : Python executable AliceVision was built with, checked against BUNDLE_PYTHON_ROOT (optional)
 #   - CMAKE_INSTALL_BINDIR      : relative bin dir  (default: bin)
@@ -127,13 +129,11 @@ set(LINUX_OS_LIB_BLACKLIST
 # ─── Windows exclusions ──────────────────────────────────────────────────────
 # DLLs that must never be embedded in the bundle:
 #   - api-ms-win-* / ext-ms-win-*: API sets resolved by the OS loader
-#   - libomp*.x86_64.dll: the LLVM OpenMP runtime (/openmp:llvm), shipped with Windows
 #   - CUDA runtime DLLs (cuBLAS, cuFFT, NPP, etc.): require CUDA to be installed
 #     on the target machine
 set(WINDOWS_DLL_EXCLUDE_REGEXES
     "^api-ms-win-"
     "^ext-ms-win-"
-    "^libomp[0-9]*\\.x86_64\\.dll$"
     "^(cublas|cublaslt|cufft|curand|cusolver|cusparse|nvrtc|nvjitlink)[0-9_]*\\.dll$"
     "^npp[a-z]+[0-9_]*\\.dll$"
     "^cudart[0-9_]*\\.dll$"
@@ -169,6 +169,7 @@ message(STATUS "  CMAKE_INSTALL_FULL_LIBDIR  : ${CMAKE_INSTALL_FULL_LIBDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_INCLUDEDIR : ${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 message(STATUS "  CMAKE_INSTALL_FULL_DATADIR : ${CMAKE_INSTALL_FULL_DATADIR}")
 message(STATUS "  BUNDLE_LIBS_PATHS       : ${BUNDLE_LIBS_PATHS}")
+message(STATUS "  BUNDLE_EXTRA_LIBS       : ${BUNDLE_EXTRA_LIBS}")
 message(STATUS "  BUNDLE_PYTHON_ROOT      : ${BUNDLE_PYTHON_ROOT}")
 message(STATUS "  BUNDLE_PYTHON_REFERENCE : ${BUNDLE_PYTHON_REFERENCE}")
 
@@ -213,6 +214,34 @@ foreach(_dir
     endif()
 endforeach()
 
+# ─── Extra runtime libraries ─────────────────────────────────────────────────
+# Libraries that no bundled binary depends on, but that software built against the bundle needs
+# (e.g. Embree for QtAliceVision). They are copied next to the other runtime libraries, and their
+# own dependencies are resolved below like those of the bundled binaries.
+
+set(BUNDLE_EXTRA_LIBS_IN_BUNDLE "")
+foreach(_extra_lib IN LISTS BUNDLE_EXTRA_LIBS)
+    if(NOT EXISTS "${_extra_lib}")
+        message(FATAL_ERROR "MakeBundle.cmake: extra runtime library not found: ${_extra_lib}")
+    endif()
+    file(REAL_PATH "${_extra_lib}" _extra_lib_real)
+    get_filename_component(_extra_lib_name "${_extra_lib_real}" NAME)
+    message(STATUS "  Bundling extra runtime library: ${_extra_lib_real}")
+    if(WIN32)
+        set(_extra_lib_dest "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+        file(COPY "${_extra_lib_real}" DESTINATION "${_extra_lib_dest}")
+    else()
+        # Also copy its symlinks (libfoo.so -> libfoo.so.4 -> libfoo.so.4.4.1): the loader
+        # looks for the SONAME, not for the real file name
+        set(_extra_lib_dest "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+        get_filename_component(_extra_lib_dir "${_extra_lib_real}" DIRECTORY)
+        string(REGEX REPLACE "\\.so(\\.[0-9]+)*$" ".so" _extra_lib_base "${_extra_lib_name}")
+        file(GLOB _extra_lib_files "${_extra_lib_dir}/${_extra_lib_base}*")
+        file(COPY ${_extra_lib_files} DESTINATION "${_extra_lib_dest}" USE_SOURCE_PERMISSIONS)
+    endif()
+    list(APPEND BUNDLE_EXTRA_LIBS_IN_BUNDLE "${_extra_lib_dest}/${_extra_lib_name}")
+endforeach()
+
 # ─── Runtime dependencies ────────────────────────────────────────────────────
 
 if(WIN32)
@@ -240,10 +269,24 @@ if(WIN32)
          EXECUTABLES ${BUNDLE_APPS}
          DIRECTORIES ${LIBS_LOOKUPS_PATHS}
          PRE_EXCLUDE_REGEXES ${WINDOWS_DLL_EXCLUDE_REGEXES}
+         # Kept although found in C:/Windows, to be reported below
+         POST_INCLUDE_REGEXES "/libomp140[^/]*\\.dll$"
          POST_EXCLUDE_REGEXES "^[A-Za-z]:/[Ww][Ii][Nn][Dd][Oo][Ww][Ss]/"
          RESOLVED_DEPENDENCIES_VAR _resolved_deps
          UNRESOLVED_DEPENDENCIES_VAR _unresolved_deps
          CONFLICTING_DEPENDENCIES_PREFIX _conflicting_deps)
+
+    # Visual Studio's LLVM OpenMP runtime: vc_redist does not install it and it cannot be redistributed
+    # (Visual Studio only ships it in its debug_nonredist folder). AliceVision links libomp.dll instead,
+    # built by the llvm-openmp vcpkg port (see the OpenMP section of src/CMakeLists.txt).
+    set(_vs_openmp_deps ${_resolved_deps} ${_unresolved_deps})
+    list(FILTER _vs_openmp_deps INCLUDE REGEX "(^|/)libomp140[^/]*\\.dll$")
+    if(_vs_openmp_deps)
+        list(JOIN _vs_openmp_deps "\n    " _vs_openmp_deps)
+        message(FATAL_ERROR "MakeBundle.cmake: binaries depend on the Visual Studio OpenMP runtime, which cannot be "
+                            "redistributed (AliceVision must be configured with ALICEVISION_OPENMP_LIBRARY, "
+                            "from the llvm-openmp vcpkg port):\n    ${_vs_openmp_deps}")
+    endif()
 
     if(_unresolved_deps)
         list(JOIN _unresolved_deps "\n    " _unresolved_deps)
@@ -287,9 +330,10 @@ else()
     endif()
 
     # fixup_bundle uses the first app as anchor; it fixes up all others automatically.
+    # The extra libraries are not dependencies of any app: pass them explicitly, as plugins.
     list(GET BUNDLE_APPS 0 MAIN_APP)
     message(STATUS "  Main app for fixup_bundle: ${MAIN_APP}")
-    fixup_bundle("${MAIN_APP}" "" "${LIBS_LOOKUPS_PATHS}")
+    fixup_bundle("${MAIN_APP}" "${BUNDLE_EXTRA_LIBS_IN_BUNDLE}" "${LIBS_LOOKUPS_PATHS}")
 endif()
 
 # ─── Move stray libs that fixup_bundle dropped into bin/ back into lib/ ──────

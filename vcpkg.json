@@ -32,6 +32,10 @@
     "nanoflann",
     "openmesh",
     "embree",
+    {
+      "name": "llvm-openmp",
+      "platform": "windows"
+    },
     "tbb",
     "cuda",
     "liblemon",
