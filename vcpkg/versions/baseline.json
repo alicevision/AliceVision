@@ -1,5 +1,9 @@
 {
   "default": {
+    "llvm-openmp": {
+      "baseline": "22.1.3",
+      "port-version": 0
+    },
     "vcpkg-tool-swig": {
       "baseline": "4.3.0",
       "port-version": 0

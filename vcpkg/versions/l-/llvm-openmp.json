@@ -1,0 +1,9 @@
+{
+  "versions": [
+    {
+      "version": "22.1.3",
+      "port-version": 0,
+      "path": "$/ports/llvm-openmp"
+    }
+  ]
+}

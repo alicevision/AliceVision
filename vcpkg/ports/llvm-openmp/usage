@@ -1,0 +1,12 @@
+llvm-openmp provides libomp.dll and its import library lib/libomp.lib (no CMake package).
+
+To use it with code compiled with MSVC's /openmp:llvm instead of the toolset's libomp140.x86_64.dll,
+link lib/libomp.lib explicitly and drop the default library requested by the compiler:
+
+    set(OpenMP_RUNTIME_MSVC "llvm")
+    find_package(OpenMP REQUIRED)
+    find_library(LLVM_OPENMP_LIBRARY NAMES libomp REQUIRED NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+    target_link_libraries(main PRIVATE OpenMP::OpenMP_CXX "${LLVM_OPENMP_LIBRARY}")
+    target_link_options(main PRIVATE "LINKER:/NODEFAULTLIB:libomp.lib" "LINKER:/NODEFAULTLIB:libompd.lib")
+
+The LLVM headers are in include/llvm-openmp (not needed with /openmp:llvm, which uses the toolset's omp.h).
