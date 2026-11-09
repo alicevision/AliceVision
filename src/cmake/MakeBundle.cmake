@@ -129,13 +129,11 @@ set(LINUX_OS_LIB_BLACKLIST
 # ─── Windows exclusions ──────────────────────────────────────────────────────
 # DLLs that must never be embedded in the bundle:
 #   - api-ms-win-* / ext-ms-win-*: API sets resolved by the OS loader
-#   - libomp*.x86_64.dll: the LLVM OpenMP runtime (/openmp:llvm), shipped with Windows
 #   - CUDA runtime DLLs (cuBLAS, cuFFT, NPP, etc.): require CUDA to be installed
 #     on the target machine
 set(WINDOWS_DLL_EXCLUDE_REGEXES
     "^api-ms-win-"
     "^ext-ms-win-"
-    "^libomp[0-9]*\\.x86_64\\.dll$"
     "^(cublas|cublaslt|cufft|curand|cusolver|cusparse|nvrtc|nvjitlink)[0-9_]*\\.dll$"
     "^npp[a-z]+[0-9_]*\\.dll$"
     "^cudart[0-9_]*\\.dll$"
@@ -271,10 +269,24 @@ if(WIN32)
          EXECUTABLES ${BUNDLE_APPS}
          DIRECTORIES ${LIBS_LOOKUPS_PATHS}
          PRE_EXCLUDE_REGEXES ${WINDOWS_DLL_EXCLUDE_REGEXES}
+         # Kept although found in C:/Windows, to be reported below
+         POST_INCLUDE_REGEXES "/libomp140[^/]*\\.dll$"
          POST_EXCLUDE_REGEXES "^[A-Za-z]:/[Ww][Ii][Nn][Dd][Oo][Ww][Ss]/"
          RESOLVED_DEPENDENCIES_VAR _resolved_deps
          UNRESOLVED_DEPENDENCIES_VAR _unresolved_deps
          CONFLICTING_DEPENDENCIES_PREFIX _conflicting_deps)
+
+    # Visual Studio's LLVM OpenMP runtime: vc_redist does not install it and it cannot be redistributed
+    # (Visual Studio only ships it in its debug_nonredist folder). AliceVision links libomp.dll instead,
+    # built by the llvm-openmp vcpkg port (see the OpenMP section of src/CMakeLists.txt).
+    set(_vs_openmp_deps ${_resolved_deps} ${_unresolved_deps})
+    list(FILTER _vs_openmp_deps INCLUDE REGEX "(^|/)libomp140[^/]*\\.dll$")
+    if(_vs_openmp_deps)
+        list(JOIN _vs_openmp_deps "\n    " _vs_openmp_deps)
+        message(FATAL_ERROR "MakeBundle.cmake: binaries depend on the Visual Studio OpenMP runtime, which cannot be "
+                            "redistributed (AliceVision must be configured with ALICEVISION_OPENMP_LIBRARY, "
+                            "from the llvm-openmp vcpkg port):\n    ${_vs_openmp_deps}")
+    endif()
 
     if(_unresolved_deps)
         list(JOIN _unresolved_deps "\n    " _unresolved_deps)
