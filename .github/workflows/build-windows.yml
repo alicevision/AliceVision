@@ -11,7 +11,7 @@ jobs:
       BUILD_TYPE: Release
       CUDA_VERSION: '13.2.1'
       CUDA_MAJOR_MINOR: '13.2'
-      VCPKG_VERSION: '2026.11.05'
+      VCPKG_VERSION: '2026.11.09'
 
       buildDir: '${{ github.workspace }}\build\'
       dependenciesDir: '${{ github.workspace }}\dependencies'
