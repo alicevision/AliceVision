@@ -272,7 +272,11 @@ At the end of the cmake process, a report shows for each library which version (
 * `ALICEVISION_USE_OPENMP` (default `ON`)  
   Use OpenMP parallelization (huge impact on performances).  
   **OSX**: if you are compiling with clang shipped with XCode, please note that OpenMP is not supported and you need to
-  disable OpenMP passing `-DALICEVISION_USE_OPENMP:BOOL=OFF`.
+  disable OpenMP passing `-DALICEVISION_USE_OPENMP:BOOL=OFF`.  
+  **Windows**: the code is compiled with `/openmp:llvm`, but linked with the LLVM OpenMP runtime (`libomp.dll`) built by the
+  `llvm-openmp` vcpkg port (`vcpkg/ports/llvm-openmp`) instead of Visual Studio's `libomp140.x86_64.dll`, which is not
+  installed by the VC++ redistributable and cannot be shipped. `ALICEVISION_OPENMP_LIBRARY` points to its `libomp.lib`
+  (found automatically in the vcpkg tree).
 
 * `ALICEVISION_USE_CCTAG` (default: `AUTO`)  
   Build with CCTag markers support.  
