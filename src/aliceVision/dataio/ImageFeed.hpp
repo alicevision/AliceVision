@@ -96,18 +96,24 @@ class ImageFeed : public IFeed
     virtual ~ImageFeed();
 
     /**
-     * @brief For a given extension, return true if that file can be used as input
-     * for the feed. ImageFeed supports .txt and the most common image files.
+     * @brief Return true if that path can be used as input for the feed.
+     * ImageFeed supports .txt files, the most common image files, folders and image sequence patterns.
      *
-     * @param extension The file extension to check in ".ext" format (case insensitive)
-     * @return True if the file is supported.
+     * @param path The path to check (extension is case insensitive)
+     * @return True if the path is supported.
      */
-    static bool isSupported(const std::string& extension);
+    static bool isSupported(const std::string& path);
 
   private:
     class FeederImpl;
     std::unique_ptr<FeederImpl> _imageFeed;
 };
+
+/**
+ * @brief Register ImageFeed in FeedFactory so that FeedProvider can open images, folders and image sequences.
+ * Calling it several times is harmless.
+ */
+void registerImageFeed();
 
 }  // namespace dataio
 }  // namespace aliceVision

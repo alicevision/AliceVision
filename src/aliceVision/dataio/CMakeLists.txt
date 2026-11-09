@@ -1,18 +1,18 @@
 # Headers
 set(dataio_files_headers
+    FeedFactory.hpp
     FeedProvider.hpp
     IFeed.hpp
     ImageFeed.hpp
-    SfMDataFeed.hpp
     json.hpp
 )
 
 # Sources
 set(dataio_files_sources
+    FeedFactory.cpp
     FeedProvider.cpp
     IFeed.cpp
     ImageFeed.cpp
-    SfMDataFeed.cpp
     json.cpp
 )
 
@@ -32,8 +32,6 @@ alicevision_add_library(aliceVision_dataio
         aliceVision_camera
         aliceVision_image
     PRIVATE_LINKS
-        aliceVision_sfmData
-        aliceVision_sfmDataIO
         aliceVision_system
         Boost::boost
         Boost::json

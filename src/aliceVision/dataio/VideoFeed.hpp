@@ -109,16 +109,23 @@ class VideoFeed : public IFeed
     virtual ~VideoFeed();
 
     /**
-     * @brief For a given extension, return true if that file can be used as input video for the feed.
-     * @param extension The file extension to check in ".ext" format (case insensitive).
-     * @return True if the file is supported.
+     * @brief Return true if that path can be used as input for the feed:
+     * an existing video file or a live device number (e.g. "0").
+     * @param path The path to check (extension is case insensitive).
+     * @return True if the path is supported.
      */
-    static bool isSupported(const std::string& extension);
+    static bool isSupported(const std::string& path);
 
   private:
     class FeederImpl;
     std::unique_ptr<FeederImpl> _feeder;
 };
+
+/**
+ * @brief Register VideoFeed in FeedFactory so that FeedProvider can open video files and live devices.
+ * Calling it several times is harmless.
+ */
+void registerVideoFeed();
 
 }  // namespace dataio
 }  // namespace aliceVision

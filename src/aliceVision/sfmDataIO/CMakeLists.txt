@@ -9,6 +9,7 @@ set(sfmDataIO_files_headers
     plyIO.hpp
     viewIO.hpp
     sceneSample.hpp
+    SfMDataFeed.hpp
 )
 
 # Sources
@@ -22,6 +23,7 @@ set(sfmDataIO_files_sources
     plyIO.cpp
     viewIO.cpp
     sceneSample.cpp
+    SfMDataFeed.cpp
 )
 
 if (ALICEVISION_HAVE_ALEMBIC)
@@ -54,9 +56,11 @@ alicevision_add_library(aliceVision_sfmDataIO
     PUBLIC_LINKS
         aliceVision_sfmData
         aliceVision_camera
+        aliceVision_dataio
     PRIVATE_LINKS
         assimp::assimp
         aliceVision_image
+        aliceVision_system
         Boost::regex
         Boost::boost
 )
