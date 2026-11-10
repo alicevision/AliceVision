@@ -92,11 +92,20 @@ class CostIntrinsicsProject : public ceres::CostFunction
             J = d_res_d_pt_est * _intrinsics->getDerivativeTransformProjectWrtParams(T, pth);
         }
 
-        if (jacobians[1] != nullptr && _distortion)
+        if (jacobians[1] != nullptr)
         {
-            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 2, _distortion->getParameters().size());
+            if (_distortion)
+            {
+                Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 2, _distortion->getParameters().size());
 
-            J = d_res_d_pt_est * _isod->getDerivativeTransformProjectWrtDistortion(T, pth);
+                J = d_res_d_pt_est * _isod->getDerivativeTransformProjectWrtDistortion(T, pth);
+            }
+            else
+            {
+                // Fake distortion block of size 1: the residual does not depend on it
+                Eigen::Map<Eigen::Matrix<double, 2, 1>> J(jacobians[1]);
+                J.setZero();
+            }
         }
 
         if (jacobians[2] != nullptr)

@@ -69,11 +69,20 @@ class CostIntrinsicsLift : public ceres::CostFunction
             J = _intrinsics->getDerivativeBackProjectUnitWrtParams(_pt2d);
         }
 
-        if (jacobians[1] != nullptr && _distortion)
+        if (jacobians[1] != nullptr)
         {
-            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 3, _distortion->getParameters().size());
+            if (_distortion)
+            {
+                Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[1], 3, _distortion->getParameters().size());
 
-            J = _isod->getDerivativeBackProjectUnitWrtDistortion(_pt2d);
+                J = _isod->getDerivativeBackProjectUnitWrtDistortion(_pt2d);
+            }
+            else
+            {
+                // Fake distortion block of size 1: the residual does not depend on it
+                Eigen::Map<Eigen::Matrix<double, 3, 1>> J(jacobians[1]);
+                J.setZero();
+            }
         }
 
         return true;
