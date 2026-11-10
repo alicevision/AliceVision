@@ -679,8 +679,8 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
             if (observation.getDepth() > 0.0)
             {
-                const double depthVariance = 0.1; //10 cm ?
-                ceres::CostFunction* costFunction = DepthErrorFunctor::createCostFunction(observation, depthVariance);
+                const double depthStdDev = 0.1; //10 cm ?
+                ceres::CostFunction* costFunction = DepthErrorFunctor::createCostFunction(observation, depthStdDev);
 
                 std::vector<double*> params;
                 params.push_back(poseBlockPtr);

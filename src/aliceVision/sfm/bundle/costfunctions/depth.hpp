@@ -18,8 +18,8 @@ namespace sfm {
 */
 struct DepthErrorFunctor
 {
-    explicit DepthErrorFunctor(double depth, double depthVariance) 
-    : _depth(depth), _depthVariance(depthVariance)      
+    explicit DepthErrorFunctor(double depth, double depthStdDev) 
+    : _depth(depth), _depthStdDev(depthStdDev)      
     {        
     }
 
@@ -33,7 +33,7 @@ struct DepthErrorFunctor
         T transformedPoint[3];
         applyPose(parameter_pose, parameter_point, transformedPoint);
 
-        residuals[0] = T(1.0 / _depthVariance) * (transformedPoint[2] - T(_depth));
+        residuals[0] = T(1.0 / _depthStdDev) * (transformedPoint[2] - T(_depth));
 
         return true;
     }
@@ -41,12 +41,13 @@ struct DepthErrorFunctor
     /**
      * @brief Create the appropriate cost function
      * @param[in] observation The corresponding observation
+     * @param[in] depthStdDev Standard deviation of the measured depth (the residual is divided by it)
      * @return cost functor
      */
     inline static ceres::CostFunction* createCostFunction(
-        const sfmData::Observation& observation, double depthVariance)
+        const sfmData::Observation& observation, double depthStdDev)
     {
-        auto costFunction = new ceres::DynamicAutoDiffCostFunction<DepthErrorFunctor>(new DepthErrorFunctor(observation.getDepth(), depthVariance));
+        auto costFunction = new ceres::DynamicAutoDiffCostFunction<DepthErrorFunctor>(new DepthErrorFunctor(observation.getDepth(), depthStdDev));
 
         costFunction->AddParameterBlock(6);
         costFunction->AddParameterBlock(3);
@@ -56,7 +57,7 @@ struct DepthErrorFunctor
     }
     
     const double _depth;
-    const double _depthVariance;
+    const double _depthStdDev;
 };
 
 }  // namespace sfm
