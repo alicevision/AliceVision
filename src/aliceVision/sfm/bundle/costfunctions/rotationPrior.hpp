@@ -7,24 +7,29 @@ namespace aliceVision {
 namespace sfm {
 
 /**
- * @brief Ceres functor to use a pair of pinhole on a pure rotation 2D constraint.
+ * @brief Ceres functor for a prior on the relative rotation between two views.
+ *
+ *  The residual is the angle-axis of (two_R_one_estimated * two_R_one_prior^T), in degrees.
+ *  Only the rotation part of the pose blocks is used.
  *
  *  Data parameter blocks are the following <3,6,6>
  *  - 3 => dimension of the residuals,
- *  - 6 => the camera extrinsic data block for the first view
- *  - 6 => the camera extrinsic data block for the second view
+ *  - 6 => the pose block of the first view
+ *  - 6 => the pose block of the second view
  */
 struct RotationPriorErrorFunctor
 {
+    /**
+     * @param[in] two_R_one prior on the rotation from the first view frame to the second view frame
+     */
     explicit RotationPriorErrorFunctor(const Eigen::Matrix3d& two_R_one)
       : m_two_R_one(two_R_one)
     {}
 
     /**
-     * @param[in] cam_Rt: Camera parameterized using one block of 6 parameters [R;t]:
-     *   - 3 for rotation(angle axis), 3 for translation
-     * @param[in] pos_3dpoint
-     * @param[out] out_residuals
+     * @param[in] cam_R1 pose block of the first view: 3 for rotation (angle axis), 3 for center
+     * @param[in] cam_R2 pose block of the second view: 3 for rotation (angle axis), 3 for center
+     * @param[out] out_residuals rotation error as angle axis, in degrees
      */
     template<typename T>
     bool operator()(const T* const cam_R1, const T* const cam_R2, T* out_residuals) const
