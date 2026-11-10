@@ -2144,33 +2144,33 @@
         "Backdrop_1": {
             "nodeType": "Backdrop",
             "position": [
-                1494,
-                -387
+                1550,
+                -400
             ],
             "internalInputs": {
                 "label": "Previsualisation Keyframes",
                 "color": "#bea981",
-                "nodeWidth": 1183,
-                "nodeHeight": 222
+                "nodeWidth": 1100,
+                "nodeHeight": 220
             }
         },
         "Backdrop_2": {
             "nodeType": "Backdrop",
             "position": [
-                3393,
-                -89
+                3350,
+                -80
             ],
             "internalInputs": {
                 "label": "Previz final",
                 "color": "#bea981",
-                "nodeWidth": 617,
+                "nodeWidth": 650,
                 "nodeHeight": 200
             }
         },
         "Backdrop_3": {
             "nodeType": "Backdrop",
             "position": [
-                -77,
+                -60,
                 -80
             ],
             "internalInputs": {
@@ -2178,7 +2178,7 @@
                 "color": "#8787af",
                 "fontSize": 16,
                 "nodeWidth": 1480,
-                "nodeHeight": 233
+                "nodeHeight": 240
             }
         },
         "Backdrop_4": {
@@ -2196,13 +2196,13 @@
         "Backdrop_5": {
             "nodeType": "Backdrop",
             "position": [
-                1505,
-                -81
+                1500,
+                -80
             ],
             "internalInputs": {
                 "label": "All Frames localization",
                 "color": "#8787af",
-                "nodeWidth": 1737
+                "nodeWidth": 1700
             }
         },
         "CameraInit_2": {
@@ -2252,8 +2252,8 @@
             "nodeType": "ConvertSfMFormat",
             "version": "2.0",
             "position": [
-                614,
-                -280
+                600,
+                -300
             ],
             "inputs": {
                 "input": "{ExportImages_3.outputSfMData}",
@@ -2269,8 +2269,8 @@
             "nodeType": "ConvertSfMFormat",
             "version": "2.0",
             "position": [
-                2247,
-                -324
+                2200,
+                -330
             ],
             "inputs": {
                 "input": "{ExportImages_4.outputSfMData}",
@@ -2340,8 +2340,8 @@
             "nodeType": "ExportImages",
             "version": "1.1",
             "position": [
-                3614,
-                -31
+                3600,
+                0
             ],
             "inputs": {
                 "input": "{IntrinsicsTransforming_2.input}",
@@ -2356,8 +2356,8 @@
             "nodeType": "ExportImages",
             "version": "1.1",
             "position": [
-                404,
-                -280
+                400,
+                -300
             ],
             "inputs": {
                 "input": "{IntrinsicsTransforming_3.input}",
@@ -2372,8 +2372,8 @@
             "nodeType": "ExportImages",
             "version": "1.1",
             "position": [
-                2037,
-                -324
+                2000,
+                -330
             ],
             "inputs": {
                 "input": "{IntrinsicsTransforming_4.input}",
@@ -2388,8 +2388,8 @@
             "nodeType": "FeatureExtraction",
             "version": "1.3",
             "position": [
-                161,
-                -23
+                200,
+                0
             ],
             "inputs": {
                 "input": "{KeyframeSelection_1.outputSfMDataKeyframes}",
@@ -2404,8 +2404,8 @@
             "nodeType": "FeatureExtraction",
             "version": "1.3",
             "position": [
-                1542.0,
-                85.0
+                1550,
+                90
             ],
             "inputs": {
                 "input": "{MeshResection_1.output}",
@@ -2420,8 +2420,8 @@
             "nodeType": "FeatureMatching",
             "version": "2.2",
             "position": [
-                581,
-                -23
+                600,
+                0
             ],
             "inputs": {
                 "input": "{ImageMatching_1.input}",
@@ -2438,8 +2438,8 @@
             "nodeType": "FeatureMatching",
             "version": "2.2",
             "position": [
-                2015,
-                151
+                2000,
+                180
             ],
             "inputs": {
                 "input": "{ImageMatching_2.input}",
@@ -2457,8 +2457,8 @@
             "nodeType": "FeatureMatching",
             "version": "2.2",
             "position": [
-                2004,
-                1
+                2000,
+                0
             ],
             "inputs": {
                 "input": "{ImageMatchingMultiSfM_1.outputCombinedSfM}",
@@ -2475,8 +2475,8 @@
             "nodeType": "ImageMatchingMultiSfM",
             "version": "2.1",
             "position": [
-                1794,
-                1
+                1800,
+                0
             ],
             "inputs": {
                 "input": "{MeshResection_1.output}",
@@ -2496,8 +2496,8 @@
             "nodeType": "ImageMatching",
             "version": "2.1",
             "position": [
-                359,
-                -21
+                400,
+                0
             ],
             "inputs": {
                 "input": "{FeatureExtraction_1.input}",
@@ -2515,8 +2515,8 @@
             "nodeType": "ImageMatching",
             "version": "2.1",
             "position": [
-                1787,
-                167
+                1800,
+                180
             ],
             "inputs": {
                 "input": "{MeshResection_1.input}",
@@ -2546,8 +2546,8 @@
             "nodeType": "IntrinsicsTransforming",
             "version": "1.1",
             "position": [
-                3438,
-                -27
+                3400,
+                0
             ],
             "inputs": {
                 "input": "{SfMColorizing_2.output}"
@@ -2560,8 +2560,8 @@
             "nodeType": "IntrinsicsTransforming",
             "version": "1.1",
             "position": [
-                194,
-                -280
+                200,
+                -300
             ],
             "inputs": {
                 "input": "{SfMSplitReconstructed_1.reconstructedOutput}"
@@ -2574,8 +2574,8 @@
             "nodeType": "IntrinsicsTransforming",
             "version": "1.1",
             "position": [
-                1827,
-                -324
+                1800,
+                -330
             ],
             "inputs": {
                 "input": "{SfMSplitReconstructed_2.reconstructedOutput}"
@@ -2588,8 +2588,8 @@
             "nodeType": "KeyframeSelection",
             "version": "5.1",
             "position": [
-                -49,
-                -23
+                0,
+                0
             ],
             "inputs": {
                 "inputPaths": [
@@ -2618,7 +2618,7 @@
                 "color": "#575963"
             }
         },
-        "Lidarmesh_1": {
+        "LidarMesh_1": {
             "nodeType": "InputFile",
             "version": "1.0",
             "position": [
@@ -2639,7 +2639,7 @@
             ],
             "inputs": {
                 "input": "{ApplyCalibration_2.output}",
-                "mesh": "{Lidarmesh_1.inputFile}",
+                "mesh": "{LidarMesh_1.inputFile}",
                 "observations": [
                     {
                         "userName": "",
@@ -2879,25 +2879,25 @@
             "nodeType": "Backdrop",
             "position": [
                 -70,
-                -391
+                -360
             ],
             "internalInputs": {
                 "label": "Previz lidar resection",
                 "color": "#bea981",
                 "nodeWidth": 1122,
-                "nodeHeight": 282
+                "nodeHeight": 200
             }
         },
         "ScenePreview_1": {
             "nodeType": "ScenePreview",
             "version": "3.0",
             "position": [
-                3802,
-                -33
+                3800,
+                0
             ],
             "inputs": {
                 "cameras": "{ExportImages_2.outputSfMData}",
-                "model": "{Lidarmesh_1.inputFile}",
+                "model": "{LidarMesh_1.inputFile}",
                 "masks": "{ImageSegmentationSam3_2.output}",
                 "meshParams": {
                     "shading": "line_art",
@@ -2912,12 +2912,12 @@
             "nodeType": "ScenePreview",
             "version": "3.0",
             "position": [
-                824,
-                -280
+                800,
+                -300
             ],
             "inputs": {
                 "cameras": "{ConvertSfMFormat_2.output}",
-                "model": "{Lidarmesh_1.inputFile}",
+                "model": "{LidarMesh_1.inputFile}",
                 "masks": "{ImageSegmentationSam3_2.output}"
             },
             "internalInputs": {
@@ -2928,12 +2928,12 @@
             "nodeType": "ScenePreview",
             "version": "3.0",
             "position": [
-                2457,
-                -324
+                2400,
+                -330
             ],
             "inputs": {
                 "cameras": "{ConvertSfMFormat_3.output}",
-                "model": "{Lidarmesh_1.inputFile}",
+                "model": "{LidarMesh_1.inputFile}",
                 "masks": "{ImageSegmentationSam3_2.output}"
             },
             "internalInputs": {
@@ -2944,14 +2944,14 @@
             "nodeType": "SfMBootStrapping",
             "version": "4.3",
             "position": [
-                1001,
-                -23
+                1000,
+                0
             ],
             "inputs": {
                 "input": "{TracksBuilding_1.input}",
                 "method": "mesh_single",
                 "tracksFilename": "{TracksBuilding_1.output}",
-                "meshFilename": "{Lidarmesh_1.inputFile}",
+                "meshFilename": "{LidarMesh_1.inputFile}",
                 "pairs": "empty"
             },
             "internalInputs": {
@@ -2962,8 +2962,8 @@
             "nodeType": "SfMColorizing",
             "version": "1.0",
             "position": [
-                3047,
-                14
+                3000,
+                0
             ],
             "inputs": {
                 "input": "{SfMExpanding_3.output}"
@@ -2976,13 +2976,13 @@
             "nodeType": "SfMExpanding",
             "version": "2.8",
             "position": [
-                2634,
-                1
+                2600,
+                0
             ],
             "inputs": {
                 "input": "{TracksBuilding_2.input}",
                 "tracksFilename": "{TracksMerging_1.output}",
-                "meshFilename": "{Lidarmesh_1.inputFile}",
+                "meshFilename": "{LidarMesh_1.inputFile}",
                 "localizerEstimatorError": 4.0,
                 "nbFirstUnstableCameras": 0,
                 "maxImagesPerGroup": 0,
@@ -3002,8 +3002,8 @@
             "nodeType": "SfMExpanding",
             "version": "2.8",
             "position": [
-                2844,
-                1
+                2800,
+                0
             ],
             "inputs": {
                 "input": "{SfMExpanding_2.output}",
@@ -3030,8 +3030,8 @@
             "nodeType": "SfMExpanding",
             "version": "2.8",
             "position": [
-                1211,
-                -23
+                1200,
+                0
             ],
             "inputs": {
                 "input": "{SfMBootStrapping_1.output}",
@@ -3053,8 +3053,8 @@
             "nodeType": "SfMSplitReconstructed",
             "version": "1.0",
             "position": [
-                -16,
-                -280
+                0,
+                -300
             ],
             "inputs": {
                 "input": "{MeshResection_1.output}"
@@ -3067,8 +3067,8 @@
             "nodeType": "SfMSplitReconstructed",
             "version": "1.0",
             "position": [
-                1617,
-                -324
+                1600,
+                -330
             ],
             "inputs": {
                 "input": "{SfMExpanding_4.output}"
@@ -3081,8 +3081,8 @@
             "nodeType": "TracksBuilding",
             "version": "1.0",
             "position": [
-                791,
-                -23
+                800,
+                0
             ],
             "inputs": {
                 "input": "{FeatureMatching_1.input}",
@@ -3101,8 +3101,8 @@
             "nodeType": "TracksBuilding",
             "version": "1.0",
             "position": [
-                2214,
-                1
+                2200,
+                0
             ],
             "inputs": {
                 "input": "{FeatureMatching_3.input}",
@@ -3123,8 +3123,8 @@
             "nodeType": "TracksMerging",
             "version": "3.0",
             "position": [
-                2428,
-                12
+                2400,
+                0
             ],
             "inputs": {
                 "inputs": [
