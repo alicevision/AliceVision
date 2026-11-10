@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/utils.hpp>
 #include <ceres/rotation.h>
 
 namespace aliceVision {
@@ -28,20 +29,9 @@ struct DepthErrorFunctor
         const T* parameter_pose = parameters[0];
         const T* parameter_point = parameters[1];
 
-        //--
         // Apply external parameters (Pose)
-        //--
-        const T* cam_R = parameter_pose;
-        const T* cam_c = &parameter_pose[3];
-        
-        T centeredPoint[3];
-        centeredPoint[0] = parameter_point[0] - cam_c[0];
-        centeredPoint[1] = parameter_point[1] - cam_c[1];
-        centeredPoint[2] = parameter_point[2] - cam_c[2];
-
         T transformedPoint[3];
-        // Rotate the point according the camera rotation
-        ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
+        applyPose(parameter_pose, parameter_point, transformedPoint);
 
         residuals[0] = T(1.0 / _depthVariance) * (transformedPoint[2] - T(_depth));
 

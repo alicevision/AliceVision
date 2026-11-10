@@ -11,6 +11,7 @@
 #include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/intrinsicsProject.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/utils.hpp>
 #include <ceres/rotation.h>
 #include "dynamic_cost_function_to_functor.h"
 
@@ -21,37 +22,38 @@
 namespace aliceVision {
 namespace sfm {
 
-struct ProjectionSimpleErrorFunctor
+/**
+ * @brief Reprojection error of a world point
+ * Parameter blocks: intrinsics, distortion, pose, [rig sub-pose,] point
+ * @tparam withSubPose true when the view is part of a rig and the rig sub-pose is applied after the pose
+ */
+template<bool withSubPose>
+struct ProjectionErrorFunctor
 {
-    explicit ProjectionSimpleErrorFunctor(const sfmData::Observation& obs, const std::shared_ptr<camera::IntrinsicBase>& intrinsics)        
-    : _intrinsicFunctor(new CostIntrinsicsProject(obs, intrinsics))
-    {        
-    }
+    static constexpr int pointIndex = withSubPose ? 4 : 3;
+
+    explicit ProjectionErrorFunctor(const sfmData::Observation& obs, const std::shared_ptr<camera::IntrinsicBase>& intrinsics)
+      : _intrinsicFunctor(new CostIntrinsicsProject(obs, intrinsics))
+    {}
 
     template<typename T>
     bool operator()(T const* const* parameters, T* residuals) const
-    {       
+    {
         const T* parameter_intrinsics = parameters[0];
         const T* parameter_distortion = parameters[1];
         const T* parameter_pose = parameters[2];
-        const T* parameter_point = parameters[3];
-
-        //--
-        // Apply external parameters (Pose)
-        //--
-        const T* cam_R = parameter_pose;
-        const T* cam_c = &parameter_pose[3];
-        
-        T centeredPoint[3];
-        centeredPoint[0] = parameter_point[0] - cam_c[0];
-        centeredPoint[1] = parameter_point[1] - cam_c[1];
-        centeredPoint[2] = parameter_point[2] - cam_c[2];
+        const T* parameter_point = parameters[pointIndex];
 
         T transformedPoint[3];
-        // Rotate the point according the camera rotation
-        ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
+        applyPose(parameter_pose, parameter_point, transformedPoint);
 
-        const T * innerParameters[3];
+        if constexpr (withSubPose)
+        {
+            const T* parameter_subpose = parameters[3];
+            applyPose(parameter_subpose, transformedPoint, transformedPoint);
+        }
+
+        const T* innerParameters[3];
         innerParameters[0] = parameter_intrinsics;
         innerParameters[1] = parameter_distortion;
         innerParameters[2] = transformedPoint;
@@ -65,111 +67,19 @@ struct ProjectionSimpleErrorFunctor
      * @param[in] observation The corresponding observation
      * @return cost functor
      */
-    inline static ceres::CostFunction* createCostFunction(
-        const std::shared_ptr<camera::IntrinsicBase> intrinsic, const sfmData::Observation& observation)
+    inline static ceres::CostFunction* createCostFunction(const std::shared_ptr<camera::IntrinsicBase>& intrinsic,
+                                                          const sfmData::Observation& observation)
     {
-        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionSimpleErrorFunctor>(new ProjectionSimpleErrorFunctor(observation, intrinsic));
-
-        int distortionSize = 1;
-        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-        if (isod)
-        {
-            auto distortion = isod->getDistortion();
-            if (distortion)
-            {
-                distortionSize = distortion->getParameters().size();
-            }
-        }
+        auto costFunction =
+          new ceres::DynamicAutoDiffCostFunction<ProjectionErrorFunctor>(new ProjectionErrorFunctor(observation, intrinsic));
 
         costFunction->AddParameterBlock(intrinsic->getParameters().size());
-        costFunction->AddParameterBlock(distortionSize);
+        costFunction->AddParameterBlock(getDistortionSize(intrinsic));
         costFunction->AddParameterBlock(6);
-        costFunction->AddParameterBlock(3);
-        costFunction->SetNumResiduals(2);
-
-        return costFunction;
-    }
-
-    ceres::DynamicCostFunctionToFunctorTmp _intrinsicFunctor;
-};
-
-struct ProjectionErrorFunctor
-{
-    explicit ProjectionErrorFunctor(const sfmData::Observation& obs, const std::shared_ptr<camera::IntrinsicBase>& intrinsics)        
-    : _intrinsicFunctor(new CostIntrinsicsProject(obs, intrinsics))
-    {        
-    }
-
-    template<typename T>
-    bool operator()(T const* const* parameters, T* residuals) const
-    {       
-        const T* parameter_intrinsics = parameters[0];
-        const T* parameter_distortion = parameters[1];
-        const T* parameter_pose = parameters[2];
-        const T* parameter_subpose = parameters[3];
-        const T* parameter_point = parameters[4];
-
-        T transformedPoint[3];
+        if constexpr (withSubPose)
         {
-            const T* cam_R = parameter_pose;
-            const T* cam_c = &parameter_pose[3];
-
-            T centeredPoint[3];
-            centeredPoint[0] = parameter_point[0] - cam_c[0];
-            centeredPoint[1] = parameter_point[1] - cam_c[1];
-            centeredPoint[2] = parameter_point[2] - cam_c[2];
-
-            // Rotate the point according the camera rotation
-            ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
+            costFunction->AddParameterBlock(6);
         }
-
-        {
-            const T* cam_R = parameter_subpose;
-            const T* cam_c = &parameter_subpose[3];
-
-            T centeredPoint[3];
-            centeredPoint[0] = transformedPoint[0] - cam_c[0];
-            centeredPoint[1] = transformedPoint[1] - cam_c[1];
-            centeredPoint[2] = transformedPoint[2] - cam_c[2];
-
-            // Rotate the point according to the camera rotation
-            ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
-        }
-
-        const T * innerParameters[3];
-        innerParameters[0] = parameter_intrinsics;
-        innerParameters[1] = parameter_distortion;
-        innerParameters[2] = transformedPoint;
-
-        return _intrinsicFunctor(innerParameters, residuals);
-    }
-
-    /**
-     * @brief Create the appropriate cost functor according the provided input rig camera intrinsic model
-     * @param[in] intrinsicPtr The intrinsic pointer
-     * @param[in] observation The corresponding observation
-     * @return cost functor
-     */
-    inline static ceres::CostFunction* createCostFunction(std::shared_ptr<camera::IntrinsicBase> intrinsic, 
-                                                        const sfmData::Observation& observation)
-    {
-        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionErrorFunctor>(new ProjectionErrorFunctor(observation, intrinsic));
-
-        int distortionSize = 1;
-        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-        if (isod)
-        {
-            auto distortion = isod->getDistortion();
-            if (distortion)
-            {
-                distortionSize = distortion->getParameters().size();
-            }
-        }
-
-        costFunction->AddParameterBlock(intrinsic->getParameters().size());
-        costFunction->AddParameterBlock(distortionSize);
-        costFunction->AddParameterBlock(6);
-        costFunction->AddParameterBlock(6);
         costFunction->AddParameterBlock(3);
         costFunction->SetNumResiduals(2);
 
@@ -241,18 +151,8 @@ struct ProjectionRelativeErrorFunctor
             absolutePoint[1] += refcam_c[1];
             absolutePoint[2] += refcam_c[2];
 
-            //--
             // Apply external parameters (Pose)
-            //--
-            const T* cam_R = parameter_pose;
-            const T* cam_c = &parameter_pose[3];
-            
-            absolutePoint[0] -= cam_c[0];
-            absolutePoint[1] -= cam_c[1];
-            absolutePoint[2] -= cam_c[2];
-
-            // Rotate the point according the camera rotation
-            ceres::AngleAxisRotatePoint(cam_R, absolutePoint, transformedPoint);
+            applyPose(parameter_pose, absolutePoint, transformedPoint);
         }
 
         const T * innerParameters[3];
@@ -271,25 +171,14 @@ struct ProjectionRelativeErrorFunctor
      * @return cost functor
      */
     inline static ceres::CostFunction* createCostFunction(
-        const std::shared_ptr<camera::IntrinsicBase> intrinsic, 
+        const std::shared_ptr<camera::IntrinsicBase>& intrinsic,
         const sfmData::Observation& observation,
         bool withoutPose)
     {
         auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionRelativeErrorFunctor>(new ProjectionRelativeErrorFunctor(observation, intrinsic, withoutPose));
 
-        int distortionSize = 1;
-        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-        if (isod)
-        {
-            auto distortion = isod->getDistortion();
-            if (distortion)
-            {
-                distortionSize = distortion->getParameters().size();
-            }
-        }
-
         costFunction->AddParameterBlock(intrinsic->getParameters().size());
-        costFunction->AddParameterBlock(distortionSize);
+        costFunction->AddParameterBlock(getDistortionSize(intrinsic));
 
         if (!withoutPose)
         {

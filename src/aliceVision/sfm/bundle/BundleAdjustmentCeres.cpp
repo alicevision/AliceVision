@@ -624,7 +624,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
             if (view.isPartOfRig() && !view.isPoseIndependant())
             {
-                ceres::CostFunction* costFunction = ProjectionErrorFunctor::createCostFunction(intrinsic, observation);
+                ceres::CostFunction* costFunction = ProjectionErrorFunctor<true>::createCostFunction(intrinsic, observation);
 
                 double* rigBlockPtr = _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data();
                 _linearSolverOrdering.AddElementToGroup(rigBlockPtr, 1);
@@ -665,7 +665,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             }
             else
             {
-                ceres::CostFunction* costFunction = ProjectionSimpleErrorFunctor::createCostFunction(intrinsic, observation);
+                ceres::CostFunction* costFunction = ProjectionErrorFunctor<false>::createCostFunction(intrinsic, observation);
 
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
