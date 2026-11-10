@@ -1011,7 +1011,8 @@ void BundleAdjustmentCeres::addTemporalSmoothnessToProblem(const sfmData::SfMDat
             blockIds.push_back(blockId);
         }
 
-        if (land2ViewsRegWeight != 0.)
+        // Without landmarks, the landmarks mean is undefined (division by zero)
+        if (land2ViewsRegWeight != 0. && !_landmarksBlocks.empty())
         {
             std::vector<double*> landmarks;
 
