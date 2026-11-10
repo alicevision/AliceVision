@@ -32,7 +32,7 @@
 #ifndef CERES_PUBLIC_DYNAMIC_COST_FUNCTION_TO_FUNCTOR_TMP_H_
 #define CERES_PUBLIC_DYNAMIC_COST_FUNCTION_TO_FUNCTOR_TMP_H_
 
-#if ((CERES_VERSION_MAJOR == 2 && CERES_VERSION_MINOR >= 3) || (CERES_VERION_MAJOR >= 3))
+#if ((CERES_VERSION_MAJOR == 2 && CERES_VERSION_MINOR >= 3) || (CERES_VERSION_MAJOR >= 3))
 namespace ceres {
   using DynamicCostFunctionToFunctorTmp = DynamicCostFunctionToFunctor;
 }
