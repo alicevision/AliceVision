@@ -353,19 +353,23 @@ if(UNIX)
 endif()
 
 # ─── Copy USD plugin directory from lookup paths ─────────────────────────────
-# plugInfo.json and plugin subdirs must sit alongside the DLLs for the USD resolver.
+# plugInfo.json and plugin subdirs must sit alongside the USD libraries for the USD resolver: USD looks for them
+# in <dir of libusd_plug>/usd, i.e. the bin dir on Windows and the lib dir on Linux. Without them, USD aborts when
+# loading a plugin ("Failed to find the plugInfo.json file that declares the plugin for ArDefaultResolver").
 
 if (WIN32)
-    set(_bundle_bindir "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
-    foreach(_lookup_path IN LISTS BUNDLE_LIBS_PATHS)
-        set(_usd_src "${_lookup_path}/usd")
-        if(EXISTS "${_usd_src}")
-            message(STATUS "  Copying USD plugin dir: ${_usd_src} -> ${_bundle_bindir}/usd")
-            file(COPY "${_usd_src}" DESTINATION "${_bundle_bindir}" USE_SOURCE_PERMISSIONS)
-            break()
-        endif()
-    endforeach()
-endif(WIN32)
+    set(_bundle_usd_dest "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+else()
+    set(_bundle_usd_dest "${BUNDLE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+foreach(_lookup_path IN LISTS BUNDLE_LIBS_PATHS)
+    set(_usd_src "${_lookup_path}/usd")
+    if(EXISTS "${_usd_src}")
+        message(STATUS "  Copying USD plugin dir: ${_usd_src} -> ${_bundle_usd_dest}/usd")
+        file(COPY "${_usd_src}" DESTINATION "${_bundle_usd_dest}" USE_SOURCE_PERMISSIONS)
+        break()
+    endif()
+endforeach()
 
 # ─── Embed the Python runtime ────────────────────────────────────────────────
 # Copied after fixup_bundle, which must not rewrite the interpreter and its modules.
