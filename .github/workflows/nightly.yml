@@ -14,12 +14,36 @@ concurrency:
 jobs:
 
   # ───────────────────────────────────────────────
+  # 0. Skip scheduled runs when the nightly already holds this commit
+  # ───────────────────────────────────────────────
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.check.outputs.build }}
+    steps:
+      - name: Compare the nightly tag with the commit to build
+        id: check
+        run: |
+          # The tag only moves after a full publish (last step of publish-nightly).
+          TAG_SHA=$(git ls-remote "https://github.com/${GITHUB_REPOSITORY}.git" refs/tags/nightly | cut -f 1)
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && [ "$TAG_SHA" = "$GITHUB_SHA" ]; then
+            echo "Nightly already published for ${GITHUB_SHA}: skip."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ───────────────────────────────────────────────
   # 1. Build & archive (archives created inside each build workflow)
   # ───────────────────────────────────────────────
   build-linux:
+    needs: check
+    if: needs.check.outputs.build == 'true'
     uses: ./.github/workflows/build-linux.yml
 
   build-windows:
+    needs: check
+    if: needs.check.outputs.build == 'true'
     uses: ./.github/workflows/build-windows.yml
 
   # ───────────────────────────────────────────────
@@ -27,6 +51,8 @@ jobs:
   # ───────────────────────────────────────────────
   publish-nightly:
     needs: [build-linux, build-windows]
+    # Manual runs on other branches only build: never publish them as the develop nightly.
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     permissions:
       contents: write   # required to create/edit releases and push tags
@@ -53,12 +79,9 @@ jobs:
         id: meta
         run: |
           SHORT_SHA=$(git rev-parse --short=8 HEAD)
-          FULL_SHA=$(git rev-parse HEAD)
           NOW=$(date -u +'%Y-%m-%d %H:%M UTC')
           BUILD_LABEL=$(date -u +%Y%m%d)-${SHORT_SHA}
-          echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
           echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
-          echo "full_sha=${FULL_SHA}" >> $GITHUB_OUTPUT
           echo "now=${NOW}" >> $GITHUB_OUTPUT
           echo "build_label=${BUILD_LABEL}" >> $GITHUB_OUTPUT
 
@@ -104,8 +127,19 @@ jobs:
         run: |
           NOW="${{ steps.meta.outputs.now }}"
           SHORT_SHA="${{ steps.meta.outputs.short_sha }}"
-          BUILD_LABEL="${{ steps.meta.outputs.build_label }}"
-          FULL_SHA="${{ steps.meta.outputs.full_sha }}"
+          # CUDA versions come from the build workflows, so the notes cannot drift from them.
+          LINUX_CUDA=$(grep -oP 'image: ".*-cuda\K[0-9.]+' .github/workflows/build-linux.yml)
+          WINDOWS_CUDA=$(grep -oP "CUDA_VERSION: '\K[^']+" .github/workflows/build-windows.yml)
+          # List the files actually downloaded, not names rebuilt from today's date.
+          ASSET_ROWS=$(for FILE in dist/*; do
+            NAME=$(basename "$FILE")
+            case "$NAME" in
+              *-linux.*)   PLATFORM="Linux (Rocky 9, CUDA ${LINUX_CUDA})" ;;
+              *-windows.*) PLATFORM="Windows (CUDA ${WINDOWS_CUDA})" ;;
+              *)           PLATFORM="" ;;
+            esac
+            echo "| \`${NAME}\` | ${PLATFORM} |"
+          done)
           cat > nightly_release_notes.md << EOF
           > [!WARNING]
           > **Automated nightly build** from the \`develop\` branch. May be unstable.
@@ -120,8 +154,7 @@ jobs:
 
           | File | Platform |
           |------|----------|
-          | \`AliceVision-nightly-${BUILD_LABEL}-linux.tar.gz\` | Linux (Rocky 9, CUDA 12.8.0) |
-          | \`AliceVision-nightly-${BUILD_LABEL}-windows.zip\`  | Windows (CUDA 13.2.1) |
+          ${ASSET_ROWS}
           EOF
 
       # ── Update release from file ──────────────────
@@ -134,4 +167,12 @@ jobs:
             --title "Nightly Build (${{ steps.meta.outputs.build_label }})" \
             --notes-file nightly_release_notes.md \
             --prerelease
+
+      # ── Move the nightly tag to the built commit ─
+      # The release's "Source code" archives come from this tag.
+      # Last step: the "check" job skips the next scheduled run only if this whole publish succeeded.
+      - name: Move nightly tag
+        run: |
+          git tag -f nightly "${GITHUB_SHA}"
+          git push -f origin refs/tags/nightly
 
