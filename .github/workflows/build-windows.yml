@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: |
-            C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2
+            C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${{ env.CUDA_MAJOR_MINOR }}
             C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\BuildCustomizations\
             ${{ env.CUDA_ENV_FILE }}
           key: cuda-${{ runner.os }}-${{ env.CUDA_VERSION }}
@@ -85,7 +85,7 @@ jobs:
 
       # Keep downloaded wheels across runs (the venvs themselves are recreated).
       - name: Cache pip downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~\AppData\Local\pip\Cache
           key: pip-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('requirements.txt') }}
