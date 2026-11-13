@@ -16,6 +16,9 @@
 namespace aliceVision {
 namespace sfm {
 
+/// Added under the square roots of distances: keeps the value and its derivative finite when camera centers coincide
+constexpr double temporalSquaredEpsilon = 1e-12;
+
 /**
  * @brief TemporalConstraintFunctor implements a temporal constraint for camera poses in bundle adjustment.
  *
@@ -148,7 +151,7 @@ struct TemporalConstraintFunctor
             residuals[7] = _c0pWeight * (viewCenter2[1] - viewCenter1[1]);
             residuals[8] = _c0pWeight * (viewCenter2[2] - viewCenter1[2]);
 
-            T c1normalization = sqrt( (viewCenter2[0] - viewCenter1[0]) * (viewCenter2[0] - viewCenter1[0])
+            T c1normalization = sqrt( temporalSquaredEpsilon + (viewCenter2[0] - viewCenter1[0]) * (viewCenter2[0] - viewCenter1[0])
                                     + (viewCenter2[1] - viewCenter1[1]) * (viewCenter2[1] - viewCenter1[1])
                                     + (viewCenter2[2] - viewCenter1[2]) * (viewCenter2[2] - viewCenter1[2])
                                     + (viewCenter1[0] - viewCenter0[0]) * (viewCenter1[0] - viewCenter0[0])
@@ -165,7 +168,7 @@ struct TemporalConstraintFunctor
             residuals[10] = _c0pWeight * (viewCenter3[1] - viewCenter2[1]);
             residuals[11] = _c0pWeight * (viewCenter3[2] - viewCenter2[2]);
 
-            T c1normalization = sqrt( (viewCenter3[0] - viewCenter2[0]) * (viewCenter3[0] - viewCenter2[0])
+            T c1normalization = sqrt( temporalSquaredEpsilon + (viewCenter3[0] - viewCenter2[0]) * (viewCenter3[0] - viewCenter2[0])
                                     + (viewCenter3[1] - viewCenter2[1]) * (viewCenter3[1] - viewCenter2[1])
                                     + (viewCenter3[2] - viewCenter2[2]) * (viewCenter3[2] - viewCenter2[2])
                                     + (viewCenter2[0] - viewCenter1[0]) * (viewCenter2[0] - viewCenter1[0])
@@ -176,7 +179,7 @@ struct TemporalConstraintFunctor
             residuals[13] = _c1pWeight * (2. * viewCenter2[1] - viewCenter1[1] - viewCenter3[1]) / c1normalization;
             residuals[14] = _c1pWeight * (2. * viewCenter2[2] - viewCenter1[2] - viewCenter3[2]) / c1normalization;
 
-            T c2normalization = sqrt( (viewCenter3[0] - viewCenter2[0]) * (viewCenter3[0] - viewCenter2[0])
+            T c2normalization = sqrt( temporalSquaredEpsilon + (viewCenter3[0] - viewCenter2[0]) * (viewCenter3[0] - viewCenter2[0])
                                     + (viewCenter3[1] - viewCenter2[1]) * (viewCenter3[1] - viewCenter2[1])
                                     + (viewCenter3[2] - viewCenter2[2]) * (viewCenter3[2] - viewCenter2[2])
                                     + (viewCenter2[0] - viewCenter1[0]) * (viewCenter2[0] - viewCenter1[0])
@@ -291,13 +294,13 @@ struct TrajectoryLengthRegularizationFunctor
     template<typename T>
     bool operator()(const T* const * para, T* residuals) const
     {
-        residuals[0] = _regWeight * (sqrt( (para[1][3] - para[0][3]) * (para[1][3] - para[0][3])
+        residuals[0] = _regWeight * (sqrt( temporalSquaredEpsilon + (para[1][3] - para[0][3]) * (para[1][3] - para[0][3])
                                          + (para[1][4] - para[0][4]) * (para[1][4] - para[0][4])
                                          + (para[1][5] - para[0][5]) * (para[1][5] - para[0][5]) ) - _trajectoryLength);
 
         for (int paraIdx = 2; paraIdx < _paraSize; paraIdx++)
         {
-            residuals[0] += _regWeight * sqrt( (para[paraIdx][3] - para[paraIdx-1][3]) * (para[paraIdx][3] - para[paraIdx-1][3])
+            residuals[0] += _regWeight * sqrt( temporalSquaredEpsilon + (para[paraIdx][3] - para[paraIdx-1][3]) * (para[paraIdx][3] - para[paraIdx-1][3])
                                              + (para[paraIdx][4] - para[paraIdx-1][4]) * (para[paraIdx][4] - para[paraIdx-1][4])
                                              + (para[paraIdx][5] - para[paraIdx-1][5]) * (para[paraIdx][5] - para[paraIdx-1][5]) );
         }

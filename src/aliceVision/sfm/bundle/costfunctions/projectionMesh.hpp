@@ -11,6 +11,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/intrinsicsProject.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/meshIntersect.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/utils.hpp>
 #include <aliceVision/sfmData/PointFetcher.hpp>
 
 #include <ceres/rotation.h>
@@ -48,8 +49,6 @@ struct ProjectionMeshErrorFunctor
 
         const T* refcam_r_world = parameter_referencePose;
         const T* world_t_refcam = &parameter_referencePose[3];
-        const T* curcam_r_world = parameter_currentPose;
-        const T* world_t_curcam = &parameter_currentPose[3];
 
         T world_r_refcam[3];
         world_r_refcam[0] = -refcam_r_world[0];
@@ -80,10 +79,7 @@ struct ProjectionMeshErrorFunctor
 
         // Compute point in camera coordinates
         T transformedPoint[3];
-        worldPoint[0] -= world_t_curcam[0];
-        worldPoint[1] -= world_t_curcam[1];
-        worldPoint[2] -= world_t_curcam[2];
-        ceres::AngleAxisRotatePoint(curcam_r_world, worldPoint, transformedPoint);
+        applyPose(parameter_currentPose, worldPoint, transformedPoint);
 
         // Project
         const T * innerParameters[3];
@@ -109,21 +105,9 @@ struct ProjectionMeshErrorFunctor
     {
         auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionMeshErrorFunctor>(new ProjectionMeshErrorFunctor(observation, intrinsic, fetcher, samePose));
 
-        // Estimate distortion size from intrinsics
-        int distortionSize = 1;
-        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-        if (isod)
-        {
-            auto distortion = isod->getDistortion();
-            if (distortion)
-            {
-                distortionSize = distortion->getParameters().size();
-            }
-        }
-
         // Intrinsic paramters
         costFunction->AddParameterBlock(intrinsic->getParameters().size());
-        costFunction->AddParameterBlock(distortionSize);
+        costFunction->AddParameterBlock(getDistortionSize(intrinsic));
 
         // Add parameters for poses
         if (!samePose)

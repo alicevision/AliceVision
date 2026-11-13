@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include <aliceVision/sfm/bundle/costfunctions/intrinsicsProject.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/utils.hpp>
+#include "dynamic_cost_function_to_functor.h"
 
 namespace aliceVision {
 namespace sfm {
@@ -35,20 +38,9 @@ struct SurveyErrorFunctor
         parameter_point[1] = T(_point.y());
         parameter_point[2] = T(_point.z());
 
-        //--
         // Apply external parameters (Pose)
-        //--
-        const T* cam_R = parameter_pose;
-        const T* cam_c = &parameter_pose[3];
-        
-        T centeredPoint[3];
-        centeredPoint[0] = parameter_point[0] - cam_c[0];
-        centeredPoint[1] = parameter_point[1] - cam_c[1];
-        centeredPoint[2] = parameter_point[2] - cam_c[2];
-
         T transformedPoint[3];
-        // Rotate the point according the camera rotation
-        ceres::AngleAxisRotatePoint(cam_R, centeredPoint, transformedPoint);
+        applyPose(parameter_pose, parameter_point, transformedPoint);
 
         const T * innerParameters[3];
         innerParameters[0] = parameter_intrinsics;
@@ -88,19 +80,8 @@ struct SurveyErrorFunctor
     {
         auto costFunction = new ceres::DynamicAutoDiffCostFunction<SurveyErrorFunctor>(new SurveyErrorFunctor(point, observation, residual, intrinsic, weight));
 
-        int distortionSize = 1;
-        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsic);
-        if (isod)
-        {
-            auto distortion = isod->getDistortion();
-            if (distortion)
-            {
-                distortionSize = distortion->getParameters().size();
-            }
-        }
-
         costFunction->AddParameterBlock(intrinsic->getParameters().size());
-        costFunction->AddParameterBlock(distortionSize);
+        costFunction->AddParameterBlock(getDistortionSize(intrinsic));
         costFunction->AddParameterBlock(6);
         costFunction->SetNumResiduals(2);
 

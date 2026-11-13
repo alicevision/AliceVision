@@ -11,6 +11,7 @@
 #include <aliceVision/sfmData/Observation.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/intrinsicsProject.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/intrinsicsLift.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/utils.hpp>
 #include <ceres/rotation.h>
 #include "dynamic_cost_function_to_functor.h"
 
@@ -121,37 +122,15 @@ struct Constraint2dErrorFunctor
     {       
         auto costFunction = new ceres::DynamicAutoDiffCostFunction<Constraint2dErrorFunctor>(new Constraint2dErrorFunctor(observation_first, observation_second, intrinsicLift, intrinsicProject, rigLift, rigProject, sharedPose, sharedSubPose));
 
-        int distortionLiftSize = 1;
-        auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsicLift);
-        if (isod)
-        {
-            auto distortion = isod->getDistortion();
-            if (distortion)
-            {
-                distortionLiftSize = distortion->getParameters().size();
-            }
-        }
-
-        costFunction->AddParameterBlock(intrinsicLift->getParameters().size()); 
-        costFunction->AddParameterBlock(distortionLiftSize);
+        costFunction->AddParameterBlock(intrinsicLift->getParameters().size());
+        costFunction->AddParameterBlock(getDistortionSize(intrinsicLift));
 
         // Add intrinsic parameters for the second camera if this
         // camera is different from the first
         if (intrinsicLift != intrinsicProject)
         {
-            int distortionProjectSize = 1;
-            auto isod = camera::IntrinsicScaleOffsetDisto::cast(intrinsicProject);
-            if (isod)
-            {
-                auto distortion = isod->getDistortion();
-                if (distortion)
-                {
-                    distortionProjectSize = distortion->getParameters().size();
-                }
-            }
-
-            costFunction->AddParameterBlock(intrinsicProject->getParameters().size()); 
-            costFunction->AddParameterBlock(distortionProjectSize);
+            costFunction->AddParameterBlock(intrinsicProject->getParameters().size());
+            costFunction->AddParameterBlock(getDistortionSize(intrinsicProject));
         }
 
         costFunction->AddParameterBlock(6);

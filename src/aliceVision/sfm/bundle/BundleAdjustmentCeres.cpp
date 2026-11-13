@@ -624,7 +624,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
             if (view.isPartOfRig() && !view.isPoseIndependant())
             {
-                ceres::CostFunction* costFunction = ProjectionErrorFunctor::createCostFunction(intrinsic, observation);
+                ceres::CostFunction* costFunction = ProjectionErrorFunctor<true>::createCostFunction(intrinsic, observation);
 
                 double* rigBlockPtr = _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data();
                 _linearSolverOrdering.AddElementToGroup(rigBlockPtr, 1);
@@ -665,7 +665,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             }
             else
             {
-                ceres::CostFunction* costFunction = ProjectionSimpleErrorFunctor::createCostFunction(intrinsic, observation);
+                ceres::CostFunction* costFunction = ProjectionErrorFunctor<false>::createCostFunction(intrinsic, observation);
 
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
@@ -679,8 +679,8 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
             if (observation.getDepth() > 0.0)
             {
-                const double depthVariance = 0.1; //10 cm ?
-                ceres::CostFunction* costFunction = DepthErrorFunctor::createCostFunction(observation, depthVariance);
+                const double depthStdDev = 0.1; //10 cm ?
+                ceres::CostFunction* costFunction = DepthErrorFunctor::createCostFunction(observation, depthStdDev);
 
                 std::vector<double*> params;
                 params.push_back(poseBlockPtr);
@@ -814,24 +814,23 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
             distortionBlockPtr_2 = _distortionsBlocks.at(intrinsicId_2).data();
         }
 
-        bool view_1_rig = false;
+        // Same rule as the projection cost: the rig sub-pose is only applied to views that depend on the rig pose
+        const bool view_1_rig = view_1.isPartOfRig() && !view_1.isPoseIndependant();
         double * rigBlockPtr_1 = nullptr;
-        if (view_1.getRigId() != UndefinedIndexT)
+        if (view_1_rig)
         {
-            view_1_rig = true;
-            IndexT rigId = view_1.getRigId();
-            IndexT subPoseId = view_1.getSubPoseId();
-            rigBlockPtr_1 = _rigBlocks[rigId][subPoseId].data();
+            const IndexT rigId = view_1.getRigId();
+            const IndexT subPoseId = view_1.getSubPoseId();
+            rigBlockPtr_1 = _rigBlocks.at(rigId).at(subPoseId).data();
         }
 
-        bool view_2_rig = false;
+        const bool view_2_rig = view_2.isPartOfRig() && !view_2.isPoseIndependant();
         double * rigBlockPtr_2 = nullptr;
-        if (view_2.getRigId() != UndefinedIndexT)
+        if (view_2_rig)
         {
-            view_2_rig = true;
-            IndexT rigId = view_2.getRigId();
-            IndexT subPoseId = view_2.getSubPoseId();
-            rigBlockPtr_2 = _rigBlocks[rigId][subPoseId].data();
+            const IndexT rigId = view_2.getRigId();
+            const IndexT subPoseId = view_2.getSubPoseId();
+            rigBlockPtr_2 = _rigBlocks.at(rigId).at(subPoseId).data();
         }
 
         ceres::CostFunction* costFunction = Constraint2dErrorFunctor::createCostFunction(intrinsicObject1,
@@ -1012,7 +1011,8 @@ void BundleAdjustmentCeres::addTemporalSmoothnessToProblem(const sfmData::SfMDat
             blockIds.push_back(blockId);
         }
 
-        if (land2ViewsRegWeight != 0.)
+        // Without landmarks, the landmarks mean is undefined (division by zero)
+        if (land2ViewsRegWeight != 0. && !_landmarksBlocks.empty())
         {
             std::vector<double*> landmarks;
 
