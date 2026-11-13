@@ -223,6 +223,10 @@ void DepthMapEstimator::getTilesList(const std::vector<int>& cams, std::vector<T
 
 void DepthMapEstimator::compute(int cudaDeviceId, const std::vector<int>& cams)
 {
+    // nothing to compute
+    if (cams.empty())
+        return;
+
     // set the device to use for GPU executions
     // the CUDA runtime API is thread-safe, it maintains per-thread state about the current device
     setCudaDeviceId(cudaDeviceId);
