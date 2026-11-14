@@ -42,7 +42,7 @@ bool SfmBundle::process(sfmData::SfMData & sfmData, const track::TracksHandler &
         // Fill in the blanks in the views by interpolating new poses (position and orientation)
 
         sfm::poseFilter poseFilter;
-        if (!poseFilter.interpolateMissingPoses(sfmData, false))
+        if (!poseFilter.interpolateMissingPoses(sfmData))
         {
             return false;
         }
