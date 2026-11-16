@@ -17,6 +17,8 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/tools/floating_point_comparison.hpp>
 
+#include <map>
+
 using namespace aliceVision;
 
 bool getPointOnSphere(Vec3& result, const camera::IntrinsicBase& intrinsic, const Vec2& pt, double distanceToUnitCenter)
@@ -274,6 +276,92 @@ BOOST_AUTO_TEST_CASE(test_poses)
         {
             BOOST_CHECK_LT(rmseAfter, rmseBefore);
             BOOST_CHECK_LT(rmseAfter, 1e-3);
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_poses_rotationOnly)
+{
+    // Only the rotations are perturbed and refined: the centers are locked and must not move.
+    auto listIntrinsics = buildIntrinsics();
+
+    for (auto pairIntrinsics : listIntrinsics)
+    {
+        sfmData::SfMData sfmData;
+
+        createScene(sfmData, *pairIntrinsics.first);
+
+        srand(0);
+        std::map<IndexT, Vec3> centersBefore;
+        for (auto& [poseId, pose] : sfmData.getPoses().valueRange())
+        {
+            geometry::Pose3 pose3 = pose.getTransform();
+            const Eigen::Matrix3d nR = SO3::expm(Eigen::Vector3d::Random() * 0.01);
+            pose.setTransform(geometry::Pose3(nR * pose3.rotation(), pose3.center()));
+            centersBefore[poseId] = pose.getTransform().center();
+        }
+
+        sfm::BundleAdjustmentCeres::CeresOptions options;
+        options.summary = false;
+
+        double rmseBefore = sfm::RMSE(sfmData);
+        sfm::BundleAdjustmentCeres BA(options);
+        const bool success = BA.adjust(sfmData, sfm::BundleAdjustment::REFINE_ROTATION);
+        double rmseAfter = sfm::RMSE(sfmData);
+
+        BOOST_TEST_CONTEXT(EINTRINSIC_enumToString(pairIntrinsics.first->getType()))
+        {
+            BOOST_CHECK(success);
+            BOOST_CHECK_LT(rmseAfter, rmseBefore);
+            BOOST_CHECK_LT(rmseAfter, 1e-3);
+
+            for (const auto& [poseId, pose] : sfmData.getPoses().valueRange())
+            {
+                BOOST_CHECK_SMALL((pose.getTransform().center() - centersBefore.at(poseId)).norm(), 1e-9);
+            }
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_poses_centerOnly)
+{
+    // Only the centers are perturbed and refined: the rotations are locked and must not change.
+    auto listIntrinsics = buildIntrinsics();
+
+    for (auto pairIntrinsics : listIntrinsics)
+    {
+        sfmData::SfMData sfmData;
+
+        createScene(sfmData, *pairIntrinsics.first);
+
+        srand(0);
+        std::map<IndexT, Mat3> rotationsBefore;
+        for (auto& [poseId, pose] : sfmData.getPoses().valueRange())
+        {
+            geometry::Pose3 pose3 = pose.getTransform();
+            const Eigen::Vector3d nc = Eigen::Vector3d::Random() * 0.1;
+            pose.setTransform(geometry::Pose3(pose3.rotation(), pose3.center() + nc));
+            rotationsBefore[poseId] = pose.getTransform().rotation();
+        }
+
+        sfm::BundleAdjustmentCeres::CeresOptions options;
+        options.summary = false;
+
+        double rmseBefore = sfm::RMSE(sfmData);
+        sfm::BundleAdjustmentCeres BA(options);
+        const bool success = BA.adjust(sfmData, sfm::BundleAdjustment::REFINE_CENTER);
+        double rmseAfter = sfm::RMSE(sfmData);
+
+        BOOST_TEST_CONTEXT(EINTRINSIC_enumToString(pairIntrinsics.first->getType()))
+        {
+            BOOST_CHECK(success);
+            BOOST_CHECK_LT(rmseAfter, rmseBefore);
+            BOOST_CHECK_LT(rmseAfter, 1e-3);
+
+            for (const auto& [poseId, pose] : sfmData.getPoses().valueRange())
+            {
+                BOOST_CHECK_SMALL((pose.getTransform().rotation() - rotationsBefore.at(poseId)).cwiseAbs().maxCoeff(), 1e-9);
+            }
         }
     }
 }
