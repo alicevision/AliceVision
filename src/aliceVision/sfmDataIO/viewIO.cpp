@@ -168,7 +168,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     {
         // check if the image is resized
         int exifWidth = std::stoi(view.getImage().getMetadata({"Exif:PixelXDimension", "PixelXDimension"}));
-        int exifHeight = std::stoi(view.getImage().getMetadata({"Exif:PixelYDimension", "PixelXDimension"}));
+        int exifHeight = std::stoi(view.getImage().getMetadata({"Exif:PixelYDimension", "PixelYDimension"}));
 
         // if metadata is rotated
         if (exifWidth == view.getImage().getHeight() && exifHeight == view.getImage().getWidth())
@@ -235,6 +235,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     if ((lcpIntrinsicType != camera::EINTRINSIC::UNKNOWN))
     {
         intrinsicType = lcpIntrinsicType;
+        distortionType = lcpDistortionType;
     }
     else if (hasFisheyeCompatibleParameters)
     {
