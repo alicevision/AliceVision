@@ -31,6 +31,7 @@ if(APPLE AND BUILD_SHARED_LIBS)
     option(BUILD_APPLE_FRAMEWORKS "Create Frameworks instead of plain dynamic libraries on macOS" ON)
 endif()
 option(ALICEVISION_INSTALL_MESHROOM_PLUGIN "Install AliceVision's plugin for Meshroom" ON)
+option(ALICEVISION_INSTALL_VOCTREE "Download the trained vocabulary tree (~266 MB) and install it into share/aliceVision" OFF)
 
 # Global policy section
 cmake_policy(SET CMP0135 NEW)    # Improve timestamp handling in ExternalProject_Add()
@@ -122,6 +123,10 @@ if (ALICEVISION_INSTALL_MESHROOM_PLUGIN)
         DIRECTORY meshroom
         DESTINATION ${CMAKE_INSTALL_DATADIR}
     )
+endif()
+
+if (ALICEVISION_INSTALL_VOCTREE)
+    include(src/cmake/VocTree.cmake)
 endif()
 
 # Bundle target (see src/cmake/MakeBundle.cmake)
