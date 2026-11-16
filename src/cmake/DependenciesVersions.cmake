@@ -17,7 +17,8 @@
 # ── Core / Compression ────────────────────────────────────────────────────────
 
 set(DEP_ZLIB_VERSION   "1.3.2")
-set(DEP_ZLIB_URL       "https://www.zlib.net/zlib-${DEP_ZLIB_VERSION}.tar.gz")
+# Not zlib.net: it only serves the latest release at this path
+set(DEP_ZLIB_URL       "https://github.com/madler/zlib/releases/download/v${DEP_ZLIB_VERSION}/zlib-${DEP_ZLIB_VERSION}.tar.gz")
 set(DEP_ZLIB_HASH      "SHA256=bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16")
 
 set(DEP_TBB_VERSION    "2022.1.0-rc1")
