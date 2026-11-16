@@ -180,6 +180,11 @@ alicevision_add_test(bundle/bundleAdjustment_temporalConstraint_test.cpp
           aliceVision_track
 )
 
+alicevision_add_test(bundle/poseManifold_test.cpp
+    NAME "sfm_poseManifold"
+    LINKS aliceVision_sfm
+)
+
 alicevision_add_test(bundle/costIntrinsics_test.cpp
     NAME "sfm_costIntrinsics"
     LINKS aliceVision_sfm
