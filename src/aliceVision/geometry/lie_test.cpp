@@ -14,6 +14,28 @@
 
 #include <array>
 
+BOOST_AUTO_TEST_CASE(SO3_expm_small_angles)
+{
+    using namespace Eigen;
+    using namespace aliceVision::SO3;
+
+    const Vector3d axis = Vector3d(0.3, -0.5, 0.8).normalized();
+
+    // Down to tiny angles, expm keeps the first order term: exp(w) = I + [w]x + O(|w|^2)
+    for (const double angle : {1e-20, 1e-17, 1e-12, 1e-8, 1e-5, 0.99e-4, 1.01e-4, 1e-3, 0.1, 1.0, 3.0})
+    {
+        const Vector3d w = angle * axis;
+        const Matrix3d R = expm(w);
+        const Matrix3d expected = AngleAxisd(angle, axis).toRotationMatrix();
+
+        BOOST_CHECK_SMALL((R - expected).norm(), 1e-15);
+        BOOST_CHECK_SMALL((R.transpose() * R - Matrix3d::Identity()).norm(), 1e-15);
+        BOOST_CHECK_SMALL((R - Matrix3d::Identity() - skew(w)).norm(), angle * angle);
+    }
+
+    BOOST_CHECK(expm(Vector3d::Zero()) == Matrix3d::Identity());
+}
+
 BOOST_AUTO_TEST_CASE(SO3_logm_exact_half_turn)
 {
     using namespace Eigen;
