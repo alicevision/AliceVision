@@ -16,6 +16,7 @@
 #include <aliceVision/sfm/bundle/costfunctions/depth.hpp>
 #include <aliceVision/sfm/bundle/costfunctions/survey.hpp>
 #include <aliceVision/sfm/bundle/manifolds/intrinsics.hpp>
+#include <aliceVision/sfm/bundle/manifolds/pose.hpp>
 #include <aliceVision/sfm/utils/poseFilter.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -227,8 +228,8 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
                                                    BundleAdjustment::ERefineOptions refineOptions,
                                                    ceres::Problem& problem)
 {
-    const bool refineCenter = refineOptions & BundleAdjustment::REFINE_CENTER;
-    const bool refineRotation = refineOptions & BundleAdjustment::REFINE_ROTATION;
+    const bool lockCenter = !(refineOptions & BundleAdjustment::REFINE_CENTER);
+    const bool lockRotation = !(refineOptions & BundleAdjustment::REFINE_ROTATION);
 
     const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isConstant, std::array<double, 6>& poseBlock) {
         const Mat3& R = cameraPose.getTransform().rotation();
@@ -250,7 +251,7 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
         _allParametersBlocks.push_back(poseBlockPtr);
 
         // keep the camera extrinsics constants
-        if (cameraPose.isLocked() || isConstant || (!refineCenter && !refineRotation))
+        if (cameraPose.isLocked() || isConstant || (lockCenter && lockRotation))
         {
             // set the whole parameter block as constant.
             _statistics.addState(EParameter::POSE, EEstimatorParameterState::CONSTANT);
@@ -258,31 +259,8 @@ void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmDa
             return;
         }
 
-        // constant parameters
-        std::vector<int> constantExtrinsic;
-
-        // don't refine rotations
-        if (!refineRotation)
-        {
-            constantExtrinsic.push_back(0);
-            constantExtrinsic.push_back(1);
-            constantExtrinsic.push_back(2);
-        }
-
-        // don't refine translations
-        if (!refineCenter)
-        {
-            constantExtrinsic.push_back(3);
-            constantExtrinsic.push_back(4);
-            constantExtrinsic.push_back(5);
-        }
-
-        // subset parametrization
-        if (!constantExtrinsic.empty())
-        {
-            auto* subsetManifold = new ceres::SubsetManifold(6, constantExtrinsic);
-            problem.SetManifold(poseBlockPtr, subsetManifold);
-        }
+        // pose update expressed in the camera frame (rotation and center may be locked)
+        problem.SetManifold(poseBlockPtr, new PoseCameraFrameManifold(lockRotation, lockCenter));
 
         _statistics.addState(EParameter::POSE, EEstimatorParameterState::REFINED);
     };
