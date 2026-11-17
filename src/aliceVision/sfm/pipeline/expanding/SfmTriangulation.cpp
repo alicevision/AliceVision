@@ -325,10 +325,14 @@ bool SfmTriangulation::processTrackWithPointFetcher(
         const sfmData::CameraPose & cp = sfmData.getAbsolutePose(v.getPoseId());
         const camera::IntrinsicBase & intrinsics = *sfmData.getIntrinsics().at(v.getIntrinsicId());
 
-        _pointFetcherHandler->setPose(cp.getTransform());
+        // Tracks are processed in parallel and the point fetcher is shared:
+        // build the ray here instead of setting the fetcher pose (shared state)
+        const geometry::Pose3 pose = cp.getTransform();
+        const Vec3 origin = pose.center();
+        const Vec3 direction = (intrinsics.backprojectTransform(refTrackItem.coords, true, pose, 1.0) - origin).normalized();
 
         Vec3 point, normal;
-        if (!_pointFetcherHandler->pickPointAndNormal(point, normal, intrinsics, refTrackItem.coords))
+        if (!_pointFetcherHandler->getPointAndNormal(point, normal, origin, direction))
         {
             continue;
         }
