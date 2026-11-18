@@ -1289,7 +1289,7 @@
             }
         },
         "RomaMatcher": {
-            "2.1": {
+            "3.0": {
                 "inputs": {
                     "inputSfMData": {
                         "type": "File",
@@ -1299,9 +1299,12 @@
                         "type": "File",
                         "value": ""
                     },
-                    "prepareArchive": {
-                        "type": "File",
-                        "value": ""
+                    "prepareArchives": {
+                        "type": "ListAttribute",
+                        "elementDesc": {
+                            "type": "File",
+                            "value": ""
+                        }
                     },
                     "checkLoops": {
                         "type": "BoolParam",
@@ -2421,7 +2424,7 @@
         },
         "RomaMatcher_1": {
             "nodeType": "RomaMatcher",
-            "version": "2.1",
+            "version": "3.0",
             "position": [
                 885,
                 43
@@ -2429,7 +2432,9 @@
             "inputs": {
                 "inputSfMData": "{StarListing_1.inputSfMData}",
                 "imagePairsList": "{StarListing_1.imagePairsList}",
-                "prepareArchive": "{RomaPrepare_1.outputPrepareArchive}",
+                "prepareArchives": [
+                    "{RomaPrepare_1.outputPrepareArchive}"
+                ],
                 "checkLoops": true
             },
             "internalInputs": {
