@@ -42,7 +42,7 @@
             }
         },
         "CameraInit": {
-            "12.1": {
+            "13.0": {
                 "inputs": {
                     "viewpoints": {
                         "type": "ListAttribute",
@@ -91,9 +91,9 @@
                                     "type": "IntParam",
                                     "value": -1
                                 },
-                                "initialFocalLength": {
-                                    "type": "FloatParam",
-                                    "value": -1.0
+                                "useFocalLengthPrior": {
+                                    "type": "BoolParam",
+                                    "value": false
                                 },
                                 "focalLength": {
                                     "type": "FloatParam",
@@ -3502,7 +3502,7 @@
         },
         "CameraInit_1": {
             "nodeType": "CameraInit",
-            "version": "12.1",
+            "version": "13.0",
             "position": [
                 -200,
                 0
@@ -3517,7 +3517,7 @@
         },
         "CameraInit_2": {
             "nodeType": "CameraInit",
-            "version": "12.1",
+            "version": "13.0",
             "position": [
                 -600,
                 -160
@@ -3530,7 +3530,7 @@
         },
         "CameraInit_3": {
             "nodeType": "CameraInit",
-            "version": "12.1",
+            "version": "13.0",
             "position": [
                 -600,
                 -500
