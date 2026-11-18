@@ -13,6 +13,7 @@
 #include <aliceVision/sfm/Frustum.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
+#include <aliceVision/sfm/utils/statistics.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::sfmData;
@@ -28,3 +29,9 @@ using namespace aliceVision::sfm;
 %include <aliceVision/sfm/Frustum.i>
 %include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
 %include <aliceVision/sfm/sfmFilters.hpp>
+
+namespace aliceVision {
+namespace sfm {
+double RMSE(const aliceVision::sfmData::SfMData& sfmData);
+}  // namespace sfm
+}  // namespace aliceVision
