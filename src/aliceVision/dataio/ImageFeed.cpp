@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ImageFeed.hpp"
+#include "FeedFactory.hpp"
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/utils/regexFilter.hpp>
 
@@ -265,20 +266,33 @@ bool ImageFeed::goToNextFrame() { return _imageFeed->goToNextFrame(); }
 
 bool ImageFeed::isInit() const { return (_imageFeed->isInit()); }
 
-bool ImageFeed::isSupported(const std::string& extension)
+bool ImageFeed::isSupported(const std::string& path)
 {
-    std::string ext = boost::to_lower_copy(extension);
-    if (ext == ".txt")
+    namespace fs = std::filesystem;
+    const fs::path fsPath(path);
+    if (fs::is_regular_file(fsPath))
     {
-        return true;
-    }
-    else
-    {
+        const std::string ext = boost::to_lower_copy(fsPath.extension().string());
+        if (ext == ".txt")
+        {
+            return true;
+        }
         return (image::isSupported(ext) && !image::isVideoExtension(ext));
     }
+    // Folder or sequence of images
+    // parent_path() returns "/foo/bar/" when input path equals to "/foo/bar/"
+    return fs::is_directory(fsPath) || fs::is_directory(fsPath.parent_path());
 }
 
 ImageFeed::~ImageFeed() {}
+
+void registerImageFeed()
+{
+    FeedFactory::instance().registerFeed(
+      "image", &ImageFeed::isSupported, [](const std::string& path, const std::string& calibPath) -> std::unique_ptr<IFeed> {
+          return std::make_unique<ImageFeed>(path, calibPath);
+      });
+}
 
 }  // namespace dataio
 }  // namespace aliceVision

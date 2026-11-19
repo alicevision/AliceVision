@@ -6,15 +6,15 @@
 
 #pragma once
 
-#include "IFeed.hpp"
+#include <aliceVision/dataio/IFeed.hpp>
 
 #include <string>
 #include <memory>
 
 namespace aliceVision {
-namespace dataio {
+namespace sfmDataIO {
 
-class SfMDataFeed : public IFeed
+class SfMDataFeed : public dataio::IFeed
 {
   public:
     /**
@@ -27,6 +27,7 @@ class SfMDataFeed : public IFeed
      * 1) an ".sfm" file
      * 2) a ".json" file
      * 3) an ".abc" file
+     * 4) a ".usda" file
      *
      * @param[in] imagePath The source of images, it could be a file (json, txt) or a directory.
      * @param[in] calibPath The source for the camera intrinsics common to each image.
@@ -96,18 +97,25 @@ class SfMDataFeed : public IFeed
     virtual ~SfMDataFeed();
 
     /**
-     * @brief For a given extension, return true if that file can be used as input
-     * for the feed. SfMDataFeed supports .sfm, .json, and .abc files.
+     * @brief Return true if that path can be used as input for the feed.
+     * SfMDataFeed supports existing .sfm, .json, .abc and .usda files.
      *
-     * @param extension The file extension to check in ".ext" format (case insensitive)
+     * @param path The path to check (extension is case insensitive)
      * @return True if the file is supported.
      */
-    static bool isSupported(const std::string& extension);
+    static bool isSupported(const std::string& path);
 
   private:
     class FeederImpl;
     std::unique_ptr<FeederImpl> _sfmDataFeed;
 };
 
-}  // namespace dataio
+/**
+ * @brief Register SfMDataFeed in dataio::FeedFactory so that dataio::FeedProvider can open SfMData files.
+ * Calling it several times is harmless.
+ * Register it before dataio::registerImageFeed(): feeds are tried in registration order.
+ */
+void registerSfMDataFeed();
+
+}  // namespace sfmDataIO
 }  // namespace aliceVision

@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "VideoFeed.hpp"
+#include "FeedFactory.hpp"
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/conversion.hpp>
@@ -16,6 +17,9 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/videoio.hpp>
 
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
 #include <iostream>
 
 namespace aliceVision {
@@ -202,6 +206,10 @@ std::size_t VideoFeed::FeederImpl::nbFrames() const
         ALICEVISION_LOG_WARNING("The video file could not be opened.");
         return 0;
     }
+    // The number of frames of a live stream is unknown
+    if (_isLive)
+        return 0;
+
     return _videoCapture.get(cv::CAP_PROP_FRAME_COUNT);
 }
 
@@ -261,9 +269,38 @@ bool VideoFeed::goToNextFrame() { return _feeder->goToNextFrame(); }
 
 bool VideoFeed::isInit() const { return (_feeder->isInit()); }
 
-bool VideoFeed::isSupported(const std::string& extension) { return image::isVideoExtension(extension); }
+/**
+ * @brief Return true if the path is a live device number (e.g. "0") and not an existing file or folder.
+ */
+static bool isVideoDevice(const std::string& path)
+{
+    return !path.empty() && std::all_of(path.begin(), path.end(), [](unsigned char c) { return std::isdigit(c); }) &&
+           !std::filesystem::exists(path);
+}
+
+bool VideoFeed::isSupported(const std::string& path)
+{
+    namespace fs = std::filesystem;
+    if (fs::is_regular_file(fs::path(path)))
+    {
+        return image::isVideoExtension(fs::path(path).extension().string());
+    }
+    return isVideoDevice(path);
+}
 
 VideoFeed::~VideoFeed() {}
+
+void registerVideoFeed()
+{
+    FeedFactory::instance().registerFeed(
+      "video", &VideoFeed::isSupported, [](const std::string& path, const std::string& calibPath) -> std::unique_ptr<IFeed> {
+          if (isVideoDevice(path))
+          {
+              return std::make_unique<VideoFeed>(std::stoi(path), calibPath);
+          }
+          return std::make_unique<VideoFeed>(path, calibPath);
+      });
+}
 
 }  // namespace dataio
 }  // namespace aliceVision
