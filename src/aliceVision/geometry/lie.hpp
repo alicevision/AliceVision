@@ -65,19 +65,28 @@ inline Eigen::Matrix3d skew(const Eigen::Vector3d& in)
  */
 inline Eigen::Matrix3d expm(const Eigen::Vector3d& algebra)
 {
-    const double angle = algebra.norm();
+    const double angle2 = algebra.squaredNorm();
+    const double angle = std::sqrt(angle2);
 
-    if (angle < std::numeric_limits<double>::epsilon())
+    // Rodrigues: I + a * K + b * K^2, with a = sin(t) / t and b = (1 - cos(t)) / t^2
+    double a, b;
+    if (angle < 1e-4)
     {
-        return Eigen::Matrix3d::Identity();
+        // Taylor expansions (truncation error below 1e-18), exact first order down to zero
+        a = 1.0 - angle2 / 6.0;
+        b = 0.5 - angle2 / 24.0;
+    }
+    else
+    {
+        // 1 - cos(t) = 2 sin^2(t / 2) avoids the cancellation for small angles
+        const double s = std::sin(0.5 * angle);
+        a = std::sin(angle) / angle;
+        b = 2.0 * s * s / angle2;
     }
 
     const Eigen::Matrix3d omega = skew(algebra);
 
-    Eigen::Matrix3d ret;
-    ret = Eigen::Matrix3d::Identity() + (sin(angle) / angle) * omega + ((1.0 - cos(angle)) / (angle * angle)) * omega * omega;
-
-    return ret;
+    return Eigen::Matrix3d::Identity() + a * omega + b * omega * omega;
 }
 
 /**
