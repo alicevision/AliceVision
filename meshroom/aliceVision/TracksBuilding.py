@@ -4,7 +4,9 @@ from meshroom.core import desc
 from meshroom.core.utils import DESCRIBER_TYPES, VERBOSE_LEVEL
 
 
-class TracksBuilding(desc.AVCommandLineNode):
+class TracksBuilding(desc.AVCommandLineNode,
+                     desc.interface.FeatureProviderInterface,
+                     desc.interface.TrackProviderInterface):
     """
 This node fuses all feature matches between image pairs into tracks.
 Each track represents a candidate point in space, visible from multiple cameras.
@@ -96,3 +98,15 @@ Each track represents a candidate point in space, visible from multiple cameras.
             value="{nodeCacheFolder}/tracksFile.json",
         ),
     ]
+
+    def getFeaturesFolders(self, node) -> list:
+        
+        return [f.value for f in node.featuresFolders]
+    
+    def getDescriberTypes(self, node) -> list:
+    
+        return node.describerTypes.value
+    
+    def getTracksFile(self, node) -> str:
+        
+        return node.output.value
