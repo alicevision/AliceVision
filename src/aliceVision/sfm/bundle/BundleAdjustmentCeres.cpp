@@ -557,6 +557,22 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
             // If there is a point fetcher, the landmark is only a bearing vector
             if (landmark.getPointFetcher())
             {
+                // Plane tangent to the mesh at the landmark, used when its ray leaves the mesh during the solve
+                const Vec3 origin = refPose.center();
+                const Vec3 direction = (landmark.getX() - origin).normalized();
+                MeshTangentPlane & plane = _meshTangentPlanes[landmarkId];
+                Vec3 meshPoint;
+                if (landmark.getPointFetcher()->getPointAndNormal(meshPoint, plane.normal, origin, direction))
+                {
+                    plane.point = meshPoint;
+                }
+                else
+                {
+                    // The landmark is not on the mesh anymore: use the plane facing the reference camera
+                    plane.point = landmark.getX();
+                    plane.normal = -direction;
+                }
+
                 refX.x() /= refX.z();
                 refX.y() /= refX.z();
                 sizeLandmark = 2;
@@ -648,7 +664,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
                     _linearSolverOrdering.AddElementToGroup(referencePoseBlockPtr, 1);
                 }
 
-                ceres::CostFunction* costFunction = ProjectionMeshErrorFunctor::createCostFunction(intrinsic, observation, landmark.getPointFetcher(), samePose);
+                ceres::CostFunction* costFunction = ProjectionMeshErrorFunctor::createCostFunction(intrinsic, observation, landmark.getPointFetcher(), _meshTangentPlanes.at(landmarkId), samePose);
 
                 std::vector<double*> params;
                 params.push_back(intrinsicBlockPtr);
@@ -1083,6 +1099,7 @@ void BundleAdjustmentCeres::resetProblem()
     _posesBlocks.clear();
     _intrinsicsBlocks.clear();
     _landmarksBlocks.clear();
+    _meshTangentPlanes.clear();
     _rigBlocks.clear();
     _intrinsicObjects.clear();
     _distortionsBlocks.clear();
@@ -1220,8 +1237,9 @@ void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefin
                     rdir = rdir / rdir.norm();
                     const Vec3 wdir = refPose.rotation().transpose() * rdir;
 
+                    // Same intersection as in the cost function, so that the landmark is the point the solver optimized
                     Vec3 point, normal;
-                    if (!landmark.getPointFetcher()->getPointAndNormal(point, normal, origin, wdir))
+                    if (!intersectMeshOrTangentPlane(*landmark.getPointFetcher(), _meshTangentPlanes.at(idLandmark), origin, wdir, point, normal))
                     {
                         ALICEVISION_LOG_DEBUG("A mesh-based landmark has no intersection with the mesh.");
                         continue;
