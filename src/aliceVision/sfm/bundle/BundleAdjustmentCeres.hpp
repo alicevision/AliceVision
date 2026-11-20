@@ -10,6 +10,7 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfm/bundle/BundleAdjustment.hpp>
+#include <aliceVision/sfm/bundle/costfunctions/meshIntersect.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/CameraPose.hpp>
@@ -298,6 +299,8 @@ class BundleAdjustmentCeres : public BundleAdjustment, ceres::EvaluationCallback
     /// landmarks blocks wrapper
     /// block: 3d position(3)
     std::map<IndexT, std::array<double, 3>> _landmarksBlocks;
+    /// planes tangent to the mesh at the mesh-based landmarks, used when their ray misses the mesh
+    std::map<IndexT, MeshTangentPlane> _meshTangentPlanes;
     /// rig sub-poses blocks wrapper
     /// block: ceres angleAxis(3) + translation(3)
     std::map<IndexT, std::map<IndexT, std::array<double, 6>>> _rigBlocks;
