@@ -30,9 +30,10 @@ struct ProjectionMeshErrorFunctor
     explicit ProjectionMeshErrorFunctor(const sfmData::Observation& obs
     , const std::shared_ptr<camera::IntrinsicBase>& intrinsics
     , sfmData::PointFetcher::sptr fetcher
+    , const MeshTangentPlane & tangentPlane
     , bool samePose)
     : _intrinsicFunctor(new CostIntrinsicsProject(obs, intrinsics))
-    , _meshIntersectFunctor(new CostMeshIntersector(fetcher))
+    , _meshIntersectFunctor(new CostMeshIntersector(fetcher, tangentPlane))
     , _samePose(samePose)
     {
     }
@@ -94,6 +95,7 @@ struct ProjectionMeshErrorFunctor
      * @param[in] intrinsicPtr The intrinsic pointer
      * @param[in] observation The corresponding observation
      * @param[in] fetcher the mesh point fetcher used for 3D point retrieval
+     * @param[in] tangentPlane the plane tangent to the mesh at the landmark, used when the ray misses the mesh
      * @param[in] samePose When reference view and current view are the same, one pose is added
      * @return cost functor
      */
@@ -101,9 +103,10 @@ struct ProjectionMeshErrorFunctor
         const std::shared_ptr<camera::IntrinsicBase> intrinsic,
         const sfmData::Observation& observation,
         sfmData::PointFetcher::sptr fetcher,
+        const MeshTangentPlane & tangentPlane,
         bool samePose)
     {
-        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionMeshErrorFunctor>(new ProjectionMeshErrorFunctor(observation, intrinsic, fetcher, samePose));
+        auto costFunction = new ceres::DynamicAutoDiffCostFunction<ProjectionMeshErrorFunctor>(new ProjectionMeshErrorFunctor(observation, intrinsic, fetcher, tangentPlane, samePose));
 
         // Intrinsic paramters
         costFunction->AddParameterBlock(intrinsic->getParameters().size());
