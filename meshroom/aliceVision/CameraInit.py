@@ -1,4 +1,4 @@
-__version__ = "12.1"
+__version__ = "13.0"
 
 import os
 import json
@@ -77,15 +77,14 @@ Intrinsic = [
         value=-1,
         range=None,
     ),
-    desc.FloatParam(
-        name="initialFocalLength",
-        label="Initial Focal Length",
-        description="Initial guess on the focal length (in mm).\n"
-                    "When we have an initial value from EXIF, this value is not accurate but it cannot be wrong.\n"
+    desc.BoolParam(
+        name="useFocalLengthPrior",
+        label="Use Focal Length Prior",
+        description="Use the focal length value as a prior during the optimization.\n"
+                    "When the focal length comes from EXIF, this value is not accurate but it cannot be wrong.\n"
                     "So this value is used to limit the range of possible values in the optimization.\n"
-                    "If this value is set to -1, it will not be used and the focal length will not be bounded.",
-        value=-1.0,
-        range=None,
+                    "If disabled, the focal length will not be bounded.",
+        value=False,
     ),
     desc.FloatParam(
         name="focalLength",
@@ -297,7 +296,13 @@ def readSfMData(sfmFile):
 
     intrinsicsKeys = [i.name for i in Intrinsic]
 
-    intrinsics = [{k: v for k, v in item.items() if k in intrinsicsKeys} for item in data.get("intrinsics", [])]
+    intrinsics = []
+    for item in data.get("intrinsics", []):
+        intrinsic = {k: v for k, v in item.items() if k in intrinsicsKeys}
+        # The sfmData stores the prior as an initial focal length (-1 if unused)
+        intrinsic['useFocalLengthPrior'] = float(item.get('initialFocalLength', -1.0)) > 0
+        intrinsics.append(intrinsic)
+
     for intrinsic in intrinsics:
         pp = intrinsic.get('principalPoint', (0, 0))
         intrinsic['principalPoint'] = {}
@@ -603,6 +608,12 @@ The needed metadata are:
                 itype = intrinsic['type']
                 self.upgradeTypes(intrinsic, itype)
 
+        # Starting with version 13, the initial focal length is replaced by a checkbox
+        if fromVersion < Version(13, 0):
+            for intrinsic in attrValues['intrinsics']:
+                initialFocalLength = intrinsic.pop('initialFocalLength', -1.0)
+                intrinsic['useFocalLengthPrior'] = initialFocalLength is not None and float(initialFocalLength) > 0
+
         return attrValues
 
     def readSfMData(self, sfmFile):
@@ -663,6 +674,9 @@ The needed metadata are:
                 intrinsic['principalPoint'] = [intrinsic['principalPoint']['x'], intrinsic['principalPoint']['y']]
                 intrinsic['undistortionOffset'] = [intrinsic['undistortionOffset']['x'], intrinsic['undistortionOffset']['y']]
                 intrinsic['undistortionType'] = 'none'
+                # The sfmData stores the prior as an initial focal length (-1 if unused)
+                useFocalLengthPrior = intrinsic.pop('useFocalLengthPrior', False)
+                intrinsic['initialFocalLength'] = intrinsic['focalLength'] if useFocalLengthPrior else -1.0
             views = node.viewpoints.getPrimitiveValue(exportDefault=False)
 
             # convert the metadata string into a map
