@@ -127,9 +127,9 @@ void Match(std::mt19937& gen,
         for (int j = 0; j < (int)indexToCompare.size(); ++j)
         {
             size_t J = indexToCompare[j];
-            const feature::Regions& regionsJ = regionsPerView.getRegions(I, descType);
+            const feature::Regions& regionsJ = regionsPerView.getRegions(J, descType);
 
-            if (!regionsPerView.viewExist(J) || regionsI.Type_id() != regionsJ.Type_id())
+            if (!regionsPerView.viewExist(J) || regionsJ.RegionCount() == 0 || regionsI.Type_id() != regionsJ.Type_id())
             {
                 ++progressDisplay;
                 continue;

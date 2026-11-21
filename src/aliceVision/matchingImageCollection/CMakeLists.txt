@@ -59,6 +59,10 @@ alicevision_add_test(geometricFilterUtils_test.cpp
     NAME "matchingImageCollection_geometricFilterUtils"
     LINKS aliceVision_matchingImageCollection
 )
+alicevision_add_test(ImageCollectionMatcher_cascadeHashing_test.cpp
+    NAME "matchingImageCollection_cascadeHashing"
+    LINKS aliceVision_matchingImageCollection
+)
 
 # SWIG Binding
 if (ALICEVISION_BUILD_SWIG_BINDING)
