@@ -1,0 +1,322 @@
+{
+ "imageGroups": {
+  "{DATA}/img/base.jpg#0001": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/img/base.jpg#0001": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "2.5",
+   "height": "12",
+   "initialFocalLength": "2.5",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "{DATA}/img_Canon_Canon EOS 5D",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "-1",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "0.44692737430167601",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "{DATA}/img_Canon_Canon EOS 5D",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0004": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "50",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "2",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "{DATA}/img_Canon_Canon EOS 5D",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0005": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "-1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "{DATA}/img_Canon_Canon EOS 5D_FocalLengthMM_50.000000",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0007": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "4",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/img",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0008": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "5",
+   "height": "12",
+   "initialFocalLength": "5",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/img",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/img/base.jpg#0001": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0001",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:FocalLength": "24.5/2",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/img/base.jpg#0001",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0002",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:FocalLength": "1/0",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/img/base.jpg#0002",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0003": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0002",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:FocalLength": "n/a",
+    "Exif:FocalLengthIn35mmFilm": "n/a",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/img/base.jpg#0003",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0004": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0004",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:FocalLength": "50",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D",
+    "PixelAspectRatio": "2"
+   },
+   "pose": "{DATA}/img/base.jpg#0004",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0005": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0005",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:FocalLength": "50",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D",
+    "PixelAspectRatio": "abc"
+   },
+   "pose": "{DATA}/img/base.jpg#0005",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0006": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0005",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:FocalLength": "50",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D",
+    "PixelAspectRatio": "-1"
+   },
+   "pose": "{DATA}/img/base.jpg#0006",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0007": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0007",
+   "metadata": {
+    "Exif:FocalLength": "4",
+    "Exif:FocalLengthIn35mmFilm": "0"
+   },
+   "pose": "{DATA}/img/base.jpg#0007",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0008": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0008",
+   "metadata": {
+    "AliceVision:SensorWidthEstimation": "-0.173066",
+    "Exif:FocalLength": "5",
+    "Exif:FocalLengthIn35mmFilm": "",
+    "FocalLengthIn35mmFilm": "30"
+   },
+   "pose": "{DATA}/img/base.jpg#0008",
+   "width": "16"
+  }
+ }
+}

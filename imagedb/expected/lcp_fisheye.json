@@ -1,0 +1,115 @@
+{
+ "imageGroups": {
+  "{DATA}/img/base.jpg#0001": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/img/base.jpg#0001": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0.014021344482898712",
+    "-0.0020000000949949026",
+    "0",
+    "0"
+   ],
+   "distortionType": "fisheye",
+   "focalLength": "35",
+   "height": "12",
+   "initialFocalLength": "35",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "{DATA}/img_Canon_Canon EOS 5D",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "fisheye",
+   "focalLength": "35",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/img_Custom_X",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/img/base.jpg#0001": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0001",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "AliceVision:VignParam1": "-0.338525",
+    "AliceVision:VignParam2": "0.050000",
+    "AliceVision:VignParam3": "-0.010000",
+    "AliceVision:VignParamCenterX": "0.510000",
+    "AliceVision:VignParamCenterY": "0.490000",
+    "AliceVision:VignParamFocX": "1.100000",
+    "AliceVision:VignParamFocY": "1.100000",
+    "Exif:FocalLength": "35",
+    "FNumber": "4",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/img/base.jpg#0001",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0002",
+   "metadata": {
+    "Exif:FocalLength": "35",
+    "Make": "Custom",
+    "Model": "X"
+   },
+   "pose": "{DATA}/img/base.jpg#0002",
+   "width": "16"
+  }
+ }
+}

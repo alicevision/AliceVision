@@ -1,0 +1,159 @@
+{
+ "imageGroups": {
+  "{DATA}/img/base.jpg#0001": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/img/base.jpg#0001": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "50",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "98",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "35",
+   "height": "12",
+   "initialFocalLength": "35",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "7",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0003": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "3",
+   "height": "12",
+   "initialFocalLength": "3",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "4.6275000000000004",
+   "sensorWidth": "6.1699999999999999",
+   "serialNumber": "{DATA}/img_GoPro_GoPro HERO9",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/img/base.jpg#0001": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0001",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "ApertureValue": "3",
+    "FNumber": "abc",
+    "cameraMake": "Canon",
+    "cameraModel": "Canon EOS 5D",
+    "cameraSerialNumber": "9",
+    "focalLength": "50",
+    "lensModel": "EF50mm f/1.8",
+    "lensSerialNumber": "8"
+   },
+   "pose": "{DATA}/img/base.jpg#0001",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0002",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Serial Number": "7",
+    "camera model name": "Canon EOS 5D",
+    "lens_focal_length": "35",
+    "tiff:Make": "Canon"
+   },
+   "pose": "{DATA}/img/base.jpg#0002",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0003": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0003",
+   "metadata": {
+    "AliceVision:SensorWidth": "6.170000",
+    "camera make": "GoPro",
+    "camera_focal": "3",
+    "camera_model": "GoPro HERO9"
+   },
+   "pose": "{DATA}/img/base.jpg#0003",
+   "width": "16"
+  }
+ }
+}

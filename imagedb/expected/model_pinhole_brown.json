@@ -1,0 +1,110 @@
+{
+ "imageGroups": {
+  "{DATA}/img/base.jpg#0001": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/img/base.jpg#0001": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "brown",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "50",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "{DATA}/img_Canon_Canon EOS 5D",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "brown",
+   "focalLength": "3",
+   "height": "12",
+   "initialFocalLength": "3",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "4.6275000000000004",
+   "sensorWidth": "6.1699999999999999",
+   "serialNumber": "{DATA}/img_GoPro_GoPro HERO9",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/img/base.jpg#0001": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0001",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:FocalLength": "50",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/img/base.jpg#0001",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0002",
+   "metadata": {
+    "AliceVision:SensorWidth": "6.170000",
+    "Exif:FocalLength": "3",
+    "Make": "GoPro",
+    "Model": "GoPro HERO9"
+   },
+   "pose": "{DATA}/img/base.jpg#0002",
+   "width": "16"
+  }
+ }
+}

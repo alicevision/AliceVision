@@ -1,0 +1,117 @@
+{
+ "imageGroups": {
+  "{DATA}/img/uid/counter.jpg": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/img/uid/counter.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/img/uid",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/uid/subsec.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "S1",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/img/uid/counter.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/uid/counter.jpg",
+   "intrinsic": "{DATA}/img/uid/counter.jpg",
+   "metadata": {
+    "Exif:FocalLength": "50",
+    "imageCounter": "42"
+   },
+   "pose": "{DATA}/img/uid/counter.jpg",
+   "width": "16"
+  },
+  "{DATA}/img/uid/dims.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/uid/counter.jpg",
+   "intrinsic": "{DATA}/img/uid/counter.jpg",
+   "metadata": {
+    "Exif:FocalLength": "50",
+    "Exif:PixelXDimension": "16",
+    "Exif:PixelYDimension": "12",
+    "ImageUniqueID": "abc"
+   },
+   "pose": "{DATA}/img/uid/dims.jpg",
+   "width": "16"
+  },
+  "{DATA}/img/uid/subsec.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/uid/counter.jpg",
+   "intrinsic": "{DATA}/img/uid/subsec.jpg",
+   "metadata": {
+    "Exif:BodySerialNumber": "S1",
+    "Exif:DateTimeOriginal": "2024:01:01 00:00:00",
+    "Exif:FocalLength": "50",
+    "Exif:SubsecTimeOriginal": "5"
+   },
+   "pose": "{DATA}/img/uid/subsec.jpg",
+   "width": "16"
+  }
+ }
+}

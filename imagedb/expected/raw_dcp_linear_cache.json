@@ -1,0 +1,138 @@
+{
+ "imageGroups": {
+  "{DATA}/raw/two/testcam_a.dng": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/raw/two/testcam_a.dng": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "20",
+   "height": "24",
+   "initialFocalLength": "20",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "17.625",
+   "sensorWidth": "23.5",
+   "serialNumber": "{DATA}/raw/two_Testcam_Model One",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "32"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/raw/two/testcam_a.dng": {
+   "height": "24",
+   "imageGroup": "{DATA}/raw/two/testcam_a.dng",
+   "intrinsic": "{DATA}/raw/two/testcam_a.dng",
+   "metadata": {
+    "AliceVision:DCP:CameraCalibrationMatrixNumber": "0",
+    "AliceVision:DCP:ColorMat1": "0.800000 -0.200000 -0.100000 -0.300000 1.100000 0.200000 -0.050000 0.150000 0.600000 ",
+    "AliceVision:DCP:ColorMatrixNumber": "1",
+    "AliceVision:DCP:ForwardMatrixNumber": "0",
+    "AliceVision:DCP:Temp1": "6500.000000",
+    "AliceVision:DCP:Temp2": "0.000000",
+    "AliceVision:DCP:colorProfileFileName": "{DATA}/dcp/single/Testcam Model One.dcp",
+    "AliceVision:SensorWidth": "23.500000",
+    "AliceVision:rawColorInterpretation": "dcpLinearprocessing",
+    "Exif:ApertureValue": "-inf",
+    "Exif:Flash": "0",
+    "Exif:FocalLength": "20",
+    "Exif:ISOSpeedRatings": "0",
+    "Exif:ShutterSpeedValue": "inf",
+    "ExposureTime": "0",
+    "FNumber": "0",
+    "Make": "Testcam",
+    "Model": "Model One",
+    "Orientation": "1",
+    "PixelAspectRatio": "1",
+    "Testcam:AFPoint": "-1",
+    "Testcam:FocalUnits": "1",
+    "Testcam:ImageStabilization": "-1",
+    "Testcam:LensID": "18446744073709551615",
+    "raw:Demosaic": "AHD",
+    "raw:HighlightMode": "0",
+    "raw:WhiteBalance": "2, 1, 1.42857, 1",
+    "raw:cam_mul": "2, 1, 1.42857, 0",
+    "raw:dng:baseline_exposure": "-999",
+    "raw:dng:calibration_illuminant1": "21",
+    "raw:dng:calibration_illuminant2": "65535",
+    "raw:dng:color_matrix1": "0.8, -0.2, -0.1, -0.3, 1.1, 0.2, -0.05, 0.15, 0.6, 0, 0, 0",
+    "raw:dng:version": "17039360",
+    "raw:pre_mul": "2.21487, 0.968406, 1.32315, 0",
+    "raw:rgb_cam": "1.70892, -0.73771, 0.0287871, 0, -0.280427, 1.72785, -0.447428, 0, 0.0105347, -0.456567, 1.44603, 0",
+    "thumbnail_height": "-1",
+    "thumbnail_width": "-1"
+   },
+   "pose": "{DATA}/raw/two/testcam_a.dng",
+   "width": "32"
+  },
+  "{DATA}/raw/two/testcam_b.dng": {
+   "height": "24",
+   "imageGroup": "{DATA}/raw/two/testcam_a.dng",
+   "intrinsic": "{DATA}/raw/two/testcam_a.dng",
+   "metadata": {
+    "AliceVision:DCP:CameraCalibrationMatrixNumber": "0",
+    "AliceVision:DCP:ColorMat1": "0.800000 -0.200000 -0.100000 -0.300000 1.100000 0.200000 -0.050000 0.150000 0.600000 ",
+    "AliceVision:DCP:ColorMatrixNumber": "1",
+    "AliceVision:DCP:ForwardMatrixNumber": "0",
+    "AliceVision:DCP:Temp1": "6500.000000",
+    "AliceVision:DCP:Temp2": "0.000000",
+    "AliceVision:DCP:colorProfileFileName": "{DATA}/dcp/single/Testcam Model One.dcp",
+    "AliceVision:SensorWidth": "23.500000",
+    "AliceVision:rawColorInterpretation": "dcpLinearprocessing",
+    "Exif:ApertureValue": "-inf",
+    "Exif:Flash": "0",
+    "Exif:FocalLength": "20",
+    "Exif:ISOSpeedRatings": "0",
+    "Exif:ShutterSpeedValue": "inf",
+    "ExposureTime": "0",
+    "FNumber": "0",
+    "Make": "Testcam",
+    "Model": "Model One",
+    "Orientation": "1",
+    "PixelAspectRatio": "1",
+    "Testcam:AFPoint": "-1",
+    "Testcam:FocalUnits": "1",
+    "Testcam:ImageStabilization": "-1",
+    "Testcam:LensID": "18446744073709551615",
+    "raw:Demosaic": "AHD",
+    "raw:HighlightMode": "0",
+    "raw:WhiteBalance": "2, 1, 1.42857, 1",
+    "raw:cam_mul": "2, 1, 1.42857, 0",
+    "raw:dng:baseline_exposure": "-999",
+    "raw:dng:calibration_illuminant1": "21",
+    "raw:dng:calibration_illuminant2": "65535",
+    "raw:dng:color_matrix1": "0.8, -0.2, -0.1, -0.3, 1.1, 0.2, -0.05, 0.15, 0.6, 0, 0, 0",
+    "raw:dng:version": "17039360",
+    "raw:pre_mul": "2.21487, 0.968406, 1.32315, 0",
+    "raw:rgb_cam": "1.70892, -0.73771, 0.0287871, 0, -0.280427, 1.72785, -0.447428, 0, 0.0105347, -0.456567, 1.44603, 0",
+    "thumbnail_height": "-1",
+    "thumbnail_width": "-1"
+   },
+   "pose": "{DATA}/raw/two/testcam_b.dng",
+   "width": "32"
+  }
+ }
+}

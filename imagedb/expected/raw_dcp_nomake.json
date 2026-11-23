@@ -1,0 +1,64 @@
+{
+ "imageGroups": {
+  "{DATA}/raw/nomake/anon.dng": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/raw/nomake/anon.dng": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "20",
+   "height": "24",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/raw/nomake",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "32"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/raw/nomake/anon.dng": {
+   "height": "24",
+   "imageGroup": "{DATA}/raw/nomake/anon.dng",
+   "intrinsic": "{DATA}/raw/nomake/anon.dng",
+   "metadata": {
+    "Exif:FocalLength": "20",
+    "Orientation": "1",
+    "compression": "none",
+    "planarconfig": "contig",
+    "tiff:Compression": "1",
+    "tiff:PhotometricInterpretation": "32803",
+    "tiff:PlanarConfiguration": "1",
+    "tiff:RowsPerStrip": "24",
+    "tiff:subfiletype": "0"
+   },
+   "pose": "{DATA}/raw/nomake/anon.dng",
+   "width": "32"
+  }
+ }
+}

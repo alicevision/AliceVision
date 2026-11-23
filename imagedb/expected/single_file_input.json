@@ -1,0 +1,69 @@
+{
+ "imageGroups": {
+  "{DATA}/img/canon50.jpg": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/img/canon50.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "50",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "10012002",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/img/canon50.jpg": {
+   "frameId": "50",
+   "height": "12",
+   "imageGroup": "{DATA}/img/canon50.jpg",
+   "intrinsic": "{DATA}/img/canon50.jpg",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:BodySerialNumber": "1001",
+    "Exif:DateTimeOriginal": "2024:01:02 03:04:05",
+    "Exif:FocalLength": "50",
+    "Exif:ImageUniqueID": "uid-canon50",
+    "Exif:LensModel": "EF50mm f/1.8",
+    "Exif:LensSerialNumber": "2002",
+    "Exif:PixelXDimension": "16",
+    "Exif:PixelYDimension": "12",
+    "Exif:SubsecTimeOriginal": "12",
+    "FNumber": "1.8",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/img/canon50.jpg",
+   "width": "16"
+  }
+ }
+}

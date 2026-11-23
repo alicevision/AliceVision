@@ -1,0 +1,89 @@
+{
+ "imageGroups": {
+  "{DATA}/folders/frames/0013_left.jpg": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/folders/frames/0013_left.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/frames",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/folders/frames/0013_left.jpg": {
+   "frameId": "13",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/frames/0013_left.jpg",
+   "intrinsic": "{DATA}/folders/frames/0013_left.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/frames/0013_left.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/frames/IMG_12_34.jpg": {
+   "frameId": "34",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/frames/0013_left.jpg",
+   "intrinsic": "{DATA}/folders/frames/0013_left.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/frames/IMG_12_34.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/frames/abc.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/frames/0013_left.jpg",
+   "intrinsic": "{DATA}/folders/frames/0013_left.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/frames/abc.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/frames/img_0012.jpg": {
+   "frameId": "12",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/frames/0013_left.jpg",
+   "intrinsic": "{DATA}/folders/frames/0013_left.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/frames/img_0012.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/frames/n12345678901.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/frames/0013_left.jpg",
+   "intrinsic": "{DATA}/folders/frames/0013_left.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/frames/n12345678901.jpg",
+   "width": "16"
+  }
+ }
+}
