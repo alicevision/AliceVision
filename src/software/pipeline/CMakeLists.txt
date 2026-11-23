@@ -22,6 +22,25 @@ if (ALICEVISION_BUILD_SFM)
               Boost::boost
     )
 
+    # Run every case of the imagedb dataset (tiny images covering the cameraInit code paths).
+    # UNIX only: the references record POSIX paths, signal exits and glibc number formatting.
+    if (ALICEVISION_BUILD_TESTS AND UNIX)
+        find_package(Python3 COMPONENTS Interpreter)
+        if (Python3_Interpreter_FOUND)
+            set(IMAGEDB_SKIP "")
+            if (NOT ALICEVISION_HAVE_ALEMBIC)
+                list(APPEND IMAGEDB_SKIP --skip output_format_abc)
+            endif()
+            if (NOT ALICEVISION_HAVE_USD)
+                list(APPEND IMAGEDB_SKIP --skip output_format_usda)
+            endif()
+            add_test(NAME test_aliceVision_cameraInit_imagedb
+                COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/imagedb/run_cases.py
+                        --bin $<TARGET_FILE:aliceVision_cameraInit_exe> ${IMAGEDB_SKIP}
+            )
+        endif()
+    endif()
+
     # Image processing
     if (ALICEVISION_HAVE_OPENCV)
         alicevision_add_software(aliceVision_imageMasking
