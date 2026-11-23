@@ -18,11 +18,6 @@ alicevision_add_library(aliceVision_sensorDB
         Boost::boost
 )
 
-# Install DB
-install(FILES cameraSensors.db
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
-)
-
 # Unit tests
 alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase" LINKS aliceVision_sensorDB)
 
