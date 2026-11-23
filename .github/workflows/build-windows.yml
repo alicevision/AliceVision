@@ -37,10 +37,12 @@ jobs:
             submodules: recursive
       
       # Initialize the MSVC toolchain environment (cl.exe, link.exe, SDK paths) for x64.
+      # The toolset is pinned: CUDA 13.2's cudafe++ crashes (ACCESS_VIOLATION) with MSVC 14.52.
       - name: Set up Visual Studio shell
-        uses: egor-tensin/vs-shell@v2
+        uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+          toolset: '14.51'
 
       # Pre-create output directories so later steps can write to them unconditionally.
       - name: Create Directories
