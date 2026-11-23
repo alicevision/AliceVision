@@ -18,7 +18,7 @@
 using namespace aliceVision::sensorDB;
 namespace fs = std::filesystem;
 
-static const std::string sDatabase = (fs::path(THIS_SOURCE_DIR) / "cameraSensors.db").string();
+static const std::string sDatabase = (fs::path(THIS_SOURCE_DIR) / "cameraSensors_test.db").string();
 
 BOOST_AUTO_TEST_CASE(InvalidDatabase)
 {

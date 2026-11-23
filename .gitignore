@@ -26,6 +26,7 @@ Thumbs.db # Windows
 *.dll
 *.exe
 *.db
+!/src/aliceVision/sensorDB/cameraSensors_test.db
 
 # Folder receiving the compilation products
 /build*

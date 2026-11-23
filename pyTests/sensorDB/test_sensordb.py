@@ -14,7 +14,7 @@ from pyalicevision import sensorDB as db
 ##################
 
 DB_PATH = os.path.abspath(os.path.dirname(__file__)) + \
-    "/../../src/aliceVision/sensorDB/cameraSensors.db"
+    "/../../src/aliceVision/sensorDB/cameraSensors_test.db"
 
 def test_sensordb_valid_database():
     """ Test loading a valid database and retrieving datasheets from it. """
