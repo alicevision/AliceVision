@@ -1,0 +1,18 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D"
+      },
+      "intrinsicId": "1234"
+    }
+  ]
+}

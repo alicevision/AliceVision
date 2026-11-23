@@ -1,0 +1,62 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:PixelXDimension": "32"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:PixelYDimension": "24"
+      }
+    },
+    {
+      "viewId": "3",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:PixelXDimension": "12",
+        "Exif:PixelYDimension": "20"
+      }
+    },
+    {
+      "viewId": "4",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:PixelXDimension": "32",
+        "Exif:PixelYDimension": "0"
+      }
+    },
+    {
+      "viewId": "5",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:PixelXDimension": "16",
+        "Exif:PixelYDimension": "10"
+      }
+    }
+  ]
+}

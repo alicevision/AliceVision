@@ -1,0 +1,17 @@
+{
+  "version": [
+    "99",
+    "0",
+    "0"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D"
+      }
+    }
+  ]
+}

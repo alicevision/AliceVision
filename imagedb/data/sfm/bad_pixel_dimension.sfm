@@ -1,0 +1,20 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:PixelXDimension": "abc",
+        "Exif:PixelYDimension": "12"
+      }
+    }
+  ]
+}

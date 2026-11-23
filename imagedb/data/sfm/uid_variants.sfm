@@ -1,0 +1,34 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "path": "{DATA}/img/uid/counter.jpg",
+      "metadata": {
+        "imageCounter": "42",
+        "Exif:FocalLength": "50"
+      }
+    },
+    {
+      "path": "{DATA}/img/uid/subsec.jpg",
+      "metadata": {
+        "Exif:DateTimeOriginal": "2024:01:01 00:00:00",
+        "Exif:SubsecTimeOriginal": "5",
+        "Exif:BodySerialNumber": "S1",
+        "Exif:FocalLength": "50"
+      }
+    },
+    {
+      "path": "{DATA}/img/uid/dims.jpg",
+      "metadata": {
+        "Exif:PixelXDimension": "16",
+        "Exif:PixelYDimension": "12",
+        "ImageUniqueID": "abc",
+        "Exif:FocalLength": "50"
+      }
+    }
+  ]
+}

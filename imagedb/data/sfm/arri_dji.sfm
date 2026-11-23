@@ -1,0 +1,56 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "ARRI",
+        "Model": "ALEXA Mini",
+        "AxialNominalFocalLength": "35"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "ARRI",
+        "Model": "ALEXA Mini",
+        "AxialNominalFocalLength": "35000"
+      }
+    },
+    {
+      "viewId": "3",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "DJI",
+        "Model": "FC6310",
+        "focal_length": "[50000,1000]"
+      }
+    },
+    {
+      "viewId": "4",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "DJI",
+        "Model": "FC6310",
+        "focal_length": "[abc,1000]",
+        "Exif:FocalLength": "8.8"
+      }
+    },
+    {
+      "viewId": "5",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "DJI",
+        "Model": "FC6310",
+        "focal_length": "[noComma]",
+        "Exif:FocalLength": "8.8"
+      }
+    }
+  ]
+}

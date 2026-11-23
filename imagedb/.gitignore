@@ -1,0 +1,2 @@
+# the sensor databases are test inputs (the root .gitignore ignores *.db)
+!*.db

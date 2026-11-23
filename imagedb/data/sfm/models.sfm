@@ -1,0 +1,27 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "GoPro",
+        "Model": "GoPro HERO9",
+        "Exif:FocalLength": "3"
+      }
+    }
+  ]
+}

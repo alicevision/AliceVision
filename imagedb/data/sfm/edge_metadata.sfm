@@ -1,0 +1,92 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Negative",
+        "Model": "Two",
+        "Exif:FocalLengthIn35mmFilm": "50"
+      }
+    },
+    {
+      "viewId": "3",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Testcam",
+        "Model": "Model One",
+        "Exif:FocalLength": "20",
+        "ImageSensorEffectiveWidth": "9000"
+      }
+    },
+    {
+      "viewId": "4",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "32767"
+      }
+    },
+    {
+      "viewId": "5",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "4294967295"
+      }
+    },
+    {
+      "viewId": "6",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "2147483647"
+      }
+    },
+    {
+      "viewId": "7",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "4294970"
+      }
+    },
+    {
+      "viewId": "8",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "DJI",
+        "Model": "FC6310",
+        "focal_length": "x[50000,1000]",
+        "Exif:FocalLength": "9"
+      }
+    },
+    {
+      "viewId": "9",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "DJI",
+        "Model": "FC6310",
+        "focal_length": "[50000,1000]x",
+        "Exif:FocalLength": "9"
+      }
+    }
+  ]
+}
