@@ -13,11 +13,57 @@
 namespace aliceVision {
 namespace sfm {
 
+/**
+ * @brief Plane tangent to the mesh at a landmark, used when its ray misses the mesh
+ */
+struct MeshTangentPlane
+{
+    Vec3 point = Vec3::Zero();
+    Vec3 normal = Vec3::Zero();
+};
+
+/**
+ * @brief Intersect a ray with the mesh, or with the tangent plane if the ray misses the mesh
+ * A ray leaving the mesh (silhouette, hole) must not make the whole bundle step fail:
+ * the plane keeps the cost defined, consistent with the local plane model of the Jacobian.
+ * @return false if the ray misses both the mesh and the plane (parallel or behind the origin)
+ */
+inline bool intersectMeshOrTangentPlane(sfmData::PointFetcher & fetcher,
+                                        const MeshTangentPlane & plane,
+                                        const Vec3 & origin,
+                                        const Vec3 & direction,
+                                        Vec3 & point,
+                                        Vec3 & normal)
+{
+    if (fetcher.getPointAndNormal(point, normal, origin, direction))
+    {
+        return true;
+    }
+
+    const double denum = plane.normal.dot(direction);
+    if (std::abs(denum) < 1e-12)
+    {
+        return false;
+    }
+
+    const double lambda = plane.normal.dot(plane.point - origin) / denum;
+    if (lambda <= 0.0)
+    {
+        return false;
+    }
+
+    point = origin + lambda * direction;
+    normal = plane.normal;
+
+    return true;
+}
+
 class CostMeshIntersector : public ceres::CostFunction
 {
   public:
-    CostMeshIntersector(sfmData::PointFetcher::sptr fetcher)
-    : _fetcher(fetcher)
+    CostMeshIntersector(sfmData::PointFetcher::sptr fetcher, const MeshTangentPlane & tangentPlane)
+    : _fetcher(fetcher),
+      _tangentPlane(tangentPlane)
     {
       set_num_residuals(3);
 
@@ -27,11 +73,11 @@ class CostMeshIntersector : public ceres::CostFunction
 
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
     {
-      Eigen::Map<const Eigen::Vector3d> origin(parameters[0]); 
+      Eigen::Map<const Eigen::Vector3d> origin(parameters[0]);
       Eigen::Map<const Eigen::Vector3d> direction(parameters[1]);
 
       Vec3 point, normal;
-      if (!_fetcher->getPointAndNormal(point, normal, origin, direction))
+      if (!intersectMeshOrTangentPlane(*_fetcher, _tangentPlane, origin, direction, point, normal))
       {
         return false;
       }
@@ -101,6 +147,7 @@ class CostMeshIntersector : public ceres::CostFunction
 
   private:
     sfmData::PointFetcher::sptr _fetcher;
+    MeshTangentPlane _tangentPlane;
 };
 
 }  // namespace sfm
