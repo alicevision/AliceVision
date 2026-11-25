@@ -179,8 +179,12 @@ set(ALICEVISION_BUNDLE_PYTHON_ROOT "${_bundle_python_root_default}" CACHE PATH "
 # Runtime libraries that no AliceVision binary links, but that software built against the bundle
 # needs: Embree, used by QtAliceVision's meshViewer (see src/CMakeLists.txt).
 set(BUNDLE_EXTRA_LIBS "")
+# When the dependencies are built along (AV_BUILD_EMBREE), "embree" is the target building it, not the library.
 if(TARGET embree)
-    list(APPEND BUNDLE_EXTRA_LIBS "$<TARGET_FILE:embree>")
+    get_target_property(_embree_type embree TYPE)
+    if(_embree_type MATCHES "LIBRARY")
+        list(APPEND BUNDLE_EXTRA_LIBS "$<TARGET_FILE:embree>")
+    endif()
 endif()
 
 add_custom_target(bundle
