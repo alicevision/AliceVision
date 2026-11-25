@@ -139,6 +139,10 @@
     {
       "name": "embree",
       "version": "4.4.1"
-    }   
+    },
+    {
+      "name": "kubazip",
+      "version": "0.3.15#1"
+    }
   ]
 }

@@ -9,9 +9,9 @@ jobs:
 
     env:
       BUILD_TYPE: Release
-      CUDA_VERSION: '13.2.1'
-      CUDA_MAJOR_MINOR: '13.2'
-      VCPKG_VERSION: '2026.11.09'
+      CUDA_VERSION: '13.5.0'
+      CUDA_MAJOR_MINOR: '13.5'
+      VCPKG_VERSION: '2026.11.25'
 
       buildDir: '${{ github.workspace }}\build\'
       dependenciesDir: '${{ github.workspace }}\dependencies'
@@ -37,12 +37,10 @@ jobs:
             submodules: recursive
       
       # Initialize the MSVC toolchain environment (cl.exe, link.exe, SDK paths) for x64.
-      # The toolset is pinned: CUDA 13.2's cudafe++ crashes (ACCESS_VIOLATION) with MSVC 14.52.
       - name: Set up Visual Studio shell
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: egor-tensin/vs-shell@v2
         with:
           arch: x64
-          toolset: '14.51'
 
       # Pre-create output directories so later steps can write to them unconditionally.
       - name: Create Directories
@@ -67,9 +65,8 @@ jobs:
         with:
           path: |
             C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${{ env.CUDA_MAJOR_MINOR }}
-            C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\BuildCustomizations\
             ${{ env.CUDA_ENV_FILE }}
-          key: cuda-${{ runner.os }}-${{ env.CUDA_VERSION }}
+          key: cuda-redist-${{ runner.os }}-${{ env.CUDA_VERSION }}
 
       # Install sccache with a local cache dir, saved as a single GHA cache entry per run
       # (the sccache GHA backend creates one cache entry per object file).
@@ -132,27 +129,46 @@ jobs:
           if ($LASTEXITCODE) { throw "the build venv does not use the vcpkg python3" }
 
       # Install the CUDA Toolkit (nvcc, headers, libraries) when not restored from cache.
+      # Uses NVIDIA's per-component redist archives: Jimver/cuda-toolkit does not list CUDA > 13.3.1,
+      # and CUDA <= 13.3's cudafe++ crashes (ACCESS_VIOLATION) with the image's MSVC 14.52.
       - name: Get CUDA Toolkit
-        if: steps.cache-cuda.outputs.cache-hit != 'true'
-        uses: Jimver/cuda-toolkit@v0.2.36
-        id: cuda-toolkit
-        with:
-          cuda: '${{ env.CUDA_VERSION }}'
-
-      # Write CUDA_PATH and CUDACXX to a file so they survive the cache/restore cycle.
-      - name: Save CUDA path metadata
         if: steps.cache-cuda.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $nvccCommand = Get-Command nvcc -ErrorAction SilentlyContinue
-          if (!$nvccCommand) {
-            throw "nvcc not found in PATH"
+          $ProgressPreference = 'SilentlyContinue'
+          $base = "https://developer.download.nvidia.com/compute/cuda/redist"
+          $manifest = Invoke-RestMethod "$base/redistrib_${{ env.CUDA_VERSION }}.json"
+          $cudaRoot = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v${{ env.CUDA_MAJOR_MINOR }}"
+          $tmp = "${{ runner.temp }}\cuda-redist"
+          New-Item -ItemType Directory -Force -Path $cudaRoot, $tmp | Out-Null
+          $components = @(
+            'cuda_nvcc', 'cuda_crt', 'cuda_cudart', 'cccl', 'libnvvm',
+            'cuda_nvtx', 'cuda_profiler_api', 'cuda_nvrtc', 'libnvjitlink',
+            'libcublas', 'libcufft', 'libcurand', 'libcusolver', 'libcusparse', 'libnpp'
+          )
+          foreach ($name in $components) {
+            $pkg = $manifest.$name.'windows-x86_64'
+            if (!$pkg) { throw "No windows-x86_64 archive for $name in CUDA ${{ env.CUDA_VERSION }}" }
+            $zip = "$tmp\$name.zip"
+            Invoke-WebRequest -Uri "$base/$($pkg.relative_path)" -OutFile $zip
+            if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $pkg.sha256.ToUpper()) {
+              throw "SHA256 mismatch for $name"
+            }
+            Expand-Archive -Path $zip -DestinationPath "$tmp\$name"
+            # Each archive holds a single top-level folder (<name>-windows-x86_64-<version>-archive).
+            Get-ChildItem "$tmp\$name" -Directory | ForEach-Object {
+              Copy-Item -Path "$($_.FullName)\*" -Destination $cudaRoot -Recurse -Force
+            }
+            Remove-Item $zip, "$tmp\$name" -Recurse -Force
+            Write-Host "Installed $name $($manifest.$name.version)"
           }
-          $nvccPath = $nvccCommand.Source
+          $nvccPath = "$cudaRoot\bin\nvcc.exe"
           if (!(Test-Path $nvccPath)) {
             throw "nvcc.exe not found at $nvccPath"
           }
-          $cudaRoot = Split-Path (Split-Path $nvccPath -Parent) -Parent
+          & $nvccPath --version
+          if ($LASTEXITCODE) { throw "nvcc --version failed" }
+          # Write CUDA_PATH and CUDACXX to a file so they survive the cache/restore cycle.
           "CUDA_PATH=$cudaRoot" | Out-File -FilePath "${{ env.CUDA_ENV_FILE }}" -Encoding utf8
           "CUDACXX=$nvccPath" | Out-File -FilePath "${{ env.CUDA_ENV_FILE }}" -Encoding utf8 -Append
 
