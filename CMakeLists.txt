@@ -32,6 +32,7 @@ if(APPLE AND BUILD_SHARED_LIBS)
 endif()
 option(ALICEVISION_INSTALL_MESHROOM_PLUGIN "Install AliceVision's plugin for Meshroom" ON)
 option(ALICEVISION_INSTALL_VOCTREE "Download the trained vocabulary tree (~266 MB) and install it into share/aliceVision" OFF)
+option(ALICEVISION_INSTALL_SENSORDB "Download the camera sensor database (cameraSensors.db) and install it into share/aliceVision" OFF)
 
 # Global policy section
 cmake_policy(SET CMP0135 NEW)    # Improve timestamp handling in ExternalProject_Add()
@@ -127,6 +128,10 @@ endif()
 
 if (ALICEVISION_INSTALL_VOCTREE)
     include(src/cmake/VocTree.cmake)
+endif()
+
+if (ALICEVISION_INSTALL_SENSORDB)
+    include(src/cmake/SensorDB.cmake)
 endif()
 
 # Bundle target (see src/cmake/MakeBundle.cmake)

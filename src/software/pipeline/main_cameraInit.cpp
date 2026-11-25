@@ -329,14 +329,26 @@ int aliceVision_main(int argc, char** argv)
     std::vector<sensorDB::Datasheet> sensorDatabase;
     if (sensorDatabasePath.empty())
     {
-        const auto root = image::getAliceVisionRoot();
-        if (root.empty())
+        // The sensor database is distributed separately (https://github.com/alicevision/sensordb):
+        // use ALICEVISION_SENSOR_DB, or the copy installed with -DALICEVISION_INSTALL_SENSORDB=ON if present.
+        const char* envSensorDb = std::getenv("ALICEVISION_SENSOR_DB");
+        if (envSensorDb != nullptr && envSensorDb[0] != '\0')
         {
-            ALICEVISION_LOG_WARNING("ALICEVISION_ROOT is not defined, default sensor database cannot be accessed.");
+            sensorDatabasePath = envSensorDb;
         }
         else
         {
-            sensorDatabasePath = root + "/share/aliceVision/cameraSensors.db";
+            const auto root = image::getAliceVisionRoot();
+            const std::string installedSensorDb = root.empty() ? std::string() : root + "/share/aliceVision/cameraSensors.db";
+            if (!installedSensorDb.empty() && utils::exists(installedSensorDb))
+            {
+                sensorDatabasePath = installedSensorDb;
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("ALICEVISION_SENSOR_DB is not defined and no sensor database is installed in "
+                                        "ALICEVISION_ROOT, default sensor database cannot be accessed.");
+            }
         }
     }
 

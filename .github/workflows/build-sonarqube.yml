@@ -13,7 +13,6 @@ jobs:
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: ${{ github.workspace }}/../AV_install
-      ALICEVISION_SENSOR_DB: ${{ github.workspace }}/../AV_install/share/aliceVision/cameraSensors.db
       ALICEVISION_LENS_PROFILE_INFO: ""
     steps:
       - uses: actions/checkout@v1

@@ -60,6 +60,7 @@ jobs:
            -DALICEVISION_USE_ALEMBIC=ON \
            -DALICEVISION_USE_USD=ON \
            -DALICEVISION_INSTALL_VOCTREE=${{ github.workflow == 'Nightly' && 'ON' || 'OFF' }} \
+           -DALICEVISION_INSTALL_SENSORDB=ON \
            -DOpenCV_DIR:PATH="${DEPS_INSTALL_DIR}/share/OpenCV" \
            -DCeres_DIR:PATH="${DEPS_INSTALL_DIR}/share/Ceres" \
            -DAlembic_DIR:PATH="${DEPS_INSTALL_DIR}/lib/cmake/Alembic" \

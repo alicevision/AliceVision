@@ -565,7 +565,9 @@ To use AliceVision in Meshroom to the best of its abilities, we recommend buildi
 Meshroom relies on specific files provided by AliceVision:
 
 * Sensor database: a text database of sensor width per camera model.
-Provided in AliceVision source tree: {ALICEVISION_REPOSITORY}/src/aliceVision/sensorDB/cameraSensors.db
+Provided by a separate repository: [alicevision/sensordb](https://github.com/alicevision/sensordb) (`cameraSensors.db`).
+Build with `-DALICEVISION_INSTALL_SENSORDB=ON` to download it and install it into `{ALICEVISION_ROOT}/share/aliceVision`.
+If `ALICEVISION_SENSOR_DB` is not set, CameraInit uses this installed copy when it exists.
 * Voctree (optional): for larger datasets (>200 images), greatly improves image matching performances.
 It can be downloaded [here](https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree).
 * Sphere detection model (optional): for the automated sphere detection in stereo photometry.
