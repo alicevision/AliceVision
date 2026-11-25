@@ -1,0 +1,155 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50"
+      },
+      "intrinsicId": "77"
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50"
+      },
+      "intrinsicId": "78"
+    },
+    {
+      "viewId": "3",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50"
+      },
+      "intrinsicId": "79"
+    },
+    {
+      "viewId": "4",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50"
+      },
+      "intrinsicId": "77",
+      "poseId": "4",
+      "width": "16",
+      "height": "12"
+    }
+  ],
+  "intrinsics": [
+    {
+      "width": "16",
+      "height": "12",
+      "sensorWidth": "36",
+      "sensorHeight": "27",
+      "serialNumber": "sfm",
+      "type": "pinhole",
+      "initializationMode": "estimated",
+      "initialFocalLength": "50",
+      "focalLength": "50",
+      "pixelRatio": "1",
+      "pixelRatioLocked": "true",
+      "offsetLocked": "false",
+      "scaleLocked": "false",
+      "principalPoint": [
+        "0",
+        "0"
+      ],
+      "distortionLocked": "false",
+      "distortionInitializationMode": "none",
+      "distortionParams": [
+        "0",
+        "0",
+        "0"
+      ],
+      "undistortionOffset": [
+        "0",
+        "0"
+      ],
+      "undistortionParams": "",
+      "distortionType": "radialk3",
+      "undistortionType": "none",
+      "locked": "false",
+      "intrinsicId": "77"
+    },
+    {
+      "width": "16",
+      "height": "12",
+      "sensorWidth": "36",
+      "sensorHeight": "27",
+      "serialNumber": "sfm",
+      "type": "pinhole",
+      "initializationMode": "estimated",
+      "initialFocalLength": "-1",
+      "focalLength": "0",
+      "pixelRatio": "1",
+      "pixelRatioLocked": "true",
+      "offsetLocked": "false",
+      "scaleLocked": "false",
+      "principalPoint": [
+        "0",
+        "0"
+      ],
+      "distortionLocked": "false",
+      "distortionInitializationMode": "none",
+      "distortionParams": [
+        "0",
+        "0",
+        "0"
+      ],
+      "undistortionOffset": [
+        "0",
+        "0"
+      ],
+      "undistortionParams": "",
+      "distortionType": "radialk3",
+      "undistortionType": "none",
+      "locked": "false",
+      "intrinsicId": "78"
+    },
+    {
+      "width": "16",
+      "height": "12",
+      "sensorWidth": "36",
+      "sensorHeight": "27",
+      "serialNumber": "sfm",
+      "type": "equidistant",
+      "initializationMode": "estimated",
+      "initialFocalLength": "20",
+      "focalLength": "20",
+      "pixelRatio": "1",
+      "pixelRatioLocked": "true",
+      "offsetLocked": "false",
+      "scaleLocked": "false",
+      "principalPoint": [
+        "0",
+        "0"
+      ],
+      "distortionLocked": "false",
+      "distortionInitializationMode": "none",
+      "distortionParams": "",
+      "undistortionOffset": [
+        "0",
+        "0"
+      ],
+      "undistortionParams": "",
+      "distortionType": "none",
+      "undistortionType": "none",
+      "locked": "false",
+      "intrinsicId": "79"
+    }
+  ]
+}

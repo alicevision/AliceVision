@@ -1,0 +1,42 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "cameraMake": "Canon",
+        "cameraModel": "Canon EOS 5D",
+        "focalLength": "50",
+        "cameraSerialNumber": "9",
+        "lensSerialNumber": "8",
+        "lensModel": "EF50mm f/1.8",
+        "FNumber": "abc",
+        "ApertureValue": "3"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "tiff:Make": "Canon",
+        "camera model name": "Canon EOS 5D",
+        "lens_focal_length": "35",
+        "Serial Number": "7"
+      }
+    },
+    {
+      "viewId": "3",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "camera make": "GoPro",
+        "camera_model": "GoPro HERO9",
+        "camera_focal": "3"
+      }
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "35",
+        "FNumber": "4",
+        "Exif:LensModel": "EF50mm f/1.8"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "35",
+        "FNumber": "4",
+        "Exif:LensModel": "EF50mm f/1.8"
+      }
+    },
+    {
+      "viewId": "3",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "35",
+        "FNumber": "4",
+        "Exif:LensModel": "EF50mm f/1.8",
+        "Exif:LensID": "61"
+      }
+    },
+    {
+      "viewId": "4",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "36",
+        "FNumber": "4",
+        "Exif:LensModel": "EF50mm f/1.8 II"
+      }
+    },
+    {
+      "viewId": "5",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "12",
+        "FNumber": "4",
+        "Exif:LensModel": "EF8-15mm f/4L Fisheye"
+      }
+    },
+    {
+      "viewId": "6",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "10",
+        "FNumber": "1",
+        "Exif:LensModel": "EF35mm f/2"
+      }
+    },
+    {
+      "viewId": "7",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "90",
+        "FNumber": "4",
+        "Exif:LensModel": "EF35mm f/2"
+      }
+    },
+    {
+      "viewId": "8",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "37",
+        "FNumber": "4",
+        "Exif:LensModel": "Unknown lens"
+      }
+    },
+    {
+      "viewId": "9",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "37",
+        "FNumber": "4",
+        "Exif:LensModel": "Unknown lens"
+      }
+    },
+    {
+      "viewId": "10",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "38"
+      }
+    },
+    {
+      "viewId": "11",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Nikon",
+        "Model": "Nikon D800",
+        "Exif:FocalLength": "50",
+        "Exif:LensModel": "AF-S 50mm"
+      }
+    },
+    {
+      "viewId": "12",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Custom",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "35",
+        "FNumber": "4",
+        "Exif:LensModel": "EF50mm f/1.8"
+      }
+    },
+    {
+      "viewId": "13",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:LensModel": "EF50mm f/1.8"
+      }
+    },
+    {
+      "viewId": "14",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "24",
+        "FNumber": "1",
+        "Exif:LensModel": "EF35mm f/2"
+      }
+    },
+    {
+      "viewId": "15",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "40",
+        "FNumber": "16",
+        "Exif:LensModel": "EF35mm f/2"
+      }
+    },
+    {
+      "viewId": "16",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "41",
+        "FNumber": "1",
+        "Exif:LensModel": "EF35mm f/2"
+      }
+    },
+    {
+      "viewId": "17",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "42",
+        "FNumber": "2.83",
+        "Exif:LensModel": "EF28-70 Odd"
+      }
+    },
+    {
+      "viewId": "18",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "13",
+        "FNumber": "4",
+        "Exif:LensModel": "EF 100 Macro USM"
+      }
+    },
+    {
+      "viewId": "19",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "43",
+        "FNumber": "4",
+        "Exif:LensModel": "EF35mm f/2",
+        "Exif:LensID": "abc"
+      }
+    },
+    {
+      "viewId": "20",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "44",
+        "FNumber": "4",
+        "Exif:LensModel": "EF Mixed"
+      }
+    },
+    {
+      "viewId": "21",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "45",
+        "FNumber": "4",
+        "Exif:LensModel": "EF 85 Alt"
+      }
+    },
+    {
+      "viewId": "22",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "46",
+        "FNumber": "4",
+        "Exif:LensModel": "EF85mm",
+        "Exif:LensID": "300"
+      }
+    },
+    {
+      "viewId": "23",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "47",
+        "FNumber": "4",
+        "Exif:LensModel": "EF Wrong"
+      }
+    },
+    {
+      "viewId": "24",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "48",
+        "FNumber": "4",
+        "Exif:LensModel": "EF Pretty"
+      }
+    }
+  ]
+}

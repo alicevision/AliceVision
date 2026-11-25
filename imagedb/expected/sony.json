@@ -1,0 +1,158 @@
+{
+ "imageGroups": {
+  "{DATA}/img/base.jpg#0001": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/img/base.jpg#0001": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "35",
+   "height": "12",
+   "initialFocalLength": "35",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "18.171978428338509",
+   "sensorWidth": "24.229304571118011",
+   "serialNumber": "{DATA}/img_Sony_ILME-FX6",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "35",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "15.6",
+   "sensorWidth": "23.5",
+   "serialNumber": "{DATA}/img_Sony_ILME-FX6",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0003": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "23.999999999999996",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "17.625",
+   "sensorWidth": "23.5",
+   "serialNumber": "{DATA}/img_Sony_ILME-FX6",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/img/base.jpg#0001": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0001",
+   "metadata": {
+    "AliceVision:SensorWidthEstimation": "24.229305",
+    "LensZoom35mmStillCameraEquivalent": "0.05",
+    "LensZoomActualFocalLength": "0.035",
+    "Make": "Sony",
+    "Model": "ILME-FX6"
+   },
+   "pose": "{DATA}/img/base.jpg#0001",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0002",
+   "metadata": {
+    "AliceVision:SensorWidthEstimation": "23.500000",
+    "ImageSensorEffectiveHeight ": "15600",
+    "ImageSensorEffectiveWidth": "23500",
+    "LensZoomActualFocalLength": "0.035",
+    "Make": "Sony",
+    "Model": "ILME-FX6"
+   },
+   "pose": "{DATA}/img/base.jpg#0002",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0003": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0003",
+   "metadata": {
+    "AliceVision:SensorWidthEstimation": "23.500000",
+    "ImageSensorEffectiveHeight": "15600",
+    "ImageSensorEffectiveWidth": "23500",
+    "LensZoomActualFocalLength": "0.024",
+    "Make": "Sony",
+    "Model": "ILME-FX6"
+   },
+   "pose": "{DATA}/img/base.jpg#0003",
+   "width": "16"
+  }
+ }
+}

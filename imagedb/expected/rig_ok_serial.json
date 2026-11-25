@@ -1,0 +1,150 @@
+{
+ "imageGroups": {
+  "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "50",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "B0",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "50",
+   "initializationMode": "estimated",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "26.849999999999998",
+   "sensorWidth": "35.799999999999997",
+   "serialNumber": "B1",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [
+  2
+ ],
+ "views": {
+  "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg": {
+   "frameId": "1",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "intrinsic": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:BodySerialNumber": "B0",
+    "Exif:FocalLength": "50",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "rig": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "subPoseId": "0",
+   "width": "16"
+  },
+  "{DATA}/folders/rig/ok/rig/0/frame_0002.jpg": {
+   "frameId": "2",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "intrinsic": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:BodySerialNumber": "B0",
+    "Exif:FocalLength": "50",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/folders/rig/ok/rig/0/frame_0002.jpg",
+   "rig": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "subPoseId": "0",
+   "width": "16"
+  },
+  "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg": {
+   "frameId": "1",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "intrinsic": "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:BodySerialNumber": "B1",
+    "Exif:FocalLength": "50",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg",
+   "rig": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "subPoseId": "1",
+   "width": "16"
+  },
+  "{DATA}/folders/rig/ok/rig/1/frame_0002.jpg": {
+   "frameId": "2",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "intrinsic": "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg",
+   "metadata": {
+    "AliceVision:SensorWidth": "35.800000",
+    "Exif:BodySerialNumber": "B1",
+    "Exif:FocalLength": "50",
+    "Make": "Canon",
+    "Model": "Canon EOS 5D"
+   },
+   "pose": "{DATA}/folders/rig/ok/rig/1/frame_0002.jpg",
+   "rig": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "subPoseId": "1",
+   "width": "16"
+  }
+ }
+}

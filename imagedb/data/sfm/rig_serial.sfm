@@ -1,0 +1,49 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "10",
+      "path": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:BodySerialNumber": "B0"
+      }
+    },
+    {
+      "viewId": "11",
+      "path": "{DATA}/folders/rig/ok/rig/0/frame_0002.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:BodySerialNumber": "B0"
+      }
+    },
+    {
+      "viewId": "12",
+      "path": "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:BodySerialNumber": "B1"
+      }
+    },
+    {
+      "viewId": "13",
+      "path": "{DATA}/folders/rig/ok/rig/1/frame_0002.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "Exif:BodySerialNumber": "B1"
+      }
+    }
+  ]
+}

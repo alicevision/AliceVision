@@ -1,0 +1,2370 @@
+[
+ {
+  "name": "args_none",
+  "covers": [
+   "A1"
+  ],
+  "args": [],
+  "expect": "fail",
+  "log": [
+   "AliceVision cameraInit:"
+  ],
+  "sensorDb": null,
+  "env": {},
+  "note": "no argument at all: CmdLine prints the options",
+  "platform": null,
+  "defaultOutput": false
+ },
+ {
+  "name": "args_unknown_option",
+  "covers": [
+   "A1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/img",
+   "--notAnOption",
+   "1"
+  ],
+  "expect": "fail",
+  "log": [
+   "unrecognised option '--notAnOption'"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_bad_camera_model",
+  "covers": [
+   "A2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--defaultCameraModel",
+   "notamodel"
+  ],
+  "expect": "fail",
+  "log": [
+   "[fatal] notamodel"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_bad_distortion_model",
+  "covers": [
+   "A2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--defaultCameraModel",
+   "pinhole",
+   "--defaultDistortionModel",
+   "radialbrown"
+  ],
+  "expect": "fail",
+  "log": [
+   "[fatal] radialbrown"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "the help text advertises 'radialbrown', which is rejected",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_no_input",
+  "covers": [
+   "A3"
+  ],
+  "args": [],
+  "expect": "fail",
+  "log": [
+   "Program need -i or --imageFolder option"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_both_inputs",
+  "covers": [
+   "A4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--input",
+   "{DATA}/sfm/sony.sfm"
+  ],
+  "expect": "fail",
+  "log": [
+   "Cannot combine -i and --imageFolder options"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_missing_folder",
+  "covers": [
+   "A5"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/does_not_exist"
+  ],
+  "expect": "fail",
+  "log": [
+   "The input folder doesn't exist"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_missing_sfm",
+  "covers": [
+   "A6"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/does_not_exist.sfm"
+  ],
+  "expect": "fail",
+  "log": [
+   "The input sfm file doesn't exist"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_sfm_is_directory",
+  "covers": [
+   "A6"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm"
+  ],
+  "expect": "fail",
+  "log": [
+   "Is a directory"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_empty_output",
+  "covers": [
+   "A7"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--output",
+   ""
+  ],
+  "expect": "fail",
+  "log": [
+   "Invalid output"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_output_new_dir",
+  "covers": [
+   "A8"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--output",
+   "{OUT}/newdir/cameraInit.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "output parent created; the output is checked by the runner in newdir/",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_output_missing_parent",
+  "covers": [
+   "A8"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--output",
+   "{OUT}/a/b/cameraInit.sfm"
+  ],
+  "expect": "fail",
+  "log": [
+   "cannot create directory"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_focal_and_fov",
+  "covers": [
+   "A9"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--defaultFocalLength",
+   "10",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "fail",
+  "log": [
+   "Cannot combine --defaultFocalLength --defaultFieldOfView options"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_bad_focal_ratio",
+  "covers": [
+   "A10"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--defaultFocalRatio",
+   "0"
+  ],
+  "expect": "fail",
+  "log": [
+   "Focal Ratio needs to be a positive value"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_no_sensor_db_no_root",
+  "covers": [
+   "A11"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif"
+  ],
+  "expect": "ok",
+  "log": [
+   "ALICEVISION_SENSOR_DB is not defined and no sensor database is installed"
+  ],
+  "sensorDb": null,
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_sensor_db_from_root",
+  "covers": [
+   "A11"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": null,
+  "env": {
+   "ALICEVISION_SENSOR_DB": "",
+   "ALICEVISION_ROOT": "{DATA}/root"
+  },
+  "note": "an empty ALICEVISION_SENSOR_DB is ignored",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_sensor_db_from_env",
+  "covers": [
+   "A11"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": null,
+  "env": {
+   "ALICEVISION_SENSOR_DB": "{DATA}/sensors.db",
+   "ALICEVISION_ROOT": "{DATA}/img"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_sensor_db_missing",
+  "covers": [
+   "A12"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif"
+  ],
+  "expect": "fail",
+  "log": [
+   "Invalid input sensor database"
+  ],
+  "sensorDb": "does_not_exist.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_sensor_db_env_missing",
+  "covers": [
+   "A12"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif"
+  ],
+  "expect": "fail",
+  "log": [
+   "Invalid input sensor database"
+  ],
+  "sensorDb": null,
+  "env": {
+   "ALICEVISION_SENSOR_DB": "{DATA}/does_not_exist.db",
+   "ALICEVISION_ROOT": "{DATA}/root"
+  },
+  "note": "ALICEVISION_SENSOR_DB has priority over the database installed in ALICEVISION_ROOT",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_root_without_db",
+  "covers": [
+   "A12"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif"
+  ],
+  "expect": "ok",
+  "log": [
+   "no sensor database is installed in ALICEVISION_ROOT"
+  ],
+  "sensorDb": null,
+  "env": {
+   "ALICEVISION_ROOT": "{DATA}/img"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_sensor_db_bad_width",
+  "covers": [
+   "A13"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif"
+  ],
+  "expect": "fail",
+  "log": [
+   "stod"
+  ],
+  "sensorDb": "sensors_bad.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "args_bad_output_extension",
+  "covers": [
+   "W4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--output",
+   "{OUT}/cameraInit.txt"
+  ],
+  "expect": "fail",
+  "log": [
+   "The file extension is not recognized"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "exif_folder",
+  "covers": [
+   "L7",
+   "B3",
+   "B4",
+   "S1",
+   "S2",
+   "S3",
+   "S4",
+   "S5",
+   "S7a",
+   "S7b",
+   "S8",
+   "S10",
+   "S11",
+   "S12",
+   "S13",
+   "FL1",
+   "FL3",
+   "G2",
+   "G3",
+   "G4",
+   "G6",
+   "G8",
+   "G11",
+   "G12",
+   "G13",
+   "N1",
+   "N2",
+   "N4",
+   "N5",
+   "N8",
+   "N9",
+   "W1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif"
+  ],
+  "expect": "ok",
+  "log": [
+   "Resized image detected",
+   "slightly different",
+   "Sensor width doesn't exist",
+   "no serial number"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "exif_folder_fov",
+  "covers": [
+   "G1",
+   "S12"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--defaultFieldOfView",
+   "60"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "exif_folder_focal",
+  "covers": [
+   "G1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--defaultFocalLength",
+   "8"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "exif_folder_wide_fov",
+  "covers": [
+   "G6",
+   "G8",
+   "G13"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--defaultFieldOfView",
+   "120"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "exif_folder_global",
+  "covers": [
+   "N4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--groupCameraFallback",
+   "global"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "exif_folder_image",
+  "covers": [
+   "N4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--groupCameraFallback",
+   "image"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "exif_folder_sequence",
+  "covers": [
+   "W3"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--isSequence",
+   "1"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "exif_folder_ratio_offset",
+  "covers": [
+   "G5"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--defaultFocalRatio",
+   "2",
+   "--defaultOffsetX",
+   "1.5",
+   "--defaultOffsetY",
+   "-2"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "single_file_input",
+  "covers": [
+   "L5",
+   "W2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/img/canon50.jpg",
+   "--allowSingleView",
+   "1"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "single_file_needs_two",
+  "covers": [
+   "W2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/img/canon50.jpg"
+  ],
+  "expect": "fail",
+  "log": [
+   "At least two images"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "single_file_unsupported",
+  "covers": [
+   "L6",
+   "L8"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/img/notes.txt"
+  ],
+  "expect": "fail",
+  "log": [
+   "is not a valid folder or file path"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "nested_listing",
+  "covers": [
+   "L6",
+   "L7"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/nested",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "text_only_folder",
+  "covers": [
+   "L8"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/textonly"
+  ],
+  "expect": "fail",
+  "log": [
+   "is not a valid folder or file path"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "no_initialized_view",
+  "covers": [
+   "W2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/nested"
+  ],
+  "expect": "fail",
+  "log": [
+   "should have an initialized intrinsic"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "viewid_filename",
+  "covers": [
+   "B4",
+   "B5"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/viewid",
+   "--viewIdMethod",
+   "filename",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "viewid_filename_nomatch",
+  "covers": [
+   "B5"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/viewid_nonumber",
+   "--viewIdMethod",
+   "filename",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "abort",
+  "log": [
+   "must match a unique number in the filename abc"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "viewid_filename_badregex",
+  "covers": [
+   "B5"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/viewid",
+   "--viewIdMethod",
+   "filename",
+   "--viewIdRegex",
+   "(",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "abort",
+  "log": [
+   "Invalid regex conversion"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "viewid_filename_nogroup",
+  "covers": [
+   "B5"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/viewid",
+   "--viewIdMethod",
+   "filename",
+   "--viewIdRegex",
+   "\\d+",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "abort",
+  "log": [
+   "must match a unique number"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "viewid_filename_notnumber",
+  "covers": [
+   "B5"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/viewid",
+   "--viewIdMethod",
+   "filename",
+   "--viewIdRegex",
+   "(img)",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "abort",
+  "log": [
+   "can't be converted to a number"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "viewid_metadata_variants",
+  "covers": [
+   "B4",
+   "UID"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/uid",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "rig_ok",
+  "covers": [
+   "R1",
+   "R3",
+   "R7",
+   "N6",
+   "F1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/rig/ok",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "rig_ok_serial",
+  "covers": [
+   "R1",
+   "R3",
+   "N1"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/rig_serial.sfm",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "rig_gap",
+  "covers": [
+   "R4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/rig/gap",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "fail",
+  "log": [
+   "Wrong subPoseId in rig structure"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "rig_unequal",
+  "covers": [
+   "R6"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/rig/unequal",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [
+   "Wrong number of poses per subPose"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "rig_duplicate_frames",
+  "covers": [
+   "X1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/rig/dupframe",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "fail",
+  "log": [
+   "Multiple frames have the same frame id"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "rig_no_number",
+  "covers": [
+   "R2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/rig/nonumber",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [
+   "Invalid rig structure"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "rig_overflow",
+  "covers": [
+   "R2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/rig/overflow",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [
+   "Invalid rig structure"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "frame_ids",
+  "covers": [
+   "F1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/frames",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "pose_groups",
+  "covers": [
+   "P1",
+   "P2",
+   "P3"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/posegroups",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_default",
+  "covers": [
+   "D1",
+   "D8"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_metadata",
+  "covers": [
+   "D2",
+   "D4",
+   "D7",
+   "D8"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/full"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_linear_cache",
+  "covers": [
+   "D2",
+   "D4",
+   "D5",
+   "D7"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/two",
+   "--rawColorInterpretation",
+   "DcpLinearProcessing",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/single"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_db_missing_error",
+  "covers": [
+   "D3",
+   "C1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata"
+  ],
+  "expect": "fail",
+  "log": [
+   "does not exist or is empty",
+   "Can't find color profile"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_db_empty_error",
+  "covers": [
+   "D3",
+   "C1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/empty"
+  ],
+  "expect": "fail",
+  "log": [
+   "Can't find color profile for at least one input image"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_db_missing_noerror",
+  "covers": [
+   "D6",
+   "D8",
+   "C1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--errorOnMissingColorProfile",
+   "0"
+  ],
+  "expect": "ok",
+  "log": [
+   "Can't find color profile"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_nomatch_noerror",
+  "covers": [
+   "D6",
+   "D8",
+   "C1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/nomatch",
+   "--errorOnMissingColorProfile",
+   "0"
+  ],
+  "expect": "ok",
+  "log": [
+   "DCP Profile not found"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_nomake",
+  "covers": [
+   "D2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/nomake",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/full",
+   "--defaultFieldOfView",
+   "45"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_single_illuminant",
+  "covers": [
+   "D7"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/other",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/single"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_bad_tag_count",
+  "covers": [
+   "D9"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/badtags"
+  ],
+  "expect": "ok",
+  "log": [
+   "Tag number out of range"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_bad_tag_type",
+  "covers": [
+   "D9"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/badtype"
+  ],
+  "expect": "ok",
+  "log": [
+   "Invalid Tag"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_no_color_matrix",
+  "covers": [
+   "D9"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/nomatrix"
+  ],
+  "expect": "ok",
+  "log": [
+   "missing 'ColorMatrix1'"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_interpretation_none",
+  "covers": [
+   "D8"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/one",
+   "--allowSingleView",
+   "1",
+   "--rawColorInterpretation",
+   "None"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "jpeg_dcp_ignored",
+  "covers": [
+   "D2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/full"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_single_file",
+  "covers": [
+   "LC1",
+   "LC2",
+   "LC13",
+   "LC14",
+   "G7",
+   "G16"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/single/canon_ef50.lcp"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_single_folder",
+  "covers": [
+   "LC1",
+   "LC2"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/single"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_multi",
+  "covers": [
+   "LC1",
+   "LC3",
+   "LC4",
+   "LC5",
+   "LC6",
+   "LC7",
+   "LC8",
+   "LC9",
+   "LC13",
+   "LC14",
+   "G7",
+   "G14",
+   "G16"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/lcp_multi.sfm",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/multi"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_multi_use_model",
+  "covers": [
+   "LC6"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/lcp_multi.sfm",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/multi",
+   "--lensCorrectionProfileSearchIgnoreCameraModel",
+   "0"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_no_geometry",
+  "covers": [
+   "LC12"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/nogeometry"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_fisheye",
+  "covers": [
+   "G7",
+   "G14"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/lcp_fisheye.sfm",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/fisheye"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_altnames_element_style",
+  "covers": [
+   "LC11"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/altnames_element"
+  ],
+  "expect": "abort",
+  "log": [
+   "stoi"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "element-style LCP with AlternateLensNames: std::stoi throws during the full parse",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_broken",
+  "covers": [
+   "LC11"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/broken"
+  ],
+  "expect": "abort",
+  "log": [
+   "Invalid XML in LCP file"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sony",
+  "covers": [
+   "S6",
+   "S9",
+   "FL2"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/sony.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "arri_dji",
+  "covers": [
+   "FL4",
+   "FL5"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/arri_dji.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "malformed_numbers",
+  "covers": [
+   "FL1",
+   "S5",
+   "G5",
+   "N7"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/malformed.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "aliases",
+  "covers": [
+   "MD"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/aliases.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "existing_intrinsics",
+  "covers": [
+   "I1",
+   "I2",
+   "B1"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/existing_intrinsics.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_pose_differs",
+  "covers": [
+   "B7"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/pose_differs.sfm"
+  ],
+  "expect": "ok",
+  "log": [
+   "PoseId and viewId are different"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_rig_without_pose",
+  "covers": [
+   "B6"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/rig_without_pose.sfm"
+  ],
+  "expect": "abort",
+  "log": [
+   "marked as part of a rig"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_future_version",
+  "covers": [
+   "L2",
+   "L9"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/future_version.sfm"
+  ],
+  "expect": "fail",
+  "log": [
+   "File has a version more recent than this library"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_no_views",
+  "covers": [
+   "L9"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/no_views.sfm"
+  ],
+  "expect": "fail",
+  "log": [
+   "Can't find views in input"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_dangling_intrinsic",
+  "covers": [
+   "L4"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/dangling_intrinsic.sfm"
+  ],
+  "expect": "abort",
+  "log": [
+   "cannot be found"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_missing_image",
+  "covers": [
+   "B2"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/missing_image.sfm"
+  ],
+  "expect": "abort",
+  "log": [
+   "Can't find/open image file"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_malformed_json",
+  "covers": [
+   "L3"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/malformed_json.sfm"
+  ],
+  "expect": "abort",
+  "log": [
+   "No such node"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_bad_pixel_dimension",
+  "covers": [
+   "G2",
+   "UID"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/bad_pixel_dimension.sfm"
+  ],
+  "expect": "abort",
+  "log": [
+   "stoi"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {
+   "OMP_NUM_THREADS": "1"
+  },
+  "note": "std::stoi on a non-numeric PixelXDimension throws (uid.cpp / viewIO.cpp)",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_negative_sensor",
+  "covers": [
+   "S12"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/negative_sensor.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_pinhole_none",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "pinhole",
+   "--defaultDistortionModel",
+   "none"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_pinhole_radialk1",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "pinhole",
+   "--defaultDistortionModel",
+   "radialk1"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_pinhole_radialk3",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "pinhole",
+   "--defaultDistortionModel",
+   "radialk3"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_pinhole_radialk3pt",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "pinhole",
+   "--defaultDistortionModel",
+   "radialk3pt"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_pinhole_brown",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "pinhole",
+   "--defaultDistortionModel",
+   "brown"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_pinhole_fisheye",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "pinhole",
+   "--defaultDistortionModel",
+   "fisheye"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_pinhole_fisheye1",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "pinhole",
+   "--defaultDistortionModel",
+   "fisheye1"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_equidistant_none",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "equidistant",
+   "--defaultDistortionModel",
+   "none"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_equirectangular_none",
+  "covers": [
+   "A2",
+   "G10",
+   "G15"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultCameraModel",
+   "equirectangular",
+   "--defaultDistortionModel",
+   "none"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "model_distortion_only",
+  "covers": [
+   "G9"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/models.sfm",
+   "--defaultDistortionModel",
+   "radialk1"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "group_fallback_folder_explicit",
+  "covers": [
+   "N4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--groupCameraFallback",
+   "folder"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "group_fallback_invalid",
+  "covers": [
+   "A1"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--groupCameraFallback",
+   "camera"
+  ],
+  "expect": "fail",
+  "log": [
+   "Invalid GroupCameraFallback type string camera"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "uid_variants",
+  "covers": [
+   "UID"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/uid_variants.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "edge_metadata",
+  "covers": [
+   "S1",
+   "S5",
+   "S8",
+   "S9",
+   "FL3",
+   "FL4"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/edge_metadata.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "pixel_dims",
+  "covers": [
+   "G2"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/pixel_dims.sfm"
+  ],
+  "expect": "ok",
+  "log": [
+   "Resized image detected"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "sfm_rig_with_pose",
+  "covers": [
+   "B7"
+  ],
+  "args": [
+   "--input",
+   "{DATA}/sfm/rig_with_pose.sfm"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "image_folder_not_a_folder",
+  "covers": [
+   "L6"
+  ],
+  "args": [
+   "--imageFolder",
+   "/dev/null"
+  ],
+  "expect": "fail",
+  "log": [
+   "is not a valid folder or file path"
+  ],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "exists, but is neither a regular file nor a directory",
+  "platform": "linux",
+  "defaultOutput": true
+ },
+ {
+  "name": "raw_dcp_rich_profiles",
+  "covers": [
+   "D4",
+   "D7",
+   "D9"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/raw/rich",
+   "--rawColorInterpretation",
+   "DcpMetadata",
+   "--colorProfileDatabase",
+   "{DATA}/dcp/rich"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "lcp_attribute_style",
+  "covers": [
+   "LC1",
+   "LC2",
+   "LC13",
+   "LC14",
+   "G7",
+   "G16"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--lensCorrectionProfileInfo",
+   "{DATA}/lcp/attr/canon_attr.lcp"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "output_format_ply",
+  "covers": [
+   "W4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--output",
+   "{OUT}/cameraInit.ply"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "output_format_baf",
+  "covers": [
+   "W4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--output",
+   "{OUT}/cameraInit.baf"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "output_format_abc",
+  "covers": [
+   "W4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--output",
+   "{OUT}/cameraInit.abc"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ },
+ {
+  "name": "output_format_usda",
+  "covers": [
+   "W4"
+  ],
+  "args": [
+   "--imageFolder",
+   "{DATA}/folders/exif",
+   "--output",
+   "{OUT}/cameraInit.usda"
+  ],
+  "expect": "ok",
+  "log": [],
+  "sensorDb": "sensors.db",
+  "env": {},
+  "note": "",
+  "platform": null,
+  "defaultOutput": true
+ }
+]

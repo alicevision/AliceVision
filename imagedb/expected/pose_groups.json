@@ -1,0 +1,303 @@
+{
+ "imageGroups": {
+  "{DATA}/folders/posegroups/HDR_upper/a.jpg": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/folders/posegroups/HDR_upper/a.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/posegroups/HDR_upper",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/PS_upper/AMBIENT.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/posegroups/PS_upper",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/hdr_dated/shot0.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/posegroups/hdr_dated",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/hdr_nodate/a.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/posegroups/hdr_nodate",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/ps_one/a.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/posegroups/ps_one",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/folders/posegroups/HDR_upper/a.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "metadata": {
+    "Exif:DateTimeOriginal": "2024:01:01 11:00:01"
+   },
+   "pose": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/HDR_upper/b.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "metadata": {
+    "Exif:DateTimeOriginal": "2024:01:01 11:00:00"
+   },
+   "pose": "{DATA}/folders/posegroups/HDR_upper/b.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/PS_upper/AMBIENT.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/PS_upper/AMBIENT.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/posegroups/PS_upper/AMBIENT.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/PS_upper/y.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/PS_upper/AMBIENT.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/posegroups/PS_upper/AMBIENT.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/hdr_dated/shot0.jpg": {
+   "frameId": "0",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/hdr_dated/shot0.jpg",
+   "metadata": {
+    "Exif:DateTimeOriginal": "2024:01:01 10:00:02"
+   },
+   "pose": "{DATA}/folders/posegroups/hdr_dated/shot2.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/hdr_dated/shot1.jpg": {
+   "frameId": "1",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/hdr_dated/shot0.jpg",
+   "metadata": {
+    "Exif:DateTimeOriginal": "2024:01:01 10:00:00"
+   },
+   "pose": "{DATA}/folders/posegroups/hdr_dated/shot2.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/hdr_dated/shot2.jpg": {
+   "frameId": "2",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/hdr_dated/shot0.jpg",
+   "metadata": {
+    "Exif:DateTimeOriginal": "2024:01:01 10:00:01"
+   },
+   "pose": "{DATA}/folders/posegroups/hdr_dated/shot2.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/hdr_nodate/a.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/hdr_nodate/a.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/posegroups/hdr_nodate/b.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/hdr_nodate/b.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/hdr_nodate/a.jpg",
+   "metadata": {
+    "Exif:DateTimeOriginal": "2024:01:01 10:00:01"
+   },
+   "pose": "{DATA}/folders/posegroups/hdr_nodate/b.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/hdr_nodate/c.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/hdr_nodate/a.jpg",
+   "metadata": {
+    "Exif:DateTimeOriginal": "2024:01:01 10:00:02"
+   },
+   "pose": "{DATA}/folders/posegroups/hdr_nodate/b.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/ps_one/a.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/ps_one/a.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/posegroups/ps_one/ambient_light.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/ps_one/ambient_light.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/ps_one/a.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/posegroups/ps_one/ambient_light.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/posegroups/ps_one/c.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/posegroups/HDR_upper/a.jpg",
+   "intrinsic": "{DATA}/folders/posegroups/ps_one/a.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/posegroups/ps_one/ambient_light.jpg",
+   "width": "16"
+  }
+ }
+}

@@ -1,0 +1,41 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Sony",
+        "Model": "ILME-FX6",
+        "LensZoomActualFocalLength": "0.035",
+        "LensZoom35mmStillCameraEquivalent": "0.05"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Sony",
+        "Model": "ILME-FX6",
+        "LensZoomActualFocalLength": "0.035",
+        "ImageSensorEffectiveWidth": "23500",
+        "ImageSensorEffectiveHeight ": "15600"
+      }
+    },
+    {
+      "viewId": "3",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Sony",
+        "Model": "ILME-FX6",
+        "LensZoomActualFocalLength": "0.024",
+        "ImageSensorEffectiveWidth": "23500",
+        "ImageSensorEffectiveHeight": "15600"
+      }
+    }
+  ]
+}

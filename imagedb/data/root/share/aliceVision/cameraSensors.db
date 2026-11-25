@@ -1,0 +1,9 @@
+# imagedb sensor database: brand;model;sensor width (mm);source
+
+Canon;Canon EOS 5D;35.8;imagedb
+GoPro;GoPro HERO9;6.17;imagedb
+Testcam;Model One;23.5;imagedb
+Othercam;Model Two;17.3;imagedb
+Negative;Width;-1;imagedb
+Negative;Two;-2;imagedb
+Short;Line;5

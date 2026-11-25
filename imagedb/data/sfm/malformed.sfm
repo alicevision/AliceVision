@@ -1,0 +1,84 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "24.5/2"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "1/0"
+      }
+    },
+    {
+      "viewId": "3",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "n/a",
+        "Exif:FocalLengthIn35mmFilm": "n/a"
+      }
+    },
+    {
+      "viewId": "4",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "PixelAspectRatio": "2"
+      }
+    },
+    {
+      "viewId": "5",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "PixelAspectRatio": "abc"
+      }
+    },
+    {
+      "viewId": "6",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Canon",
+        "Model": "Canon EOS 5D",
+        "Exif:FocalLength": "50",
+        "PixelAspectRatio": "-1"
+      }
+    },
+    {
+      "viewId": "7",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Exif:FocalLengthIn35mmFilm": "0",
+        "Exif:FocalLength": "4"
+      }
+    },
+    {
+      "viewId": "8",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Exif:FocalLengthIn35mmFilm": "",
+        "FocalLengthIn35mmFilm": "30",
+        "Exif:FocalLength": "5"
+      }
+    }
+  ]
+}

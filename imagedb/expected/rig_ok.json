@@ -1,0 +1,126 @@
+{
+ "imageGroups": {
+  "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/rig/ok/rig/0_rig_{DATA}/folders/rig/ok/rig/0/frame_0001.jpg_0",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/rig/ok/rig/1_rig_{DATA}/folders/rig/ok/rig/0/frame_0001.jpg_1",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [
+  2
+ ],
+ "views": {
+  "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg": {
+   "frameId": "1",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "intrinsic": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "rig": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "subPoseId": "0",
+   "width": "16"
+  },
+  "{DATA}/folders/rig/ok/rig/0/frame_0002.jpg": {
+   "frameId": "2",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "intrinsic": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/rig/ok/rig/0/frame_0002.jpg",
+   "rig": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "subPoseId": "0",
+   "width": "16"
+  },
+  "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg": {
+   "frameId": "1",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "intrinsic": "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg",
+   "rig": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "subPoseId": "1",
+   "width": "16"
+  },
+  "{DATA}/folders/rig/ok/rig/1/frame_0002.jpg": {
+   "frameId": "2",
+   "height": "12",
+   "imageGroup": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "intrinsic": "{DATA}/folders/rig/ok/rig/1/frame_0001.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/rig/ok/rig/1/frame_0002.jpg",
+   "rig": "{DATA}/folders/rig/ok/rig/0/frame_0001.jpg",
+   "subPoseId": "1",
+   "width": "16"
+  }
+ }
+}

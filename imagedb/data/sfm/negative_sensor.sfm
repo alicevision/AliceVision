@@ -1,0 +1,28 @@
+{
+  "version": [
+    "1",
+    "2",
+    "14"
+  ],
+  "views": [
+    {
+      "viewId": "1",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Negative",
+        "Model": "Width",
+        "Exif:FocalLength": "50"
+      }
+    },
+    {
+      "viewId": "2",
+      "path": "{DATA}/img/base.jpg",
+      "metadata": {
+        "Make": "Foo",
+        "Model": "Bar",
+        "Exif:FocalLength": "50",
+        "ImageSensorEffectiveWidth": "-5"
+      }
+    }
+  ]
+}

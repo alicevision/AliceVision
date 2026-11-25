@@ -1,0 +1,176 @@
+{
+ "imageGroups": {
+  "{DATA}/img/base.jpg#0001": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/img/base.jpg#0001": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "35",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/img_ARRI_ALEXA Mini",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0003": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "50",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/img_DJI_FC6310",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0004": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "8.8000000000000007",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/img_DJI_FC6310",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/img/base.jpg#0001": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0001",
+   "metadata": {
+    "AxialNominalFocalLength": "35",
+    "Make": "ARRI",
+    "Model": "ALEXA Mini"
+   },
+   "pose": "{DATA}/img/base.jpg#0001",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0002": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0001",
+   "metadata": {
+    "AxialNominalFocalLength": "35000",
+    "Make": "ARRI",
+    "Model": "ALEXA Mini"
+   },
+   "pose": "{DATA}/img/base.jpg#0002",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0003": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0003",
+   "metadata": {
+    "Make": "DJI",
+    "Model": "FC6310",
+    "focal_length": "[50000,1000]"
+   },
+   "pose": "{DATA}/img/base.jpg#0003",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0004": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0004",
+   "metadata": {
+    "Exif:FocalLength": "8.8",
+    "Make": "DJI",
+    "Model": "FC6310",
+    "focal_length": "[abc,1000]"
+   },
+   "pose": "{DATA}/img/base.jpg#0004",
+   "width": "16"
+  },
+  "{DATA}/img/base.jpg#0005": {
+   "height": "12",
+   "imageGroup": "{DATA}/img/base.jpg#0001",
+   "intrinsic": "{DATA}/img/base.jpg#0004",
+   "metadata": {
+    "Exif:FocalLength": "8.8",
+    "Make": "DJI",
+    "Model": "FC6310",
+    "focal_length": "[noComma]"
+   },
+   "pose": "{DATA}/img/base.jpg#0005",
+   "width": "16"
+  }
+ }
+}

@@ -1,0 +1,138 @@
+{
+ "imageGroups": {
+  "{DATA}/folders/nested/a.jpg": {
+   "imageGroupType": "ImageSet"
+  }
+ },
+ "intrinsics": {
+  "{DATA}/folders/nested/a.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/nested",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/folders/nested/sub/b.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/nested/sub",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  },
+  "{DATA}/folders/nested/sub/deeper/c.jpg": {
+   "distortionInitializationMode": "none",
+   "distortionLocked": "false",
+   "distortionParams": [
+    "0",
+    "0",
+    "0"
+   ],
+   "distortionType": "radialk3",
+   "focalLength": "43.45584412271571",
+   "height": "12",
+   "initialFocalLength": "-1",
+   "initializationMode": "unknown",
+   "locked": "false",
+   "offsetLocked": "false",
+   "pixelRatio": "1",
+   "pixelRatioLocked": "true",
+   "principalPoint": [
+    "0",
+    "0"
+   ],
+   "scaleLocked": "false",
+   "sensorHeight": "27",
+   "sensorWidth": "36",
+   "serialNumber": "{DATA}/folders/nested/sub/deeper",
+   "type": "pinhole",
+   "undistortionOffset": [
+    "0",
+    "0"
+   ],
+   "undistortionParams": "",
+   "undistortionType": "none",
+   "width": "16"
+  }
+ },
+ "rigs": [],
+ "views": {
+  "{DATA}/folders/nested/a.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/nested/a.jpg",
+   "intrinsic": "{DATA}/folders/nested/a.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/nested/a.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/nested/sub/b.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/nested/a.jpg",
+   "intrinsic": "{DATA}/folders/nested/sub/b.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/nested/sub/b.jpg",
+   "width": "16"
+  },
+  "{DATA}/folders/nested/sub/deeper/c.jpg": {
+   "height": "12",
+   "imageGroup": "{DATA}/folders/nested/a.jpg",
+   "intrinsic": "{DATA}/folders/nested/sub/deeper/c.jpg",
+   "metadata": {},
+   "pose": "{DATA}/folders/nested/sub/deeper/c.jpg",
+   "width": "16"
+  }
+ }
+}
