@@ -5,7 +5,13 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 %include <std_shared_ptr.i>
+// The whole intrinsic hierarchy is declared here, before any intrinsic class or factory function is parsed.
 %shared_ptr(aliceVision::camera::IntrinsicBase)
+%shared_ptr(aliceVision::camera::IntrinsicScaleOffset)
+%shared_ptr(aliceVision::camera::IntrinsicScaleOffsetDisto)
+%shared_ptr(aliceVision::camera::Pinhole)
+%shared_ptr(aliceVision::camera::Equidistant)
+%shared_ptr(aliceVision::camera::Equirectangular)
 
 %{
 #include <aliceVision/camera/IntrinsicBase.hpp>

@@ -25,6 +25,11 @@ using namespace aliceVision::camera;
 %}
 
 %include <aliceVision/camera/cameraCommon.hpp>
+
+%include <aliceVision/camera/IntrinsicInitMode.i>
+%include <aliceVision/camera/IntrinsicBase.i>
+%include <aliceVision/camera/Distortion.i>
+%include <aliceVision/camera/Undistortion.i>
 %include <aliceVision/camera/camera.hpp>
 %include <aliceVision/camera/cameraUndistortImage.hpp>
 
@@ -35,7 +40,6 @@ using namespace aliceVision::camera;
 %include <aliceVision/camera/Undistortion3DE.i>
 %include <aliceVision/camera/UndistortionRadial.i>
 
-%include <aliceVision/camera/IntrinsicInitMode.i>
 %include <aliceVision/camera/Equidistant.i>
 %include <aliceVision/camera/Equirectangular.i>
 %include <aliceVision/camera/Pinhole.i>
