@@ -6,6 +6,7 @@
 
 %module (package="pyalicevision") sfmDataIO
 
+%include <aliceVision/exception.i>
 %include <std_string.i>
 %include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
