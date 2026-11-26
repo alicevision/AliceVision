@@ -26,7 +26,6 @@ using namespace aliceVision::camera;
 
 %include <aliceVision/camera/cameraCommon.hpp>
 
-%include <aliceVision/camera/IntrinsicInitMode.i>
 %include <aliceVision/camera/IntrinsicBase.i>
 %include <aliceVision/camera/Distortion.i>
 %include <aliceVision/camera/Undistortion.i>

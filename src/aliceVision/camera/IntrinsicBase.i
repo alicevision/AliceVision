@@ -5,6 +5,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 %include <std_shared_ptr.i>
+// EInitMode is used by IntrinsicBase: wrap it in every module that includes this file (e.g. sfmData),
+// otherwise getInitializationMode() returns an opaque pointer.
+%include <aliceVision/camera/IntrinsicInitMode.i>
+
 // The whole intrinsic hierarchy is declared here, before any intrinsic class or factory function is parsed.
 %shared_ptr(aliceVision::camera::IntrinsicBase)
 %shared_ptr(aliceVision::camera::IntrinsicScaleOffset)
