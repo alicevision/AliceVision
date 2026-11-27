@@ -4,6 +4,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+%include <aliceVision/exception.i>
+
 %include <stdint.i>
 %include <std_container.i>
 %include <std_string.i>

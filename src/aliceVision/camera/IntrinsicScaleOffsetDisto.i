@@ -5,9 +5,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 %include <std_shared_ptr.i>
-%shared_ptr(aliceVision::camera::IntrinsicScaleOffsetDisto)
 
 %include <aliceVision/camera/IntrinsicScaleOffset.i>
+%include <aliceVision/camera/Distortion.i>
+%include <aliceVision/camera/Undistortion.i>
 %include <aliceVision/camera/IntrinsicScaleOffsetDisto.hpp>
 
 %{

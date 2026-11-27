@@ -4,6 +4,13 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+%include <std_shared_ptr.i>
+%shared_ptr(aliceVision::camera::Undistortion)
+%shared_ptr(aliceVision::camera::UndistortionRadialK3)
+%shared_ptr(aliceVision::camera::Undistortion3DEAnamorphic4)
+%shared_ptr(aliceVision::camera::Undistortion3DEClassicLD)
+%shared_ptr(aliceVision::camera::Undistortion3DERadial4)
+
 %include <aliceVision/camera/Undistortion.hpp>
 
 %{

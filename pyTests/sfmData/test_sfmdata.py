@@ -4,6 +4,8 @@ Collection of unit tests for the SfMData class.
 
 import os
 
+import pytest
+
 from pyalicevision import sfmData as av
 from ..constants import IMAGE_PATH, VIEW_ID, INTRINSIC_ID, POSE_ID, IMAGE_WIDTH, \
     IMAGE_HEIGHT, RIG_ID, SUBPOSE_ID, METADATA
@@ -257,6 +259,25 @@ def test_sfmdata_get_view():
         assert view.getSubPoseId() == SUBPOSE_ID + i
         assert view.getImageInfo().getImgSize() == (IMAGE_WIDTH + i, IMAGE_HEIGHT + i)
         assert view.getImageInfo().getImagePath() == IMAGE_PATH
+
+
+def test_sfmdata_missing_key():
+    """ Test that getting or deleting a missing key of the Views, Poses and Intrinsics raises KeyError(key),
+    as for a dict. """
+    data = av.SfMData()
+    data.getViews()[VIEW_ID] = av.View()
+    data.getPoses()[POSE_ID] = av.CameraPose()
+    data.getIntrinsics()[INTRINSIC_ID] = av.Pinhole()
+    missing_id = 999
+
+    for mapping in (data.getViews(), data.getPoses(), data.getIntrinsics()):
+        with pytest.raises(KeyError) as error:
+            mapping[missing_id]
+        assert error.value.args == (missing_id,)
+
+        with pytest.raises(KeyError):
+            del mapping[missing_id]
+        assert len(mapping) == 1, "Deleting a missing key should not change the mapping"
 
 
 def test_sfmdata_combine():

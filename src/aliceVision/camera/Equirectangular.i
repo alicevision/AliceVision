@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 %include <std_shared_ptr.i>
-%shared_ptr(aliceVision::camera::Equirectangular)
 
 %include <aliceVision/camera/IntrinsicScaleOffsetDisto.i>
 %include <aliceVision/camera/Equirectangular.hpp>

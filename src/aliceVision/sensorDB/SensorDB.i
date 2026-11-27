@@ -6,6 +6,8 @@
 
 %module (package="pyalicevision") sensorDB
 
+%include <aliceVision/exception.i>
+
 %include <aliceVision/sensorDB/Datasheet.i>
 
 %include <aliceVision/sensorDB/parseDatabase.hpp>
