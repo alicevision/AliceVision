@@ -158,7 +158,10 @@ IndexT removeOutliersWithAngleError(sfmData::SfMData& sfmData, const double dMin
     return toErase.size();
 }
 
-bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose, std::set<IndexT>* outRemovedViewsId)
+bool eraseUnstablePoses(sfmData::SfMData& sfmData,
+                        const IndexT minPointsPerPose,
+                        std::set<IndexT>* outRemovedViewsId,
+                        const IndexT minObservationsPerSupportingLandmark)
 {
     IndexT removedElements = 0;
     const sfmData::Landmarks& landmarks = sfmData.getLandmarks();
@@ -181,6 +184,12 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose
     for (const auto & [idLandmark, landmark] : landmarks)
     {
         const sfmData::Observations& observations = landmark.getObservations();
+
+        // A landmark seen by too few views does not support their poses
+        if (observations.size() < minObservationsPerSupportingLandmark)
+        {
+            continue;
+        }
 
         for (const auto & [viewId, obs] : observations)
         {
@@ -315,7 +324,8 @@ bool eraseLandmarksWithMissingReferenceView(sfmData::SfMData& sfmData)
 bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
                                        const IndexT minPointsPerPose,
                                        const IndexT minPointsPerLandmark,
-                                       std::set<IndexT>* outRemovedViewsId)
+                                       std::set<IndexT>* outRemovedViewsId,
+                                       const IndexT minObservationsPerSupportingLandmark)
 {
     // Observations are only removed as a consequence of removed poses
     bool removedPoses = false;
@@ -323,7 +333,7 @@ bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
     do
     {
         removedContent = false;
-        if (eraseUnstablePoses(sfmData, minPointsPerPose, outRemovedViewsId))
+        if (eraseUnstablePoses(sfmData, minPointsPerPose, outRemovedViewsId, minObservationsPerSupportingLandmark))
         {
             removedPoses = true;
 

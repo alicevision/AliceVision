@@ -50,7 +50,20 @@ IndexT removeOutliersWithAngleError(sfmData::SfMData& sfmData, const double dMin
  */
 IndexT removeConstraints(sfmData::SfMData& sfmData, const double maxDist);
 
-bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT minPointsPerPose, std::set<IndexT>* outRemovedViewsId = NULL);
+/**
+ * @brief Erase the removable poses which are not supported by enough landmarks
+ * @param sfmData the sfmData to update
+ * @param minPointsPerPose the minimal number of supporting landmark observations to keep a pose
+ * @param outRemovedViewsId if not null, the ids of the views whose pose was erased are added to it
+ * @param minObservationsPerSupportingLandmark a landmark only supports the poses observing it
+ *        if it has at least this number of observations
+ *        (a landmark observed by a single view, e.g. created from that view's depth, constrains nothing)
+ * @return true if some poses were erased
+ */
+bool eraseUnstablePoses(sfmData::SfMData& sfmData,
+                        const IndexT minPointsPerPose,
+                        std::set<IndexT>* outRemovedViewsId = NULL,
+                        const IndexT minObservationsPerSupportingLandmark = 1);
 
 bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT minPointsPerLandmark);
 
@@ -65,7 +78,8 @@ bool eraseLandmarksWithMissingReferenceView(sfmData::SfMData& sfmData);
 bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
                                        const IndexT minPointsPerPose = 6,
                                        const IndexT minPointsPerLandmark = 2,
-                                       std::set<IndexT>* outRemovedViewsId = NULL);
+                                       std::set<IndexT>* outRemovedViewsId = NULL,
+                                       const IndexT minObservationsPerSupportingLandmark = 1);
 
 
 }  // namespace sfm
