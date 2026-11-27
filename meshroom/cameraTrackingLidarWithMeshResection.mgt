@@ -1257,14 +1257,16 @@
                         "type": "ShapeList",
                         "shape": {
                             "type": "Rectangle",
-                            "name": "bbox"
+                            "name": "bbox",
+                            "keyable": true
                         }
                     },
                     "negativeBoxes": {
                         "type": "ShapeList",
                         "shape": {
                             "type": "Rectangle",
-                            "name": "bbox"
+                            "name": "bbox",
+                            "keyable": true
                         }
                     },
                     "verboseLevel": {
@@ -1586,7 +1588,8 @@
                         "type": "ShapeList",
                         "shape": {
                             "type": "SurveyPoint",
-                            "name": "point"
+                            "name": "point",
+                            "keyable": true
                         }
                     },
                     "verboseLevel": {
@@ -2409,7 +2412,7 @@
             ],
             "inputs": {
                 "input": "{MeshResection_1.output}",
-                "masksFolder": "{ImageSegmentationSam3_2.masks}",
+                "masksFolder": "{ImageSegmentationSam3_2.output}",
                 "maskExtension": "exr"
             },
             "internalInputs": {
@@ -2531,8 +2534,8 @@
             "nodeType": "ImageSegmentationSam3",
             "version": "2.0",
             "position": [
-                -964.0,
-                225.0
+                -957.0,
+                183.0
             ],
             "inputs": {
                 "input": "{CameraInit_2.output}",
