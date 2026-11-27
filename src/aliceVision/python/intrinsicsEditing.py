@@ -183,7 +183,8 @@ def applyEdits(intrinsic, edits, updateInitialFocal):
 
     The sensor width is applied before the focal length so that a sensor-only change keeps the focal
     length in mm. The sensor height does not change the focal length in pixels. If the input focal length
-    is unknown (<= 0), it stays unknown unless the focal length is edited.
+    in mm is unknown (<= 0), it stays unknown unless the focal length is edited; a pixel ratio edit is then
+    applied to the scale in pixels if it is known (sensor width <= 0), and rejected otherwise.
 
     The initial focal length is the prior that bounds the focal length in bundle adjustment. If
     `updateInitialFocal` is set, it is set to the focal length whenever the focal length in pixels is
@@ -193,8 +194,9 @@ def applyEdits(intrinsic, edits, updateInitialFocal):
         list: One "<name>: <old> -> <new>" line per applied edit.
 
     Raises:
-        ValueError: If the focal length in pixels is recomputed while the sensor width is <= 0, or if the
-            recomputed scale is not finite and > 0. `intrinsic` may then be partially modified.
+        ValueError: If the focal length in pixels is recomputed while the sensor width is <= 0, if the pixel
+            ratio is edited while the input scale is unknown, or if the recomputed scale is not finite and > 0.
+            `intrinsic` may then be partially modified.
     """
     scaleOffset = _toIntrinsicScaleOffset(intrinsic)
     oldValues = _readValues(intrinsic)
@@ -207,11 +209,16 @@ def applyEdits(intrinsic, edits, updateInitialFocal):
     if "sensorHeight" in edits:
         intrinsic.setSensorHeight(edits["sensorHeight"])
 
+    # The input focal length in mm is known (> 0) only with a valid scale and a sensor width > 0. The scale in
+    # pixels can be known without the sensor width.
+    oldScaleKnown = bool(np.all(np.isfinite(oldScale) & (oldScale > 0.0)))
+    oldFocalKnownInMm = oldValues["focalLength"] > 0.0
+
     # Decided from the edits, not by comparing the scales: scaling the focal length and the sensor width by the
     # same ratio keeps the scale but is still a focal length edit.
-    scaleEdited = "focalLength" in edits or (
-        oldValues["focalLength"] > 0.0 and any(name in edits for name in ("pixelRatio", "sensorWidth")))
-    if scaleEdited:
+    scaleEdited = False
+    if "focalLength" in edits or (
+            oldFocalKnownInMm and any(name in edits for name in ("pixelRatio", "sensorWidth"))):
         # The focal length in mm is converted to pixels with the sensor width: only edited fields are checked
         # by checkEdits, so an input sensor width <= 0 would give an infinite or negative scale
         sensorWidth = intrinsic.sensorWidth()
@@ -221,6 +228,15 @@ def applyEdits(intrinsic, edits, updateInitialFocal):
         focalLength = edits.get("focalLength", oldValues["focalLength"])
         pixelRatio = edits.get("pixelRatio", oldValues["pixelRatio"])
         scaleOffset.setFocalLength(focalLength, pixelRatio)
+        scaleEdited = True
+    elif "pixelRatio" in edits:
+        if not oldScaleKnown:
+            raise ValueError("Cannot apply the pixel ratio: the input focal length is unknown: "
+                             "edit the focal length too")
+        # Focal length unknown in mm only (sensor width <= 0): apply the ratio in pixels, with the convention of
+        # setFocalLength (fy kept, fx = fy / pixel ratio)
+        scaleOffset.setScale(np.array([oldScale[1] / edits["pixelRatio"], oldScale[1]]))
+        scaleEdited = True
 
     newScale = np.array(scaleOffset.getScale(), dtype=float).ravel()
     if scaleEdited and not np.all(np.isfinite(newScale) & (newScale > 0.0)):
@@ -260,8 +276,7 @@ def applyEdits(intrinsic, edits, updateInitialFocal):
     lines = []
     for name in NUMERIC_FIELDS:
         if name in edits:
-            note = " (not applied: focal length unknown)" if name == "pixelRatio" and not scaleEdited else ""
-            lines.append(f"{name}: {oldValues.get(name)} -> {edits[name]}{note}")
+            lines.append(f"{name}: {oldValues.get(name)} -> {edits[name]}")
     if not np.array_equal(newScale, oldScale):
         lines.append(f"scale (px): {oldScale.tolist()} -> {newScale.tolist()}")
     if not np.array_equal(newInitialScale, oldInitialScale):

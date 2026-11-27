@@ -85,3 +85,24 @@ def test_focal_length_edit_rejects_invalid_scale(tmp_path):
     with pytest.raises(ValueError, match="Invalid scale"):
         _edit(inputPath, outputPath, {"focalLength": 50.0})
     assert not os.path.exists(outputPath)
+
+
+@pytest.mark.parametrize("sensorWidth", [36.0, 0.0])
+def test_pixel_ratio_edit(tmp_path, sensorWidth):
+    """ A pixel ratio edit is applied with or without a known sensor width (fy kept, fx = fy / pixel ratio). """
+    inputPath, outputPath = str(tmp_path / "in.usda"), str(tmp_path / "out.usda")
+    _writeInput(inputPath, sensorWidth)
+
+    _edit(inputPath, outputPath, {"pixelRatio": 2.0})
+    assert _readScale(outputPath) == pytest.approx([SCALE / 2.0, SCALE])
+
+
+def test_pixel_ratio_edit_rejects_unknown_scale(tmp_path):
+    """ A pixel ratio edit is rejected if the input scale is unknown, instead of being dropped. """
+    # The JSON format stores the focal length in mm: with a sensor width of 0, the scale is loaded as NaN
+    inputPath, outputPath = str(tmp_path / "in.sfm"), str(tmp_path / "out.sfm")
+    _writeInput(inputPath, 0.0)
+
+    with pytest.raises(ValueError, match="pixel ratio"):
+        _edit(inputPath, outputPath, {"pixelRatio": 2.0})
+    assert not os.path.exists(outputPath)
