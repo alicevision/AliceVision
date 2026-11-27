@@ -191,6 +191,10 @@ def applyEdits(intrinsic, edits, updateInitialFocal):
 
     Returns:
         list: One "<name>: <old> -> <new>" line per applied edit.
+
+    Raises:
+        ValueError: If the focal length in pixels is recomputed while the sensor width is <= 0, or if the
+            recomputed scale is not finite and > 0. `intrinsic` may then be partially modified.
     """
     scaleOffset = _toIntrinsicScaleOffset(intrinsic)
     oldValues = _readValues(intrinsic)
@@ -208,15 +212,24 @@ def applyEdits(intrinsic, edits, updateInitialFocal):
     scaleEdited = "focalLength" in edits or (
         oldValues["focalLength"] > 0.0 and any(name in edits for name in ("pixelRatio", "sensorWidth")))
     if scaleEdited:
+        # The focal length in mm is converted to pixels with the sensor width: only edited fields are checked
+        # by checkEdits, so an input sensor width <= 0 would give an infinite or negative scale
+        sensorWidth = intrinsic.sensorWidth()
+        if not (math.isfinite(sensorWidth) and sensorWidth > 0.0):
+            raise ValueError(f"Cannot set the focal length: the input sensor width is {sensorWidth}, "
+                             f"it must be > 0: edit the sensor width too")
         focalLength = edits.get("focalLength", oldValues["focalLength"])
         pixelRatio = edits.get("pixelRatio", oldValues["pixelRatio"])
         scaleOffset.setFocalLength(focalLength, pixelRatio)
 
     newScale = np.array(scaleOffset.getScale(), dtype=float).ravel()
+    if scaleEdited and not np.all(np.isfinite(newScale) & (newScale > 0.0)):
+        # e.g. an image size of 0
+        raise ValueError(f"Invalid scale (px) {newScale.tolist()} computed from the edits")
     if not updateInitialFocal:
         scaleOffset.setInitialScale(np.array([-1.0, -1.0]))
     elif scaleEdited:
-        scaleOffset.setInitialScale(newScale if np.all(newScale > 0.0) else np.array([-1.0, -1.0]))
+        scaleOffset.setInitialScale(newScale)
     newInitialScale = np.array(scaleOffset.getInitialScale(), dtype=float).ravel()
 
     if "centerOffsetX" in edits or "centerOffsetY" in edits:
