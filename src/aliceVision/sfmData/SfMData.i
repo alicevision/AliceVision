@@ -61,7 +61,7 @@ using namespace aliceVision::camera;
         if (it != self->end()) {
             return it->second;
         }
-        throw std::out_of_range("Key not found");
+        throw aliceVision_MissingKeyError(key);
     }
     
     void __setitem__(const IndexT& key, const std::shared_ptr<VALUETYPE>& value) {
@@ -73,7 +73,7 @@ using namespace aliceVision::camera;
         if (it != self->end()) {
             self->erase(it);
         } else {
-            throw std::out_of_range("Key not found");
+            throw aliceVision_MissingKeyError(key);
         }
     }
     
@@ -98,7 +98,7 @@ using namespace aliceVision::camera;
 
 SPMAP_EXTENSIONS(aliceVision::sfmData::View)
 SPMAP_EXTENSIONS(aliceVision::sfmData::ImageInfo)
-SPMAP_EXTENSIONS(aliceVision::sfmData::IntrinsicBase)
+SPMAP_EXTENSIONS(aliceVision::camera::IntrinsicBase)
 SPMAP_EXTENSIONS(aliceVision::sfmData::CameraPose)
 
 %template(Poses) aliceVision::sfmData::SharedPtrMap<aliceVision::sfmData::CameraPose>;
