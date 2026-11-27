@@ -97,7 +97,7 @@ bool SfmResection::processView(
     }
 
     inliersCount = inliers.size();
-    ALICEVISION_LOG_INFO("Resection for view " << viewId << " had " << inliersCount << " inliers.");
+    ALICEVISION_LOG_INFO("Resection for view " << viewId << " had " << inliersCount << " inliers out of " << structure.size() << " 2D-3D candidates (threshold " << errorMax << ").");
 
     //Refine the pose
     if (!internalRefinement(structure, observations, inliers, pose, intrinsic, errorMax))
@@ -110,7 +110,7 @@ bool SfmResection::processView(
     updatedThreshold = errorMax;
     updatedPose = pose;
 
-    ALICEVISION_LOG_INFO("SfmResection::processView end " << viewId);
+    ALICEVISION_LOG_INFO("SfmResection::processView end " << viewId << " (max inlier error after refinement " << errorMax << ")");
 
     return true;
 }
