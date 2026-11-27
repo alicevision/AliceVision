@@ -132,6 +132,26 @@ public:
         _minPointsPerPose = minPointsPerPose;
     }
 
+    /**
+     * @brief Get the minimal number of observations for a landmark to support the poses of its views
+     * @return the minimal number of observations
+    */
+    size_t getMinObservationsPerSupportingLandmark() const
+    {
+        return _minObservationsPerSupportingLandmark;
+    }
+
+    /**
+     * @brief Set the minimal number of observations for a landmark to support the poses of its views
+     * A landmark observed by a single view does not support its pose:
+     * e.g. a depth prior landmark created from the view's own rays agrees with any pose of this view
+     * @param minObservationsPerSupportingLandmark the minimal number of observations
+    */
+    void setMinObservationsPerSupportingLandmark(size_t minObservationsPerSupportingLandmark)
+    {
+        _minObservationsPerSupportingLandmark = minObservationsPerSupportingLandmark;
+    }
+
 private:
     /**
      * Initialize bundle properties
@@ -159,6 +179,7 @@ private:
     double _maxConstraintDistance = 1.0;
     size_t _minTrackLength = 1;
     size_t _minPointsPerPose = 30;
+    size_t _minObservationsPerSupportingLandmark = 2;
     size_t _bundleAdjustmentMaxOutlier = 50;
     size_t _minNbCamerasToRefinePrincipalPoint = 3;
     unsigned int _maxIterationCount = 50;

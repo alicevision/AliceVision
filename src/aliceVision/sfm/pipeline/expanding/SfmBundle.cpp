@@ -96,7 +96,7 @@ bool SfmBundle::cleanup(sfmData::SfMData & sfmData)
     bool somethingErased = false;
     if (!_bundleTemporalConstraint)
     {
-        somethingErased = eraseUnstablePosesAndObservations(sfmData, _minPointsPerPose, _minTrackLength, &removedViewsIdIteration);
+        somethingErased = eraseUnstablePosesAndObservations(sfmData, _minPointsPerPose, _minTrackLength, &removedViewsIdIteration, _minObservationsPerSupportingLandmark);
     }
 
     bool somethingChanged = /*somethingErased || */(nbOutliers > _bundleAdjustmentMaxOutlier) || (nbOutliersConstraints > 0);
