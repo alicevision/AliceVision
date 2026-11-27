@@ -174,9 +174,11 @@ int aliceVision_main(int argc, char** argv)
     if (lockScenePreviouslyReconstructed)
     {
         // lock all reconstructed camera poses
+        // and keep them: they are the reference scene, the cleanup must not erase them
         for (auto& [_, pose] : sfmData.getPoses().valueRange())
         {
             pose.lock();
+            pose.setRemovable(false);
         }
 
         for (const auto& viewPair : sfmData.getViews())
