@@ -327,17 +327,28 @@ Distortion and undistortion are not modified.
             return None
         return intrinsicsEditing.readIntrinsic(data, node.intrinsicId.value)
 
-    def _refreshIdList(self, node):
+    def _refreshIdList(self, node, keepMissingId=False):
+        """Rebuild the intrinsic ID list from the input.
+
+        If the selected ID is not in the input, it is kept in the list if `keepMissingId` is set (the computation
+        then fails on it), otherwise it is reset to "auto", which refills the fields and locks from the input.
+        """
         data = self._readInput(node)
         if data is None:
             # Keep the current list (and so the selected ID) until the input can be read, e.g. once computed
             return
         values = [AUTO] + [str(i) for i in sorted(data.getIntrinsics().keys())]
+        current = node.intrinsicId.value
+        if current not in values and keepMissingId:
+            # The ID is exclusive: it must stay in the list to stay selected
+            logging.warning(f"{node.name}: intrinsic ID '{current}' is not in the input: "
+                            f"the computation will fail until another ID is selected")
+            values.append(current)
         node.intrinsicId.setValues(values)
-        if node.intrinsicId.value not in values:
+        if current not in values:
             # Triggers onIntrinsicIdChanged: the fields are refilled from the new selection
-            logging.warning(f"{node.name}: intrinsic ID '{node.intrinsicId.value}' is not in the input, "
-                            f"reset to '{AUTO}'")
+            logging.warning(f"{node.name}: intrinsic ID '{current}' is not in the input, reset to '{AUTO}': "
+                            f"the fields and locks are refilled from the input, discarding their changes")
             node.intrinsicId.value = AUTO
 
     @staticmethod
@@ -390,8 +401,9 @@ Distortion and undistortion are not modified.
 
     @_logErrors
     def onNodeCreated(self, node):
-        # Fields are not reset: values preset in a pipeline template are kept
-        self._refreshIdList(node)
+        # Fields are not reset: values preset in a pipeline template are kept, even if the preset ID is not in
+        # the input (resetting the ID would refill the fields from the input)
+        self._refreshIdList(node, keepMissingId=True)
 
     @_logErrors
     def onInputChanged(self, node):
